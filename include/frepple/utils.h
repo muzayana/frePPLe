@@ -53,6 +53,11 @@
 #endif
 #include "datetime.h"
 
+#include <openssl/rsa.h>
+#include <openssl/evp.h>
+#include <openssl/err.h>
+#include <openssl/ssl.h>
+
 // For compatibility with earlier Python releases
 #if PY_VERSION_HEX < 0x02050000 && !defined(PY_SSIZE_T_MIN)
 typedef int Py_ssize_t;
@@ -5512,8 +5517,67 @@ class FreppleIterator : public PythonExtension<ME>
     }
 };
 
+
 /** @brief This Python function loads a frepple extension module in memory. */
 DECLARE_EXPORT PyObject* loadModule(PyObject*, PyObject*, PyObject*);
+
+
+class licenseValidator : private Object
+{
+  private:
+    void endElement(XMLInput&, const Attribute&, const DataElement&);
+    string customer;
+    string email;
+    string valid_from;
+    string valid_till;
+    Date valid_from_date;
+    Date valid_till_date;
+    string signature;
+
+    /** Check a license file. */
+    void valid();
+    
+    /** Virtual functions we have to define... */
+    static const MetaClass metadata;
+    virtual size_t getSize() const {return 0;}
+    virtual const MetaClass& getType() const {return metadata;}
+    
+  public:
+    /** Default constructor. */
+    licenseValidator() { valid(); };
+
+    /** Return the customer from the license file. */
+    string getCustomer() const {return customer;}
+
+    /** Return the email from the license file. */
+    string getEmail() const {return email;}
+
+    /** Return the validity start date from the license file. */
+    Date getValidFrom() const {return valid_from_date;}
+
+    /** Return the validity end date from the license file. */
+    Date getValidTill() const {return valid_till_date;}
+};
+
+
+class decryptor 
+{
+  public:
+    /** The public key used for decrypting and verifying signatures. */
+    static const unsigned char key[];
+
+    /** Decrypt a memory buffer. */ 
+    static bool decrypt(unsigned char*);
+
+    /** Encodes a memory buffer into base64. */
+    static string base64(const unsigned char *input, int length);
+
+    /** Decodes a base64 encoded string into a memory buffer.<br>
+      * Make sure to free up the memory buffer allocated by this method once
+      * you don't need the buffer any longer.
+      */
+    static unsigned char* unbase64(string input);
+};
 
 
 } // end namespace

@@ -3,7 +3,7 @@
 #
 
 #
-# Copyright (C) 2007-2012 by Johan De Taeye, frePPLe bvba
+# Copyright (C) 2007-2013 by Johan De Taeye, frePPLe bvba
 #
 # All information contained herein is, and remains the property of frePPLe.  
 # You are allowed to use and modify the source code, as long as the software is used
@@ -16,7 +16,7 @@
 # Initialization
 #
 AC_PREREQ(2.60)
-AC_INIT([frepple], [2.0])
+AC_INIT([frepple], [2.1.beta])
 AC_CONFIG_SRCDIR([src/main.cpp])
 AC_CONFIG_HEADER([config.h])
 AM_INIT_AUTOMAKE([1.9 tar-ustar])
@@ -200,6 +200,20 @@ AC_TRY_COMPILE(
   ])])
 
 #
+# Verify installation of OPENSSL
+#
+AC_CHECK_HEADER([openssl/rsa.h], [],
+[AC_MSG_ERROR([
+  This package requires the OPENSSL package...
+  Please install this package and its development libraries.
+])])
+AC_CHECK_LIB([crypto], [RSA_generate_key], [],
+[AC_MSG_ERROR([
+  This package requires the OPENSSL package...
+  Please install this package and its development libraries.
+])])
+
+#
 # Verify installation of XERCES-C
 #
 AC_CHECK_HEADER([xercesc/util/XercesDefs.hpp], [],
@@ -327,9 +341,9 @@ AM_CONDITIONAL(CYGWIN, test x$host_os = xcygwin)
 AC_CONFIG_FILES([ Makefile bin/Makefile doc/Makefile ])
 AC_CONFIG_FILES([ include/Makefile include/frepple/Makefile ])
 AC_CONFIG_FILES([ src/Makefile src/model/Makefile src/solver/Makefile src/utils/Makefile ])
-AC_CONFIG_FILES([ modules/Makefile modules/lp_solver/Makefile ])
-AC_CONFIG_FILES([ contrib/Makefile contrib/vc/Makefile contrib/django/Makefile contrib/installer/Makefile contrib/openerp/Makefile contrib/rpm/Makefile contrib/debian/Makefile ])
-AC_CONFIG_FILES([ test/Makefile test/cluster/Makefile test/calendar/Makefile test/constraints_combined_1/Makefile test/constraints_combined_2/Makefile test/constraints_leadtime_1/Makefile test/constraints_material_1/Makefile test/constraints_material_2/Makefile test/constraints_material_3/Makefile test/constraints_material_4/Makefile test/datetime/Makefile test/flow_alternate_1/Makefile test/flow_alternate_2/Makefile test/lpsolver_1/Makefile test/scalability_1/Makefile test/scalability_2/Makefile test/scalability_3/Makefile test/jobshop/Makefile test/xml/Makefile test/xml_remote/Makefile  test/constraints_resource_1/Makefile test/constraints_resource_2/Makefile test/constraints_resource_3/Makefile test/constraints_resource_4/Makefile  test/constraints_resource_5/Makefile test/problems/Makefile test/deletion/Makefile test/demand_policy/Makefile test/operation_alternate/Makefile test/operation_available/Makefile test/operation_effective/Makefile test/operation_pre_post/Makefile test/operation_routing/Makefile test/multithreading/Makefile test/name/Makefile test/python_1/Makefile test/python_2/Makefile test/python_3/Makefile test/sample_module/Makefile test/callback/Makefile test/pegging/Makefile test/safety_stock/Makefile test/buffer_procure_1/Makefile test/flow_effective/Makefile test/load_alternate/Makefile test/load_effective/Makefile test/setup_1/Makefile test/setup_2/Makefile test/setup_3/Makefile test/skills/Makefile ])
+AC_CONFIG_FILES([ modules/Makefile modules/lp_solver/Makefile modules/forecast/Makefile ])
+AC_CONFIG_FILES([ contrib/Makefile contrib/vc/Makefile contrib/django/Makefile contrib/installer/Makefile contrib/openerp/Makefile contrib/scripting/Makefile contrib/rpm/Makefile contrib/debian/Makefile ])
+AC_CONFIG_FILES([ test/Makefile test/cluster/Makefile test/calendar/Makefile test/constraints_combined_1/Makefile test/constraints_combined_2/Makefile test/constraints_leadtime_1/Makefile test/constraints_material_1/Makefile test/constraints_material_2/Makefile test/constraints_material_3/Makefile test/constraints_material_4/Makefile test/datetime/Makefile test/flow_alternate_1/Makefile test/flow_alternate_2/Makefile test/lpsolver_1/Makefile test/scalability_1/Makefile test/scalability_2/Makefile test/scalability_3/Makefile test/jobshop/Makefile test/xml/Makefile test/xml_remote/Makefile  test/constraints_resource_1/Makefile test/constraints_resource_2/Makefile test/constraints_resource_3/Makefile test/constraints_resource_4/Makefile  test/constraints_resource_5/Makefile test/problems/Makefile test/deletion/Makefile test/demand_policy/Makefile test/operation_alternate/Makefile test/operation_available/Makefile test/operation_effective/Makefile test/operation_pre_post/Makefile test/operation_routing/Makefile test/multithreading/Makefile test/name/Makefile test/python_1/Makefile test/python_2/Makefile test/python_3/Makefile test/sample_module/Makefile test/callback/Makefile test/pegging/Makefile test/safety_stock/Makefile test/buffer_procure_1/Makefile test/flow_effective/Makefile test/load_alternate/Makefile test/load_effective/Makefile test/setup_1/Makefile test/setup_2/Makefile test/setup_3/Makefile test/skills/Makefile test/forecast_1/Makefile test/forecast_2/Makefile test/forecast_3/Makefile test/forecast_4/Makefile test/forecast_5/Makefile test/forecast_6/Makefile])
 AC_OUTPUT
 
 # Byebye message

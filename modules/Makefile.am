@@ -2,4 +2,4 @@
 # Process this file with automake to produce Makefile.in
 #
 
-SUBDIRS = lp_solver
+SUBDIRS = lp_solver forecast

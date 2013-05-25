@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# Copyright (C) 2009-2012 by Johan De Taeye, frePPLe bvba
+# Copyright (C) 2009-2013 by Johan De Taeye, frePPLe bvba
 #
 # All information contained herein is, and remains the property of frePPLe.
 # You are allowed to use and modify the source code, as long as the software is used
@@ -115,7 +115,7 @@ def runTestSuite():
         # THE HARD_CODED TESTS LISTED HERE ARE SKIPPED WHEN RUNNING A REGRESSION TEST.
         # These test verify other aspects of the application.
         excluded = ["xml_remote", "scalability_1", "scalability_2", "scalability_3", 
-                    "jobshop", "multithreading", ]
+                    "forecast_6", "jobshop", "multithreading", ]
         break
     for o, a in opts:
       if o in ("-d", "--debug"):
