@@ -19,15 +19,26 @@ Makefile.in
 *.Po
 /INSTALL
 
-# C++
+# GNU C++ & libtool
 *.o
 *.lo
 *.a
 *.la
 *.so
-*.stackdump
 .deps
 .libs
+
+# Visual studio C++
+/bin/*.pdb
+*.exp
+*.lib
+*.idb
+*.ncb
+*.pdb
+*.obj
+*.suo
+*.dep
+*.manifest
 
 # Executables
 *.exe
@@ -43,6 +54,7 @@ build
 # Log files
 *.log
 *.out
+*.stackdump
 
 # Extra 
 *.sqlite
@@ -50,3 +62,4 @@ build
 /bin/mod_lpsolver.xsd
 /doc/html
 /test/*/output.*.xml
+

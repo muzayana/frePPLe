@@ -27,6 +27,21 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "module_lpsolver", "module_l
 		{7DB19B15-8C74-4EEF-B664-697E030FD67D} = {7DB19B15-8C74-4EEF-B664-697E030FD67D}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "createkey", "createkey.vcproj", "{2CAC15A4-4461-49C4-9AD9-D5020228B0AB}"
+	ProjectSection(ProjectDependencies) = postProject
+		{52CF1D2E-D314-4031-AC11-EB87987591A6} = {52CF1D2E-D314-4031-AC11-EB87987591A6}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "createlicense", "createlicense.vcproj", "{43EF0559-B4D2-4E80-ACE5-323F441E1029}"
+	ProjectSection(ProjectDependencies) = postProject
+		{52CF1D2E-D314-4031-AC11-EB87987591A6} = {52CF1D2E-D314-4031-AC11-EB87987591A6}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "module_forecast", "module_forecast.vcproj", "{7DB29B15-8CA4-4EAF-B666-697E030FD67D}"
+	ProjectSection(ProjectDependencies) = postProject
+		{7DB19B15-8C74-4EEF-B664-697E030FD67D} = {7DB19B15-8C74-4EEF-B664-697E030FD67D}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -57,6 +72,18 @@ Global
 		{7DB29B15-8CA4-4BAF-B696-697EA30FD67D}.Debug|Win32.Build.0 = Debug|Win32
 		{7DB29B15-8CA4-4BAF-B696-697EA30FD67D}.Release|Win32.ActiveCfg = Release|Win32
 		{7DB29B15-8CA4-4BAF-B696-697EA30FD67D}.Release|Win32.Build.0 = Release|Win32
+		{2CAC15A4-4461-49C4-9AD9-D5020228B0AB}.Debug|Win32.ActiveCfg = Debug|Win32
+		{2CAC15A4-4461-49C4-9AD9-D5020228B0AB}.Debug|Win32.Build.0 = Debug|Win32
+		{2CAC15A4-4461-49C4-9AD9-D5020228B0AB}.Release|Win32.ActiveCfg = Release|Win32
+		{2CAC15A4-4461-49C4-9AD9-D5020228B0AB}.Release|Win32.Build.0 = Release|Win32
+		{43EF0559-B4D2-4E80-ACE5-323F441E1029}.Debug|Win32.ActiveCfg = Debug|Win32
+		{43EF0559-B4D2-4E80-ACE5-323F441E1029}.Debug|Win32.Build.0 = Debug|Win32
+		{43EF0559-B4D2-4E80-ACE5-323F441E1029}.Release|Win32.ActiveCfg = Release|Win32
+		{43EF0559-B4D2-4E80-ACE5-323F441E1029}.Release|Win32.Build.0 = Release|Win32
+		{7DB29B15-8CA4-4EAF-B666-697E030FD67D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{7DB29B15-8CA4-4EAF-B666-697E030FD67D}.Debug|Win32.Build.0 = Debug|Win32
+		{7DB29B15-8CA4-4EAF-B666-697E030FD67D}.Release|Win32.ActiveCfg = Release|Win32
+		{7DB29B15-8CA4-4EAF-B666-697E030FD67D}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -6,7 +6,7 @@
 
 /***************************************************************************
  *                                                                         *
- * Copyright (C) 2012 by Johan De Taeye, frePPLe bvba                      *
+ * Copyright (C) 2012-2013 by Johan De Taeye, frePPLe bvba                 *
  *                                                                         *
  * All information contained herein is, and remains the property of        *
  * frePPLe.                                                                * 
@@ -17,6 +17,7 @@
  *                                                                         *
  ***************************************************************************/
 
+#define FREPPLE_CORE
 #include "frepple/utils.h"
 
 using namespace frepple;
