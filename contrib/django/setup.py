@@ -3,18 +3,11 @@
 #
 # Copyright (C) 2009-2012 by Johan De Taeye, frePPLe bvba
 #
-# This library is free software; you can redistribute it and/or modify it
-# under the terms of the GNU Affero General Public License as published
-# by the Free Software Foundation; either version 3 of the License, or
-# (at your option) any later version.
-#
-# This library is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
-# General Public License for more details.
-#
-# You should have received a copy of the GNU Affero General Public
-# License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# All information contained herein is, and remains the property of frePPLe.
+# You are allowed to use and modify the source code, as long as the software is used
+# within your company.
+# You are not allowed to distribute the software, either in the form of source code
+# or in the form of compiled binaries.
 #
 
 from distutils.core import setup
@@ -60,19 +53,19 @@ if len(sys.argv) > 1 and sys.argv[1] == 'bdist_wininst':
     
 setup(name = 'freppledb',
       version = __import__('freppledb').VERSION,
-      author = "www.frepple.com",
-      author_email = "info@www.frepple.com",
-      url = "http://www.frepple.com",
+      author = "frepple.com",
+      author_email = "info@frepple.com",
+      url = "http://frepple.com",
       scripts = ['manage.py'],
       packages = packages,
       data_files = data_files,
       options = { "install" : {'optimize': 2}},
       classifiers = [
-        'License :: OSI Approved :: GNU Affero General Public License (AGPL)',
+        'License :: Other/Proprietary License',
         'Intended Audience :: Manufacturing',
         'Framework :: Django',        
         ],
-      description = "Free Production Planning Library",
+      description = "FREE Production PLanning",
       long_description = '''FrePPLe stands for "Free Production Planning Library".
 It is a framework for modeling and solving production planning problems,
 targeted primarily at discrete manufacturing industries.
