@@ -8,6 +8,8 @@
 # or in the form of compiled binaries.
 #
 
+import json
+
 from django.shortcuts import render_to_response
 from django.views.decorators.csrf import csrf_protect
 from django.contrib import messages
@@ -22,7 +24,7 @@ from django.utils.text import capfirst
 from django.contrib.auth.models import User, Group
 from django.utils import translation
 from django.conf import settings
-from django.http import Http404, HttpResponseRedirect, HttpResponse
+from django.http import Http404, HttpResponseServerError, HttpResponseRedirect, HttpResponse
 
 from freppledb.common.models import Preferences, Parameter, Comment, Bucket, BucketDetail
 from freppledb.common.report import GridReport, GridFieldLastModified, GridFieldText
@@ -124,9 +126,25 @@ def horizon(request):
     pref.horizonunit = form.cleaned_data['horizonunit']
     pref.save()
     return HttpResponse(content="OK")     
-  except Exception:
+  except Exception as e:
+    logger.error("Error saving horizon settings: %s" % e)
     raise Http404('Error saving horizon settings') 
   
+  
+@login_required
+@csrf_protect
+def settings(request):
+  if request.method != 'POST' or not request.is_ajax():
+    raise Http404('Only ajax post requests allowed')  
+  try:
+    data = json.loads(request.body)
+    for key, value in data.items():
+      request.user.setPreference(key, value);
+    return HttpResponse(content="OK")
+  except Exception as e:
+    logger.error("Error saving report settings: %s" % e)
+    raise HttpResponseServerError('Error saving report settings') 
+ 
 
 class UserList(GridReport):
   '''

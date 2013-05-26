@@ -155,7 +155,36 @@ class Preferences(models.Model):
   lastmodified = models.DateTimeField(_('last modified'), auto_now=True, editable=False, db_index=True)
 
   class Meta:
-      db_table = "common_preference"
+    db_table = "common_user"
+    verbose_name = _('user')
+    verbose_name_plural = _('users')
+  
+  def getPreference(self, prop, default = None):
+    try:
+      import json
+      x = self.preferences.get(property=prop).value
+      return json.loads(x)
+      #return self.preferences.get(property=prop).value   TODO XXXXX NOOOOOOT GOOGD
+    except:
+      return default
+  
+  def setPreference(self, prop, val):
+    pref = self.preferences.get_or_create(property=prop)[0]
+    pref.value = val
+    pref.save(update_fields=['value'])
+    
+      
+class UserPreference(models.Model):
+  id = models.AutoField(_('identifier'), primary_key=True)
+  user = models.ForeignKey(User, verbose_name=_('user'), blank=False, null=False, editable=False, related_name='preferences')
+  property = models.CharField(max_length=settings.CATEGORYSIZE, blank=False, null=False)
+  value = JSONField(max_length=1000, blank=False, null=False)
+  
+  class Meta:
+    db_table = "common_preference"
+    unique_together = (('user','property'),)
+    verbose_name = 'preference'
+    verbose_name_plural = 'preferences'
 
 
 

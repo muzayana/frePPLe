@@ -1,8 +1,9 @@
 {% extends "admin/base_site_nav.html" %}
-{% load i18n admin_list %}
+{% load i18n admin_list jqgrid %}
 {% block extrahead %}{{block.super}} 
 <script type="text/javascript">
 
+var reportkey = '{{reportkey|safe}}';
 var initialfilter{% if filters %} = {{filters|safe}}{% endif %};
 {% if reportclass.hasTimeBuckets %}var numbuckets = {{bucketlist|length}};
 {% endif %}
@@ -13,11 +14,7 @@ $(function(){
    	  + (location.search.length > 0 ? "&format=json" : "?format=json"),
 	  datatype: "json",
 	  jsonReader : {repeatitems:false},
-   	colModel:[{% if is_popup %}
-      {name:'select',label:gettext('Select'),width:75,align:'center',sortable:false,search:false},
-      {% endif %}{% for f in reportclass.rows %}{% if not forloop.first %},
-   	  {% endif %}{ {{f|safe}}{% if forloop.counter <= reportclass.frozenColumns %},frozen:true{% endif %}{% if is_popup %},popup:true{% endif %} }{% endfor %}   	  
-   	  ],
+   	colModel:[{% colmodel False %}],
    	rowNum: {{request.pagesize}},{% if is_popup %}
     onSelectRow: setSelectedRow,{% elif reportclass.editable and haschangeperm %}
     cellEdit: true,
@@ -29,6 +26,7 @@ $(function(){
     viewrecords: true,    
     sortorder: "asc",	
     hidegrid: false,
+    resizeStop: saveColumnConfiguration,
     scrollRows: true,
     //altRows: true,  // Different color for alternating rows. But doesn't look nice with a lot of themes.
     //scroll: 1,      // Enables scrolling over all records, instead of paging. But not compatible with frozen columns. 
@@ -47,8 +45,48 @@ $(function(){
     });{% if reportclass.frozenColumns > 0 %}
   jQuery("#grid").jqGrid('setFrozenColumns');{% endif %}{% if reportclass.multiselect and not is_popup %}
   $('#cb_grid.cbox').click(markAllRows);{% endif %}
-});
 
+/*
+var $grid = $("#grid");
+$.each($grid[0].grid.headers, function () {
+    var $th = $(this.el), i, l, clickHandler, clickHandlers = [],
+        currentHandlers = $th.data('events'),
+        clickBinding = currentHandlers.click;
+
+    if ($.isArray(clickBinding)) {
+        for (i = 0, l = clickBinding.length; i < l; i++) {
+            clickHandler = clickBinding[i].handler;
+            clickHandlers.push(clickHandler);
+            $th.unbind('click', clickHandler);
+        }
+    }
+    $th.click(function () {
+        var p = $grid[0].p, savedRow = p.savedRow, j, len = savedRow.length;
+        if (len > 0) {
+            // there are rows in cell editing or inline editing
+            if (p.cellEdit) {
+                // savedRow has the form {id:iRow, ic:iCol, name:nm, v:value}
+                // we can call restoreCell or saveCell
+                $grid.jqGrid("restoreCell", savedRow[0].id, savedRow[0].ic);
+                //$grid.jqGrid("saveCell", savedRow[0].id, savedRow[0].ic);
+            } else {
+                // inline editing
+                for (j = len - 1; j >= 0; j--) {
+                    // call restoreRow or saveRow
+                    $grid.jqGrid("restoreRow", savedRow[j].id);
+                    //$grid.jqGrid("saveRow", savedRow[j].id);
+                }
+            }
+        }
+    });
+    l = clickHandlers.length;
+    if (l > 0) {
+        for (i = 0; i < l; i++) {
+            $th.bind('click', clickHandlers[i]);
+        }
+    }
+});
+*/
 $(window).bind('resize', function() {
   $("#grid")
    .setGridWidth($('#content-main').width()) 

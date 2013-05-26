@@ -74,10 +74,9 @@ class GridField(object):
       self.field_name = self.name
 
   def __unicode__(self):
-    o = [ "name:'%s',index:'%s',editable:%s,label:'%s',width:%s,align:'%s',title:false" % 
+    o = [ "name:'%s',index:'%s',editable:%s,label:'%s',align:'%s',title:false" % 
           (self.name or '', self.name or '', self.editable and "true" or "false", 
-           force_unicode(self.title).title().replace("'","\\'"), 
-           self.width, self.align
+           force_unicode(self.title).title().replace("'","\\'"), self.align
            ), ]
     if self.key: o.append( ",key:true" )
     if not self.sortable: o.append(",sortable:false")
@@ -243,7 +242,7 @@ class GridReport(View):
   The base class for all jqgrid views.
   The parameter values defined here are used as defaults for all reports, but
   can be overwritten.
-  '''
+  '''  
   # Points to template to be used
   template = 'admin/base_site_grid.html'
   
@@ -481,11 +480,13 @@ class GridReport(View):
         bucketnames = Bucket.objects.order_by('name').values_list('name', flat=True)
       else:
         pref = bucketnames = bucketlist = start = end = bucket = None
+      reportkey = "%s.%s" % (reportclass.__module__, reportclass.__name__);
       context = {
         'reportclass': reportclass,
         'title': (args and args[0] and _('%(title)s for %(entity)s') % {'title': force_unicode(reportclass.title), 'entity':force_unicode(args[0])}) or reportclass.title,
         'object_id': args and args[0] or None,
-        'preferences': pref,
+        'preferences': request.user.getPreference(reportkey),
+        'reportkey': reportkey,
         'is_popup': request.GET.has_key('pop'),
         'args': args,
         'filters': reportclass.getQueryString(request),

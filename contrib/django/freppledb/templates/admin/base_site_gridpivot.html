@@ -1,6 +1,11 @@
 {% extends "admin/base_site_nav.html" %}
+<<<<<<< HEAD
 {% load i18n admin_list %}
 {% block extrahead %}{{block.super}} 
+=======
+{% load i18n admin_list jqgrid %}
+{% block javascript %}{{block.super}} 
+>>>>>>> f126c5d... saving preferences...
 <script type="text/javascript">
 
 function columns (cellvalue, options, rowdata) {
@@ -14,6 +19,7 @@ function columns (cellvalue, options, rowdata) {
   return res;
 };{% endblock %}
 
+var reportkey = '{{reportkey|safe}}';
 var initialfilter{% if filters %} = {{filters|safe}}{% endif %};
 {% if reportclass.hasTimeBuckets %}var numbuckets = {{bucketlist|length}};
 {% endif %}
@@ -25,8 +31,7 @@ $(function(){
 	  datatype: "json",
 	  jsonReader : {repeatitems:false},
    	colModel:[
-   	  {% for f in reportclass.rows %}{% if not forloop.first %},
-   	  {% endif %}{ {{f|safe}},frozen:true }{% endfor %},
+   	  {% colmodel True %},
       { name:'columns',label:' ',sortable:false,width:150,align:'left',formatter:columns,search:false,frozen:true,title:false },
       {% for f in bucketlist %}{% if not forloop.first %},
       {% endif %}{ name:'{{f.name|safe}}',startdate:'{{f.startdate|date:"Y-m-d"}}',enddate:'{{f.enddate|date:"Y-m-d"}}',sortable:false,width:90,align:'center',formatter:crosses,search:false,title:false }{% endfor %}
@@ -40,6 +45,7 @@ $(function(){
     viewrecords: true,     
     sortorder: "asc",	
     hidegrid: false,
+    resizeStop: saveColumnConfiguration,
     scrollRows: true,
     //altRows: true,  // Different color for alternating rows. But doesn't look nice with a lot of themes.
     //scroll: 1,      // Enables scrolling over all records, instead of paging. But not compatible with frozen columns. 
