@@ -1,0 +1,91 @@
+{% extends "admin/base_site_gridpivot.html" %}
+{% load i18n %}
+
+{% block extrahead %}{{block.super}} 
+{% if args.0 %}<script type="text/javascript" src="{{STATIC_URL}}FusionCharts.js"></script>{% endif %}
+<script type="text/javascript" src="{{STATIC_URL}}js/jquery.sparkline.min.js"></script>
+{% endblock %}
+
+{% block contextmenus %}
+{% include "itemcontext.html" %}
+<div id="detail0context" class="ContextMenu"><ul class="ui-menu ui-widget ui-widget-content ui-corner-all ui-state-default">
+<li class="ui-menu-item"><a id="{{request.prefix}}/forecast/?o=5a&amp;item={value}">{% trans 'Detail' %}</a></li>
+</ul></div>
+<div id="detail1context" class="ContextMenu"><ul class="ui-menu ui-widget ui-widget-content ui-corner-all ui-state-default">
+<li class="ui-menu-item"><a id="{{request.prefix}}/demandplan/?o=5a&amp;item={value}&amp;due__gte={startdate}&amp;due__lt={enddate}">{% trans 'Detail' %}</a></li>
+</ul></div>
+<div id="detail2context" class="ContextMenu"><ul class="ui-menu ui-widget ui-widget-content ui-corner-all ui-state-default">
+<li class="ui-menu-item"><a id="{{request.prefix}}/demandplan/?o=5a&amp;item={value}&amp;plandate__gte={startdate}&amp;plandate__lt={enddate}">{% trans 'Detail' %}</a></li>
+</ul></div>
+{% endblock %}
+
+{% block tools %}{% if args.0 %}
+{% include "itemtabs.html" %}
+{% endif %}{{block.super}}
+{% endblock %}
+
+{% block before_table %}
+{% if args.0 %}<div id="chart1div" style="z-index: 1000;">
+	  <p>&nbsp;</p>
+	  <p>{% blocktrans %}frePPLe needs Adobe Flash Player to display graphs. If you're unable to see 
+	  the chart here, it means that your browser does not seem to have the Flash Player 
+	  installed.<br/>
+	  You can downloaded it <a href="http://www.adobe.com/products/flashplayer/" target="_blank"><u>here</u></a> for free.{% endblocktrans %}</p>
+	</div>
+	<script language="javascript" type="text/javascript">
+	   var chart1 = new FusionCharts("{{STATIC_URL}}FCF_MSColumn2DLineDY.swf", "chart1", $(window).width()-35, 350);
+	   chart1.setTransparent();
+	   chart1.setDataURL(escape("{{request.prefix}}/demandgraph/{{args.0|urlencode}}/?reportbucket={{reportbucket}}&reportstart={{reportstart|date:"Y-m-d"}}&reportend={{reportend|date:"Y-m-d"}}"));	   	   
+	   chart1.render("chart1div");
+	</script>
+{% endif %}{% endblock %}
+
+{% block crosses %}
+function graph(cellvalue, options, rowdata) {
+    var str = ['<span class="sparkline"><!--'];
+    var cols = jQuery("#grid").jqGrid('getGridParam', 'colModel'); 
+    var first = true; 
+    for (var i in cols) {       
+       if ('startdate' in cols[i]) {
+          var data = rowdata[cols[i]['name']];
+          if (first) {
+            str.push(data[0]+':'+data[1]);
+            first = false;
+          }
+          else
+            str.push(',' + data[0]+':'+data[1]);
+       }       
+    }      
+    str.push('--></span>');     
+    return str.join('');
+ };
+
+function drawGraphs() {
+  $('.sparkline').sparkline('html', { 
+     type:'bar', disableHiddenCheck:true, chartRangeMin:0, 
+     stackedBarColor:['#2B95EC','#FF0000'], width:'100px', height:'60px' 
+     });
+};  
+
+function crosses (cellvalue, options, rowdata) {
+  var result = cellvalue[0] + '<br/>';
+  if (cellvalue[0] != 0.0)
+    var result = cellvalue[0] + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail0'></span><br/>";
+  else
+    var result = '0.0<br/>';
+  if (cellvalue[1] != 0.0)
+    result += cellvalue[1] + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail1'></span><br/>";
+  else
+    result += '0.0<br/>';
+  result += cellvalue[2] + '<br/>';
+  if (cellvalue[3] != 0.0)
+    result += cellvalue[3] + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail2'></span><br/>";
+  else
+    result += '0.0<br/>';
+  result += cellvalue[4];  
+  return result;
+};
+{% endblock %}
+
+{% block extra_grid %}gridComplete: drawGraphs,
+{% endblock %}

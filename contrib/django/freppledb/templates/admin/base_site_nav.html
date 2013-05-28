@@ -14,6 +14,7 @@
 <a class="menuButton ui-widget-content ui-corner-all ui-state-default" href="#">{% trans 'Reports' %}</a>
 <div id="outputMenu"><ul class="ui-menu ui-widget ui-widget-content ui-corner-all ui-state-default ">
 <li class="ui-menu-item"><a href="{{request.prefix}}/buffer/">{% trans "Inventory report" %}</a></li>
+<li class="ui-menu-item"><a href="{{request.prefix}}/resourcegantt/">{% trans "Resource Gantt report" %}</a></li>
 <li class="ui-menu-item"><a href="{{request.prefix}}/resource/">{% trans "Resource report" %}</a></li>
 <li class="ui-menu-item"><a href="{{request.prefix}}/demand/">{% trans "Demand report" %}</a></li>
 <li class="ui-menu-item"><a href="{{request.prefix}}/operation/">{% trans "Operation report" %}</a></li>
@@ -24,6 +25,7 @@
 <li class="ui-menu-item"><a href="{{request.prefix}}/problem/">{% trans "Problem report" %}</a></li>
 <li class="ui-menu-item"><a href="{{request.prefix}}/constraint/">{% trans "Constraint report" %}</a></li>
 <li class="ui-menu-item"><a href="{{request.prefix}}/kpi/">{% trans "Performance Indicators" %}</a></li>
+<li class="ui-menu-item"><a href="{{request.prefix}}/quote/">{% trans "Order quoting" %}</a></li>
 </ul></div>
 
 {% if perms.execute %}<a class="menuButton ui-widget-content ui-corner-all ui-state-default" href="#">{% trans 'Tools' %}</a>

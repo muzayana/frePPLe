@@ -1,10 +1,10 @@
 #
-# Copyright (C) 2007-2012 by Johan De Taeye, frePPLe bvba
+# Copyright (C) 2012 by Johan De Taeye, frePPLe bvba
 #
-# All information contained herein is, and remains the property of frePPLe.
+# All information contained herein is, and remains the property of frePPLe.  
 # You are allowed to use and modify the source code, as long as the software is used
 # within your company.
-# You are not allowed to distribute the software, either in the form of source code
+# You are not allowed to distribute the software, either in the form of source code 
 # or in the form of compiled binaries.
 #
 
@@ -12,10 +12,15 @@ from django.db import connections
 from django.utils.translation import ugettext_lazy as _
 from django.utils.text import capfirst
 from django.utils.encoding import force_unicode
+from django.contrib.admin.views.decorators import staff_member_required
+from django.http import HttpResponse
+from django.template import RequestContext, loader
+from django.conf import settings
 
 from freppledb.input.models import Item
 from freppledb.output.models import Demand
-from freppledb.common.db import python_date
+from freppledb.common.db import python_date, sql_datediff, sql_overlap
+from freppledb.common.report import getBuckets
 from freppledb.common.report import GridReport, GridPivot, GridFieldText, GridFieldNumber, GridFieldDateTime, GridFieldInteger
 
 
@@ -32,8 +37,10 @@ class OverviewReport(GridPivot):
     GridFieldText(None, width="(5*numbuckets<200 ? 5*numbuckets : 200)", extra='formatter:graph', editable=False),
     )
   crosses = (
-    ('demand',{'title': _('demand')}),
-    ('supply',{'title': _('supply')}),
+    ('forecast',{'title': _('net forecast')}),
+    ('orders',{'title': _('orders')}),
+    ('demand',{'title': _('total demand')}),
+    ('supply',{'title': _('total supply')}),
     ('backlog',{'title': _('backlog')}),
     )
 
@@ -77,7 +84,8 @@ class OverviewReport(GridPivot):
         select y.name as row1,
                y.bucket as col1, y.startdate as col2, y.enddate as col3,
                min(y.orders),
-               min(y.planned)
+               coalesce(sum(fcst.quantity * %s / %s),0),
+               min(y.planned), y.lft as lft, y.rght as rght
         from (
           select x.name as name, x.lft as lft, x.rght as rght,
                x.bucket as bucket, x.startdate as startdate, x.enddate as enddate,
@@ -119,10 +127,23 @@ class OverviewReport(GridPivot):
         -- Grouping
         group by x.name, x.lft, x.rght, x.bucket, x.startdate, x.enddate
         ) y
+        -- Forecasted quantity
+        inner join item
+        on item.lft between y.lft and y.rght
+        left join (select forecast.item_id as item_id, out_forecast.startdate as startdate,
+		        out_forecast.enddate as enddate, out_forecast.net as quantity
+          from out_forecast, forecast
+          where out_forecast.forecast = forecast.name
+          ) fcst
+        on item.name = fcst.item_id
+        and fcst.enddate >= y.startdate
+        and fcst.startdate <= y.enddate
         -- Ordering and grouping
         group by y.name, y.lft, y.rght, y.bucket, y.startdate, y.enddate
         order by %s, y.startdate
-       ''' % (basesql,bucket,startdate,enddate,startdate,enddate,startdate,enddate,sortsql)
+       ''' % (sql_overlap('fcst.startdate','fcst.enddate','y.startdate','y.enddate'),
+         sql_datediff('fcst.enddate','fcst.startdate'),
+         basesql,bucket,startdate,enddate,startdate,enddate,startdate,enddate,sortsql)
     cursor.execute(query,baseparams)
 
     # Build the python result
@@ -132,14 +153,16 @@ class OverviewReport(GridPivot):
         try: backlog =  startbacklogdict[row[0]]
         except: backlog = 0
         previtem = row[0]
-      backlog += float(row[4]) - float(row[5])
+      backlog += float(row[4]) + float(row[5]) - float(row[6])
       yield {
         'item': row[0],
         'bucket': row[1],
         'startdate': python_date(row[2]),
         'enddate': python_date(row[3]),
-        'demand': round(row[4],1),
-        'supply': round(row[5],1),
+        'orders': round(row[4],1),
+        'forecast': round(row[5],1),
+        'demand': round(float(row[4]) + float(row[5]),1),
+        'supply': round(row[6],1),
         'backlog': round(backlog,1),
         }
 
@@ -150,22 +173,11 @@ class DetailReport(GridReport):
   '''
   template = 'output/demandplan.html'
   title = _("Demand plan detail")
+  basequeryset = Demand.objects.extra(select={'forecast': "select name from forecast where out_demand.demand like forecast.name || ' - %%'",})
   model = Demand
   frozenColumns = 0
   editable = False
-  multiselect = False  
-      
-  @ classmethod
-  def basequeryset(reportclass, request, args, kwargs):
-    if args and args[0]:
-      return Demand.objects.filter(item__exact=args[0])
-    else:
-      return Demand.objects.all()
-
-  @classmethod 
-  def extra_context(reportclass, request, *args, **kwargs):
-    return {'active_tab': 'plandetail'}
-
+  multiselect = False
   rows = (
     GridFieldText('demand', title=_('demand'), key=True, editable=False, formatter='demand'),
     GridFieldText('item', title=_('item'), formatter='item', editable=False),

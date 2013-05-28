@@ -32,7 +32,7 @@ else:
   sys.exit(1)     
 os.environ['FREPPLE_HOME'] = FREPPLE_HOME
 
-DEBUG = False
+DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
@@ -174,7 +174,8 @@ INSTALLED_APPS = (
     'freppledb.output',
     'freppledb.execute',
     'freppledb.common',
-    #'freppledb_extra',
+    'freppledb.forecast',
+    'freppledb.quoting',
     #'openerp',
 )
 
@@ -284,8 +285,8 @@ AUTHENTICATION_BACKENDS = (
     "freppledb.common.auth.EmailBackend",
 )
 
-# To add the user preferences to the standard admin
-AUTH_PROFILE_MODULE = 'common.Preferences'
+# Custom user model
+AUTH_USER_MODEL = 'common.User'
 
 # IP address of the machine you are browsing from. When logging in from this
 # machine additional debugging statements can be shown.

@@ -158,19 +158,6 @@ class Preferences(models.Model):
       db_table = "common_preference"
 
 
-def CreatePreferenceModel(instance, **kwargs):
-  '''Create a preference model for a new user.'''
-  pref, created = Preferences.objects.get_or_create(user=instance)
-  if created:
-    pref.horizontype = True
-    pref.horizonlength = 6
-    pref.horizonunit = 'month'
-    pref.save()
-
-# This signal will make sure a preference model is created when a user is added.
-# The preference model is automatically deleted again when the user is deleted.
-signals.post_save.connect(CreatePreferenceModel, sender=User)
-
 
 class Comment(models.Model):
   id = models.AutoField(_('identifier'), primary_key=True)
