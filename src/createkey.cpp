@@ -1,19 +1,8 @@
 /***************************************************************************
-  file : $URL: file:///C:/Users/Johan/Dropbox/SVNrepository/frepple/addon/src/createkey.cpp $
-  version : $LastChangedRevision: 463 $  $LastChangedBy: Johan $
-  date : $LastChangedDate: 2013-02-24 14:35:53 +0100 (Sun, 24 Feb 2013) $
- ***************************************************************************/
-
-/***************************************************************************
  *                                                                         *
- * Copyright (C) 2012 by Johan De Taeye, frePPLe bvba                      *
+ * Copyright (C) 2012-2013 by Johan De Taeye, frePPLe bvba                 *
  *                                                                         *
- * All information contained herein is, and remains the property of        *
- * frePPLe.                                                                * 
- * You are allowed to use and modify the source code, as long as the       *
- * software is used within your company.                                   *
- * You are not allowed to distribute the software, either in the form of   *
- * source code or in the form of compiled binaries.                        *
+ * You should never have received this file!                               *
  *                                                                         *
  ***************************************************************************/
 

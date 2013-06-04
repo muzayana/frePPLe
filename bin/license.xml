@@ -1,16 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <license>
 <!--
-This is a license file for the frePPLe community edition.
+This is a license file for the development of the frePPLe 
+enterprise edition. 
+
+THIS KEY SHOULD NEVER BE USED BY ANY CUSTOMER OR PARTNER.
+
 -->
-<customer>Community Edition users</customer>
-<email>N/A</email>
+<customer>Enterprise version development</customer>
+<email>jdetaeye@frepple.com</email>
 <valid_from>2013-01-01T00:00:00</valid_from>
 <valid_till>2030-01-01T00:00:00</valid_till>
-<signature>FoLconC0LxQLssPGhOEymCyoi/+YCfwsGfSTyjbqEkWKHcy92xpXKjfMeQG4j1+b
-izqN3hWC2rKOeYwoPmHo4SgUfTvNeK7VNOFgmD11rgpf5k4TJZbD8Jd36cmAXNhM
-CSnx/j8v5xAIHSMF+7qLLnirr8gQ92OV1VksSPdajmmPoNxDe8jrK5j/WxWpEdjs
-rJIbjkdxoTt3jDyBGy0S42ju5mSJWm/MD9+cC7pOEHCUvuBJrPkbi8VhllC1Np7f
-zd1VeYQk7TIJbJskrT6MjOLMPPCiOuyVZMx2M6AkKC34nndzinb78m0NVTX361/M
-VKpoqrtwtEd5izg4pW6PhA==</signature>
+<signature>YeAOdPHeo3hAfc5Z2bqvlPkn+iOzzZUrVqAA1Wrj43hslR6lPi2lKFt355lQVyCe
+lVllX/RduiHqebbF9tqiZKSeMJdvMAq1JSZZ1nvVZSUvwfunOf7x1Isz3Wk7mKDs
+JYYRiaZLRSKAghr9fUAW0ZM/I4euDEc4yZPDSOv6fe8j7EpKeVfXcfOogY/3N7T0
+PEsY6XEZTA8LC3NWMUKOykkyhxtC6E5kK+cH1oDZtX5kT1CpXcFe/ndt52o0sYDR
+n1aBbS/02LXVtmDbktwfUdzpNLjZD9onjWEGU4pkPs4sFZQxaXjupj6E6SzWxsHi
+kvq/NE5mtoYNlCRKSsueDA==</signature>
 </license>

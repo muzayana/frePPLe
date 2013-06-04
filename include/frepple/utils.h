@@ -5521,8 +5521,9 @@ class FreppleIterator : public PythonExtension<ME>
 /** @brief This Python function loads a frepple extension module in memory. */
 DECLARE_EXPORT PyObject* loadModule(PyObject*, PyObject*, PyObject*);
 
+extern DECLARE_EXPORT int flags; 
 
-class licenseValidator : private Object
+class LicenseValidator : private Object
 {
   private:
     void endElement(XMLInput&, const Attribute&, const DataElement&);
@@ -5544,7 +5545,7 @@ class licenseValidator : private Object
     
   public:
     /** Default constructor. */
-    licenseValidator() { valid(); };
+    LicenseValidator() { valid(); };
 
     /** Return the customer from the license file. */
     string getCustomer() const {return customer;}
@@ -5560,14 +5561,11 @@ class licenseValidator : private Object
 };
 
 
-class decryptor 
+class Decryptor 
 {
   public:
     /** The public key used for decrypting and verifying signatures. */
     static const unsigned char key[];
-
-    /** Decrypt a memory buffer. */ 
-    static bool decrypt(unsigned char*);
 
     /** Encodes a memory buffer into base64. */
     static string base64(const unsigned char *input, int length);

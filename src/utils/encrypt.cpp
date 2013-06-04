@@ -1,19 +1,8 @@
 /***************************************************************************
-  file : $URL: file:///C:/Users/Johan/Dropbox/SVNrepository/frepple/addon/src/utils/encrypt.cpp $
-  version : $LastChangedRevision: 493 $  $LastChangedBy: Johan $
-  date : $LastChangedDate: 2013-05-01 17:50:02 +0200 (Wed, 01 May 2013) $
- ***************************************************************************/
-
-/***************************************************************************
  *                                                                         *
  * Copyright (C) 2013 by Johan De Taeye, frePPLe bvba                      *
  *                                                                         *
- * All information contained herein is, and remains the property of        *
- * frePPLe.                                                                * 
- * You are allowed to use and modify the source code, as long as the       *
- * software is used within your company.                                   *
- * You are not allowed to distribute the software, either in the form of   *
- * source code or in the form of compiled binaries.                        *
+ * You should never have received this file!                               *
  *                                                                         *
  ***************************************************************************/
    
@@ -25,11 +14,12 @@ namespace frepple
 namespace utils
 {
 
+DECLARE_EXPORT int flags = 836125; 
   
-const MetaClass licenseValidator::metadata;
+const MetaClass LicenseValidator::metadata;
 
 
-const unsigned char decryptor::key[270] = {
+const unsigned char Decryptor::key[270] = {
   0x30,0x82,0x01,0x0A,0x02,0x82,0x01,0x01,0x00,0xCC,0x9F,0x8B,0xF9,0xEF,0xC1,0x06,
   0x81,0x5E,0x88,0xBF,0x94,0xE3,0xB0,0x86,0x05,0x1E,0x57,0xFE,0xBC,0x5D,0x6D,0x79,
   0xD6,0xAA,0xC7,0x15,0x2A,0x49,0x89,0xCF,0x39,0x6D,0x80,0xF7,0xA4,0xD3,0x4D,0xD6,
@@ -50,7 +40,7 @@ const unsigned char decryptor::key[270] = {
 };
 
 
-string decryptor::base64(const unsigned char *input, int length)
+string Decryptor::base64(const unsigned char *input, int length)
 {
   BIO *bmem, *b64;
   BUF_MEM *bptr;
@@ -66,7 +56,7 @@ string decryptor::base64(const unsigned char *input, int length)
 }
 
 
-unsigned char* decryptor::unbase64(string input)
+unsigned char* Decryptor::unbase64(string input)
 {
   BIO *b64, *bmem;
   int length = input.size();
@@ -82,7 +72,7 @@ unsigned char* decryptor::unbase64(string input)
 }
 
 
-void licenseValidator::endElement(XMLInput& pIn, const Attribute& pAttr, const DataElement& pElement)
+void LicenseValidator::endElement(XMLInput& pIn, const Attribute& pAttr, const DataElement& pElement)
 {
   static const Keyword tag_customer("customer");
   static const Keyword tag_email("email");
@@ -108,10 +98,10 @@ void licenseValidator::endElement(XMLInput& pIn, const Attribute& pAttr, const D
 }
 
 
-void licenseValidator::valid()
+void LicenseValidator::valid()
 {
   // Parse the license file
-  XMLInputFile("license.xml").parse(this, false);
+  XMLInputFile(Environment::searchFile("license.xml")).parse(this, false);
 
   // Validate the fields
   Date now = Date::now();
@@ -121,12 +111,12 @@ void licenseValidator::valid()
     
   // Build public key.
   RSA *rsa;
-  const unsigned char *p = decryptor::key;
-  rsa = d2i_RSAPublicKey(NULL, &p, sizeof(decryptor::key));  
+  const unsigned char *p = Decryptor::key;
+  rsa = d2i_RSAPublicKey(NULL, &p, sizeof(Decryptor::key));  
   if (!rsa) throw RuntimeException("Invalid license file");
 
   // Decode the signature from its base64 encoding
-  unsigned char *sig_buf = decryptor::unbase64(signature);
+  unsigned char *sig_buf = Decryptor::unbase64(signature);
 
   // Intialize the signature
   EVP_MD_CTX ctx;
@@ -146,13 +136,9 @@ void licenseValidator::valid()
   EVP_PKEY_free (evpKey);
   free(sig_buf);  
   if (err != 1) throw RuntimeException("Invalid license file");
-  printf ("Signature Verified Ok.\n");
-}
 
-
-bool decryptor::decrypt(unsigned char*)
-{
-  return true;
+  // Set a "secret" flag to determine we are running in enterprise mode or not.
+  flags = Keyword::hash(customer.c_str());
 }
 
 } // End namespace frepple_enterprise::utils

@@ -71,6 +71,9 @@ void LibraryUtils::initialize(int argc, char *argv[])
   }
   init = true;
 
+  // Validate the license file
+  LicenseValidator x;
+
   // Set the locale to the default setting.
   // When not executed, the locale is the "C-locale", which restricts us to
   // ascii data in the input.
@@ -294,7 +297,7 @@ DECLARE_EXPORT void Environment::loadModule(string lib, ParameterList& parameter
 
   // Call the initialization routine with the parameter list
   string x = (inithandle)(parameters);
-  if (x.empty()) throw DataException("Invalid module name returned");
+  if (x.empty()) throw DataException("Invalid module");
 
   // Insert the new module in the registry
   moduleRegistry.insert(x);

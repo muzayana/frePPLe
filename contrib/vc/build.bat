@@ -4,6 +4,7 @@ setlocal
 
 rem EDIT THIS SECTION TO MATCH YOUR INSTALLATION
 set PYTHON=C:\develop\python27
+set OPENSSL=C:\Program Files (x86)\OpenSSL-Win32\
 set XERCES=C:\develop\xerces-c-3.1.1-x86-windows-vc-9.0
 set GLPK=C:\develop\glpk-4.47
 set DOTNET=C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319
@@ -29,7 +30,7 @@ if "%1"=="-d" (set conf=Debug) & shift & goto CheckOpts
 
 rem BUILD THE PROJECT
 call "%VC%\vcvarsall"
-set INCLUDE=%PYTHON%\include;%XERCES%\include;%GLPK%\src;%INCLUDE%
-set LIB=%PYTHON%\libs;%XERCES%\lib;%GLPK%\w32;%LIB%
+set INCLUDE=%PYTHON%\include;%XERCES%\include;%GLPK%\src;%OPENSSL%\include;%INCLUDE%
+set LIB=%PYTHON%\libs;%XERCES%\lib;%GLPK%\w32;%OPENSSL%\lib\VC\static;%LIB%
 
 "%VC%\vcpackages\vcbuild.exe" %build%  /useenv /showenv frepple.sln "%conf%|Win32"

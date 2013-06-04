@@ -1,19 +1,8 @@
 /***************************************************************************
-  file : $URL: file:///C:/Users/Johan/Dropbox/SVNrepository/frepple/addon/src/createlicense.cpp $
-  version : $LastChangedRevision: 466 $  $LastChangedBy: johan $
-  date : $LastChangedDate: 2013-02-24 17:24:14 +0100 (Sun, 24 Feb 2013) $
- ***************************************************************************/
-
-/***************************************************************************
  *                                                                         *
  * Copyright (C) 2012-2013 by Johan De Taeye, frePPLe bvba                 *
  *                                                                         *
- * All information contained herein is, and remains the property of        *
- * frePPLe.                                                                * 
- * You are allowed to use and modify the source code, as long as the       *
- * software is used within your company.                                   *
- * You are not allowed to distribute the software, either in the form of   *
- * source code or in the form of compiled binaries.                        *
+ * You should never have received this file!                               *
  *                                                                         *
  ***************************************************************************/
 
@@ -22,7 +11,6 @@
 
 using namespace frepple;
 using namespace frepple::utils;
-
 
 
 /** This program prompts the user for a number of input parameters
@@ -176,7 +164,7 @@ int main(int argc, char* argv[])
   }
 
   // Encode the signature in base64
-  string signature = decryptor::base64(sig_buf, sig_len); 
+  string signature = Decryptor::base64(sig_buf, sig_len); 
 
   // Write out the license file
   cout << endl << "License:" << endl << endl;

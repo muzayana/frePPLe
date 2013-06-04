@@ -44,6 +44,10 @@ MODULE_EXPORT const char* initialize(const Environment::ParameterList& z)
   }
   init = true;
 
+  // Verify you have an enterprise license.
+  // This specific value of the flag is when the customer name is "Community Edition users".
+  if (flags == 836125) return "";
+  
   // Process the module parameters
   for (Environment::ParameterList::const_iterator x = z.begin();
       x != z.end(); ++x)
