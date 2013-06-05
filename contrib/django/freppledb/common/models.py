@@ -11,12 +11,13 @@
 from datetime import datetime
 
 from django.db import models, DEFAULT_DB_ALIAS, connections, transaction
-from django.contrib.auth.models import User
 from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import signals
 from django.utils.translation import ugettext_lazy as _
 from django.conf import settings 
+from django.contrib.auth.models import AbstractUser
+
+from freppledb.common.fields import JSONField
 
 
 class HierarchyModel(models.Model):
@@ -133,13 +134,12 @@ class Parameter(AuditModel):
     verbose_name_plural = _('parameters')
 
     
-class Preferences(models.Model):
+class User(AbstractUser):
   csvOutputType = (
     ('table',_('Table')),
     ('list',_('List')),
   )
   languageList = tuple( [ ('auto',_('Detect automatically')), ] + list(settings.LANGUAGES) )
-  user = models.ForeignKey(User, verbose_name=_('user'), primary_key=True)
   language = models.CharField(_('language'), max_length=10, choices=languageList,
     default='auto')
   theme = models.CharField(_('theme'), max_length=20, default=settings.DEFAULT_THEME, 
@@ -152,7 +152,8 @@ class Preferences(models.Model):
   horizonlength = models.IntegerField(blank=True, default=6, null=True)
   horizonunit = models.CharField(blank=True, max_length=5, default='month', null=True, 
     choices=(("day","day"),("week","week"),("month","month")))
-  lastmodified = models.DateTimeField(_('last modified'), auto_now=True, editable=False, db_index=True)
+  lastmodified = models.DateTimeField(_('last modified'), auto_now=True, null=True, blank=True,
+    editable=False, db_index=True)
 
   class Meta:
     db_table = "common_user"
@@ -161,10 +162,7 @@ class Preferences(models.Model):
   
   def getPreference(self, prop, default = None):
     try:
-      import json
-      x = self.preferences.get(property=prop).value
-      return json.loads(x)
-      #return self.preferences.get(property=prop).value   TODO XXXXX NOOOOOOT GOOGD
+      return self.preferences.get(property=prop).value
     except:
       return default
   

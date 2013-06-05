@@ -13,9 +13,9 @@
 # date : $LastChangedDate: 2012-12-28 18:59:56 +0100 (Fri, 28 Dec 2012) $
 
 from datetime import datetime
+import json
 
 from django.db import connections, transaction
-from django.utils import simplejson
 from django.utils.translation import ugettext_lazy as _
 from django.utils.text import capfirst
 from django.utils.encoding import force_unicode
@@ -91,7 +91,7 @@ class OverviewReport(GridPivot):
     resp = HttpResponse()
     ok = True
     try:          
-      for rec in simplejson.JSONDecoder().decode(request.read()):
+      for rec in json.JSONDecoder().decode(request.read()):
         try:
           # Find the forecast
           start = datetime.strptime(rec['startdate'],'%Y-%m-%d')

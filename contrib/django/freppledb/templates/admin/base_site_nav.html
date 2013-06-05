@@ -36,9 +36,9 @@
 
 {% if modelsAuth or modelsCommon %}<a class="menuButton ui-widget-content ui-corner-all ui-state-default" href="#">{% trans 'Admin' %}</a>
 <div id="authMenu"><ul class="ui-menu ui-widget ui-widget-content ui-corner-all ui-state-default">
-{% for m in modelsAuth %}<li class="ui-menu-item"><a href="{{m.admin_url}}">{{m.name}}</a></li>
-{% endfor %}
 {% for m in modelsCommon %}<li class="ui-menu-item"><a href="{{request.prefix}}{{m.admin_url}}">{{m.name}}</a></li>
+{% endfor %}
+{% for m in modelsAuth %}<li class="ui-menu-item"><a href="{{m.admin_url}}">{{m.name}}</a></li>
 {% endfor %}</ul></div>{% endif %}
 
 <a class="menuButton ui-widget-content ui-corner-all ui-state-default" href="#">{% trans 'User' %}</a>

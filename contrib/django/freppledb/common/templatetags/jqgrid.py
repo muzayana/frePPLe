@@ -30,7 +30,7 @@ class ColModelNode(Node):
     self.frozen = frozen
      
   def render(self, context):
-    #try: 
+    try: 
       reportclass = context['reportclass']
       is_popup = context['is_popup']  
       prefs = context['preferences']
@@ -44,13 +44,13 @@ class ColModelNode(Node):
         count += 1
         result.append(u"{%s,width:%s,counter:%d%s%s%s}" % (
            reportclass.rows[index], width, index,
-           (self.frozen or count <= reportclass.frozenColumns) and ',frozen:true' or '',
+           (self.frozen or count < reportclass.frozenColumns) and ',frozen:true' or '',
            is_popup and ',popup:true' or '',
            hidden and ',hidden:true' or ''
            ))
       return ',\n'.join(result) 
-#    except:
-#      return ''  # Silently fail   
+    except:
+      return ''  # Silently fail   
 
   def __repr__(self):
     return "<colmodel Node>"

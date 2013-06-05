@@ -9,6 +9,7 @@
 #
 
 import uuid
+import json
 from datetime import datetime
 
 from django.views.decorators.csrf import csrf_protect
@@ -17,7 +18,6 @@ from django.shortcuts import render_to_response
 from django.db.models.fields.related import RelatedField
 
 from django.db import connections, transaction
-from django.utils import simplejson
 from django.utils.translation import ugettext_lazy as _
 from django.utils.text import capfirst
 from django.utils.encoding import force_unicode
