@@ -475,11 +475,10 @@ class GridReport(View):
       # Return HTML page
       # Pick up the list of time buckets      
       if reportclass.hasTimeBuckets:
-        pref = request.user
-        (bucket,start,end,bucketlist) = getBuckets(request, pref)
+        (bucket,start,end,bucketlist) = getBuckets(request)
         bucketnames = Bucket.objects.order_by('name').values_list('name', flat=True)
       else:
-        pref = bucketnames = bucketlist = start = end = bucket = None
+        bucketnames = bucketlist = start = end = bucket = None
       reportkey = "%s.%s" % (reportclass.__module__, reportclass.__name__);
       context = {
         'reportclass': reportclass,
@@ -1273,5 +1272,5 @@ def getBuckets(request, bucket=None, start=None, end=None):
   else:
     res = BucketDetail.objects.using(request.database).filter(bucket=bucket)
     if start: res = res.filter(enddate__gt=start)
-    if end: res = res.filter(startdate__lt=end)
+    if end: res = res.filter(startdate__lt=end)  
     return (unicode(bucket), start, end, res.values('name','startdate','enddate'))

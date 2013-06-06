@@ -15,14 +15,11 @@ from django.db import connections, transaction
 from django.utils.translation import ugettext_lazy as _
 from django.utils.text import capfirst
 from django.utils.encoding import force_unicode
-from django.contrib.admin.views.decorators import staff_member_required
 from django.http import HttpResponse, HttpResponseForbidden
-from django.template import RequestContext, loader
-from django.conf import settings
 
-from freppledb.forecast.models import Forecast
+from freppledb.forecast.models import Forecast, ForecastDemand
 from freppledb.common.db import python_date, sql_datediff, sql_overlap
-from freppledb.common.report import GridPivot, GridFieldText, GridFieldInteger, getBuckets
+from freppledb.common.report import GridPivot, GridFieldText, GridFieldInteger, GridFieldDate
 from freppledb.common.report import GridReport, GridFieldBool, GridFieldLastModified, GridFieldNumber
 
 
@@ -52,6 +49,26 @@ class ForecastList(GridReport):
     GridFieldLastModified('lastmodified'),
     )
     
+    
+class ForecastDemandList(GridReport):
+  '''
+  A list report to show forecastdemands.
+  '''
+  template = 'forecast/forecastdemandlist.html'
+  title = _("Forecast demand List")
+  basequeryset = ForecastDemand.objects.all()
+  model = ForecastDemand
+  frozenColumns = 1
+
+  rows = (
+    GridFieldInteger('id', title=_('identifier'), key=True),
+    GridFieldText('forecast', title=_('forecast'), formatter='forecast'),
+    GridFieldDate('startdate', title=_('start date')),
+    GridFieldDate('enddate', title=_('end date')),
+    GridFieldNumber('quantity', title=_('quantity')),
+    GridFieldLastModified('lastmodified'),
+    )
+
 
 class OverviewReport(GridPivot):
   '''
@@ -200,31 +217,4 @@ class OverviewReport(GridPivot):
         'net': row[8],
         'planned': row[9],
         }
-        
-        
-@staff_member_required
-def GraphData(request, entity):
-  basequery = Forecast.objects.filter(pk__exact=entity)
-  (bucket,start,end,bucketlist) = getBuckets(request)
-  total = []
-  net = []
-  orders = []
-  planned = []
-  for x in OverviewReport.query(request, basequery, bucket, start, end):
-    total.append(x['total'])
-    net.append(x['net'])
-    orders.append(x['orders'])
-    planned.append(x['planned'])
-  context = { 
-    'buckets': bucketlist, 
-    'total': total, 
-    'net': net, 
-    'orders': orders, 
-    'planned': planned,
-    'axis_nth': len(bucketlist) / 20 + 1,
-    }
-  return HttpResponse(
-    loader.render_to_string("output/forecast.xml", context, context_instance=RequestContext(request)),
-    mimetype='application/xml; charset=%s' % settings.DEFAULT_CHARSET
-    )
-    
+              

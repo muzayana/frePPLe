@@ -33,7 +33,8 @@ class Forecast(AuditModel):
   calendar = models.ForeignKey(Calendar, verbose_name=_('calendar'), null=False)
   operation = models.ForeignKey(Operation, verbose_name=_('delivery operation'), null=True, blank=True,
     related_name='used_forecast', help_text=_('Operation used to satisfy this demand'))
-  priority = models.PositiveIntegerField(_('priority'),default=2, choices=Demand.demandpriorities)
+  priority = models.PositiveIntegerField(_('priority'), default=10, choices=Demand.demandpriorities,
+    help_text=_('Priority of the demand (lower numbers indicate more important demands)'))
   minshipment = models.DecimalField(_('minimum shipment'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True, blank=True,
     help_text=_('Minimum shipment quantity when planning this demand'))
   maxlateness = models.DecimalField(_('maximum lateness'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True, blank=True,

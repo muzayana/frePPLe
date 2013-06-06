@@ -2,7 +2,7 @@
 {% load i18n %}
 
 {% block extrahead %}{{block.super}} 
-<script type="text/javascript" src="{{STATIC_URL}}js/jquery.sparkline.min.js"></script>
+<script type="text/javascript" src="{{STATIC_URL}}js/flotr2.min.js"></script>
 {% endblock %}
 
 {% block contextmenus %}
@@ -19,41 +19,126 @@
 {% endif %}{{block.super}}
 {% endblock %}
 
-{% block before_table %}
-{% if args.0 %}<div id="chart1div" style="z-index: 1000;">
-	  <p>&nbsp;</p>
-	  <p>{% blocktrans %}frePPLe needs Adobe Flash Player to display graphs. If you're unable to see 
-	  the chart here, it means that your browser does not seem to have the Flash Player 
-	  installed.<br/>
-	  You can downloaded it <a href="http://www.adobe.com/products/flashplayer/" target="_blank"><u>here</u></a> for free.{% endblocktrans %}</p>
-	</div>
+{% block before_table %}{% if args.0 %}
+<div id="graph" style="clear: both; height: 400px; padding: 10px; "></div>
 {% endif %}{% endblock %}
 
 {% block crosses %}
-function graph(cellvalue, options, rowdata) {
-    var str = ['<span class="sparkline"><!--'];
-    var cols = jQuery("#grid").jqGrid('getGridParam', 'colModel'); 
-    var first = true; 
-    for (var i in cols) {       
-       if ('startdate' in cols[i]) {
-          var data = rowdata[cols[i]['name']];
-          if (first) {
-            str.push(data[0]);
-            first = false;
-          }
-          else
-            str.push(',' + data[0]);
-       }       
-    }      
-    str.push('--></span>');     
-    return str.join('');
- };
+{% if args.0 %}$(function(){
+  // Resize top graph
+  var h = $(window).height(); 
+  $("#graph").width($(window).width()-55).height(h>800 || h<480 ? 400 : h-380);
+});{% endif %} 
 
-function drawGraphs() {
-  $('.sparkline').sparkline('html', { 
-     type:'bar', disableHiddenCheck:true, chartRangeMin:0, 
-     barColor:'#2B95EC', width:'100px', height:'60px' 
-     });
+function drawGraphs(jsondata) 
+{  
+  var cols = jQuery("#grid").jqGrid('getGridParam', 'colModel'); 
+  var x_major = [];
+  var x_minor = [];
+  var first = true;
+  var ticks = Math.ceil((cols.length-5)/20.0);
+  
+  // Loop over all graph cells
+  $("#grid_frozen").find(".graph").each(function(index) 
+  {
+    // Collect the graph data
+    var d1=[], d2=[], d3=[], d4=[];
+    var j = 0;
+    for (var i in cols) 
+    {
+       if ('startdate' in cols[i]) 
+       {
+          if (first) 
+          {
+            x_minor.push([j,cols[i]['name']]);
+            if (j % ticks == 0) x_major.push([j,cols[i]['name']]);
+          } 
+          var data = jsondata['rows'][index][cols[i]['name']];
+          var load = data[3];
+          var delta = data[0] - data[2] - data[3];
+          if (delta > 0) 
+          {
+            free = Math.round(delta*10)/10;
+            overload = 0;
+          } else 
+          {
+            free = 0;
+            load = Math.round((data[0] - data[2])*10)/10;
+            overload = -Math.round(delta*10)/10;
+          }
+          d1.push([j,data[1]]);
+          d2.push([j,data[2]]);
+          d3.push([j,data[3]]);
+          d4.push([j,data[4]]);
+          j = j + 1;
+       }       
+    }                   
+    first = false;
+     
+    // Draw the graph    
+    Flotr.draw({% if args.0 %}$("#graph").get(0){% else %}this{% endif %},[
+      { data:d1, label:"{{_('total')|capfirst}}" },
+      { data:d2, label:"{{_('net')|capfirst}}" },
+      { data:d3, label:"{{_('orders')|capfirst}}" },
+      { data:d4, label:"{{_('planned')|capfirst}}" }
+      ], {
+      HtmlText: false,
+      bars : {
+        show : true,
+        stacked : false,
+        horizontal : false,
+        fillOpacity: 1,
+        barWidth : 0.9,
+        lineWidth : 1,
+        shadowSize : 0
+      },
+      {% if args.0 %}
+      legend : {
+        position: 'ne',
+        backgroundOpacity: 1,
+        },
+      grid : {
+        verticalLines : false,
+        horizontalLines : true,
+        },
+      xaxis: {
+        ticks: x_major
+        },
+      yaxis: {
+        title: '{{units.1|capfirst}}',
+        titleAngle: 90
+        },
+      {% else %}
+      legend: {
+        show: false
+        },
+      grid : {
+        verticalLines : false,
+        horizontalLines : false,
+        outlineWidth: 0
+        },
+      xaxis: {
+        showLabels: false
+        },
+      yaxis: {
+        showLabels: false
+        },       
+      {% endif %}
+      mouse : {
+        track : true,
+        relative : true,
+        trackFormatter: function(obj) {
+          return x_minor[Math.round(obj.x)][1] + "<br/>" + obj.y; // TODO not good JSON.stringify(obj); 
+          }        
+        },
+      colors: ['#F6BD0F','#2B95EC','#AFD8F8','#8BBA00','#FF0000'],
+      parseFloat: false
+      });     
+    });
+}
+
+function graph(cellvalue, options, rowdata) {
+  return '<div class="graph" style="width:' + (5*numbuckets < 200 ? 5*numbuckets : 200) +'px; height:80px;"></div>';
 };  
 
 function getDirtyData()
@@ -75,7 +160,7 @@ function onChange(event)
 }
 
 function crosses (cellvalue, options, rowdata) {
-{% if perms.input.change_forecastdemand %}
+{% if perms.forecast.change_forecastdemand %}
   var result = '<input type="text" class="smallpadding" value="' + Math.round(cellvalue[0]) + '" size="5" onchange="onChange(event)" onclick="$(this).select();"/><br/>' + Math.round(cellvalue[1]) + '<br/>' + Math.round(cellvalue[2]) + '<br/>';
 {% else %}
   var result = Math.round(cellvalue[0]) + '<br/>' + Math.round(cellvalue[1]) + '<br/>' + Math.round(cellvalue[2]) + '<br/>';
@@ -88,5 +173,5 @@ function crosses (cellvalue, options, rowdata) {
 };
 {% endblock %}
 
-{% block extra_grid %}gridComplete: drawGraphs,
+{% block extra_grid %}loadComplete: drawGraphs,
 {% endblock %}
