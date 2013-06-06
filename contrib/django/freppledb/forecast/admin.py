@@ -15,8 +15,8 @@
 from django.contrib import admin
 from django.utils.translation import ugettext_lazy as _
 
-from freppledb_extra.models import Forecast, ForecastDemand
-from freppledb.admin import site
+from freppledb.forecast.models import Forecast, ForecastDemand
+from freppledb.admin import data_site
 from freppledb.common import MultiDBModelAdmin, MultiDBTabularInline
 
 
@@ -35,4 +35,4 @@ class Forecast_admin(MultiDBModelAdmin):
   radio_fields = {'priority': admin.HORIZONTAL, }
   inlines = [ ForecastDemand_inline, ]
   save_on_top = True
-site.register(Forecast,Forecast_admin)
+data_site.register(Forecast,Forecast_admin)

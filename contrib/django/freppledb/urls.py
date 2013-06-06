@@ -8,7 +8,6 @@
 # or in the form of compiled binaries.
 #
 
-
 r'''
 Django URL mapping file.
 '''
@@ -39,14 +38,16 @@ for app in settings.INSTALLED_APPS:
     if hasattr(mod, 'urlpatterns'):
       if getattr(mod, 'autodiscover', False):
         urlpatterns += mod.urlpatterns
-  except ImportError:
-    # Silently ignore 
-    pass
+  except ImportError as e:
+    # Silently ignore if the missing module is called urls
+    if not 'urls' in e.message: raise e
     
 # Admin pages, and the Javascript i18n library.
 # It needs to be added as the last item since the applications can
 # hide/override some admin urls.
 urlpatterns += patterns('',
+    (r'^data/', include(freppledb.admin.data_site.urls)),
+    (r'^admin/', include(freppledb.admin.admin_site.urls)),
+    (r'^data/jsi18n/$', 'django.views.i18n.javascript_catalog', {'packages': ('django.conf','freppledb'),}),
     (r'^admin/jsi18n/$', 'django.views.i18n.javascript_catalog', {'packages': ('django.conf','freppledb'),}),
-    (r'^admin/', include(freppledb.admin.site.urls)),
 )

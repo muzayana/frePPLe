@@ -8,10 +8,6 @@
 # or in the form of compiled binaries.
 #
 
-# file : $URL: file:///C:/Users/Johan/Dropbox/SVNrepository/frepple/addon/contrib/django/freppledb_extra/views/forecast.py $
-# revision : $LastChangedRevision: 449 $  $LastChangedBy: Johan $
-# date : $LastChangedDate: 2012-12-28 18:59:56 +0100 (Fri, 28 Dec 2012) $
-
 from datetime import datetime
 import json
 
@@ -20,20 +16,21 @@ from django.utils.translation import ugettext_lazy as _
 from django.utils.text import capfirst
 from django.utils.encoding import force_unicode
 from django.contrib.admin.views.decorators import staff_member_required
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseForbidden
 from django.template import RequestContext, loader
 from django.conf import settings
 
-from freppledb_extra.models import Forecast
+from freppledb.forecast.models import Forecast
 from freppledb.common.db import python_date, sql_datediff, sql_overlap
 from freppledb.common.report import GridPivot, GridFieldText, GridFieldInteger, getBuckets
 from freppledb.common.report import GridReport, GridFieldBool, GridFieldLastModified, GridFieldNumber
+
 
 class ForecastList(GridReport):
   '''
   A list report to show forecasts.
   '''
-  template = 'input/forecastlist.html'
+  template = 'forecast/forecastlist.html'
   title = _("Forecast List")
   basequeryset = Forecast.objects.all()
   model = Forecast
@@ -60,7 +57,7 @@ class OverviewReport(GridPivot):
   '''
   A report allowing easy editing of forecast numbers.
   '''
-  template = 'output/forecast.html'
+  template = 'forecast/forecast.html'
   title = _('Forecast Report')
   basequeryset = Forecast.objects.all()
   model = Forecast
@@ -82,7 +79,7 @@ class OverviewReport(GridPivot):
   @classmethod
   def parseJSONupload(reportclass, request): 
     # Check permissions
-    if not request.user.has_perm('input.change_forecastdemand'):
+    if not request.user.has_perm('forecast.change_forecastdemand'):
       return HttpResponseForbidden(_('Permission denied'))
 
     # Loop over the data records 

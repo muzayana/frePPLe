@@ -16,8 +16,8 @@ import freppledb.forecast.views
 autodiscover = True
 
 urlpatterns = patterns('',
-    (r'^admin/input/forecast/$', freppledb_extra.views.forecast.ForecastList.as_view()),
-    (r'^forecast/([^/]+)/$',  freppledb_extra.views.forecast.OverviewReport.as_view()),
-    (r'^forecastgraph/([^/]+)/$', freppledb_extra.views.forecast.GraphData),
-    (r'^forecast/$', freppledb_extra.views.forecast.OverviewReport.as_view()),
+    (r'^data/forecast/forecast/$', freppledb.forecast.views.ForecastList.as_view()),
+    (r'^forecast/([^/]+)/$',  freppledb.forecast.views.OverviewReport.as_view()),
+    (r'^forecastgraph/([^/]+)/$', freppledb.forecast.views.GraphData),
+    (r'^forecast/$', freppledb.forecast.views.OverviewReport.as_view()),
     )
