@@ -180,6 +180,7 @@ class Forecast(AuditModel):
 # @todo add logic to allow direct import and edit of the forecast demands. Similar to calendar buckets
 class ForecastDemand(AuditModel):
   # Database fields
+  id = models.AutoField(_('identifier'), primary_key=True)
   forecast = models.ForeignKey(Forecast, verbose_name=_('forecast'), null=False, db_index=True, related_name='entries')
   startdate = models.DateField(_('start date'), null=False)
   enddate = models.DateField(_('end date'), null=False)
