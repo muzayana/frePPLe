@@ -156,6 +156,7 @@ class UserList(GridReport):
   title = _("User List")
   basequeryset = User.objects.all()
   model = User
+  adminsite = 'admin'
   frozenColumns = 1
   multiselect = False
   
@@ -177,6 +178,7 @@ class GroupList(GridReport):
   title = _("Group List")
   basequeryset = Group.objects.all()
   model = Group
+  adminsite = 'admin'
   frozenColumns = 0
   multiselect = False
   rows = (
@@ -193,6 +195,7 @@ class ParameterList(GridReport):
   title = _("Parameter List")
   basequeryset = Parameter.objects.all()
   model = Parameter
+  adminsite = 'admin'
   frozenColumns = 1
 
   rows = (
@@ -245,6 +248,7 @@ class CommentList(GridReport):
   basequeryset = Comment.objects.all()
   default_sort = (0,'desc')
   model = Comment
+  adminsite = 'admin'
   editable = False
   multiselect = False
   frozenColumns = 0
@@ -267,6 +271,7 @@ class BucketList(GridReport):
   title = _("Bucket List")
   basequeryset = Bucket.objects.all()
   model = Bucket
+  adminsite = 'admin'
   frozenColumns = 1
   rows = (
     GridFieldText('name', title=_('name'), key=True, formatter="bucket"),
@@ -283,6 +288,7 @@ class BucketDetailList(GridReport):
   title = _("Bucket Detail List")
   basequeryset = BucketDetail.objects.all()
   model = BucketDetail
+  adminsite = 'admin'
   frozenColumns = 2
   rows = (
     GridFieldText('bucket', title=_('bucket'), field_name='bucket__name', formatter="bucket"),
