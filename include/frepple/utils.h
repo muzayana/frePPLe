@@ -53,11 +53,6 @@
 #endif
 #include "datetime.h"
 
-#include <openssl/rsa.h>
-#include <openssl/evp.h>
-#include <openssl/err.h>
-#include <openssl/ssl.h>
-
 // For compatibility with earlier Python releases
 #if PY_VERSION_HEX < 0x02050000 && !defined(PY_SSIZE_T_MIN)
 typedef int Py_ssize_t;
@@ -216,6 +211,7 @@ class AttributeList;
 // Include the list of predefined tags
 #include "frepple/tags.h"
 
+extern DECLARE_EXPORT int flags; 
 
 /** This type defines what operation we want to do with the entity. */
 enum Action
@@ -5520,8 +5516,6 @@ class FreppleIterator : public PythonExtension<ME>
 
 /** @brief This Python function loads a frepple extension module in memory. */
 DECLARE_EXPORT PyObject* loadModule(PyObject*, PyObject*, PyObject*);
-
-extern DECLARE_EXPORT int flags; 
 
 class LicenseValidator : private Object
 {

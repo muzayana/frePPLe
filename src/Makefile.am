@@ -2,7 +2,16 @@
 # Process this file with automake to produce Makefile.in
 #
 
-bin_PROGRAMS = frepple createkey createlicense
+bin_PROGRAMS = frepple 
+
+# License creation utilities...
+# bin_PROGRAMS += createkey createlicense
+#nodist_createkey_SOURCES = createkey.cpp
+#nodist_createlicense_SOURCES = createlicense.cpp
+#createkey_LDADD = libfrepple.la
+#createlicense_LDADD = libfrepple.la
+#createkey_LDFLAGS = -dynamic -export-dynamic
+#createlicense_LDFLAGS = -dynamic -export-dynamic
 
 # The local target builds the main executables first, and then copies the
 # output to the bin directory
@@ -27,14 +36,6 @@ libfrepple_la_LIBADD = ./solver/libsolver.la ./model/libmodel.la ./utils/libutil
 frepple_SOURCES = main.cpp
 frepple_LDFLAGS = -dynamic -export-dynamic
 frepple_LDADD = libfrepple.la
-# Note that we do NOT want to distribute the source code of the some source files!!!
-# These contain the private key we use to generate license keys.
-nodist_createkey_SOURCES = createkey.cpp
-nodist_createlicense_SOURCES = createlicense.cpp
-createkey_LDADD = libfrepple.la
-createlicense_LDADD = libfrepple.la
-createkey_LDFLAGS = -dynamic -export-dynamic
-createlicense_LDFLAGS = -dynamic -export-dynamic
 
 SUBDIRS = utils model solver
 

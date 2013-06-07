@@ -9,6 +9,11 @@
 #define FREPPLE_CORE
 #include "frepple/utils.h"
 
+#include <openssl/rsa.h>
+#include <openssl/evp.h>
+#include <openssl/err.h>
+#include <openssl/ssl.h>
+
 namespace frepple
 {
 namespace utils

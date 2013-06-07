@@ -4,6 +4,7 @@
 
 nobasedir = $(datadir)/frepple
 nobase_DATA = frepple.xsd frepple_core.xsd init.xml
+nodist_nobase_data = license.xml
 
 EXTRA_DIST = $(nobase_DATA)
 
