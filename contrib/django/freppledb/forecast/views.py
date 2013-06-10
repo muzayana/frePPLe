@@ -20,7 +20,8 @@ from django.http import HttpResponse, HttpResponseForbidden
 from freppledb.forecast.models import Forecast, ForecastDemand
 from freppledb.common.db import python_date, sql_datediff, sql_overlap
 from freppledb.common.report import GridPivot, GridFieldText, GridFieldInteger, GridFieldDate
-from freppledb.common.report import GridReport, GridFieldBool, GridFieldLastModified, GridFieldNumber
+from freppledb.common.report import GridReport, GridFieldBool, GridFieldLastModified
+from freppledb.common.report import GridFieldChoice, GridFieldNumber
 
 
 class ForecastList(GridReport):
@@ -41,6 +42,7 @@ class ForecastList(GridReport):
     GridFieldText('description', title=_('description')),
     GridFieldText('category', title=_('category')),
     GridFieldText('subcategory', title=_('subcategory')),
+    GridFieldChoice('method', title=_('method'), choices=Forecast.methods),
     GridFieldText('operation', title=_('operation'), field_name='operation__name', formatter='operation'),
     GridFieldInteger('priority', title=_('priority')),
     GridFieldNumber('maxlateness', title=_('maximum lateness')),
@@ -86,12 +88,15 @@ class OverviewReport(GridPivot):
     GridFieldText(None, width="(5*numbuckets<200 ? 5*numbuckets : 200)", extra='formatter:graph', editable=False),
     )
   crosses = (
-    ('total',{'title': _('total forecast'), 'editable': lambda req: req.user.has_perm('input.change_forecastdemand'),}),
-    ('orders',{'title': _('orders')}),
-    ('net',{'title': _('net forecast')}),
+    ('orderstotal',{'title': _('total orders'), 'editable': lambda req: req.user.has_perm('input.change_forecastdemand'),}),
+    ('ordersopen',{'title': _('open orders')}),
+    ('forecastbaseline',{'title': _('forecast baseline')}),
+    ('forecastadjustment',{'title': _('forecast adjustment')}),
+    ('forecasttotal',{'title': _('forecast total')}),
+    ('forecastnet',{'title': _('forecast net')}),
+    ('forecastconsumed',{'title': _('forecast consumed')}),
     ('planned',{'title': _('planned net forecast')}),
-    )
-
+    )    
     
   @classmethod
   def parseJSONupload(reportclass, request): 
@@ -142,20 +147,24 @@ class OverviewReport(GridPivot):
     query = '''
         select y.name as row1, y.item_id as row2, y.customer_id as row3,
                y.bucket as col1, y.startdate as col2, y.enddate as col3,
-               min(y.total),
-               min(y.consumed),
-               min(y.net),
+               min(y.orderstotal),
+               min(y.ordersopen),
+               min(y.forecastbaseline),
+               min(y.forecastadjustment),
+               min(y.forecasttotal),
+               min(y.forecastnet),
+               min(y.forecastconsumed),
                coalesce(sum(out_demand.planquantity),0)
         from (
-          select x.name as name, x.item_id as item_id, x.customer_id as customer_id,
-                 x.bucket as bucket, x.startdate as startdate, x.enddate as enddate,
-                 coalesce(sum(out_forecast.consumed * %s / %s),0) as consumed,
-                 coalesce(sum(out_forecast.net * %s / %s),0) as net,
-                 min(x.total) as total
-        from (
           select fcst.name as name, fcst.item_id as item_id, fcst.customer_id as customer_id,
-                 d.bucket as bucket, d.startdate as startdate, d.enddate as enddate,
-                 coalesce(sum(forecastdemand.quantity * %s / %s),0) as total
+             d.bucket as bucket, d.startdate as startdate, d.enddate as enddate,
+             coalesce(sum(forecastplan.orderstotal),0) as orderstotal,
+             coalesce(sum(forecastplan.ordersopen),0) as ordersopen,
+             coalesce(sum(forecastplan.forecastbaseline),0) as forecastbaseline,
+             coalesce(sum(forecastplan.forecastadjustment),0) as forecastadjustment,
+             coalesce(sum(forecastplan.forecasttotal),0) as forecasttotal,
+             coalesce(sum(forecastplan.forecastnet),0) as forecastnet,
+             coalesce(sum(forecastplan.forecastconsumed),0) as forecastconsumed
           from (%s) fcst
           -- Multiply with buckets
           cross join (
@@ -163,25 +172,14 @@ class OverviewReport(GridPivot):
              from common_bucketdetail
              where bucket_id = '%s' and enddate > '%s' and startdate < '%s'
              ) d
-          -- Forecasted quantity
-          left join forecastdemand
-          on fcst.name = forecastdemand.forecast_id
-          and forecastdemand.enddate >= d.startdate
-          and forecastdemand.startdate <= d.enddate
+          -- Forecast plan
+          left join forecastplan
+          on fcst.name = forecastplan.forecast_id
+          and forecastplan.startdate >= d.startdate
+          and forecastplan.startdate < d.enddate
           -- Grouping
           group by fcst.name, fcst.item_id, fcst.customer_id,
                  d.bucket, d.startdate, d.enddate
-          ) x
-        -- Net and consumed quantity
-        left join out_forecast
-        on x.name = out_forecast.forecast
-        and out_forecast.enddate >= x.startdate
-        and out_forecast.startdate <= x.enddate
-        and out_forecast.enddate >= '%s'
-        and out_forecast.enddate < '%s'
-        -- Grouping
-        group by x.name, x.item_id, x.customer_id,
-               x.bucket, x.startdate, x.enddate
         ) y
         -- Planned quantity
         left join out_demand
@@ -194,13 +192,7 @@ class OverviewReport(GridPivot):
         group by y.name, y.item_id, y.customer_id,
            y.bucket, y.startdate, y.enddate
         order by %s, y.startdate
-        ''' % (sql_overlap('out_forecast.startdate','out_forecast.enddate','x.startdate','x.enddate'),
-         sql_datediff('out_forecast.enddate','out_forecast.startdate'),
-         sql_overlap('out_forecast.startdate','out_forecast.enddate','x.startdate','x.enddate'),
-         sql_datediff('out_forecast.enddate','out_forecast.startdate'),
-         sql_overlap('forecastdemand.startdate','forecastdemand.enddate','d.startdate','d.enddate'),
-         sql_datediff('forecastdemand.enddate','forecastdemand.startdate'),
-         basesql,bucket,startdate,enddate,startdate,enddate,startdate,enddate,sortsql)
+        ''' % (basesql,bucket,startdate,enddate,startdate,enddate,sortsql)
     cursor.execute(query, baseparams)
 
     # Build the python result
@@ -212,9 +204,12 @@ class OverviewReport(GridPivot):
         'bucket': row[3],
         'startdate': python_date(row[4]),
         'enddate': python_date(row[5]),
-        'total': row[6],
-        'orders': row[7],
-        'net': row[8],
+        'orderstotal': row[6],
+        'ordersopen': row[7],
+        'forecastbaseline': row[8],
+        'forecastadjustment': row[9],
+        'forecasttotal': row[9],
+        'forecastnet': row[9],
+        'forecastconsumed': row[9],
         'planned': row[9],
-        }
-              
+        }            

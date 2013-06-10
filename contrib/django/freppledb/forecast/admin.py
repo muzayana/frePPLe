@@ -17,6 +17,7 @@ from freppledb.common import MultiDBModelAdmin, MultiDBTabularInline
   
 class ForecastDemand_admin(MultiDBModelAdmin):
   model = ForecastDemand
+  raw_id_fields = ('forecast',)
   save_on_top = True
 data_site.register(ForecastDemand,ForecastDemand_admin)
   
@@ -30,7 +31,7 @@ class Forecast_admin(MultiDBModelAdmin):
   model = Forecast
   raw_id_fields = ('customer', 'item', 'calendar', 'operation')
   fieldsets = (
-            (None, {'fields': ('name', 'item', 'customer', 'calendar', 'description', 'category','subcategory', 'priority')}),
+            (None, {'fields': ('name', 'item', 'customer', 'calendar', 'method', 'description', 'category','subcategory', 'priority')}),
             (_('Planning parameters'), {'fields': ('discrete', 'operation', 'minshipment', 'maxlateness'), 'classes': ('collapse')}),
         )
   inlines = [ ForecastDemand_inline, ]

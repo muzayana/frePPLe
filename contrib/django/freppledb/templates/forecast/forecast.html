@@ -42,7 +42,7 @@ function drawGraphs(jsondata)
   $("#grid_frozen").find(".graph").each(function(index) 
   {
     // Collect the graph data
-    var d1=[], d2=[], d3=[], d4=[];
+    var d1=[], d2=[], d3=[], d4=[], d5=[], d6=[], d7=[], d8=[];
     var j = 0;
     for (var i in cols) 
     {
@@ -55,21 +55,14 @@ function drawGraphs(jsondata)
           } 
           var data = jsondata['rows'][index][cols[i]['name']];
           var load = data[3];
-          var delta = data[0] - data[2] - data[3];
-          if (delta > 0) 
-          {
-            free = Math.round(delta*10)/10;
-            overload = 0;
-          } else 
-          {
-            free = 0;
-            load = Math.round((data[0] - data[2])*10)/10;
-            overload = -Math.round(delta*10)/10;
-          }
           d1.push([j,data[1]]);
           d2.push([j,data[2]]);
           d3.push([j,data[3]]);
           d4.push([j,data[4]]);
+          d5.push([j,data[5]]);
+          d6.push([j,data[6]]);
+          d7.push([j,data[7]]);
+          d8.push([j,data[8]]);
           j = j + 1;
        }       
     }                   
@@ -77,10 +70,14 @@ function drawGraphs(jsondata)
      
     // Draw the graph    
     Flotr.draw({% if args.0 %}$("#graph").get(0){% else %}this{% endif %},[
-      { data:d1, label:"{{_('total')|capfirst}}" },
-      { data:d2, label:"{{_('net')|capfirst}}" },
-      { data:d3, label:"{{_('orders')|capfirst}}" },
-      { data:d4, label:"{{_('planned')|capfirst}}" }
+      { data:d1, label:"{{_('total orders')|capfirst}}" },
+      { data:d2, label:"{{_('open orders')|capfirst}}" },
+      { data:d3, label:"{{_('forecast baseline')|capfirst}}" },
+      { data:d4, label:"{{_('forecast adjustment')|capfirst}}" },
+      { data:d5, label:"{{_('forecast total')|capfirst}}" },
+      { data:d6, label:"{{_('forecast net')|capfirst}}" },
+      { data:d7, label:"{{_('forecast consumed')|capfirst}}" },
+      { data:d8, label:"{{_('planned')|capfirst}}" }
       ], {
       HtmlText: false,
       bars : {
@@ -160,15 +157,39 @@ function onChange(event)
 }
 
 function crosses (cellvalue, options, rowdata) {
-{% if perms.forecast.change_forecastdemand %}
-  var result = '<input type="text" class="smallpadding" value="' + Math.round(cellvalue[0]) + '" size="5" onchange="onChange(event)" onclick="$(this).select();"/><br/>' + Math.round(cellvalue[1]) + '<br/>' + Math.round(cellvalue[2]) + '<br/>';
-{% else %}
-  var result = Math.round(cellvalue[0]) + '<br/>' + Math.round(cellvalue[1]) + '<br/>' + Math.round(cellvalue[2]) + '<br/>';
-{% endif %}
-  if (cellvalue[3] != 0.0)
-    result += Math.round(cellvalue[3]) + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail'></span>";
+  if (cellvalue[0] != 0.0)
+    var result = Math.round(cellvalue[0]) + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail'></span><br/>";
   else
-    result += '0.0';
+    var result = '0<br/>';
+  if (cellvalue[1] != 0.0)
+    result += Math.round(cellvalue[1]) + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail'></span><br/>";
+  else
+    result += '0<br/>';
+  if (cellvalue[2] != 0.0)
+    result += Math.round(cellvalue[2]) + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail'></span><br/>";
+  else
+    result += '0<br/>';
+{% if perms.forecast.change_forecastdemand %}
+  result += '<input type="text" class="smallpadding" value="' + Math.round(cellvalue[3]) + '" size="5" onchange="onChange(event)" onclick="$(this).select();"/><br/>';
+{% else %}
+  result += Math.round(cellvalue[3]) + '<br/>';
+{% endif %}
+  if (cellvalue[4] != 0.0)
+    result += Math.round(cellvalue[4]) + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail'></span><br/>";
+  else
+    result += '0<br/>';
+  if (cellvalue[5] != 0.0)
+    result += Math.round(cellvalue[5]) + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail'></span><br/>";
+  else
+    result += '0.0<br/>';
+  if (cellvalue[6] != 0.0)
+    result += Math.round(cellvalue[6]) + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail'></span><br/>";
+  else
+    result += '0<br/>';  
+  if (cellvalue[7] != 0.0)
+    result += Math.round(cellvalue[7]) + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail'></span><br/>";
+  else
+    result += '0<br/>';
   return result;
 };
 {% endblock %}

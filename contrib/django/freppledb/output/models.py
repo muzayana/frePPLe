@@ -176,23 +176,3 @@ class DemandPegging(models.Model):
     ordering = ['id']
     verbose_name = _('demand pegging')
     verbose_name_plural = _('demand peggings')
-
-
-class Forecast(models.Model):    # TODO this model should be moved to the enterprise version
-  # Database fields
-  forecast = models.CharField(_('forecast'), max_length=settings.NAMESIZE, db_index=True)
-  startdate = models.DateTimeField(_('start date'), null=False, db_index=True)
-  enddate = models.DateTimeField(_('end date'), null=False)
-  total = models.DecimalField(_('total quantity'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
-  net = models.DecimalField(_('net quantity'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
-  consumed = models.DecimalField(_('consumed quantity'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
-
-  def __unicode__(self):
-    return self.forecast.name \
-      + ' - ' + str(self.startdate) + ' - ' + str(self.enddate)
-
-  class Meta:
-    db_table = 'out_forecast'
-    ordering = ['id']
-    verbose_name = _('forecast plan')
-    verbose_name_plural = _('forecast plans')

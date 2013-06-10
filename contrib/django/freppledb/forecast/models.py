@@ -23,6 +23,16 @@ from freppledb.input.models import Customer, Operation, Item, Calendar, Demand
 
 
 class Forecast(AuditModel):
+  # Forecasting methods
+  methods = (
+    ('automatic',_('Automatic')),
+    ('constant',_('Constant')),
+    ('trend',_('Trend')),
+    ('seasonal',_('Seasonal')),
+    ('intermittent',_('Intermittent')),
+    ('manual',_('Manual')),
+  )
+  
   # Database fields
   name = models.CharField(_('name'), max_length=settings.NAMESIZE, primary_key=True)
   description = models.CharField(_('description'), max_length=settings.DESCRIPTIONSIZE, null=True, blank=True)
@@ -30,6 +40,9 @@ class Forecast(AuditModel):
   subcategory = models.CharField(_('subcategory'), max_length=settings.CATEGORYSIZE, null=True, blank=True, db_index=True)
   customer = models.ForeignKey(Customer, verbose_name=_('customer'), null=True, blank=True, db_index=True)
   item = models.ForeignKey(Item, verbose_name=_('item'), db_index=True)
+  method = models.CharField(_('Forecast method'), max_length=20, null=True, blank=True, choices=methods, default='automatic',
+    help_text=_('Method used to generate a base forecast'),
+    )
   calendar = models.ForeignKey(Calendar, verbose_name=_('calendar'), null=False)
   operation = models.ForeignKey(Operation, verbose_name=_('delivery operation'), null=True, blank=True,
     related_name='used_forecast', help_text=_('Operation used to satisfy this demand'))
@@ -175,9 +188,11 @@ class Forecast(AuditModel):
     verbose_name = _('forecast')
     verbose_name_plural = _('forecasts')
     ordering = ['name']
+    permissions = (
+      ("generate_baseline", "Can generate a baseline forecast"),
+      )
 
 
-# @todo add logic to allow direct import and edit of the forecast demands. Similar to calendar buckets
 class ForecastDemand(AuditModel):
   # Database fields
   id = models.AutoField(_('identifier'), primary_key=True)
@@ -194,3 +209,27 @@ class ForecastDemand(AuditModel):
     verbose_name = _('forecast demand')
     verbose_name_plural = _('forecast demands')
 
+
+class ForecastPlan(models.Model):
+  # Database fields
+  id = models.AutoField(_('identifier'), primary_key=True)
+  forecast = models.ForeignKey(Forecast, verbose_name=_('forecast'), db_index=True, related_name='plans')
+  customerlvl = models.PositiveIntegerField(null=True, editable=False, blank=True)
+  itemlvl = models.PositiveIntegerField(null=True, editable=False, blank=True)
+  startdate = models.DateTimeField(_('start date'), null=False, db_index=True)
+  orderstotal = models.DecimalField(_('total orders'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
+  ordersopen = models.DecimalField(_('open orders'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
+  forecastbaseline = models.DecimalField(_('forecast baseline'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
+  forecastadjustment = models.DecimalField(_('forecast adjustment'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
+  forecasttotal = models.DecimalField(_('forecast total'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
+  forecastnet = models.DecimalField(_('forecast net'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
+  forecastconsumed = models.DecimalField(_('forecast consumed'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
+
+  def __unicode__(self):
+    return "%s - %s" % (self.forecast.name, str(self.startdate))
+
+  class Meta:
+    db_table = 'forecastplan'
+    ordering = ['id']
+    verbose_name = _('forecast plan')
+    verbose_name_plural = _('forecast plans')
