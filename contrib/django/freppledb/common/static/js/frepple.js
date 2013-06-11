@@ -765,7 +765,7 @@ function bucket_show()
             $(this).dialog('close');
           else {
             // Ajax request to update the horizon preferences
-              $.ajax({
+            $.ajax({
                 type: 'POST',
                 url: '/horizon/',
                 data: { 

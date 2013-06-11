@@ -40,7 +40,7 @@ class Calendar(AuditModel):
     decimal_places=settings.DECIMAL_PLACES, default='0.00',
     help_text= _('Value to be used when no entry is effective')
     )
-
+  
   def __unicode__(self): return self.name
 
   class Meta(AuditModel.Meta):
@@ -68,7 +68,7 @@ class CalendarBucket(AuditModel):
   sunday = models.BooleanField(_('Sunday'), blank=True, default=True)
   starttime = models.TimeField(_('start time'), blank=True, null=True, default=time(0,0,0))
   endtime = models.TimeField(_('end time'), blank=True, null=True, default=time(23,59,59))
-
+  
   def __unicode__(self):
     return u"%s" % self.id
 
@@ -400,12 +400,12 @@ class Skill(AuditModel):
   # Database fields
   name = models.CharField(_('name'), max_length=settings.NAMESIZE, primary_key=True,
      help_text=_('Unique identifier'))
-
-  class Meta(AuditModel.Meta):
+                            
+  class Meta(AuditModel.Meta): 
     db_table = 'skill'
     verbose_name = _('skill')
     verbose_name_plural = _('skills')
-    ordering = ['name']
+    ordering = ['name']     
 
 
 class ResourceSkill(AuditModel):
@@ -420,16 +420,16 @@ class ResourceSkill(AuditModel):
     help_text=_('Validity end date')
     )
   priority = models.IntegerField(_('priority'), default=1, null=True, blank=True,
-    help_text=_('Priority of this flow in a group of alternates'))
-
-  class Meta(AuditModel.Meta):
+    help_text=_('Priority of this flow in a group of alternates'))                            
+  
+  class Meta(AuditModel.Meta): 
     db_table = 'resourceskill'
     unique_together = (('resource','skill'),)
     verbose_name = _('resource skill')
     verbose_name_plural = _('resource skills')
     ordering = ['resource','skill']
-
-
+    
+    
 class Flow(AuditModel):
   # Types of flow
   types = (
@@ -529,7 +529,7 @@ class OperationPlan(AuditModel):
   enddate = models.DateTimeField(_('end date'),help_text=_('end date'))
   locked = models.BooleanField(_('locked'),default=True,
     help_text=_('Prevent or allow changes'))
-  owner = models.ForeignKey('self', verbose_name=_('owner'), null=True, blank=True,
+  owner = models.ForeignKey('self', verbose_name=_('owner'), null=True, blank=True, 
     related_name='xchildren', help_text=_('Hierarchical parent'))
 
   def __unicode__(self): return str(self.id)
