@@ -80,7 +80,7 @@ def erase(request):
   # Allow only post
   if request.method != 'POST':
     messages.add_message(request, messages.ERROR, force_unicode(_('Only POST method allowed')))
-    return HttpResponseRedirect('%s/execute/execute.html#database' % request.prefix)
+    return HttpResponseRedirect('%s/execute/#database' % request.prefix)
 
   # Erase the database contents
   try:
@@ -91,7 +91,7 @@ def erase(request):
     messages.add_message(request, messages.ERROR, force_unicode(_('Failure during database erasing: %(msg)s') % {'msg':e}))
 
   # Redirect the page such that reposting the doc is prevented and refreshing the page doesn't give errors
-  return HttpResponseRedirect('%s/execute/execute.html#database' % request.prefix)
+  return HttpResponseRedirect('%s/execute/#database' % request.prefix)
 
 
 @staff_member_required
@@ -105,7 +105,7 @@ def create(request):
   if request.method != 'POST':
     messages.add_message(request, messages.ERROR,
       force_unicode(_('Only POST method allowed')))
-    return HttpResponseRedirect('%s/execute/execute.html#generator' % request.prefix)
+    return HttpResponseRedirect('%s/execute/#generator' % request.prefix)
 
   # Validate the input form data
   try:
@@ -153,7 +153,7 @@ def create(request):
 
   # Show the main screen again
   # Redirect the page such that reposting the doc is prevented and refreshing the page doesn't give errors
-  return HttpResponseRedirect('%s/execute/execute.html#generator' % request.prefix)
+  return HttpResponseRedirect('%s/execute/#generator' % request.prefix)
 
 
 class runfrepple_async(Thread):
@@ -189,7 +189,7 @@ def runfrepple(request):
   if request.method != 'POST':
     messages.add_message(request, messages.ERROR,
       force_unicode(_('Only POST method allowed')))
-    return HttpResponseRedirect('%s/execute/execute.html#plan' % request.prefix)
+    return HttpResponseRedirect('%s/execute/#plan' % request.prefix)
 
   # Decode form input
   constraint = 0
@@ -211,7 +211,7 @@ def runfrepple(request):
   runfrepple_async(request, plantype, constraint).start()
 
   # Redirect the page such that reposting the doc is prevented and refreshing the page doesn't give errors
-  return HttpResponseRedirect('%s/execute/execute.html#plan' % request.prefix)
+  return HttpResponseRedirect('%s/execute/#plan' % request.prefix)
 
 
 @staff_member_required
@@ -225,14 +225,14 @@ def cancelfrepple(request):
   if request.method != 'POST':
     messages.add_message(request, messages.ERROR,
       force_unicode(_('Only POST method allowed')))
-    return HttpResponseRedirect('%s/execute/execute.html#plan' % request.prefix)
+    return HttpResponseRedirect('%s/execute/#plan' % request.prefix)
   try:
     p = Parameter.objects.using(request.database).get(name="Plan executing")
     p.value = p.value + ' Canceling'
     p.save(using=request.database)
   except: 
     pass
-  return HttpResponseRedirect('%s/execute/execute.html#plan' % request.prefix)
+  return HttpResponseRedirect('%s/execute/#plan' % request.prefix)
 
 
 @staff_member_required
@@ -250,7 +250,7 @@ def progressfrepple(request):
      mimetype = 'text/html; charset=%s' % settings.DEFAULT_CHARSET,
      content = percentage
      )
-  return HttpResponseRedirect('%s/execute/execute.html#plan' % request.prefix)
+  return HttpResponseRedirect('%s/execute/#plan' % request.prefix)
 
 
 @staff_member_required
@@ -265,7 +265,7 @@ def fixture(request):
     messages.add_message(request, messages.ERROR,
       force_unicode(_('Only POST method allowed')))
     # Redirect the page such that reposting the doc is prevented and refreshing the page doesn't give errors
-    return HttpResponseRedirect('%s/execute/execute.html#database' % request.prefix)
+    return HttpResponseRedirect('%s/execute/#database' % request.prefix)
 
   # Decode the input data from the form
   try:
@@ -274,7 +274,7 @@ def fixture(request):
   except:
     messages.add_message(request, messages.ERROR,
       force_unicode(_('Missing dataset name')))
-    return HttpResponseRedirect('%s/execute/execute.html#database' % request.prefix)
+    return HttpResponseRedirect('%s/execute/#database' % request.prefix)
 
   # Load the fixture
   # The fixture loading code is unfornately such that no exceptions are
@@ -292,7 +292,7 @@ def fixture(request):
       force_unicode(_('Error while loading dataset: %(msg)s') % {'msg':e}))
     log(category='LOAD', theuser=request.user.username,
       message='Failed loading dataset "%s": %s' % (fixture,e)).save(using=request.database)
-  return HttpResponseRedirect('%s/execute/execute.html#database' % request.prefix)
+  return HttpResponseRedirect('%s/execute/#database' % request.prefix)
 
 
 @staff_member_required
@@ -360,7 +360,7 @@ def scenarios(request):
   if request.method != 'POST':
     messages.add_message(request, messages.ERROR,
       force_unicode(_('Only POST method allowed')))
-    return HttpResponseRedirect('%s/execute/execute.html#scenarios' % request.prefix)
+    return HttpResponseRedirect('%s/execute/#scenarios' % request.prefix)
 
   # Execute the correct action
   try:
@@ -410,7 +410,7 @@ def scenarios(request):
     else:
       messages.add_message(request, messages.ERROR,
         force_unicode(_('Invalid action')))
-      return HttpResponseRedirect('%s/execute/execute.html#scenarios' % request.prefix)
+      return HttpResponseRedirect('%s/execute/#scenarios' % request.prefix)
 
   except Exception as x:
     print x
@@ -419,4 +419,4 @@ def scenarios(request):
     transaction.commit()
 
   # Redirect the page such that reposting the doc is prevented and refreshing the page doesn't give errors
-  return HttpResponseRedirect('%s/execute/execute.html#scenarios' % request.prefix)
+  return HttpResponseRedirect('%s/execute/#scenarios' % request.prefix)
