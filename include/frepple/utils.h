@@ -5539,7 +5539,7 @@ class LicenseValidator : private Object
     
   public:
     /** Default constructor. */
-    LicenseValidator() { valid(); };
+    LicenseValidator() { resetReferenceCount(); valid(); };
 
     /** Return the customer from the license file. */
     string getCustomer() const {return customer;}
