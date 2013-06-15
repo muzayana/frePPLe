@@ -14,16 +14,16 @@ Summary: Free Production PLanning
 Name: frepple
 Version: 2.1.beta
 Release: 1%{?dist}
-# Note on the license: frePPle is released with the AGPL license, version 3 or higher. 
-# The optional plugin module mod_lpsolver depends on the GLPK package which is 
+# Note on the license: frePPle is released with the AGPL license, version 3 or higher.
+# The optional plugin module mod_lpsolver depends on the GLPK package which is
 # licensed under GPL. That module is therefore disabled in this build.
 License: AGPLv3+
 Group: Applications/Productivity
 URL: http://www.frepple.com
 Source: http://downloads.sourceforge.net/%{name}/%{name}-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-XXXXXX)
-Requires: xerces-c, Django
-BuildRequires: python-devel, xerces-c-devel
+Requires: xerces-c, Django, openssl, httpd, mod_wsgi
+BuildRequires: python-devel, xerces-c-devel, openssl-devel
 
 %description
 FrePPLe stands for "Free Production PLanning". It is an application for
@@ -58,7 +58,7 @@ Documentation subpackage for frePPLe - free Production PLanning.
 %configure \
   --disable-static \
   --disable-dependency-tracking \
-  --disable-doc \
+  --enable-doc \
   --disable-lp_solver
 # Remove rpath from libtool
 sed -i 's|^hardcode_libdir_flag_spec=.*|hardcode_libdir_flag_spec=""|g' libtool
@@ -68,15 +68,16 @@ sed -i -e 's| -shared | -Wl,--as-needed\0|g' libtool
 # Compile
 make %{?_smp_mflags} all
 
-%check
-# Run test suite, skipping some long and less interesting tests
-TESTARGS="--regression -e setup_1 -e setup_2 -e setup_3 -e operation_routing -e constraints_combined_1"
-export TESTARGS
-make check
+# No tests in the enterprise version, because we only distribute the license.xml file of the community edition.
+#%check
+## Run test suite, skipping some long and less interesting tests
+#TESTARGS="--regression -e setup_1 -e setup_2 -e setup_3 -e operation_routing -e constraints_combined_1"
+#export TESTARGS
+#make check
 
 %install
 rm -rf %{buildroot}
-make install DESTDIR=%{buildroot} 
+make install DESTDIR=%{buildroot}
 # Do not package .la files created by libtool
 find %{buildroot} -name '*.la' -exec rm {} \;
 # Use percent-doc instead of install to create the documentation
@@ -85,6 +86,9 @@ rm -rf %{buildroot}%{_docdir}/%{name}
 (cd $RPM_BUILD_ROOT && find . -name 'django*.mo') | %{__sed} -e 's|^.||' | %{__sed} -e \
   's:\(.*/locale/\)\([^/_]\+\)\(.*\.mo$\):%lang(\2) \1\2\3:' \
   >> %{name}.lang
+# Install apache configuration
+mkdir -p $RPM_BUILD_ROOT/etc/httpd/conf.d
+install -m 644 -p contrib/rpm/httpd.conf $RPM_BUILD_ROOT/etc/httpd/conf.d/z_frepple.conf
 
 %clean
 rm -rf %{buildroot}
@@ -100,12 +104,17 @@ rm -rf %{buildroot}
 %dir %{_libdir}/frepple
 %{_libdir}/frepple/libfrepple.so.0
 %{_libdir}/frepple/libfrepple.so.0.0.0
-%dir %{_datadir}/frepple
-%{_datadir}/frepple/*.xsd
-%{_datadir}/frepple/*.xml
+%{_libdir}/frepple/mod_forecast.so
+%{_datadir}/frepple
+#%dir %{_datadir}/frepple/static
+%config(noreplace) %{_datadir}/frepple/license.xml
+#%{_datadir}/frepple/*.xsd
+#%{_datadir}/frepple/*.xml
 %{_mandir}/man1/frepple.1.*
+%config(noreplace) %{python_sitelib}/freppledb/settings.py
 %{python_sitelib}/freppledb*
-%doc COPYING 
+%doc COPYING
+/etc/httpd/conf.d/z_frepple.conf
 
 %files devel
 %defattr(-,root,root,-)

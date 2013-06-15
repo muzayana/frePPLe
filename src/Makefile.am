@@ -2,16 +2,19 @@
 # Process this file with automake to produce Makefile.in
 #
 
-bin_PROGRAMS = frepple 
+bin_PROGRAMS = frepple
 
 # License creation utilities...
-# bin_PROGRAMS += createkey createlicense
-#nodist_createkey_SOURCES = createkey.cpp
-#nodist_createlicense_SOURCES = createlicense.cpp
-#createkey_LDADD = libfrepple.la
-#createlicense_LDADD = libfrepple.la
-#createkey_LDFLAGS = -dynamic -export-dynamic
-#createlicense_LDFLAGS = -dynamic -export-dynamic
+if LICENSE
+# Build all components, including hidden ones
+bin_PROGRAMS += createkey createlicense
+createkey_SOURCES = createkey.cpp
+createlicense_SOURCES = createlicense.cpp
+createkey_LDADD = libfrepple.la
+createlicense_LDADD = libfrepple.la
+createkey_LDFLAGS = -dynamic -export-dynamic
+createlicense_LDFLAGS = -dynamic -export-dynamic
+endif
 
 # The local target builds the main executables first, and then copies the
 # output to the bin directory

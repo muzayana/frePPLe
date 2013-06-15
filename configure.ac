@@ -134,6 +134,19 @@ esac], [AC_CHECK_PROG(lp, [glpsol], true, false)])
 AM_CONDITIONAL(LP, test x$lp = xtrue)
 
 #
+# Define an extra configure argument to enable building the license key tools
+#
+AC_ARG_ENABLE(license,
+AC_HELP_STRING([--enable-license],
+[Build the tools to create and validate license keys (default: false)]),
+[case "${enableval}" in
+  yes) lic=true ;;
+  no)  lic=false ;;
+  *) AC_MSG_ERROR([bad value ${enableval} for --enable-license]) ;;
+esac], [lic=false])
+AM_CONDITIONAL(LICENSE, test x$lic = xtrue)
+
+#
 # Define a configure argument to enable/disable building of the documentation
 #
 AC_ARG_ENABLE([doc],
