@@ -16,6 +16,7 @@
 #     - prep:        Initializes the AutoMake tools.
 #  BUILDING AND COMPILING
 #     - default:     Configures and recreates an optimized build from scratch.
+#     - enterprise:  Configures and recreates an optimized enterprise build from scratch.
 #     - debug:       Configures and recreates a debug build from scratch.
 #     - coverage:    Configures and recompiles the code for coverage testing.
 #     - profile:     Configures and recompiles the code suitable for profiling.
@@ -34,6 +35,8 @@
 #
 
 default: prep config clean build dist check
+
+enterprise: prep configenterprise clean build dist check
 
 debug: prep configdebug clean build check
 
@@ -54,22 +57,27 @@ config:
 	@echo
 	@echo "PHASE: Running configure for optimized build..."
 	./configure --enable-doc
-#--prefix=`pwd`/install-test	
+#--prefix=`pwd`/install-test
+
+configenterprise:
+	@echo
+	@echo "PHASE: Running configure for optimized enterprise build..."
+	./configure --enable-doc --enable-license
 
 configdebug:
 	@echo
 	@echo "PHASE: Running configure for debug build..."
-	./configure --disable-doc --enable-debug 
+	./configure --disable-doc --enable-debug
 
 configcoverage:
 	@echo
 	@echo "PHASE: Running configure for test coverage build..."
-	./configure --disable-doc --enable-coverage 
+	./configure --disable-doc --enable-coverage
 
 configprofile:
 	@echo
 	@echo "PHASE: Running configure for profiling build..."
-	./configure --disable-doc --enable-profile 
+	./configure --disable-doc --enable-profile
 
 clean:
 	@echo
@@ -119,11 +127,11 @@ astyle:
 #  * The  first 2 arguments need to be integers.
 #  * The third argument can be empty. Or it can be a string starting with a '.'/dot.
 old1 = 2
-old2 = 0
-old3 = 
+old2 = 1
+old3 = .beta
 new1 = 2
 new2 = 1
-new3 = .beta
+new3 = .rc1
 set_release:
 	for i in "configure.ac" "include/frepple/utils.h" "contrib/rpm/frepple.spec" "contrib/django/freppledb/__init__.py" "contrib/django/freppledb/locale/nl/LC_MESSAGES/django.po" "contrib/django/freppledb/locale/nl/LC_MESSAGES/djangojs.po" "contrib/django/freppledb/locale/zh_TW/LC_MESSAGES/django.po" "contrib/django/freppledb/locale/zh_TW/LC_MESSAGES/djangojs.po" "contrib/django/freppledb/locale/it/LC_MESSAGES/django.po" "contrib/django/freppledb/locale/it/LC_MESSAGES/djangojs.po" "contrib/django/freppledb/locale/fr/LC_MESSAGES/django.po" "contrib/django/freppledb/locale/fr/LC_MESSAGES/djangojs.po" "bin/frepple.xsd" "bin/frepple_core.xsd"; do \
 		sed 's/$(old1)\.$(old2)$(old3)/$(new1).$(new2)$(new3)/g' $$i >out.tmp; \
