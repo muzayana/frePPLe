@@ -21,6 +21,9 @@ else:
   FREPPLE_APP = os.path.abspath(os.path.join(os.path.dirname(freppledb.__file__),'..'))
 if 'FREPPLE_HOME' in os.environ:
   FREPPLE_HOME = os.environ['FREPPLE_HOME']
+elif os.path.isfile(os.path.abspath(os.path.join('usr','share','frepple','frepple.xsd'))):
+  # Linux installation layout
+  FREPPLE_HOME = os.path.abspath(os.path.join('usr','share','frepple'))
 elif os.path.isfile(os.path.abspath(os.path.join(FREPPLE_APP,'..','frepple.xsd'))):
   # Py2exe layout
   FREPPLE_HOME = os.path.abspath(os.path.join(FREPPLE_APP,'..'))
