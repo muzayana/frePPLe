@@ -1,12 +1,6 @@
 /***************************************************************************
-  file : $URL: file:///C:/Users/Johan/Dropbox/SVNrepository/frepple/addon/modules/forecast/module.cpp $
-  version : $LastChangedRevision: 449 $  $LastChangedBy: Johan $
-  date : $LastChangedDate: 2012-12-28 18:59:56 +0100 (Fri, 28 Dec 2012) $
- ***************************************************************************/
-
-/***************************************************************************
  *                                                                         *
- * Copyright (C) 2012 by Johan De Taeye, frePPLe bvba                      *
+ * Copyright (C) 2012-2013 by Johan De Taeye, frePPLe bvba                 *
  *                                                                         *
  * All information contained herein is, and remains the property of        *
  * frePPLe.                                                                * 
@@ -48,103 +42,6 @@ MODULE_EXPORT const char* initialize(const Environment::ParameterList& z)
   // This specific value of the flag is when the customer name is "Community Edition users".
   if (flags == 836125) return "";
   
-  // Process the module parameters
-  for (Environment::ParameterList::const_iterator x = z.begin();
-      x != z.end(); ++x)
-    try
-    {
-      // Forecast buckets
-      if (x->first == "DueAtEndOfBucket")
-        ForecastBucket::setDueAtEndOfBucket(x->second.getBool());
-      // Netting
-      else if (x->first == "Net_CustomerThenItemHierarchy")
-        Forecast::setCustomerThenItemHierarchy(x->second.getBool());
-      else if (x->first == "Net_MatchUsingDeliveryOperation")
-        Forecast::setMatchUsingDeliveryOperation(x->second.getBool());
-      else if (x->first == "Net_NetEarly")
-        Forecast::setNetEarly(x->second.getTimeperiod());
-      else if (x->first == "Net_NetLate")
-        Forecast::setNetLate(x->second.getTimeperiod());
-      // Forecasting
-      else if (x->first == "Forecast_Iterations")
-        Forecast::setForecastIterations(x->second.getUnsignedLong());
-      else if (x->first == "Forecast_SmapeAlfa")
-        Forecast::setForecastSmapeAlfa(x->second.getDouble());
-      else if (x->first == "Forecast_Skip")
-        Forecast::setForecastSkip(x->second.getUnsignedLong());
-      // Moving average forecast method
-      else if (x->first == "MovingAverage_buckets")
-        Forecast::MovingAverage::setDefaultBuckets(x->second.getUnsignedLong());
-      // Single exponential forecast method
-      else if (x->first == "Forecast_SingleExponential_initialAlfa")
-        Forecast::SingleExponential::setInitialAlfa(x->second.getDouble());
-      else if (x->first == "Forecast_SingleExponential_minAlfa")
-        Forecast::SingleExponential::setMinAlfa(x->second.getDouble());
-      else if (x->first == "Forecast_SingleExponential_maxAlfa")
-        Forecast::SingleExponential::setMaxAlfa(x->second.getDouble());
-      // Double exponential forecast method
-      else if (x->first == "Forecast_DoubleExponential_initialAlfa")
-        Forecast::DoubleExponential::setInitialAlfa(x->second.getDouble());
-      else if (x->first == "Forecast_DoubleExponential_minAlfa")
-        Forecast::DoubleExponential::setMinAlfa(x->second.getDouble());
-      else if (x->first == "Forecast_DoubleExponential_maxAlfa")
-        Forecast::DoubleExponential::setMaxAlfa(x->second.getDouble());
-      else if (x->first == "Forecast_DoubleExponential_initialGamma")
-        Forecast::DoubleExponential::setInitialGamma(x->second.getDouble());
-      else if (x->first == "Forecast_DoubleExponential_minGamma")
-        Forecast::DoubleExponential::setMinGamma(x->second.getDouble());
-      else if (x->first == "Forecast_DoubleExponential_maxGamma")
-        Forecast::DoubleExponential::setMaxGamma(x->second.getDouble());
-      else if (x->first == "Forecast_DoubleExponential_dampenTrend")
-        Forecast::DoubleExponential::setDampenTrend(x->second.getDouble());
-      // Seasonal forecast method
-      else if (x->first == "Forecast_Seasonal_initialAlfa")
-        Forecast::Seasonal::setInitialAlfa(x->second.getDouble());
-      else if (x->first == "Forecast_Seasonal_minAlfa")
-        Forecast::Seasonal::setMinAlfa(x->second.getDouble());
-      else if (x->first == "Forecast_Seasonal_maxAlfa")
-        Forecast::Seasonal::setMaxAlfa(x->second.getDouble());
-      else if (x->first == "Forecast_Seasonal_initialBeta")
-        Forecast::Seasonal::setInitialGamma(x->second.getDouble());
-      else if (x->first == "Forecast_Seasonal_minBeta")
-        Forecast::Seasonal::setMinBeta(x->second.getDouble());
-      else if (x->first == "Forecast_Seasonal_maxBeta")
-        Forecast::Seasonal::setMaxBeta(x->second.getDouble());
-      else if (x->first == "Forecast_Seasonal_initialGamma")
-        Forecast::Seasonal::setInitialBeta(x->second.getDouble());
-      else if (x->first == "Forecast_Seasonal_minGamma")
-        Forecast::Seasonal::setMinGamma(x->second.getDouble());
-      else if (x->first == "Forecast_Seasonal_maxGamma")
-        Forecast::Seasonal::setMaxGamma(x->second.getDouble());
-      else if (x->first == "Forecast_Seasonal_dampenTrend")
-        Forecast::Seasonal::setDampenTrend(x->second.getDouble());
-      else if (x->first == "Forecast_Seasonal_minPeriod")
-        Forecast::Seasonal::setMinPeriod(x->second.getInt());
-      else if (x->first == "Forecast_Seasonal_maxPeriod")
-        Forecast::Seasonal::setMaxPeriod(x->second.getInt());
-      // Croston forecast method
-      else if (x->first == "Forecast_Croston_initialAlfa")
-        Forecast::Croston::setInitialAlfa(x->second.getDouble());
-      else if (x->first == "Forecast_Croston_minAlfa")
-        Forecast::Croston::setMinAlfa(x->second.getDouble());
-      else if (x->first == "Forecast_Croston_maxAlfa")
-        Forecast::Croston::setMaxAlfa(x->second.getDouble());
-      else if (x->first == "Forecast_Croston_minIntermittence")
-        Forecast::Croston::setMinIntermittence(x->second.getDouble());
-      // That's bullshit
-      else
-        logger << "Warning: Unrecognized parameter '" << x->first << "'" << endl;
-    }
-    catch (const exception &e)
-    {
-      // Avoid throwing errors during the initialization!
-      logger << "Error: " << e.what() << endl;
-    }
-    catch (...)
-    {
-      logger << "Error: unknown exception" << endl;
-    }
-
   // Register the Python extensions
   PyGILState_STATE state = PyGILState_Ensure();
   try
@@ -171,6 +68,91 @@ MODULE_EXPORT const char* initialize(const Environment::ParameterList& z)
 
   // Return the name of the module
   return name;
+}
+
+
+int ForecastSolver::setattro(const Attribute& attr, const PythonObject& field)
+{
+  if (!strcmp(attr.getName(), "DueAtEndOfBucket"))
+    ForecastBucket::setDueAtEndOfBucket(field.getBool());
+  // Netting
+  else if (!strcmp(attr.getName(),"Net_CustomerThenItemHierarchy"))
+    Forecast::setCustomerThenItemHierarchy(field.getBool());
+  else if (!strcmp(attr.getName(), "Net_MatchUsingDeliveryOperation"))
+    Forecast::setMatchUsingDeliveryOperation(field.getBool());
+  else if (!strcmp(attr.getName(), "Net_NetEarly"))
+    Forecast::setNetEarly(field.getTimeperiod());
+  else if (!strcmp(attr.getName(), "Net_NetLate"))
+    Forecast::setNetLate(field.getTimeperiod());
+  // Forecasting
+  else if (!strcmp(attr.getName(), "Iterations"))
+    Forecast::setForecastIterations(field.getUnsignedLong());
+  else if (!strcmp(attr.getName(), "SmapeAlfa"))
+    Forecast::setForecastSmapeAlfa(field.getDouble());
+  else if (!strcmp(attr.getName(), "Skip"))
+    Forecast::setForecastSkip(field.getUnsignedLong());
+  // Moving average forecast method
+  else if (!strcmp(attr.getName(), "MovingAverage_order"))
+    Forecast::MovingAverage::setDefaultOrder(field.getUnsignedLong());
+  // Single exponential forecast method
+  else if (!strcmp(attr.getName(), "SingleExponential_initialAlfa"))
+    Forecast::SingleExponential::setInitialAlfa(field.getDouble());
+  else if (!strcmp(attr.getName(), "SingleExponential_minAlfa"))
+    Forecast::SingleExponential::setMinAlfa(field.getDouble());
+  else if (!strcmp(attr.getName(), "SingleExponential_maxAlfa"))
+    Forecast::SingleExponential::setMaxAlfa(field.getDouble());
+  // Double exponential forecast method
+  else if (!strcmp(attr.getName(), "DoubleExponential_initialAlfa"))
+    Forecast::DoubleExponential::setInitialAlfa(field.getDouble());
+  else if (!strcmp(attr.getName(), "DoubleExponential_minAlfa"))
+    Forecast::DoubleExponential::setMinAlfa(field.getDouble());
+  else if (!strcmp(attr.getName(), "DoubleExponential_maxAlfa"))
+    Forecast::DoubleExponential::setMaxAlfa(field.getDouble());
+  else if (!strcmp(attr.getName(), "DoubleExponential_initialGamma"))
+    Forecast::DoubleExponential::setInitialGamma(field.getDouble());
+  else if (!strcmp(attr.getName(), "DoubleExponential_minGamma"))
+    Forecast::DoubleExponential::setMinGamma(field.getDouble());
+  else if (!strcmp(attr.getName(), "DoubleExponential_maxGamma"))
+    Forecast::DoubleExponential::setMaxGamma(field.getDouble());
+  else if (!strcmp(attr.getName(), "DoubleExponential_dampenTrend"))
+    Forecast::DoubleExponential::setDampenTrend(field.getDouble());
+  // Seasonal forecast method
+  else if (!strcmp(attr.getName(), "Seasonal_initialAlfa"))
+    Forecast::Seasonal::setInitialAlfa(field.getDouble());
+  else if (!strcmp(attr.getName(), "Seasonal_minAlfa"))
+    Forecast::Seasonal::setMinAlfa(field.getDouble());
+  else if (!strcmp(attr.getName(), "Seasonal_maxAlfa"))
+    Forecast::Seasonal::setMaxAlfa(field.getDouble());
+  else if (!strcmp(attr.getName(), "Seasonal_initialBeta"))
+    Forecast::Seasonal::setInitialGamma(field.getDouble());
+  else if (!strcmp(attr.getName(), "Seasonal_minBeta"))
+    Forecast::Seasonal::setMinBeta(field.getDouble());
+  else if (!strcmp(attr.getName(), "Seasonal_maxBeta"))
+    Forecast::Seasonal::setMaxBeta(field.getDouble());
+  else if (!strcmp(attr.getName(), "Seasonal_initialGamma"))
+    Forecast::Seasonal::setInitialBeta(field.getDouble());
+  else if (!strcmp(attr.getName(), "Seasonal_minGamma"))
+    Forecast::Seasonal::setMinGamma(field.getDouble());
+  else if (!strcmp(attr.getName(), "Seasonal_maxGamma"))
+    Forecast::Seasonal::setMaxGamma(field.getDouble());
+  else if (!strcmp(attr.getName(), "Seasonal_dampenTrend"))
+    Forecast::Seasonal::setDampenTrend(field.getDouble());
+  else if (!strcmp(attr.getName(), "Seasonal_minPeriod"))
+    Forecast::Seasonal::setMinPeriod(field.getInt());
+  else if (!strcmp(attr.getName(), "Seasonal_maxPeriod"))
+    Forecast::Seasonal::setMaxPeriod(field.getInt());
+  // Croston forecast method
+  else if (!strcmp(attr.getName(), "Croston_initialAlfa"))
+    Forecast::Croston::setInitialAlfa(field.getDouble());
+  else if (!strcmp(attr.getName(), "Croston_minAlfa"))
+    Forecast::Croston::setMinAlfa(field.getDouble());
+  else if (!strcmp(attr.getName(), "Croston_maxAlfa"))
+    Forecast::Croston::setMaxAlfa(field.getDouble());
+  else if (!strcmp(attr.getName(), "Croston_minIntermittence"))
+    Forecast::Croston::setMinIntermittence(field.getDouble());
+  else
+    return Solver::setattro(attr, field);
+  return 0;  // OK
 }
 
 }       // end namespace

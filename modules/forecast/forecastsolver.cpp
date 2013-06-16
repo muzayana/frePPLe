@@ -1,12 +1,6 @@
 /***************************************************************************
-  file : $URL: file:///C:/Users/Johan/Dropbox/SVNrepository/frepple/addon/modules/forecast/forecastsolver.cpp $
-  version : $LastChangedRevision: 449 $  $LastChangedBy: Johan $
-  date : $LastChangedDate: 2012-12-28 18:59:56 +0100 (Fri, 28 Dec 2012) $
- ***************************************************************************/
-
-/***************************************************************************
  *                                                                         *
- * Copyright (C) 2012 by Johan De Taeye, frePPLe bvba                      *
+ * Copyright (C) 2012-2013 by Johan De Taeye, frePPLe bvba                 *
  *                                                                         *
  * All information contained herein is, and remains the property of        *
  * frePPLe.                                                                * 

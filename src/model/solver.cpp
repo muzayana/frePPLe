@@ -59,7 +59,7 @@ DECLARE_EXPORT void Solver::endElement(XMLInput& pIn, const Attribute& pAttr, co
 
 
 DECLARE_EXPORT PyObject* Solver::getattro(const Attribute& attr)
-{
+{ 
   if (attr.isA(Tags::tag_name))
     return PythonObject(getName());
   if (attr.isA(Tags::tag_loglevel))

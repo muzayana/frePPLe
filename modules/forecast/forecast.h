@@ -1,10 +1,4 @@
 /***************************************************************************
-  file : $URL: file:///C:/Users/Johan/Dropbox/SVNrepository/frepple/addon/modules/forecast/forecast.h $
-  version : $LastChangedRevision: 449 $  $LastChangedBy: Johan $
-  date : $LastChangedDate: 2012-12-28 18:59:56 +0100 (Fri, 28 Dec 2012) $
- ***************************************************************************/
-
-/***************************************************************************
  *                                                                         *
  * Copyright (C) 2012 by Johan De Taeye, frePPLe bvba                      *
  *                                                                         *
@@ -313,11 +307,13 @@ class Forecast : public Demand
     class MovingAverage : public ForecastMethod
     {
       private:
-        /** Number of smoothed buckets. */
-        static unsigned int defaultbuckets;
+        /** Default number of averaged buckets. 
+          * The default is 5.
+          */
+        static unsigned int defaultorder;
 
         /** Number of buckets to average. */
-        unsigned int buckets;
+        unsigned int order;
 
         /** Calculated average.<br>
           * Used to carry results between the evaluation and applying of the forecast.
@@ -326,7 +322,7 @@ class Forecast : public Demand
 
       public:
         /** Constructor. */
-        MovingAverage(int i = defaultbuckets) : buckets(i), avg(0)
+        MovingAverage(int i = defaultorder) : order(i), avg(0)
         {
           if (i < 1)
             throw DataException("Moving average needs to smooth over at least 1 bucket");
@@ -340,11 +336,11 @@ class Forecast : public Demand
         void applyForecast(Forecast*, const Date[], unsigned int, bool);
 
         /** Update the initial value for the alfa parameter. */
-        static void setDefaultBuckets(int x)
+        static void setDefaultOrder(int x)
         {
           if (x < 1)
-            throw DataException("Parameter MovingAverage.buckets needs to smooth over at least 1 bucket");
-          defaultbuckets = x;
+            throw DataException("Parameter MovingAverage.order needs to be at least 1");
+          defaultorder = x;
         }
 
         string getName() {return "moving average";}
@@ -471,7 +467,9 @@ class Forecast : public Demand
           */
         double constant_i;
 
-        /* Factor used to smoothen the trend in the future buckets. */
+        /* Factor used to smoothen the trend in the future buckets.<br>
+         * The default value is 0.8.
+         */
         static double dampenTrend;
 
       public:
@@ -1277,6 +1275,9 @@ class ForecastSolver : public Solver
 
     /** Callback function, used for netting orders against the forecast. */
     bool callback(Demand* l, const Signal a);
+
+    /** Python update method. */
+    int setattro(const Attribute&, const PythonObject&);
 
   private:
     /** Given a demand, this function will identify the forecast model it
