@@ -106,15 +106,12 @@ rm -rf %{buildroot}
 %{_libdir}/frepple/libfrepple.so.0.0.0
 %{_libdir}/frepple/mod_forecast.so
 %{_datadir}/frepple
-#%dir %{_datadir}/frepple/static
-%config(noreplace) %{_datadir}/frepple/license.xml
-#%{_datadir}/frepple/*.xsd
-#%{_datadir}/frepple/*.xml
-%{_mandir}/man1/frepple.1.*
-%config(noreplace) %{python_sitelib}/freppledb/settings.py
 %{python_sitelib}/freppledb*
+%{_mandir}/man1/frepple.1.*
 %doc COPYING
-/etc/httpd/conf.d/z_frepple.conf
+%config(noreplace) %{_datadir}/frepple/license.xml
+%config(noreplace) %{python_sitelib}/freppledb/settings.py
+%config(noreplace) /etc/httpd/conf.d/z_frepple.conf
 
 %files devel
 %defattr(-,root,root,-)
