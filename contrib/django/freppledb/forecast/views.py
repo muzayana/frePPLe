@@ -1,14 +1,14 @@
 #
 # Copyright (C) 2012 by Johan De Taeye, frePPLe bvba
 #
-# All information contained herein is, and remains the property of frePPLe.  
+# All information contained herein is, and remains the property of frePPLe.
 # You are allowed to use and modify the source code, as long as the software is used
 # within your company.
-# You are not allowed to distribute the software, either in the form of source code 
+# You are not allowed to distribute the software, either in the form of source code
 # or in the form of compiled binaries.
 #
 
-from datetime import datetime
+from datetime import datetime, date
 import json
 
 from django.db import connections, transaction
@@ -18,7 +18,7 @@ from django.utils.encoding import force_unicode
 from django.http import HttpResponse, HttpResponseForbidden
 
 from freppledb.forecast.models import Forecast, ForecastDemand
-from freppledb.common.db import python_date, sql_datediff, sql_overlap
+from freppledb.common.db import python_date
 from freppledb.common.report import GridPivot, GridFieldText, GridFieldInteger, GridFieldDate
 from freppledb.common.report import GridReport, GridFieldBool, GridFieldLastModified
 from freppledb.common.report import GridFieldChoice, GridFieldNumber
@@ -50,8 +50,8 @@ class ForecastList(GridReport):
     GridFieldBool('discrete', title=_('discrete')),
     GridFieldLastModified('lastmodified'),
     )
-    
-    
+
+
 class ForecastDemandList(GridReport):
   '''
   A list report to show forecastdemands.
@@ -63,7 +63,7 @@ class ForecastDemandList(GridReport):
   frozenColumns = 1
 
   rows = (
-    GridFieldInteger('id', title=_('identifier'), key=True),
+    GridFieldInteger('identifier', title=_('identifier'), key=True),
     GridFieldText('forecast', title=_('forecast'), formatter='forecast'),
     GridFieldDate('startdate', title=_('start date')),
     GridFieldDate('enddate', title=_('end date')),
@@ -96,20 +96,21 @@ class OverviewReport(GridPivot):
     ('forecastnet',{'title': _('forecast net')}),
     ('forecastconsumed',{'title': _('forecast consumed')}),
     ('planned',{'title': _('planned net forecast')}),
-    )    
-    
+    ('past',{'visible':False}),
+    )
+
   @classmethod
-  def parseJSONupload(reportclass, request): 
+  def parseJSONupload(reportclass, request):
     # Check permissions
     if not request.user.has_perm('forecast.change_forecastdemand'):
       return HttpResponseForbidden(_('Permission denied'))
 
-    # Loop over the data records 
+    # Loop over the data records
     transaction.enter_transaction_management(using=request.database)
     transaction.managed(True, using=request.database)
     resp = HttpResponse()
     ok = True
-    try:          
+    try:
       for rec in json.JSONDecoder().decode(request.read()):
         try:
           # Find the forecast
@@ -117,33 +118,41 @@ class OverviewReport(GridPivot):
           end = datetime.strptime(rec['enddate'],'%Y-%m-%d')
           fcst = Forecast.objects.using(request.database).get(name = rec['id'])
           # Update the forecast
-          fcst.setTotal(start,end,rec['value'])      
+          fcst.setTotal(start,end,rec['value'])
         except Exception as e:
           ok = False
           resp.write(e)
-          resp.write('<br/>')                          
+          resp.write('<br/>')
     finally:
       transaction.commit(using=request.database)
       transaction.leave_transaction_management(using=request.database)
     if ok: resp.write("OK")
     resp.status_code = ok and 200 or 403
-    return resp            
-            
-  @classmethod 
+    return resp
+
+  @classmethod
   def extra_context(reportclass, request, *args, **kwargs):
     if args and args[0]:
       return {
         'title': capfirst(force_unicode(Forecast._meta.verbose_name) + " " + args[0]),
         'post_title': ': ' + capfirst(force_unicode(_('plan'))),
-        }      
+        }
     else:
       return {}
-                
+
   @staticmethod
   def query(request, basequery, bucket, startdate, enddate, sortsql='1 asc'):
     basesql, baseparams = basequery.query.get_compiler(basequery.db).as_sql(with_col_aliases=True)
     # Execute the query
     cursor = connections[request.database].cursor()
+
+    try:
+      cursor.execute("SELECT value FROM common_parameter where name='currentdate'")
+      d = cursor.fetchone()
+      currentdate = datetime.strptime(d[0], "%Y-%m-%d %H:%M:%S").date()
+    except:
+      currentdate = date.now()
+
     query = '''
         select y.name as row1, y.item_id as row2, y.customer_id as row3,
                y.bucket as col1, y.startdate as col2, y.enddate as col3,
@@ -204,12 +213,13 @@ class OverviewReport(GridPivot):
         'bucket': row[3],
         'startdate': python_date(row[4]),
         'enddate': python_date(row[5]),
+        'past': python_date(row[4]) < currentdate and 1 or 0,
         'orderstotal': row[6],
         'ordersopen': row[7],
         'forecastbaseline': row[8],
         'forecastadjustment': row[9],
-        'forecasttotal': row[9],
-        'forecastnet': row[9],
-        'forecastconsumed': row[9],
-        'planned': row[9],
-        }            
+        'forecasttotal': row[10],
+        'forecastnet': row[11],
+        'forecastconsumed': row[12],
+        'planned': row[13],
+        }

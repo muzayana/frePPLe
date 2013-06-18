@@ -8,10 +8,6 @@
 # or in the form of compiled binaries.
 #
 
-# file : $URL: file:///C:/Users/Johan/Dropbox/SVNrepository/frepple/addon/contrib/django/freppledb_extra/models.py $
-# revision : $LastChangedRevision: 449 $  $LastChangedBy: Johan $
-# date : $LastChangedDate: 2012-12-28 18:59:56 +0100 (Fri, 28 Dec 2012) $
-
 from decimal import Decimal
 
 from django.db import models
@@ -188,9 +184,6 @@ class Forecast(AuditModel):
     verbose_name = _('forecast')
     verbose_name_plural = _('forecasts')
     ordering = ['name']
-    permissions = (
-      ("generate_baseline", "Can generate a baseline forecast"),
-      )
 
 
 class ForecastDemand(AuditModel):

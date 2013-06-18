@@ -233,7 +233,7 @@ def exportForecast(process):
 
   print "Exporting forecast plans..."
   starttime = time()
-  process.stdin.write('COPY out_forecast (forecast,startdate,enddate,total,net,consumed) FROM STDIN;\n')
+  process.stdin.write('COPY forecastplan (forecast,startdate,enddate,total,net,consumed) FROM STDIN;\n')
   for i in frepple.demands():
     if not isinstance(i, frepple.demand_forecastbucket) or i.total <= 0.0:
       continue

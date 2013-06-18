@@ -73,17 +73,19 @@ class Command(BaseCommand):
 
       # Delete all records from the tables.
       # We split the tables in groups to speed things up in postgreSQL.
-      cursor.execute('update common_preference set horizonbuckets = null')
+      cursor.execute('update common_user set horizonbuckets = null')
       transaction.commit(using=database)
+      # TODO ERASE MORE GENERICALLY ALL MODELS FROM BOTH ADMIN SITES
       tables = [ 
         ['out_demandpegging'],
         ['out_problem','out_resourceplan','out_constraint'],
         ['out_loadplan','out_flowplan','out_operationplan'], 
-        ['out_demand','out_forecast'],    # TODO Table may not exist!
+        ['out_demand'],   
         ['demand','customer','resourceskill','skill',
          'setuprule','setupmatrix','resourceload','resource',
          'flow','buffer','operationplan','item',
-         'suboperation','operation', # TODO Required to add for enterprise version on postgresql :'forecast','forecastdemand',
+         'suboperation','operation', 
+         'forecast', 'forecastdemand', 'forecastplan', # TODO Required to add for enterprise version on postgresql :
          'location','calendarbucket','calendar',],
         ['common_parameter','common_bucketdetail','common_bucket'],
         ['common_comment','django_admin_log'],

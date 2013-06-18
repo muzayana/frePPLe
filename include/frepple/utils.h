@@ -211,7 +211,7 @@ class AttributeList;
 // Include the list of predefined tags
 #include "frepple/tags.h"
 
-extern DECLARE_EXPORT int flags; 
+extern DECLARE_EXPORT int flags;
 
 /** This type defines what operation we want to do with the entity. */
 enum Action
@@ -1094,7 +1094,7 @@ class MetaClass : public NonCopyable
 
 class XMLOutput;
 
-/** @brief This class stores metadata on a data field of a class. 
+/** @brief This class stores metadata on a data field of a class.
   *
   * A field
   */
@@ -1102,7 +1102,7 @@ class XMLOutput;
 //{
 //  private:
 //    Keyword& name;
-//    
+//
 //  public:
 //    typedef double (*getDouble)() const;
 //    typedef void (*setDouble)(double);
@@ -1133,7 +1133,7 @@ class XMLOutput;
 //    int get(Object*);
 //    double get(Object*);
 //    string get(Object*);
-//    
+//
 //    void set(Object*, bool);
 //    void set(Object*, int);
 //    void set(Object*, double);
@@ -1581,7 +1581,7 @@ class Date
       * details of the current time: day of the week, day of the month,
       * day of the year, hour, minutes, seconds
       */
-    inline void getInfo(struct tm* tm_struct) const 
+    inline void getInfo(struct tm* tm_struct) const
     {
       // The standard library function localtime() is not re-entrant: the same
       // static structure is used for all calls. In a multi-threaded environment
@@ -1729,42 +1729,42 @@ class Date
     static DECLARE_EXPORT const Date infiniteFuture;
 
     /** Return the number of seconds since january 1st. */
-    long getSecondsYear() const 
-    { 
+    long getSecondsYear() const
+    {
       struct tm t;
       getInfo(&t);
       return t.tm_yday * 86400 + t.tm_sec + t.tm_min * 60 + t.tm_hour * 3600;
-    } 
+    }
 
     /** Return the number of seconds since the start of the month. */
-    long getSecondsMonth() const 
-    { 
+    long getSecondsMonth() const
+    {
       struct tm t;
       getInfo(&t);
       return (t.tm_mday-1) * 86400 + t.tm_sec + t.tm_min * 60 + t.tm_hour * 3600;
-    } 
+    }
 
-    /** Return the number of seconds since the start of the week. 
+    /** Return the number of seconds since the start of the week.
       * The week is starting on Sunday.
       */
     long getSecondsWeek() const
-    { 
+    {
       struct tm t;
       getInfo(&t);
       int result = t.tm_wday * 86400 + t.tm_sec + t.tm_min * 60 + t.tm_hour * 3600;
       assert(result >= 0 && result < 604800L);
       return result;
-    } 
+    }
 
     /** Return the number of seconds since the start of the day. */
-    long getSecondsDay() const 
-    { 
+    long getSecondsDay() const
+    {
       struct tm t;
       getInfo(&t);
       int result = t.tm_sec + t.tm_min * 60 + t.tm_hour * 3600;
       assert(result >= 0 && result < 86400L);
       return result;
-    } 
+    }
 
 #ifndef HAVE_STRPTIME
   private:
@@ -2073,7 +2073,7 @@ class XMLOutput
     bool getReferencesOnly() const {return numParents>0;}
 
     /** Start writing a new object. This method will open a new XML-tag.<br>
-      * Output: \<TAG\> 
+      * Output: \<TAG\>
       */
     void BeginObject(const Keyword& t)
     {
@@ -2081,8 +2081,8 @@ class XMLOutput
       incIndent();
     }
 
-    /** Start writing a new object. This method will open a new XML-tag. 
-      * Output: \<TAG attributes\> 
+    /** Start writing a new object. This method will open a new XML-tag.
+      * Output: \<TAG attributes\>
       */
     void BeginObject(const Keyword& t, const string& atts)
     {
@@ -2092,7 +2092,7 @@ class XMLOutput
 
     /** Start writing a new object. This method will open a new XML-tag.<br>
       * The user is responsible to assure string values are escaped correctly with the XMLEscape class.<br>
-      * Output: \<TAG TAG1="val1"\> 
+      * Output: \<TAG TAG1="val1"\>
       * @see XMLEscape
       */
     template <class T>
@@ -2105,11 +2105,11 @@ class XMLOutput
 
     /** Start writing a new object. This method will open a new XML-tag.<br>
       * The user is responsible to assure string values are escaped correctly with the XMLEscape class.<br>
-      * Output: \<TAG TAG1="val1" TAG2="val2"\> 
+      * Output: \<TAG TAG1="val1" TAG2="val2"\>
       * @see XMLEscape
       */
     template <class T, class U>
-    void BeginObject(const Keyword& t, const Keyword& attr1, const T& val1, 
+    void BeginObject(const Keyword& t, const Keyword& attr1, const T& val1,
       const Keyword& attr2, const U& val2)
     {
       *m_fp << indentstring << t.stringStartElement()
@@ -3094,9 +3094,10 @@ class PythonExtensionBase : public PyObject
     virtual ~PythonExtensionBase()
     {
       if (PyObject::ob_refcnt > 1)
-        logger << "Warning: Deleting " << PyObject::ob_type->tp_name
-            << " object that is still referenced "
-            << (PyObject::ob_refcnt-1) << " times" << endl;
+        logger << "Warning: Deleting "
+          << (PyObject::ob_type->tp_name && PyObject::ob_type ? PyObject::ob_type->tp_name : "NULL")
+          << " object that is still referenced "
+          << (PyObject::ob_refcnt-1) << " times" << endl;
     }
 
     /** A function to force an object to be destroyed by the Python garbage
@@ -3202,7 +3203,7 @@ template<class T>
 class PythonExtension: public PythonExtensionBase, public NonCopyable
 {
   public:
-    /** Constructor.<br> 
+    /** Constructor.<br>
       * The Python metadata fields always need to be set correctly.
       */
     explicit PythonExtension()
@@ -4455,8 +4456,8 @@ class XMLInput : public NonCopyable,  private xercesc::DefaultHandler
       */
     bool getAbortOnDataError() const {return abortOnDataException;}
 
-    /** Specify a Python callback function that is for every object read 
-      * from the input stream. 
+    /** Specify a Python callback function that is for every object read
+      * from the input stream.
       */
     void setUserExit(PyObject* p) {userexit = p;}
 
@@ -5443,7 +5444,7 @@ template <class A, class B, class C> class Association
 
         /** Return the optional name of the association. */
         const string& getName() const {return name;}
-        
+
         /** Update the priority. */
         void setPriority(int i) {priority = i;}
 
@@ -5531,12 +5532,12 @@ class LicenseValidator : private Object
 
     /** Check a license file. */
     void valid();
-    
+
     /** Virtual functions we have to define... */
     static const MetaClass metadata;
     virtual size_t getSize() const {return 0;}
     virtual const MetaClass& getType() const {return metadata;}
-    
+
   public:
     /** Default constructor. */
     LicenseValidator() { resetReferenceCount(); valid(); };
@@ -5555,7 +5556,7 @@ class LicenseValidator : private Object
 };
 
 
-class Decryptor 
+class Decryptor
 {
   public:
     /** The public key used for decrypting and verifying signatures. */

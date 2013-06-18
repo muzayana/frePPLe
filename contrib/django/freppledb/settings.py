@@ -173,12 +173,12 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'freppledb.forecast',
+    'freppledb.quoting',
     'freppledb.input',
     'freppledb.output',
     'freppledb.execute',
     'freppledb.common',
-    'freppledb.forecast',
-    'freppledb.quoting',
     #'openerp',
 )
 

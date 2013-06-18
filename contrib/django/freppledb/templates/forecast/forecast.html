@@ -1,7 +1,7 @@
 {% extends "admin/base_site_gridpivot.html" %}
 {% load i18n %}
 
-{% block extrahead %}{{block.super}} 
+{% block extrahead %}{{block.super}}
 <script type="text/javascript" src="{{STATIC_URL}}js/flotr2.min.js"></script>
 {% endblock %}
 
@@ -26,69 +26,142 @@
 {% block crosses %}
 {% if args.0 %}$(function(){
   // Resize top graph
-  var h = $(window).height(); 
+  var h = $(window).height();
   $("#graph").width($(window).width()-55).height(h>800 || h<480 ? 400 : h-380);
-});{% endif %} 
+});{% endif %}
 
-function drawGraphs(jsondata) 
-{  
-  var cols = jQuery("#grid").jqGrid('getGridParam', 'colModel'); 
+function drawGraphs(jsondata)
+{
+  var cols = jQuery("#grid").jqGrid('getGridParam', 'colModel');
   var x_major = [];
   var x_minor = [];
   var first = true;
   var ticks = Math.ceil((cols.length-5)/20.0);
-  
+
   // Loop over all graph cells
-  $("#grid_frozen").find(".graph").each(function(index) 
+  $("#grid_frozen").find(".graph").each(function(index)
   {
     // Collect the graph data
-    var d1=[], d2=[], d3=[], d4=[], d5=[], d6=[], d7=[], d8=[];
+    var d1=[], d2=[], d3=[], d4=[], d5=[], d6=[], d7=[], d8=[], d9=[];
     var j = 0;
-    for (var i in cols) 
+    for (var i in cols)
     {
-       if ('startdate' in cols[i]) 
+       if ('startdate' in cols[i])
        {
-          if (first) 
+          if (first)
           {
             x_minor.push([j,cols[i]['name']]);
             if (j % ticks == 0) x_major.push([j,cols[i]['name']]);
-          } 
+          }
           var data = jsondata['rows'][index][cols[i]['name']];
           var load = data[3];
-          d1.push([j,data[1]]);
-          d2.push([j,data[2]]);
-          d3.push([j,data[3]]);
-          d4.push([j,data[4]]);
-          d5.push([j,data[5]]);
-          d6.push([j,data[6]]);
-          d7.push([j,data[7]]);
-          d8.push([j,data[8]]);
+          d1.push([j,data[0]]);
+          d2.push([j,data[1]]);
+          d3.push([j,data[2]]);
+          d4.push([j,data[3]]);
+          d5.push([j,data[4]]);
+          d6.push([j,data[5]]);
+          d7.push([j,data[6]]);
+          d8.push([j,data[7]]);
+          d9.push([j,data[8]]);
           j = j + 1;
-       }       
-    }                   
+       }
+    }
     first = false;
-     
-    // Draw the graph    
+
+    // Draw the graph
     Flotr.draw({% if args.0 %}$("#graph").get(0){% else %}this{% endif %},[
-      { data:d1, label:"{{_('total orders')|capfirst}}" },
-      { data:d2, label:"{{_('open orders')|capfirst}}" },
-      { data:d3, label:"{{_('forecast baseline')|capfirst}}" },
-      { data:d4, label:"{{_('forecast adjustment')|capfirst}}" },
-      { data:d5, label:"{{_('forecast total')|capfirst}}" },
-      { data:d6, label:"{{_('forecast net')|capfirst}}" },
-      { data:d7, label:"{{_('forecast consumed')|capfirst}}" },
-      { data:d8, label:"{{_('planned')|capfirst}}" }
+      { data:d1,
+        label:"{{_('total orders')|capfirst}}",
+        lines : {
+          fillOpacity: 1,
+          shadowSize : 0,
+          fill: false,
+          show : true
+          }
+      },
+      { data:d2,
+        label:"{{_('open orders')|capfirst}}",
+        bars : {
+          show : true,
+          fillOpacity: 1,
+          barWidth : 0.45,
+          lineWidth : 1,
+          shadowSize : 0,
+          }
+      },
+      {% if args.0 %}{ data:d3,
+        label:"{{_('forecast baseline')|capfirst}}",
+        lines : {
+          show : true,
+          stacked : false,
+          horizontal : false,
+          fillOpacity: 1,
+          barWidth : 0.9,
+          lineWidth : 1,
+          shadowSize : 0
+        }
+      },{% endif %}
+      { data:d4,
+        label:"{{_('forecast adjustment')|capfirst}}",
+        bars : {
+          show : true,
+          fillOpacity: 1,
+          barWidth : 0.45,
+          lineWidth : 1,
+          shadowSize : 0
+          }
+      },
+      { data:d5,
+        label:"{{_('forecast total')|capfirst}}",
+        lines : {
+          show : true,
+          stacked : false,
+          horizontal : false,
+          fillOpacity: 1,
+          barWidth : 0.9,
+          lineWidth : 1,
+          shadowSize : 0
+        }
+      },
+      { data:d6,
+        label:"{{_('forecast net')|capfirst}}",
+        lines : {
+          show : true,
+          stacked : false,
+          horizontal : false,
+          fillOpacity: 1,
+          barWidth : 0.9,
+          lineWidth : 1,
+          shadowSize : 0
+        }
+      },
+      { data:d7,
+        label:"{{_('forecast consumed')|capfirst}}",
+        lines : {
+          show : true,
+          stacked : false,
+          horizontal : false,
+          fillOpacity: 1,
+          barWidth : 0.9,
+          lineWidth : 1,
+          shadowSize : 0
+        }
+      },
+      { data:d8,
+        label:"{{_('planned')|capfirst}}",
+        lines : {
+          show : true,
+          stacked : false,
+          horizontal : false,
+          fillOpacity: 1,
+          barWidth : 0.9,
+          lineWidth : 1,
+          shadowSize : 0
+        }
+      }
       ], {
       HtmlText: false,
-      bars : {
-        show : true,
-        stacked : false,
-        horizontal : false,
-        fillOpacity: 1,
-        barWidth : 0.9,
-        lineWidth : 1,
-        shadowSize : 0
-      },
       {% if args.0 %}
       legend : {
         position: 'ne',
@@ -119,24 +192,24 @@ function drawGraphs(jsondata)
         },
       yaxis: {
         showLabels: false
-        },       
+        },
       {% endif %}
       mouse : {
         track : true,
         relative : true,
         trackFormatter: function(obj) {
-          return x_minor[Math.round(obj.x)][1] + "<br/>" + obj.y; // TODO not good JSON.stringify(obj); 
-          }        
+          return x_minor[Math.round(obj.x)][1] + "<br/>" + obj.y; // TODO not good JSON.stringify(obj);
+          }
         },
       colors: ['#F6BD0F','#2B95EC','#AFD8F8','#8BBA00','#FF0000'],
       parseFloat: false
-      });     
+      });
     });
 }
 
 function graph(cellvalue, options, rowdata) {
   return '<div class="graph" style="width:' + (5*numbuckets < 200 ? 5*numbuckets : 200) +'px; height:80px;"></div>';
-};  
+};
 
 function getDirtyData()
 {
@@ -145,12 +218,12 @@ function getDirtyData()
     var curCol = jQuery.jgrid.getCellIndex($(this).closest("td,th"));
     var curRow = $(this).closest("tr").attr('id');
     var colmodel = jQuery("#grid").jqGrid ('getGridParam', 'colModel')[curCol];
-    changes.push({'id': curRow, 'startdate': colmodel['startdate'], 'enddate': colmodel['enddate'], 'value': $(this).val()});    
-    });    
+    changes.push({'id': curRow, 'startdate': colmodel['startdate'], 'enddate': colmodel['enddate'], 'value': $(this).val()});
+    });
   return changes;
 }
-  
-function onChange(event) 
+
+function onChange(event)
 {
   $(event.target).addClass('dirty-cell');
   upload.select();
@@ -170,7 +243,10 @@ function crosses (cellvalue, options, rowdata) {
   else
     result += '0<br/>';
 {% if perms.forecast.change_forecastdemand %}
+  if (cellvalue[8] == 0)
   result += '<input type="text" class="smallpadding" value="' + Math.round(cellvalue[3]) + '" size="5" onchange="onChange(event)" onclick="$(this).select();"/><br/>';
+  else
+  result += Math.round(cellvalue[3]) + '<br/>';
 {% else %}
   result += Math.round(cellvalue[3]) + '<br/>';
 {% endif %}
@@ -183,11 +259,11 @@ function crosses (cellvalue, options, rowdata) {
   else
     result += '0.0<br/>';
   if (cellvalue[6] != 0.0)
-    result += Math.round(cellvalue[6]) + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail'></span><br/>";
+    result += Math.round(cellvalue[6]) + "<br/>";
   else
-    result += '0<br/>';  
+    result += '0<br/>';
   if (cellvalue[7] != 0.0)
-    result += Math.round(cellvalue[7]) + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail'></span><br/>";
+    result += Math.round(cellvalue[7]) + "<br/>";
   else
     result += '0<br/>';
   return result;
