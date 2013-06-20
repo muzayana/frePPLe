@@ -560,6 +560,12 @@ class Demand(AuditModel,HierarchyModel):
     ('closed',_('closed')),
     )
 
+  # Status
+  demandstatus = (
+    ('open',_('open')),
+    ('closed',_('closed')),
+    )
+
   # Database fields
   description = models.CharField(_('description'), max_length=settings.DESCRIPTIONSIZE, null=True, blank=True)
   category = models.CharField(_('category'), max_length=settings.CATEGORYSIZE, null=True, blank=True, db_index=True)

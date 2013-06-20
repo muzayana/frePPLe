@@ -26,7 +26,7 @@ all-local:
 	if test -f .libs/createkey$(EXEEXT); then cp .libs/createkey$(EXEEXT) ../bin; fi
 
 # Shared library
-pkglib_LTLIBRARIES = libfrepple.la
+lib_LTLIBRARIES = libfrepple.la
 libfrepple_la_SOURCES = dllmain.cpp tags.cpp
 libfrepple_la_LDFLAGS = -version-info @LIBRARY_VERSION@ -no-undefined
 if CYGWIN
