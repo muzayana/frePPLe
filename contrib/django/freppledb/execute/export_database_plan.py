@@ -23,7 +23,7 @@ to keep the code portable between different databases.
 from datetime import timedelta, datetime
 from time import time
 from threading import Thread
-import inspect, os
+import os
 
 from django.db import connections, transaction, DEFAULT_DB_ALIAS
 from django.conf import settings

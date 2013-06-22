@@ -2,7 +2,7 @@
 # Process this file with automake to produce Makefile.in
 #
 
-DEBIANFILES = changelog compat control copyright frepple*.install rules watch
+DEBIANFILES = changelog compat control copyright frepple*.install rules watch httpd.conf
 EXTRA_DIST = README.txt $(DEBIANFILES)
 
 clean-local:
