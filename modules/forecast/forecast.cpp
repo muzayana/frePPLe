@@ -36,8 +36,6 @@ int Forecast::initialize()
   // Initialize the Python class
   FreppleClass<Forecast,Demand>::getType().addMethod("setQuantity", Forecast::setPythonTotalQuantity, METH_VARARGS,
       "Update the total quantity in one or more buckets");
-  FreppleClass<Forecast,Demand>::getType().addMethod("timeseries", Forecast::timeseries, METH_VARARGS,
-      "Set the future based on the timeseries of historical data");
   return FreppleClass<Forecast,Demand>::initialize();
 }
 

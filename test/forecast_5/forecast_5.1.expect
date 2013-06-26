@@ -13,6 +13,10 @@
       forecast to be planned.
   </description>
 	<current>2009-01-01T00:00:00</current>
+	<solvers>
+		<solver name="forecasting" xsi:type="solver_forecast">
+		</solver>
+	</solvers>
 	<customers>
 		<customer name="customer">
 		</customer>

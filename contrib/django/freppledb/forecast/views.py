@@ -95,7 +95,8 @@ class OverviewReport(GridPivot):
     ('forecasttotal',{'title': _('forecast total')}),
     ('forecastnet',{'title': _('forecast net')}),
     ('forecastconsumed',{'title': _('forecast consumed')}),
-    ('planned',{'title': _('planned net forecast')}),
+    ('ordersplanned',{'title': _('planned orders')}),
+    ('forecastplanned',{'title': _('planned net forecast')}),
     ('past',{'visible':False}),
     )
 
@@ -154,54 +155,34 @@ class OverviewReport(GridPivot):
       currentdate = date.now()
 
     query = '''
-        select y.name as row1, y.item_id as row2, y.customer_id as row3,
-               y.bucket as col1, y.startdate as col2, y.enddate as col3,
-               min(y.orderstotal),
-               min(y.ordersopen),
-               min(y.forecastbaseline),
-               min(y.forecastadjustment),
-               min(y.forecasttotal),
-               min(y.forecastnet),
-               min(y.forecastconsumed),
-               coalesce(sum(out_demand.planquantity),0)
-        from (
-          select fcst.name as name, fcst.item_id as item_id, fcst.customer_id as customer_id,
-             d.bucket as bucket, d.startdate as startdate, d.enddate as enddate,
-             coalesce(sum(forecastplan.orderstotal),0) as orderstotal,
-             coalesce(sum(forecastplan.ordersopen),0) as ordersopen,
-             coalesce(sum(forecastplan.forecastbaseline),0) as forecastbaseline,
-             coalesce(sum(forecastplan.forecastadjustment),0) as forecastadjustment,
-             coalesce(sum(forecastplan.forecasttotal),0) as forecasttotal,
-             coalesce(sum(forecastplan.forecastnet),0) as forecastnet,
-             coalesce(sum(forecastplan.forecastconsumed),0) as forecastconsumed
-          from (%s) fcst
-          -- Multiply with buckets
-          cross join (
-             select name as bucket, startdate, enddate
-             from common_bucketdetail
-             where bucket_id = '%s' and enddate > '%s' and startdate < '%s'
-             ) d
-          -- Forecast plan
-          left join forecastplan
-          on fcst.name = forecastplan.forecast_id
-          and forecastplan.startdate >= d.startdate
-          and forecastplan.startdate < d.enddate
-          -- Grouping
-          group by fcst.name, fcst.item_id, fcst.customer_id,
-                 d.bucket, d.startdate, d.enddate
-        ) y
-        -- Planned quantity
-        left join out_demand
-        on out_demand.demand like y.name || ' - %%%%'
-        and y.startdate <= out_demand.plandate
-        and y.enddate > out_demand.plandate
-        and out_demand.plandate >= '%s'
-        and out_demand.plandate < '%s'
-        -- Ordering and grouping
-        group by y.name, y.item_id, y.customer_id,
-           y.bucket, y.startdate, y.enddate
-        order by %s, y.startdate
-        ''' % (basesql,bucket,startdate,enddate,startdate,enddate,sortsql)
+        select fcst.name as row1, fcst.item_id as row2, fcst.customer_id as row3,
+           d.bucket as col1, d.startdate as col2, d.enddate as col3,
+           coalesce(sum(forecastplan.orderstotal),0) as orderstotal,
+           coalesce(sum(forecastplan.ordersopen),0) as ordersopen,
+           coalesce(sum(forecastplan.forecastbaseline),0) as forecastbaseline,
+           coalesce(sum(forecastplan.forecastadjustment),0) as forecastadjustment,
+           coalesce(sum(forecastplan.forecasttotal),0) as forecasttotal,
+           coalesce(sum(forecastplan.forecastnet),0) as forecastnet,
+           coalesce(sum(forecastplan.forecastconsumed),0) as forecastconsumed,
+           coalesce(sum(forecastplan.ordersplanned),0) as ordersplanned,
+           coalesce(sum(forecastplan.forecastplanned),0) as forecastplanned
+        from (%s) fcst
+        -- Multiply with buckets
+        cross join (
+           select name as bucket, startdate, enddate
+           from common_bucketdetail
+           where bucket_id = '%s' and enddate > '%s' and startdate < '%s'
+           ) d
+        -- Forecast plan
+        left join forecastplan
+        on fcst.name = forecastplan.forecast_id
+        and forecastplan.startdate >= d.startdate
+        and forecastplan.startdate < d.enddate
+        -- Grouping
+        group by fcst.name, fcst.item_id, fcst.customer_id,
+               d.bucket, d.startdate, d.enddate
+        order by %s, d.startdate
+        ''' % (basesql,bucket,startdate,enddate,sortsql)
     cursor.execute(query, baseparams)
 
     # Build the python result
@@ -221,5 +202,6 @@ class OverviewReport(GridPivot):
         'forecasttotal': row[10],
         'forecastnet': row[11],
         'forecastconsumed': row[12],
-        'planned': row[13],
+        'ordersplanned': row[13],
+        'forecastplanned': row[14],
         }

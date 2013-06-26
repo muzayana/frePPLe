@@ -83,16 +83,25 @@ extern "C" PyObject* Forecast::setPythonTotalQuantity(PyObject *self, PyObject *
 }
 
 
-extern "C" PyObject* Forecast::timeseries(PyObject *self, PyObject *args)
+extern "C" PyObject* ForecastSolver::timeseries(PyObject *self, PyObject *args)
 {
   // Get the forecast model
-  Forecast* forecast = static_cast<Forecast*>(self);
+  ForecastSolver* solver = static_cast<ForecastSolver*>(self);
 
   // Parse the Python arguments
+  PyObject* fcst;
   PyObject* history;
   PyObject* buckets = NULL;
-  int ok = PyArg_ParseTuple(args, "O|O:timeseries", &history, &buckets);
+  int ok = PyArg_ParseTuple(args, "OO|O:timeseries", &fcst, &history, &buckets);
   if (!ok) return NULL;
+
+  // Verify the object type
+  PythonObject pyfcst(fcst); 
+  if (!pyfcst.check(Forecast::metadata))
+  {
+    PyErr_SetString(PythonDataException, "first argument must be of type forecast");
+    return NULL;
+  }
 
   // Verify we can iterate over the arguments
   PyObject *historyiterator = PyObject_GetIter(history);
@@ -136,8 +145,8 @@ extern "C" PyObject* Forecast::timeseries(PyObject *self, PyObject *args)
   try
   {
     // Generate the forecast
-    forecast->generateFutureValues
-    (data, historycount, bucketdata, bucketcount, true);
+    static_cast<Forecast*>(fcst)->generateFutureValues
+      (data, historycount, bucketdata, bucketcount, solver->getLogLevel()>0);
   }
   catch (...)
   {

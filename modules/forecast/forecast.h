@@ -561,8 +561,10 @@ class Forecast : public Demand
         /** Trend smoothing constant. */
         double beta;
 
-        /** Seasonality smoothing constant. */
-        double gamma;
+        /** Seasonality smoothing constant.<br>
+          * The default value is 0.05.
+          */
+        static double gamma;
 
         /** Default initial alfa value.<br>
           * The default value is 0.2.
@@ -593,21 +595,6 @@ class Forecast : public Demand
           * The default value is 1.
           **/
         static double max_beta;
-
-        /** Default initial gamma value.<br>
-          * The default value is 0.05.
-          */
-        static double initial_gamma;
-
-        /** Lower limit on the gamma parameter.<br>
-          * The default value is 0.05.
-          **/
-        static double min_gamma;
-
-        /** Upper limit on the gamma parameter.<br>
-          * The default value is 1.
-          **/
-        static double max_gamma;
 
         /** Used to dampen a trend in the future. */
         static double dampenTrend;
@@ -640,7 +627,7 @@ class Forecast : public Demand
         /** Smoothed result - seasonal component.<br>
           * Used to carry results between the evaluation and applying of the forecast.
           */
-        double* S_i;
+        double S_i[24];
 
         /** Remember where in the cycle we are. */
         unsigned int cycleindex;
@@ -651,19 +638,10 @@ class Forecast : public Demand
           */
         void detectCycle(const double[], unsigned int);
 
-        /** Compute the determinant of a 3x3 matrix. */
-        inline double determinant(const double a, const double b, const double c,
-            const double d, const double e, const double f,
-            const double g, const double h, const double i)
-        { return a * e * i + b * f * g + c * d * h - a * f * h - b * d * i - c * e * g; }
-
       public:
         /** Constructor. */
-        Seasonal(double a = initial_alfa, double b = initial_beta, double g = initial_gamma)
-          : alfa(a), beta(b), gamma(g), period(0), L_i(0), T_i(0), S_i(NULL) {}
-
-        /** Destructor. */
-        ~Seasonal() {if (period) delete S_i;}
+        Seasonal(double a = initial_alfa, double b = initial_beta)
+          : alfa(a), beta(b), period(0), L_i(0), T_i(0) {}
 
         /** Forecast evaluation. */
         double generateForecast(Forecast* fcst, const double history[],
@@ -683,8 +661,8 @@ class Forecast : public Demand
         /** Update the maximum period that can be detected. */
         static void setMaxPeriod(int x)
         {
-          if (x <= 1) throw DataException(
-              "Parameter Seasonal.maxPeriod must be greater than 1");
+          if (x <= 1 || x >24) throw DataException(
+              "Parameter Seasonal.maxPeriod must be between 1 and 24");
           max_period = x;
         }
 
@@ -736,30 +714,14 @@ class Forecast : public Demand
           max_beta = x;
         }
 
-        /** Update the initial value for the alfa parameter.<br>
+        /** Update the value for the gamma parameter.<br>
           * The default value is 0.05. <br>
           */
-        static void setInitialGamma(double x)
+        static void setGamma(double x)
         {
           if (x<0 || x>1.0) throw DataException(
-              "Parameter Seasonal.initialGamma must be between 0 and 1");
-          initial_gamma = x;
-        }
-
-        /** Update the minimum value for the alfa parameter. */
-        static void setMinGamma(double x)
-        {
-          if (x<0 || x>1.0) throw DataException(
-              "Parameter Seasonal.minGamma must be between 0 and 1");
-          min_gamma = x;
-        }
-
-        /** Update the maximum value for the alfa parameter. */
-        static void setMaxGamma(double x)
-        {
-          if (x<0 || x>1.0) throw DataException(
-              "Parameter Seasonal.maxGamma must be between 0 and 1");
-          max_gamma = x;
+              "Parameter Seasonal.gamma must be between 0 and 1");
+          gamma = x;
         }
 
         /** Update the dampening factor for the trend. */
@@ -1040,7 +1002,6 @@ class Forecast : public Demand
 
     virtual PyObject* getattro(const Attribute&);
     virtual int setattro(const Attribute&, const PythonObject&);
-    static PyObject* timeseries(PyObject *, PyObject *);
 
   private:
     /** Initializion of a forecast.<br>
@@ -1273,6 +1234,9 @@ class ForecastSolver : public Solver
     void writeElement(XMLOutput*, const Keyword&, mode=DEFAULT) const;
     static int initialize();
 
+    /** Generates a baseline forecast. */
+    static PyObject* timeseries(PyObject *, PyObject *);
+
     /** Callback function, used for netting orders against the forecast. */
     bool callback(Demand* l, const Signal a);
 
@@ -1299,6 +1263,41 @@ class ForecastSolver : public Solver
 
     /** Used for sorting demands during netting. */
     typedef multiset < Demand*, sorter > sortedDemandList;
+
+  public:
+    static const Keyword tag_DueAtEndOfBucket;
+    static const Keyword tag_Net_CustomerThenItemHierarchy;
+    static const Keyword tag_Net_MatchUsingDeliveryOperation;
+    static const Keyword tag_Net_NetEarly;
+    static const Keyword tag_Net_NetLate;
+    static const Keyword tag_Iterations;
+    static const Keyword tag_SmapeAlfa;
+    static const Keyword tag_Skip;
+    static const Keyword tag_MovingAverage_order;
+    static const Keyword tag_SingleExponential_initialAlfa;
+    static const Keyword tag_SingleExponential_minAlfa;
+    static const Keyword tag_SingleExponential_maxAlfa;
+    static const Keyword tag_DoubleExponential_initialAlfa;
+    static const Keyword tag_DoubleExponential_minAlfa;
+    static const Keyword tag_DoubleExponential_maxAlfa;
+    static const Keyword tag_DoubleExponential_initialGamma;
+    static const Keyword tag_DoubleExponential_minGamma;
+    static const Keyword tag_DoubleExponential_maxGamma;
+    static const Keyword tag_DoubleExponential_dampenTrend;
+    static const Keyword tag_Seasonal_initialAlfa;
+    static const Keyword tag_Seasonal_minAlfa;
+    static const Keyword tag_Seasonal_maxAlfa;
+    static const Keyword tag_Seasonal_initialBeta;
+    static const Keyword tag_Seasonal_minBeta;
+    static const Keyword tag_Seasonal_maxBeta;
+    static const Keyword tag_Seasonal_gamma;
+    static const Keyword tag_Seasonal_dampenTrend;
+    static const Keyword tag_Seasonal_minPeriod;
+    static const Keyword tag_Seasonal_maxPeriod;
+    static const Keyword tag_Croston_initialAlfa;
+    static const Keyword tag_Croston_minAlfa;
+    static const Keyword tag_Croston_maxAlfa;
+    static const Keyword tag_Croston_minIntermittence;
 };
 
 }   // End namespace

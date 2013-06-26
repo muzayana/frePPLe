@@ -463,9 +463,7 @@ double Forecast::Seasonal::max_alfa = 1.0;
 double Forecast::Seasonal::initial_beta = 0.2;
 double Forecast::Seasonal::min_beta = 0.2;
 double Forecast::Seasonal::max_beta = 1.0;
-double Forecast::Seasonal::initial_gamma = 0.3;
-double Forecast::Seasonal::min_gamma = 0.05;
-double Forecast::Seasonal::max_gamma = 1.0;
+double Forecast::Seasonal::gamma = 0.05;
 
 
 void Forecast::Seasonal::detectCycle(const double history[], unsigned int count)
@@ -519,11 +517,33 @@ double Forecast::Seasonal::generateForecast
   if (!period) return DBL_MAX;
 
   // Define variables
-  double error = 0.0, error_smape = 0.0, delta_alfa, delta_beta, delta_gamma;
-  double sum11, sum12, sum13, sum14, sum22, sum23, sum24, sum33, sum34;
+  double error = 0.0, error_smape = 0.0, determinant, delta_alfa, delta_beta;
+  double forecast_i, d_forecast_d_alfa, d_forecast_d_beta;
+  double d_L_d_alfa, d_L_d_beta;
+  double d_T_d_alfa, d_T_d_beta;
+  double d_S_d_alfa[24], d_S_d_beta[24];
+  double d_L_d_alfa_prev, d_L_d_beta_prev;
+  double d_T_d_alfa_prev, d_T_d_beta_prev; 
+  double d_S_d_alfa_prev, d_S_d_beta_prev; 
+  double sum11, sum12, sum13, sum22, sum23;
   double best_error = DBL_MAX, best_smape = 0, best_alfa = initial_alfa,
-         best_beta = initial_beta, best_gamma = initial_gamma;
-  S_i = new double[period];
+         best_beta = initial_beta;
+
+  // Compute initialization values for the timeseries and seasonal index.
+  // L_i = average over first cycle
+  // T_i = average delta measured in second cycle
+  // S_i[index] = actual divided by average in first cycle
+  double L_i_initial = 0.0;
+  for (unsigned long i = 0; i < period; ++i)
+    L_i_initial += history[i];
+  L_i_initial /= period;
+  double T_i_initial = 0.0;
+  for (unsigned long i = 0; i < period; ++i)
+  {
+    T_i_initial += history[i+period] - history[i];
+    S_i[i] = history[i] / L_i;
+  }
+  T_i_initial /= period * period;
 
   // Iterations
   double L_i_prev;
@@ -531,30 +551,24 @@ double Forecast::Seasonal::generateForecast
   for (; iteration <= Forecast::getForecastIterations(); ++iteration)
   {
     // Initialize variables
-    error = error_smape = sum11 = sum12 = sum13 = sum14 = 0.0;
-    sum22 = sum23 = sum24 = sum33 = sum34 = 0.0;
-
-    // Initialize the iteration
-    // L_i = average over first cycle
-    // T_i = average delta measured in second cycle
-    // S_i[index] = actual divided by average in first cycle
-    L_i = 0.0;
-    for (unsigned long i = 0; i < period; ++i)
-      L_i += history[i];
-    L_i /= period;
-    T_i = 0.0;
+    error = error_smape = sum11 = sum12 = sum13 = sum22 = sum23 = 0.0;
+    d_L_d_alfa = d_L_d_beta = 0.0;
+    d_T_d_alfa = d_T_d_beta = 0.0;
+    L_i = L_i_initial;
+    T_i = T_i_initial;
     for (unsigned long i = 0; i < period; ++i)
     {
-      T_i += history[i+period] - history[i];
       S_i[i] = history[i] / L_i;
+      d_S_d_alfa[i] = 0.0;
+      d_S_d_beta[i] = 0.0;
     }
-    T_i /= period * period;
 
     // Calculate the forecast and forecast error.
     // We also compute the sums required for the Marquardt optimization.
     cycleindex = 0;
     for (unsigned long i = period; i <= count; ++i)
     {
+      // Base calculations
       L_i_prev = L_i;
       if (S_i[cycleindex] > ROUNDING_ERROR)
         L_i = alfa * history[i-1] / S_i[cycleindex] + (1 - alfa) * (L_i + T_i);
@@ -563,6 +577,37 @@ double Forecast::Seasonal::generateForecast
       T_i = beta * (L_i - L_i_prev) + (1 - beta) * T_i;
       S_i[cycleindex] = gamma * history[i-1] / L_i + (1 - gamma) * S_i[cycleindex];
       if (i == count) break;
+      // Calculations for the delta of the parameters
+      d_L_d_alfa_prev = d_L_d_alfa;
+      d_L_d_beta_prev = d_L_d_beta;
+      d_T_d_alfa_prev = d_T_d_alfa;
+      d_T_d_beta_prev = d_T_d_beta;
+      d_S_d_alfa_prev = d_S_d_alfa[cycleindex];
+      d_S_d_beta_prev = d_S_d_beta[cycleindex];
+      d_L_d_alfa = history[i-1] / S_i[cycleindex] 
+         - alfa * history[i-1] / S_i[cycleindex] /  S_i[cycleindex] * d_S_d_alfa_prev
+         - (L_i + T_i) 
+         + (1 - alfa) * (d_L_d_alfa_prev + d_T_d_alfa_prev);
+      d_L_d_beta = - alfa * history[i-1] / S_i[cycleindex] /  S_i[cycleindex] * d_S_d_beta_prev
+        + (1 - alfa) * (d_L_d_beta_prev + d_T_d_beta_prev);
+      d_S_d_alfa[cycleindex] = - gamma * history[i-1] / L_i / L_i * d_L_d_alfa_prev
+        + (1 - gamma) * d_S_d_alfa_prev;
+      d_S_d_beta[cycleindex] = - gamma * history[i-1] / L_i / L_i * d_L_d_beta_prev
+        + (1 - gamma) * d_S_d_beta_prev;
+      d_T_d_alfa = beta * (d_L_d_alfa - d_L_d_alfa_prev)
+        + (1 - beta) * d_T_d_alfa_prev;
+      d_T_d_beta = (L_i - L_i_prev)
+        + beta * (d_L_d_beta - d_L_d_beta_prev)
+        - T_i
+        + (1 - beta) * d_T_d_beta_prev;
+      d_forecast_d_alfa = (d_L_d_alfa + d_T_d_alfa) * S_i[cycleindex] + (L_i + T_i) * d_S_d_alfa[cycleindex];
+      d_forecast_d_beta = (d_L_d_beta + d_T_d_beta) * S_i[cycleindex] + (L_i + T_i) * d_S_d_beta[cycleindex];
+      forecast_i = (L_i + T_i) * S_i[cycleindex];
+      sum11 += weight[i] * d_forecast_d_alfa * d_forecast_d_alfa;
+      sum12 += weight[i] * d_forecast_d_alfa * d_forecast_d_beta;
+      sum22 += weight[i] * d_forecast_d_beta * d_forecast_d_beta;
+      sum13 += weight[i] * d_forecast_d_alfa * (history[i] - forecast_i);
+      sum23 += weight[i] * d_forecast_d_beta * (history[i] - forecast_i);
       if (i >= fcst->getForecastSkip()) // Don't measure during the warmup period
       {
         double fcst = (L_i + T_i) * S_i[cycleindex];
@@ -581,52 +626,35 @@ double Forecast::Seasonal::generateForecast
       best_smape = error_smape;
       best_alfa = alfa;
       best_beta = beta;
-      best_gamma = gamma;
     }
-    break; // @todo no iterations yet to tune the seasonal parameters
 
     // Add Levenberg - Marquardt damping factor
     sum11 += error / iteration;
     sum22 += error / iteration;
-    sum33 += error / iteration;
 
-    // Calculate a delta for the alfa, beta and gamma parameters.
-    // We're using Cramer's rule to solve a set of linear equations.
-    double det = determinant(sum11, sum12, sum13,
-        sum12, sum22, sum23,
-        sum13, sum23, sum33);
-    if (fabs(det) < ROUNDING_ERROR)
+    // Calculate a delta for the alfa and gamma parameters
+    determinant = sum11 * sum22 - sum12 * sum12;
+    if (fabs(determinant) < ROUNDING_ERROR)
     {
       // Almost singular matrix. Try without the damping factor.
       sum11 -= error / iteration;
       sum22 -= error / iteration;
-      sum33 -= error / iteration;
-      det = determinant(sum11, sum12, sum13,
-          sum12, sum22, sum23,
-          sum13, sum23, sum33);
-      if (fabs(det) < ROUNDING_ERROR)
+      determinant = sum11 * sum22 - sum12 * sum12;
+      if (fabs(determinant) < ROUNDING_ERROR)
         // Still singular - stop iterations here
         break;
     }
-    delta_alfa = determinant(sum14, sum12, sum13,
-        sum24, sum22, sum23,
-        sum34, sum23, sum33) / det;
-    delta_beta = determinant(sum11, sum14, sum13,
-        sum12, sum24, sum23,
-        sum13, sum34, sum33) / det;
-    delta_gamma = determinant(sum11, sum12, sum14,
-        sum12, sum22, sum24,
-        sum13, sum23, sum34) / det;
+    delta_alfa = (sum13 * sum22 - sum23 * sum12) / determinant;
+    delta_beta = (sum23 * sum11 - sum13 * sum12) / determinant;
 
     // Stop when we are close enough and have tried hard enough
-    if (fabs(delta_alfa) + fabs(delta_beta) + fabs(delta_gamma) < 3 * ACCURACY
+    if ((fabs(delta_alfa) + fabs(delta_beta)) < 3 * ACCURACY
         && iteration > 3)
       break;
 
     // New values for the next iteration
     alfa += delta_alfa;
-    alfa += delta_beta;
-    gamma += delta_gamma;
+    beta += delta_beta;
 
     // Limit the parameters in their allowed range.
     if (alfa > max_alfa)
@@ -637,18 +665,14 @@ double Forecast::Seasonal::generateForecast
       beta = max_beta;
     else if (beta < min_beta)
       beta = min_beta;
-    if (gamma > max_gamma)
-      gamma = max_gamma;
-    else if (gamma < min_gamma)
-      gamma = min_gamma;
 
     // Verify repeated running with any parameters at the boundary
-    if (gamma == min_gamma || gamma == max_gamma ||
-        beta == min_beta || beta == max_beta ||
-        alfa == min_alfa || alfa == max_alfa)
+    if ((beta == min_beta || beta == max_beta)
+        && (alfa == min_alfa || alfa == max_alfa))
     {
       if (boundarytested++ > 5) break;
     }
+    logger << "   abg: " << error << "      " << alfa << "  " << beta << "   " << gamma << "  ***  " << delta_alfa << " - " << delta_beta  << endl;
   }
 
   if (period > fcst->getForecastSkip())
@@ -657,14 +681,11 @@ double Forecast::Seasonal::generateForecast
     // value that can be compared with the other forecast methods.
     best_smape *= (count - fcst->getForecastSkip()) / (count - period);
 
-  // Keep the best result
-
   // Echo the result
   if (debug)
     logger << (fcst ? fcst->getName() : "") << ": seasonal : "
         << "alfa " << best_alfa
         << ", beta " << best_beta
-        << ", gamma " << best_gamma
         << ", smape " << best_smape
         << ", " << iteration << " iterations"
         << ", period " << period

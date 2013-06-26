@@ -25,6 +25,8 @@ int ForecastSolver::initialize()
       Object::createString<ForecastSolver>);
 
   // Initialize the Python class
+  FreppleClass<ForecastSolver,Solver>::getType().addMethod("timeseries", ForecastSolver::timeseries, METH_VARARGS,
+      "Set the future based on the timeseries of historical data");
   return FreppleClass<ForecastSolver,Solver>::initialize();
 }
 

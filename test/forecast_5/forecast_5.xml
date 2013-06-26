@@ -41,11 +41,12 @@ theitem = frepple.item(name="item")
 thecustomer = frepple.customer(name="customer")
 thecalendar = frepple.calendar(name="planningbuckets")
 thebuckets = [ i.start for i in thecalendar.buckets ]
+solver = frepple.solver_forecast(name="forecasting", Net_CustomerThenItemHierarchy=True)
 
 def testcase(fcstname, series):
   print series
   fcst = frepple.demand_forecast(name=fcstname, item=theitem, customer=thecustomer, calendar=thecalendar)
-  fcst.timeseries(series, thebuckets)
+  solver.timeseries(fcst, series, thebuckets)
 
 print "\nCase 1: A simple constant demand"
 testcase("flat demand",[100,100,100,100,100,100,100,100,100,100,100,100,100])

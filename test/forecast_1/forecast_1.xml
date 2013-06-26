@@ -261,7 +261,8 @@
   </demands>
 
 <?python
-frepple.solver_forecast(name="Netting orders from forecast",loglevel=2).solve()
+frepple.solver_forecast(name="Netting orders from forecast",loglevel=2, 
+  Net_CustomerThenItemHierarchy=True, Net_MatchUsingDeliveryOperation=False).solve()
 frepple.saveXMLfile("output.1.xml")
 ?>
 
