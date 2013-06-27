@@ -133,6 +133,13 @@ class Parameter(AuditModel):
     verbose_name = _('parameter')
     verbose_name_plural = _('parameters')
 
+  @staticmethod
+  def getValue(key, database = DEFAULT_DB_ALIAS, default = None):
+    try: 
+      return Parameter.objects.using(database).get(pk=key).value
+    except:
+      return default
+
     
 class User(AbstractUser):
   csvOutputType = (
