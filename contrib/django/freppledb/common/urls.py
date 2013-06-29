@@ -31,6 +31,6 @@ urlpatterns = patterns('',
   (r'^admin/common/bucket/$', freppledb.common.views.BucketList.as_view()),
   (r'^admin/common/bucketdetail/$', freppledb.common.views.BucketDetailList.as_view()),
   (r'^admin/common/parameter/$', freppledb.common.views.ParameterList.as_view()),
-  (r'^comments/([^/]+)/([^/]+)/([^/]+)/$', freppledb.common.views.Comments),
+  (r'^comments/([^/]+)/([^/]+)/(.+)/$', freppledb.common.views.Comments),
   (r'^admin/common/comment/$', freppledb.common.views.CommentList.as_view()),
 )
