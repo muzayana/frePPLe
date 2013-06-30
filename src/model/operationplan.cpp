@@ -904,7 +904,8 @@ DECLARE_EXPORT void OperationPlan::writeElement(XMLOutput *o, const Keyword& tag
     return;
   }
 
-  if (m != NOHEADER)
+  // Write the head
+  if (m != NOHEAD && m != NOHEADTAIL)
     o->BeginObject(tag, Tags::tag_id, id, Tags::tag_operation, XMLEscape(oper->getName()));
 
   // The demand reference is only valid for delivery operationplans,
@@ -928,7 +929,8 @@ DECLARE_EXPORT void OperationPlan::writeElement(XMLOutput *o, const Keyword& tag
     o->EndObject(Tags::tag_flowplans);
   }
 
-  o->EndObject(tag);
+  // Write the tail
+  if (m != NOHEADTAIL && m != NOTAIL) o->EndObject(tag);
 }
 
 

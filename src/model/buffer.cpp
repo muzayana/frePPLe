@@ -204,7 +204,8 @@ DECLARE_EXPORT void Buffer::writeElement(XMLOutput *o, const Keyword &tag, mode 
   }
 
   // Write the complete object
-  if (m!= NOHEADER) o->BeginObject(tag, Tags::tag_name, XMLEscape(getName()));
+  if (m != NOHEAD && m != NOHEADTAIL) 
+    o->BeginObject(tag, Tags::tag_name, XMLEscape(getName()));
 
   // Write own fields
   HasDescription::writeElement(o, tag);
@@ -249,7 +250,7 @@ DECLARE_EXPORT void Buffer::writeElement(XMLOutput *o, const Keyword &tag, mode 
   }
 
   // Ending tag
-  o->EndObject(tag);
+  if (m != NOHEADTAIL && m != NOTAIL) o->EndObject(tag);
 }
 
 
@@ -679,11 +680,11 @@ DECLARE_EXPORT void BufferInfinite::writeElement
   }
 
   // Write the complete object
-  if (m != NOHEADER) o->BeginObject
+  if (m != NOHEAD && m != NOHEADTAIL) o->BeginObject
     (tag, Tags::tag_name, XMLEscape(getName()), Tags::tag_type, getType().type);
 
   // Write the fields and an ending tag
-  Buffer::writeElement(o, tag, NOHEADER);
+  Buffer::writeElement(o, tag, NOHEAD);
 }
 
 
@@ -723,8 +724,11 @@ DECLARE_EXPORT void BufferProcure::writeElement(XMLOutput *o, const Keyword &tag
   }
 
   // Write the complete object
-  if (m != NOHEADER) o->BeginObject
+  if (m != NOHEAD && m != NOHEADTAIL) o->BeginObject
     (tag, Tags::tag_name, XMLEscape(getName()), Tags::tag_type, getType().type);
+
+  // Write the standard buffer fields
+  Buffer::writeElement(o, tag, NOHEADTAIL);
 
   // Write the extra fields
   if (leadtime) o->writeElement(Tags::tag_leadtime, leadtime);
@@ -737,8 +741,8 @@ DECLARE_EXPORT void BufferProcure::writeElement(XMLOutput *o, const Keyword &tag
   if (getMinimumInventory()) o->writeElement(Tags::tag_mininventory, getMinimumInventory());
   if (getMaximumInventory()) o->writeElement(Tags::tag_maxinventory, getMaximumInventory());
 
-  // Write the fields and an ending tag
-  Buffer::writeElement(o, tag, NOHEADER);
+  // Write the tail
+  if (m != NOHEADTAIL && m != NOTAIL) o->EndObject(tag);
 }
 
 
