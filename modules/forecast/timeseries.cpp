@@ -211,6 +211,7 @@ double Forecast::SingleExponential::generateForecast
       f_i = (history[0] + history[1] + history[2]) / 3;
       if (outliers == 1)
       {
+        // TODO this logic isn't the right concept?
         double t = 0.0;
         if (history[0] > f_i + Forecast::Forecast_maxDeviation * standarddeviation)
           t += f_i + Forecast::Forecast_maxDeviation * standarddeviation;
@@ -243,6 +244,7 @@ double Forecast::SingleExponential::generateForecast
         history_i = history[i];
         df_dalfa_i = history_i_min_1 - f_i + (1 - alfa) * df_dalfa_i;
         f_i = history_i_min_1 * alfa + (1 - alfa) * f_i;
+        if (i == count) break;
         if (outliers == 0)
         {
           // Scan outliers by computing the standard deviation
@@ -259,7 +261,6 @@ double Forecast::SingleExponential::generateForecast
           else if (history_i < f_i - Forecast::Forecast_maxDeviation * standarddeviation)
             history_i = f_i - Forecast::Forecast_maxDeviation * standarddeviation;
         }
-        if (i == count) break;
         sum_12 += df_dalfa_i * (history_i - f_i) * weight[i];
         sum_11 += df_dalfa_i * df_dalfa_i * weight[i];
         if (i >= fcst->getForecastSkip())
@@ -277,7 +278,6 @@ double Forecast::SingleExponential::generateForecast
         maxdeviation /= standarddeviation;
         // Don't repeat if there are no outliers
         if (maxdeviation < Forecast::Forecast_maxDeviation) break;
-        else logger << "detecting SE outlier! " << maxdeviation<< endl;
       }
     } // End loop: 'scan' or 'filter' mode for outliers
 
@@ -385,53 +385,125 @@ double Forecast::DoubleExponential::generateForecast
          sum11, sum12, sum22, sum13, sum23;
   double best_error = DBL_MAX, best_smape = 0, best_alfa = initial_alfa,
          best_gamma = initial_gamma, best_constant_i = 0.0, best_trend_i = 0.0;
+  double best_standarddeviation = 0.0;
 
   // Iterations
   unsigned int iteration = 1, boundarytested = 0;
   for (; iteration <= Forecast::getForecastIterations(); ++iteration)
   {
-    // Initialize variables
-    error = error_smape = sum11 = sum12 = sum22 = sum13 = sum23 = 0.0;
-    d_constant_d_alfa = d_constant_d_gamma = d_trend_d_alfa = d_trend_d_gamma = 0.0;
-    d_forecast_d_alfa = d_forecast_d_gamma = 0.0;
-
-    // Initialize the iteration
-    constant_i = (history[0] + history[1] + history[2]) / 3;
-    trend_i = (history[3] - history[0]) / 3;
-
-    // Calculate the forecast and forecast error.
-    // We also compute the sums required for the Marquardt optimization.
-    for (unsigned long i = 1; i <= count; ++i)
+    // Loop over the outliers 'scan'/0 and 'filter'/1 modes
+    double standarddeviation = 0.0;
+    double maxdeviation = 0.0;
+    for (short outliers = 0; outliers<=1; outliers++)
     {
-      constant_i_prev = constant_i;
-      trend_i_prev = trend_i;
-      constant_i = history[i-1] * alfa + (1 - alfa) * (constant_i_prev + trend_i_prev);
-      trend_i = gamma * (constant_i - constant_i_prev) + (1 - gamma) * trend_i_prev;
-      if (i == count) break;
-      d_constant_d_gamma_prev = d_constant_d_gamma;
-      d_constant_d_alfa_prev = d_constant_d_alfa;
-      d_constant_d_alfa = history[i-1] - constant_i_prev - trend_i_prev
-          + (1 - alfa) * d_forecast_d_alfa;
-      d_constant_d_gamma = (1 - alfa) * d_forecast_d_gamma;
-      d_trend_d_alfa = gamma * (d_constant_d_alfa - d_constant_d_alfa_prev)
-          + (1 - gamma) * d_trend_d_alfa;
-      d_trend_d_gamma = constant_i - constant_i_prev - trend_i_prev
-          + gamma * (d_constant_d_gamma - d_constant_d_gamma_prev)
-          + (1 - gamma) * d_trend_d_gamma;
-      d_forecast_d_alfa = d_constant_d_alfa + d_trend_d_alfa;
-      d_forecast_d_gamma = d_constant_d_gamma + d_trend_d_gamma;
-      sum11 += weight[i] * d_forecast_d_alfa * d_forecast_d_alfa;
-      sum12 += weight[i] * d_forecast_d_alfa * d_forecast_d_gamma;
-      sum22 += weight[i] * d_forecast_d_gamma * d_forecast_d_gamma;
-      sum13 += weight[i] * d_forecast_d_alfa * (history[i] - constant_i - trend_i);
-      sum23 += weight[i] * d_forecast_d_gamma * (history[i] - constant_i - trend_i);
-      if (i >= fcst->getForecastSkip()) // Don't measure during the warmup period
+
+      // Initialize variables
+      error = error_smape = sum11 = sum12 = sum22 = sum13 = sum23 = 0.0;
+      d_constant_d_alfa = d_constant_d_gamma = d_trend_d_alfa = d_trend_d_gamma = 0.0;
+      d_forecast_d_alfa = d_forecast_d_gamma = 0.0;
+
+      // Initialize the iteration
+      constant_i = (history[0] + history[1] + history[2]) / 3;
+      trend_i = (history[3] - history[0]) / 3;
+      if (outliers == 1)
       {
-        error += (constant_i + trend_i - history[i]) * (constant_i + trend_i - history[i]) * weight[i];
-        if (constant_i + trend_i + history[i] > ROUNDING_ERROR)
-          error_smape += fabs(constant_i + trend_i - history[i]) / (constant_i + trend_i + history[i]) * weight[i];
+        // TODO this logic isn't the right concept?
+        double t1 = 0.0;
+        if (history[0] > constant_i + Forecast::Forecast_maxDeviation * standarddeviation)
+          t1 = constant_i + Forecast::Forecast_maxDeviation * standarddeviation;
+        else if (history[0] < constant_i - Forecast::Forecast_maxDeviation * standarddeviation)
+          t1 = constant_i - Forecast::Forecast_maxDeviation * standarddeviation;
+        else
+          t1 = history[0];
+        double t2 = - t1;
+        if (history[1] > constant_i + trend_i + Forecast::Forecast_maxDeviation * standarddeviation)
+          t1 += constant_i + trend_i + Forecast::Forecast_maxDeviation * standarddeviation;
+        else if (history[1] < constant_i + trend_i - Forecast::Forecast_maxDeviation * standarddeviation)
+          t1 += constant_i + trend_i - Forecast::Forecast_maxDeviation * standarddeviation;
+        else
+          t1 += history[1];
+        if (history[2] > constant_i + 2 * trend_i + Forecast::Forecast_maxDeviation * standarddeviation)
+        {
+          t1 += constant_i + 2 * trend_i + Forecast::Forecast_maxDeviation * standarddeviation;
+          t2 += constant_i + 2 * trend_i + Forecast::Forecast_maxDeviation * standarddeviation;
+        }
+        else if (history[2] < constant_i + 2 * trend_i - Forecast::Forecast_maxDeviation * standarddeviation)
+        {
+          t1 += constant_i + 2 * trend_i - Forecast::Forecast_maxDeviation * standarddeviation;
+          t2 += constant_i + 2 * trend_i - Forecast::Forecast_maxDeviation * standarddeviation;
+        }
+        else
+        {
+          t1 += history[2];
+          t2 += history[2];
+        }
+        constant_i = t1 / 3;
+        trend_i = t2 / 3;
       }
-    }
+
+      // Calculate the forecast and forecast error.
+      // We also compute the sums required for the Marquardt optimization.
+      double history_i = history[0];
+      double history_i_min_1 = history[0];
+      for (unsigned long i = 1; i <= count; ++i)
+      {
+        history_i_min_1 = history_i;
+        history_i = history[i];
+        constant_i_prev = constant_i;
+        trend_i_prev = trend_i;
+        constant_i = history_i_min_1 * alfa + (1 - alfa) * (constant_i_prev + trend_i_prev);
+        trend_i = gamma * (constant_i - constant_i_prev) + (1 - gamma) * trend_i_prev;
+        if (i == count) break;
+        if (outliers == 0)
+        {
+          // Scan outliers by computing the standard deviation
+          // and keeping track of the difference between actuals and forecast
+          standarddeviation += (constant_i + trend_i - history[i]) * (constant_i + trend_i - history[i]);
+          if (fabs(constant_i + trend_i - history[i]) > maxdeviation)
+            maxdeviation = fabs(constant_i + trend_i - history[i]);
+        }
+        else
+        {
+          // Clean outliers from history
+          if (history_i > constant_i + trend_i + Forecast::Forecast_maxDeviation * standarddeviation)
+            history_i = constant_i + trend_i + Forecast::Forecast_maxDeviation * standarddeviation;
+          else if (history_i < constant_i + trend_i - Forecast::Forecast_maxDeviation * standarddeviation)
+            history_i = constant_i + trend_i - Forecast::Forecast_maxDeviation * standarddeviation;
+        }
+        d_constant_d_gamma_prev = d_constant_d_gamma;
+        d_constant_d_alfa_prev = d_constant_d_alfa;
+        d_constant_d_alfa = history_i_min_1 - constant_i_prev - trend_i_prev
+            + (1 - alfa) * d_forecast_d_alfa;
+        d_constant_d_gamma = (1 - alfa) * d_forecast_d_gamma;
+        d_trend_d_alfa = gamma * (d_constant_d_alfa - d_constant_d_alfa_prev)
+            + (1 - gamma) * d_trend_d_alfa;
+        d_trend_d_gamma = constant_i - constant_i_prev - trend_i_prev
+            + gamma * (d_constant_d_gamma - d_constant_d_gamma_prev)
+            + (1 - gamma) * d_trend_d_gamma;
+        d_forecast_d_alfa = d_constant_d_alfa + d_trend_d_alfa;
+        d_forecast_d_gamma = d_constant_d_gamma + d_trend_d_gamma;
+        sum11 += weight[i] * d_forecast_d_alfa * d_forecast_d_alfa;
+        sum12 += weight[i] * d_forecast_d_alfa * d_forecast_d_gamma;
+        sum22 += weight[i] * d_forecast_d_gamma * d_forecast_d_gamma;
+        sum13 += weight[i] * d_forecast_d_alfa * (history_i - constant_i - trend_i);
+        sum23 += weight[i] * d_forecast_d_gamma * (history_i_min_1 - constant_i - trend_i);
+        if (i >= fcst->getForecastSkip()) // Don't measure during the warmup period
+        {
+          error += (constant_i + trend_i - history_i) * (constant_i + trend_i - history_i) * weight[i];
+          if (constant_i + trend_i + history_i > ROUNDING_ERROR)
+            error_smape += fabs(constant_i + trend_i - history_i) / (constant_i + trend_i + history_i) * weight[i];
+        }
+      }
+
+      // Check outliers
+      if (outliers == 0)
+      {
+        standarddeviation = sqrt(standarddeviation / (count-1));
+        maxdeviation /= standarddeviation;
+        // Don't repeat if there are no outliers
+        if (maxdeviation < Forecast::Forecast_maxDeviation) break;
+      }
+    } // End loop: 'scan' or 'filter' mode for outliers
 
     // Better than earlier iterations?
     if (error < best_error)
@@ -442,6 +514,7 @@ double Forecast::DoubleExponential::generateForecast
       best_gamma = gamma;
       best_constant_i = constant_i;
       best_trend_i = trend_i;
+      best_standarddeviation = standarddeviation;
     }
 
     // Add Levenberg - Marquardt damping factor
@@ -513,7 +586,8 @@ double Forecast::DoubleExponential::generateForecast
         << ", " << iteration << " iterations"
         << ", constant " << constant_i
         << ", trend " << trend_i
-        << ", forecast " << (trend_i + constant_i) << endl;
+        << ", forecast " << (trend_i + constant_i)
+        << ", standard deviation " << best_standarddeviation << endl;
   return best_smape;
 }
 
@@ -612,7 +686,7 @@ double Forecast::Seasonal::generateForecast
   double d_S_d_alfa_prev, d_S_d_beta_prev;
   double sum11, sum12, sum13, sum22, sum23;
   double best_error = DBL_MAX, best_smape = 0, best_alfa = initial_alfa,
-         best_beta = initial_beta;
+         best_beta = initial_beta, best_standarddeviation = 0.0;
   double best_S_i[24], best_L_i, best_T_i;
 
   // Compute initialization values for the timeseries and seasonal index.
@@ -799,7 +873,8 @@ double Forecast::Seasonal::generateForecast
         << ", period " << period
         << ", constant " << L_i
         << ", trend " << T_i
-        << ", forecast " << (L_i + T_i) * S_i[count % period]
+        << ", forecast " << ((L_i + T_i) * S_i[count % period])
+        << ", standard deviation " << best_standarddeviation
         << endl;
   return best_smape;
 }
@@ -843,43 +918,79 @@ double Forecast::Croston::generateForecast
   double error = 0.0, error_smape = 0.0, best_smape = 0.0, delta;
   double q_i, p_i, d_p_i, d_q_i, d_f_i, sum1, sum2;
   double best_error = DBL_MAX, best_alfa = initial_alfa, best_f_i = 0.0;
+  double best_standarddeviation = 0.0;
   unsigned int between_demands = 1;
   for (; iteration <= Forecast::getForecastIterations(); ++iteration)
   {
-    // Initialize variables
-    error_smape = error = d_p_i = d_q_i = d_f_i = sum1 = sum2 = 0.0;
-
-    // Initialize the iteration.
-    q_i = f_i = history[0];
-    p_i = 0;
-
-    // Calculate the forecast and forecast error.
-    // We also compute the sums required for the Marquardt optimization.
-    for (unsigned long i = 1; i <= count; ++i)
+    // Loop over the outliers 'scan'/0 and 'filter'/1 modes
+    double standarddeviation = 0.0;
+    double maxdeviation = 0.0;
+    for (short outliers = 0; outliers<=1; outliers++)
     {
-      if (history[i-1])
+      // Initialize variables
+      error_smape = error = d_p_i = d_q_i = d_f_i = sum1 = sum2 = 0.0;
+
+      // Initialize the iteration.
+      q_i = f_i = history[0];
+      p_i = 0;
+
+      // Calculate the forecast and forecast error.
+      // We also compute the sums required for the Marquardt optimization.
+      double history_i = history[0];
+      double history_i_min_1 = history[0];
+      for (unsigned long i = 1; i <= count; ++i)
       {
-        // Non-zero bucket
-        d_p_i = between_demands - p_i + (1 - alfa) * d_p_i;
-        d_q_i = history[i-1] - q_i + (1 - alfa) * d_q_i;
-        q_i = alfa * history[i-1] + (1 - alfa) * q_i;
-        p_i = alfa * between_demands + (1 - alfa) * q_i;
-        f_i = q_i / p_i;
-        d_f_i = (d_q_i - d_p_i * q_i / p_i) / p_i;
-        between_demands = 1;
+        history_i_min_1 = history_i;
+        history_i = history[i];
+        if (history_i_min_1)
+        {
+          // Non-zero bucket
+          d_p_i = between_demands - p_i + (1 - alfa) * d_p_i;
+          d_q_i = history_i_min_1 - q_i + (1 - alfa) * d_q_i;
+          q_i = alfa * history_i_min_1 + (1 - alfa) * q_i;
+          p_i = alfa * between_demands + (1 - alfa) * q_i;
+          f_i = q_i / p_i;
+          d_f_i = (d_q_i - d_p_i * q_i / p_i) / p_i;
+          between_demands = 1;
+        }
+        else
+          ++between_demands;
+        if (i == count) break;
+        if (outliers == 0)
+        {
+          // Scan outliers by computing the standard deviation
+          // and keeping track of the difference between actuals and forecast
+          standarddeviation += (f_i - history[i]) * (f_i - history[i]);
+          if (history[i] - f_i  > maxdeviation)
+            maxdeviation = f_i - history[i];
+        }
+        else
+        {
+          // Clean outliers from history. Note that there is no correction to the lower
+          // limit for the Croston method (because 0's are normal and accepted).
+          if (history_i > f_i + Forecast::Forecast_maxDeviation * standarddeviation)
+            history_i = f_i + Forecast::Forecast_maxDeviation * standarddeviation;
+        }
+        sum1 += weight[i] * d_f_i * (history_i - f_i);
+        sum2 += weight[i] * d_f_i * d_f_i;
+        if (i >= fcst->getForecastSkip() && p_i > 0)
+        {
+          error += (f_i - history_i) * (f_i - history_i) * weight[i];
+          if (f_i + history[i] > ROUNDING_ERROR)
+            error_smape += fabs(f_i - history_i) / (f_i + history_i) * weight[i];
+        }
       }
-      else
-        ++between_demands;
-      if (i == count) break;
-      sum1 += weight[i] * d_f_i * (history[i] - f_i);
-      sum2 += weight[i] * d_f_i * d_f_i;
-      if (i >= fcst->getForecastSkip() && p_i > 0)
+
+      // Check outliers
+      if (outliers == 0)
       {
-        error += (f_i - history[i]) * (f_i - history[i]) * weight[i];
-        if (f_i + history[i] > ROUNDING_ERROR)
-          error_smape += fabs(f_i - history[i]) / (f_i + history[i]) * weight[i];
+        standarddeviation = sqrt(standarddeviation / (count-1));
+        maxdeviation /= standarddeviation;
+        // Don't repeat if there are no outliers
+        if (maxdeviation < Forecast::Forecast_maxDeviation) break;
+        else logger << "detecting CR outlier! " << maxdeviation<< endl;
       }
-    }
+    } // End loop: 'scan' or 'filter' mode for outliers
 
     // Better than earlier iterations?
     if (error < best_error)
@@ -888,6 +999,7 @@ double Forecast::Croston::generateForecast
       best_smape = error_smape;
       best_alfa = alfa;
       best_f_i = f_i;
+      best_standarddeviation = standarddeviation;
     }
 
     // Add Levenberg - Marquardt damping factor
@@ -937,7 +1049,8 @@ double Forecast::Croston::generateForecast
         << "alfa " << best_alfa
         << ", smape " << best_smape
         << ", " << iteration << " iterations"
-        << ", forecast " << f_i << endl;
+        << ", forecast " << f_i
+        << ", standard deviation " << best_standarddeviation << endl;
   return best_smape;
 }
 
