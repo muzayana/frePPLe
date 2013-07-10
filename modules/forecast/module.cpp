@@ -58,6 +58,7 @@ const Keyword ForecastSolver::tag_Croston_initialAlfa("Croston_initialAlfa");
 const Keyword ForecastSolver::tag_Croston_minAlfa("Croston_minAlfa");
 const Keyword ForecastSolver::tag_Croston_maxAlfa("Croston_maxAlfa");
 const Keyword ForecastSolver::tag_Croston_minIntermittence("Croston_minIntermittence");
+const Keyword ForecastSolver::tag_Outlier_maxDeviation("Outlier_maxDeviation");
 
 
 MODULE_EXPORT const char* initialize(const Environment::ParameterList& z)
@@ -125,6 +126,8 @@ int ForecastSolver::setattro(const Attribute& attr, const PythonObject& field)
     Forecast::setForecastSmapeAlfa(field.getDouble());
   else if (attr.isA(tag_Skip))
     Forecast::setForecastSkip(field.getUnsignedLong());
+  else if (attr.isA(tag_Outlier_maxDeviation))
+    Forecast::setForecastMaxDeviation(field.getDouble());
   // Moving average forecast method
   else if (attr.isA(tag_MovingAverage_order))
     Forecast::MovingAverage::setDefaultOrder(field.getUnsignedLong());
@@ -180,6 +183,7 @@ int ForecastSolver::setattro(const Attribute& attr, const PythonObject& field)
     Forecast::Croston::setMaxAlfa(field.getDouble());
   else if (attr.isA(tag_Croston_minIntermittence))
     Forecast::Croston::setMinIntermittence(field.getDouble());
+  // Default fields
   else
     return Solver::setattro(attr, field);
   return 0;  // OK

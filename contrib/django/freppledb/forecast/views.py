@@ -152,7 +152,7 @@ class OverviewReport(GridPivot):
       d = cursor.fetchone()
       currentdate = datetime.strptime(d[0], "%Y-%m-%d %H:%M:%S").date()
     except:
-      currentdate = date.now()
+      currentdate = datetime.now().date()
 
     query = '''
         select fcst.name as row1, fcst.item_id as row2, fcst.customer_id as row3,

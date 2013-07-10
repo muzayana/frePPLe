@@ -290,13 +290,13 @@ class Forecast : public Demand
       public:
         /** Forecast evaluation. */
         virtual double generateForecast
-        (Forecast*, const double[], unsigned int, const double[], bool) = 0;
+        (Forecast*, const double[], unsigned int, const double[], ForecastSolver*) = 0;
 
         /** This method is called when this forecast method has generated the
           * lowest forecast error and now needs to set the forecast values.
           */
         virtual void applyForecast
-        (Forecast*, const Date[], unsigned int, bool) = 0;
+        (Forecast*, const Date[], unsigned int) = 0;
 
         /** The name of the method. */
         virtual string getName() = 0;
@@ -330,10 +330,10 @@ class Forecast : public Demand
 
         /** Forecast evaluation. */
         double generateForecast(Forecast* fcst, const double history[],
-            unsigned int count, const double weight[], bool debug);
+            unsigned int count, const double weight[], ForecastSolver*);
 
         /** Forecast value updating. */
-        void applyForecast(Forecast*, const Date[], unsigned int, bool);
+        void applyForecast(Forecast*, const Date[], unsigned int);
 
         /** Update the initial value for the alfa parameter. */
         static void setDefaultOrder(int x)
@@ -383,10 +383,10 @@ class Forecast : public Demand
 
         /** Forecast evaluation. */
         double generateForecast(Forecast* fcst, const double history[],
-            unsigned int count, const double weight[], bool debug);
+            unsigned int count, const double weight[], ForecastSolver*);
 
         /** Forecast value updating. */
-        void applyForecast(Forecast*, const Date[], unsigned int, bool);
+        void applyForecast(Forecast*, const Date[], unsigned int);
 
         /** Update the initial value for the alfa parameter. */
         static void setInitialAlfa(double x)
@@ -479,10 +479,10 @@ class Forecast : public Demand
 
         /** Forecast evaluation. */
         double generateForecast(Forecast* fcst, const double history[],
-            unsigned int count, const double weight[], bool debug);
+            unsigned int count, const double weight[], ForecastSolver*);
 
         /** Forecast value updating. */
-        void applyForecast(Forecast*, const Date[], unsigned int, bool);
+        void applyForecast(Forecast*, const Date[], unsigned int);
 
         /** Update the initial value for the alfa parameter. */
         static void setInitialAlfa(double x)
@@ -645,10 +645,10 @@ class Forecast : public Demand
 
         /** Forecast evaluation. */
         double generateForecast(Forecast* fcst, const double history[],
-            unsigned int count, const double weight[], bool debug);
+            unsigned int count, const double weight[], ForecastSolver*);
 
         /** Forecast value updating. */
-        void applyForecast(Forecast*, const Date[], unsigned int, bool);
+        void applyForecast(Forecast*, const Date[], unsigned int);
 
         /** Update the minimum period that can be detected. */
         static void setMinPeriod(int x)
@@ -775,10 +775,10 @@ class Forecast : public Demand
 
         /** Forecast evaluation. */
         double generateForecast(Forecast* fcst, const double history[],
-            unsigned int count, const double weight[], bool debug);
+            unsigned int count, const double weight[], ForecastSolver*);
 
         /** Forecast value updating. */
-        void applyForecast(Forecast*, const Date[], unsigned int, bool);
+        void applyForecast(Forecast*, const Date[], unsigned int);
 
         /** Update the initial value for the alfa parameter. */
         static void setInitialAlfa(double x)
@@ -897,7 +897,7 @@ class Forecast : public Demand
       * each of the time buckets passed.
       */
     void generateFutureValues
-    (const double[], unsigned int, const Date[], unsigned int, bool=false);
+    (const double[], unsigned int, const Date[], unsigned int, ForecastSolver*);
 
     /** Updates the due date of the demand. Lower numbers indicate a
       * higher priority level. The method also updates the priority
@@ -990,6 +990,22 @@ class Forecast : public Demand
       */
     static unsigned int getForecastSkip() {return Forecast_Skip;}
 
+    /** Update the multiplier of the standard deviation used for detecting
+      * outlier demands.
+      */
+    static void setForecastMaxDeviation(double d)
+    {
+      if (d<=0) throw DataException(
+          "Parameter Forecast.maxDeviation must be bigger than 0"
+        );
+      Forecast_maxDeviation = d;
+    }
+
+    /** Return the multiplier of the standard deviation used for detecting
+      * outlier demands.
+      */
+    static double getForecastMaxDeviation() {return Forecast_maxDeviation;}
+
     /** A data type to maintain a dictionary of all forecasts. */
     typedef multimap < pair<const Item*, const Customer*>, Forecast* > MapOfForecasts;
 
@@ -1064,6 +1080,9 @@ class Forecast : public Demand
       * The default value is 5.
       */
     static unsigned long Forecast_Skip;
+
+    /** Threshold for detecting outliers. */
+    static double Forecast_maxDeviation;
 };
 
 
@@ -1298,6 +1317,7 @@ class ForecastSolver : public Solver
     static const Keyword tag_Croston_minAlfa;
     static const Keyword tag_Croston_maxAlfa;
     static const Keyword tag_Croston_minIntermittence;
+    static const Keyword tag_Outlier_maxDeviation;
 };
 
 }   // End namespace
