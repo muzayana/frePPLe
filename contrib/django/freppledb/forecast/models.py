@@ -211,7 +211,7 @@ class ForecastPlan(models.Model):
   itemlvl = models.PositiveIntegerField(null=True, editable=False, blank=True)
   startdate = models.DateTimeField(_('start date'), null=False, db_index=True)
   orderstotal = models.DecimalField(_('total orders'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
-  ordersadjustment = models.DecimalField(_('order adjustment'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
+  ordersadjustment = models.DecimalField(_('orders adjustment'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
   ordersopen = models.DecimalField(_('open orders'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
   ordersplanned = models.DecimalField(_('planned orders'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
   forecastbaseline = models.DecimalField(_('forecast baseline'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
@@ -226,6 +226,7 @@ class ForecastPlan(models.Model):
 
   class Meta:
     db_table = 'forecastplan'
+    index_together = [ ["forecast", "startdate"], ]
     ordering = ['id']
     verbose_name = _('forecast plan')
     verbose_name_plural = _('forecast plans')

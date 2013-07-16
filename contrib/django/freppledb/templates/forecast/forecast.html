@@ -42,7 +42,7 @@ function drawGraphs(jsondata)
   $("#grid_frozen").find(".graph").each(function(index)
   {
     // Collect the graph data
-    var d1=[], d2=[], d3=[]{% if args.0 %}, d4=[], d5=[], d6=[], d7=[], d8=[], d9=[]{% endif%};
+    var d0=[], d1=[], d3=[]{% if args.0 %}, d4=[], d5=[], d6=[], d7=[], d8=[], d9=[]{% endif%};
     var j = 0;
     for (var i in cols)
     {
@@ -54,16 +54,15 @@ function drawGraphs(jsondata)
             if (j % ticks == 0) x_major.push([j,cols[i]['name']]);
           }
           var data = jsondata['rows'][index][cols[i]['name']];
-          var load = data[3];
-          d1.push([j, (data[9] == 1) ? data[0] : null]);
-          d2.push([j,data[1]]);
-          d3.push([j, (data[9] == 1) ? null : data[2]]);
-          {% if args.0 %}d4.push([j,data[3]]);
-          d5.push([j,data[4]]);
-          d6.push([j,data[5]]);
-          d7.push([j,data[6]]);
-          d8.push([j,data[7]]);
-          d9.push([j,data[8]]);
+          d0.push([j, (data[10] == 1) ? data[0] : null]); // Total orders
+          d1.push([j, data[1]]);  // Open orders
+          d3.push([j, (data[11] == 1) ? data[3] : null]); // Baseline forecast
+          {% if args.0 %}d4.push([j,data[4]]);  // Forecast adjustment
+          d5.push([j,data[5]]);  // Forecast total
+          d6.push([j,data[6]]);  // Forecast net
+          d7.push([j,data[7]]);  // Forecast consumed
+          d8.push([j,data[8]]);  // Planned orders
+          d9.push([j,data[9]]);  // Planned forecast
           {% endif%}j = j + 1;
        }
     }
@@ -71,7 +70,7 @@ function drawGraphs(jsondata)
 
     // Draw the graph
     Flotr.draw({% if args.0 %}$("#graph").get(0){% else %}this{% endif %},[
-      { data:d1,
+      { data:d0,
         label:"{{_('total orders')|capfirst}}",
         lines : {
           fillOpacity: 1,
@@ -80,8 +79,15 @@ function drawGraphs(jsondata)
           show : true
           }
       },
-      { data:d2,
+      { data:d1,
         label:"{{_('open orders')|capfirst}}",
+        lines : {
+          fillOpacity: 1,
+          shadowSize : 0,
+          fill: false,
+          show : true
+          }
+        /*
         bars : {
           show : true,
           fillOpacity: 1,
@@ -89,6 +95,7 @@ function drawGraphs(jsondata)
           lineWidth : 1,
           shadowSize : 0,
           }
+        */
       },
       { data:d3,
         label:"{{_('forecast baseline')|capfirst}}",
@@ -219,7 +226,8 @@ function drawGraphs(jsondata)
     });
 }
 
-function graph(cellvalue, options, rowdata) {
+function graph(cellvalue, options, rowdata)
+{
   return '<div class="graph" style="width:' + (10*numbuckets < 200 ? 10*numbuckets : 200) +'px; height:160px;"></div>';
 };
 
@@ -230,7 +238,10 @@ function getDirtyData()
     var curCol = jQuery.jgrid.getCellIndex($(this).closest("td,th"));
     var curRow = $(this).closest("tr").attr('id');
     var colmodel = jQuery("#grid").jqGrid ('getGridParam', 'colModel')[curCol];
-    changes.push({'id': curRow, 'startdate': colmodel['startdate'], 'enddate': colmodel['enddate'], 'value': $(this).val()});
+    if ($(this).hasClass('adjhistory'))
+      changes.push({'id': curRow, 'startdate': colmodel['startdate'], 'enddate': colmodel['enddate'], 'adjHistory': $(this).val()});
+    else
+      changes.push({'id': curRow, 'startdate': colmodel['startdate'], 'enddate': colmodel['enddate'], 'adjForecast': $(this).val()});
     });
   return changes;
 }
@@ -241,47 +252,61 @@ function onChange(event)
   upload.select();
 }
 
-function crosses (cellvalue, options, rowdata) {
+function crosses (cellvalue, options, rowdata)
+{
+  // Total orders
   if (cellvalue[0] != 0.0)
     var result = Math.round(cellvalue[0]) + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail'></span><br/>";
   else
     var result = '0<br/>';
+  // Open orders
   if (cellvalue[1] != 0.0)
     result += Math.round(cellvalue[1]) + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail'></span><br/>";
   else
     result += '0<br/>';
-  if (cellvalue[2] != 0.0)
-    result += Math.round(cellvalue[2]) + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail'></span><br/>";
+  // Orders adjustment{% if perms.forecast.change_forecastdemand %}
+  if (cellvalue[10] == 1)
+    result += '<input type="text" class="smallpadding adjhistory" value="' + Math.round(cellvalue[2]) + '" size="5" onchange="onChange(event)" onclick="$(this).select();"/><br/>';
   else
-    result += '0<br/>';
-{% if perms.forecast.change_forecastdemand %}
-  if (cellvalue[9] == 0)
-  result += '<input type="text" class="smallpadding" value="' + Math.round(cellvalue[3]) + '" size="5" onchange="onChange(event)" onclick="$(this).select();"/><br/>';
+    result += '<br/>';
+  {% else %}
+  result += Math.round(cellvalue[2]) + '<br/>';{% endif %}
+  // Baseline forecast
+  if (cellvalue[11] == 1)
+    result += (Math.round(cellvalue[3]*10)/10) + '<br/>';
   else
-  result += Math.round(cellvalue[3]) + '<br/>';
-{% else %}
-  result += Math.round(cellvalue[3]) + '<br/>';
-{% endif %}
-  if (cellvalue[4] != 0.0)
-    result += Math.round(cellvalue[4]) + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail'></span><br/>";
+    result += '<br/>';
+  // Forecast adjustment{% if perms.forecast.change_forecastdemand %}
+  if (cellvalue[11] == 1)
+    result += '<input type="text" class="smallpadding adjforecast" value="' + (Math.round(cellvalue[4]*10)/10) + '" size="5" onchange="onChange(event)" onclick="$(this).select();"/><br/>';
   else
-    result += '0<br/>';
-  if (cellvalue[5] != 0.0)
-    result += Math.round(cellvalue[5]) + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail'></span><br/>";
+    result += '<br/>';
+  {% else %}
+  if (cellvalue[11] == 1)
+    result += (Math.round(cellvalue[4]*10)/10) + '<br/>';
   else
-    result += '0.0<br/>';
-  if (cellvalue[6] != 0.0)
-    result += Math.round(cellvalue[6]) + "<br/>";
+  result += '<br/>';{% endif %}
+  if (cellvalue[11] == 1)
+  {
+     // Forecast total
+     result += (Math.round(cellvalue[5]*10)/10) + "<br/>";
+     // Forecast net
+     result += (Math.round(cellvalue[6]*10)/10) + "<br/>";
+     // Forecast consumed
+     result += (Math.round(cellvalue[7]*10)/10) + "<br/>";
+     // Orders planned
+     if (cellvalue[8] != 0.0)
+       result += (Math.round(cellvalue[8]*10)/10) + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail'></span><br/>";
+     else
+       result += '0<br/>';
+     // Forecast planned
+     if (cellvalue[9] != 0.0)
+       result += (Math.round(cellvalue[9]*10)/10) + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail'></span><br/>";
+     else
+       result += '0<br/>';
+  }
   else
-    result += '0<br/>';
-  if (cellvalue[7] != 0.0)
-    result += Math.round(cellvalue[7]) + "<br/>";
-  else
-    result += '0<br/>';
-  if (cellvalue[8] != 0.0)
-    result += Math.round(cellvalue[8]) + "<br/>";
-  else
-    result += '0<br/>';
+     result += '<br/><br/><br/><br/><br/>';
   return result;
 };
 {% endblock %}

@@ -54,7 +54,7 @@ def aggregateDemand(cursor):
   transaction.commit(using=db)
   print 'Aggregate - reset records in %.2f seconds' % (time() - starttime)
 
-  # Create all active history pairs
+  # Create a temp table with the aggregated demand
   starttime = time()
   cursor.execute('''
      create temp table demand_history
@@ -79,6 +79,7 @@ def aggregateDemand(cursor):
   cursor.execute('''CREATE UNIQUE INDEX demand_history_idx ON demand_history (forecast, startdate)''')
   print 'Aggregate - temp table in %.2f seconds' % (time() - starttime)
 
+  # Create all active history pairs
   starttime = time()
   cursor.execute('''
     insert into forecastplan (
@@ -97,7 +98,7 @@ def aggregateDemand(cursor):
   )
   print 'Aggregate - init past records in %.2f seconds' % (time() - starttime)
 
-  # Create aggregate demand history
+  # Merge aggregate demand history into the forecastplan table
   starttime = time()
   cursor.execute('''update forecastplan
     set orderstotal = demand_history.orderstotal , ordersopen = demand_history.ordersopen
@@ -108,8 +109,9 @@ def aggregateDemand(cursor):
   transaction.commit(using=db)
   print 'Aggregate - update order records in %.2f seconds' % (time() - starttime)
 
-  # Initialize future buckets
+  # Initialize all buckets in the past and future
   starttime = time()
+  horizon_future = int(Parameter.getValue('Forecast.Horizon_future', db, 365))
   cursor.execute('''
     insert into forecastplan (
         forecast_id, customerlvl, itemlvl, startdate, orderstotal, ordersopen,
@@ -128,21 +130,41 @@ def aggregateDemand(cursor):
         on forecastplan.startdate = calendarbucket.startdate
         and forecastplan.forecast_id = forecast.name
       where forecastplan.forecast_id is null
-      group by forecast.name, customer.lft, item.lft, calendarbucket.startdate''' % (frepple.settings.current, frepple.settings.current + timedelta(days=365*2))
+      group by forecast.name, customer.lft, item.lft, calendarbucket.startdate
+    ''' % (frepple.settings.current, frepple.settings.current + timedelta(days=horizon_future))
   )
   print 'Aggregate - init future records in %.2f seconds' % (time() - starttime)
 
 
-def generateBaseline(solver_fcst, cursor):
+def generateBaseline(solver_fcst, cursor, db):
   data = []
   curfcst = None
-  cursor.execute('''select startdate
-     from common_bucketdetail
-     where bucket_id='month' and startdate >= '%s' and startdate < '%s'
-     ''' % (frepple.settings.current, frepple.settings.current + timedelta(days=365*2)))
-  thebuckets = [ i for i in cursor.fetchall() ]
+
+  # Build bucket lists
+  horizon_history = int(Parameter.getValue('Forecast.Horizon_history', db, 10000))
+  horizon_future = int(Parameter.getValue('Forecast.Horizon_future', db, 365))
+  thebuckets = {}
+  cursor.execute('''select calendarbucket.calendar_id, startdate
+     from calendarbucket
+     where calendarbucket.calendar_id in (select distinct forecast.calendar_id  from forecast)
+       and startdate >= '%s' and startdate < '%s'
+     order by calendarbucket.calendar_id, startdate
+     ''' % (frepple.settings.current, frepple.settings.current + timedelta(days=horizon_future)))
+  curname = None
+  curlist = []
+  for i, j in cursor.fetchall():
+    if i != curname:
+      if curname:
+        thebuckets[curname] = curlist
+        curlist = []
+      curname = i
+    curlist.append(j)
+  if curname:
+    thebuckets[curname] = curlist
+
+  # Read history data and generate forecast
   cursor.execute('''SELECT forecast.name, calendarbucket.startdate,
-     coalesce(forecastplan.orderstotal, 0) as r
+     coalesce(forecastplan.orderstotal, 0) + coalesce(forecastplan.ordersadjustment, 0) as r
      FROM forecast
      INNER JOIN calendarbucket
        ON calendarbucket.calendar_id = forecast.calendar_id
@@ -151,7 +173,7 @@ def generateBaseline(solver_fcst, cursor):
        AND calendarbucket.startdate = forecastplan.startdate
      WHERE calendarbucket.startdate >= '%s'
       AND calendarbucket.startdate < '%s'
-     ORDER BY forecast.name, calendarbucket.startdate''' % (frepple.settings.current - timedelta(days=365*3), frepple.settings.current))
+     ORDER BY forecast.name, calendarbucket.startdate''' % (frepple.settings.current - timedelta(days=horizon_history), frepple.settings.current))
   first = True
   for rec in cursor.fetchall():
     fcst = frepple.demand(name=rec[0])
@@ -159,8 +181,7 @@ def generateBaseline(solver_fcst, cursor):
       # First demand bucket of a new forecast
       if curfcst:
         # Generate the forecast
-        thebuckets = [ i.start for i in fcst.calendar.buckets if i.start >= frepple.settings.current and i.start < frepple.settings.current + timedelta(days=365*2) ]
-        solver_fcst.timeseries(curfcst, data, thebuckets)
+        solver_fcst.timeseries(curfcst, data, thebuckets[fcst.calendar.name])
       curfcst = fcst
       data = []
       first = True
@@ -169,8 +190,7 @@ def generateBaseline(solver_fcst, cursor):
       first = False
   if curfcst:
     # Generate the forecast
-    thebuckets = [ i.start for i in fcst.calendar.buckets if i.start >= frepple.settings.current and i.start < frepple.settings.current + timedelta(days=365*2) ]
-    solver_fcst.timeseries(curfcst, data, thebuckets)
+    solver_fcst.timeseries(curfcst, data, thebuckets[fcst.calendar.name])
 
 
 def exportForecast(cursor):
@@ -261,6 +281,7 @@ if __name__ == "__main__":
          or name like 'forecast.Croston_%%'
          or name like 'forecast.DoubleExponential_%%'
          or name like 'forecast.SingleExponential_%%'
+         or name = 'forecast.loglevel'
        ''')
     for key, value in cursor.fetchall():
       kw[key[9:]] = float(value)
@@ -277,7 +298,7 @@ if __name__ == "__main__":
     logProgress(50, db)
 
     print "\nStart generation of baseline forecast at", datetime.now().strftime("%H:%M:%S")
-    generateBaseline(solver_fcst, cursor)
+    generateBaseline(solver_fcst, cursor, db)
     logProgress(66, db)
 
     print "\nStart forecast netting at", datetime.now().strftime("%H:%M:%S")

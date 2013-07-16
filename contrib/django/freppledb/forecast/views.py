@@ -8,7 +8,8 @@
 # or in the form of compiled binaries.
 #
 
-from datetime import datetime, date
+from datetime import datetime
+from decimal import Decimal
 import json
 
 from django.db import connections, transaction
@@ -17,7 +18,7 @@ from django.utils.text import capfirst
 from django.utils.encoding import force_unicode
 from django.http import HttpResponse, HttpResponseForbidden
 
-from freppledb.forecast.models import Forecast, ForecastDemand
+from freppledb.forecast.models import Forecast, ForecastDemand, ForecastPlan
 from freppledb.common.db import python_date
 from freppledb.common.report import GridPivot, GridFieldText, GridFieldInteger, GridFieldDate
 from freppledb.common.report import GridReport, GridFieldBool, GridFieldLastModified
@@ -88,8 +89,9 @@ class OverviewReport(GridPivot):
     GridFieldText(None, width="(5*numbuckets<200 ? 5*numbuckets : 200)", extra='formatter:graph', editable=False),
     )
   crosses = (
-    ('orderstotal',{'title': _('total orders'), 'editable': lambda req: req.user.has_perm('input.change_forecastdemand'),}),
+    ('orderstotal',{'title': _('total orders')}),
     ('ordersopen',{'title': _('open orders')}),
+    ('ordersadjustment',{'title': _('orders adjustment'), 'editable': lambda req: req.user.has_perm('input.change_forecastdemand'),}),
     ('forecastbaseline',{'title': _('forecast baseline')}),
     ('forecastadjustment',{'title': _('forecast adjustment')}),
     ('forecasttotal',{'title': _('forecast total')}),
@@ -98,38 +100,8 @@ class OverviewReport(GridPivot):
     ('ordersplanned',{'title': _('planned orders')}),
     ('forecastplanned',{'title': _('planned net forecast')}),
     ('past',{'visible':False}),
+    ('future',{'visible':False}),
     )
-
-  @classmethod
-  def parseJSONupload(reportclass, request):
-    # Check permissions
-    if not request.user.has_perm('forecast.change_forecastdemand'):
-      return HttpResponseForbidden(_('Permission denied'))
-
-    # Loop over the data records
-    transaction.enter_transaction_management(using=request.database)
-    transaction.managed(True, using=request.database)
-    resp = HttpResponse()
-    ok = True
-    try:
-      for rec in json.JSONDecoder().decode(request.read()):
-        try:
-          # Find the forecast
-          start = datetime.strptime(rec['startdate'],'%Y-%m-%d')
-          end = datetime.strptime(rec['enddate'],'%Y-%m-%d')
-          fcst = Forecast.objects.using(request.database).get(name = rec['id'])
-          # Update the forecast
-          fcst.setTotal(start,end,rec['value'])
-        except Exception as e:
-          ok = False
-          resp.write(e)
-          resp.write('<br/>')
-    finally:
-      transaction.commit(using=request.database)
-      transaction.leave_transaction_management(using=request.database)
-    if ok: resp.write("OK")
-    resp.status_code = ok and 200 or 403
-    return resp
 
   @classmethod
   def extra_context(reportclass, request, *args, **kwargs):
@@ -159,6 +131,7 @@ class OverviewReport(GridPivot):
            d.bucket as col1, d.startdate as col2, d.enddate as col3,
            coalesce(sum(forecastplan.orderstotal),0) as orderstotal,
            coalesce(sum(forecastplan.ordersopen),0) as ordersopen,
+           coalesce(sum(forecastplan.ordersadjustment),0) as ordersadjustment,
            coalesce(sum(forecastplan.forecastbaseline),0) as forecastbaseline,
            coalesce(sum(forecastplan.forecastadjustment),0) as forecastadjustment,
            coalesce(sum(forecastplan.forecasttotal),0) as forecasttotal,
@@ -174,7 +147,7 @@ class OverviewReport(GridPivot):
            where bucket_id = '%s' and enddate > '%s' and startdate < '%s'
            ) d
         -- Forecast plan
-        left join forecastplan
+        left outer join forecastplan
         on fcst.name = forecastplan.forecast_id
         and forecastplan.startdate >= d.startdate
         and forecastplan.startdate < d.enddate
@@ -195,13 +168,90 @@ class OverviewReport(GridPivot):
         'startdate': python_date(row[4]),
         'enddate': python_date(row[5]),
         'past': python_date(row[4]) < currentdate and 1 or 0,
+        'future': python_date(row[5]) > currentdate and 1 or 0,
         'orderstotal': row[6],
         'ordersopen': row[7],
-        'forecastbaseline': row[8],
-        'forecastadjustment': row[9],
-        'forecasttotal': row[10],
-        'forecastnet': row[11],
-        'forecastconsumed': row[12],
-        'ordersplanned': row[13],
-        'forecastplanned': row[14],
+        'ordersadjustment': row[8],
+        'forecastbaseline': row[9],
+        'forecastadjustment': row[10],
+        'forecasttotal': row[11],
+        'forecastnet': row[12],
+        'forecastconsumed': row[13],
+        'ordersplanned': row[14],
+        'forecastplanned': row[15],
         }
+
+  @classmethod
+  def parseJSONupload(reportclass, request):
+    # Check permissions
+    if not request.user.has_perm('forecast.change_forecastdemand'):
+      return HttpResponseForbidden(_('Permission denied'))
+
+    # Loop over the data records
+    transaction.enter_transaction_management(using=request.database)
+    transaction.managed(True, using=request.database)
+    resp = HttpResponse()
+    ok = True
+    try:
+      for rec in json.JSONDecoder().decode(request.read()):
+        try:
+          # Find the forecastplan records that are affected
+          start = datetime.strptime(rec['startdate'],'%Y-%m-%d').date()
+          end = datetime.strptime(rec['enddate'],'%Y-%m-%d').date()
+          fcsts = [ i for i in ForecastPlan.objects.all().using(request.database).filter(forecast__name=rec['id'], startdate__gte=start, startdate__lt=end).only('ordersadjustment','forecastadjustment')]
+
+          # Which field to update
+          if 'adjHistory' in rec:
+            field = 'ordersadjustment'
+            value = rec['adjHistory']
+          elif 'adjForecast' in rec:
+            field = 'forecastadjustment'
+            value = rec['adjForecast']
+          else:
+            raise Exception('Posting invalid field')
+
+          # Sum up existing values
+          tot = Decimal(0.0)
+          cnt = 0
+          for i in fcsts:
+            tot += getattr(i,field)
+            cnt += 1
+
+          # Adjust forecastplan entries
+          if tot > 0:
+            # Existing non-zero records are proportionally scaled
+            factor = Decimal(value) / tot
+            for i in fcsts:
+              setattr(i,field, getattr(i,field) * factor)
+          elif cnt > 0:
+            # All entries are 0 and we initialize them to the average
+            eql = Decimal(value) / cnt
+            for i in fcsts:
+              setattr(i,field, eql)
+          else:
+            # Not a single active record exists, so we try to create
+            fcst = Forecast.objects.all().using(request.database).get(name=rec['id'])
+            fcstplan = [ ForecastPlan(forecast=fcst, startdate=j.startdate) for j in fcst.calendar.buckets.filter(startdate__gte=start, enddate__lte=end) ]
+            cnt = len(fcstplan)
+            if cnt > 0:
+              eql = Decimal(value) / cnt
+              for i in fcstplan:
+                setattr(i,field, eql)
+                i.save(using=request.database)
+            else:
+              raise Exception("can't create appropriate forecastplan entries")
+
+          # Store results
+          for i in fcsts:
+            i.save(using=request.database)
+
+        except Exception as e:
+          ok = False
+          resp.write(e)
+          resp.write('<br/>')
+    finally:
+      transaction.commit(using=request.database)
+      transaction.leave_transaction_management(using=request.database)
+    if ok: resp.write("OK")
+    resp.status_code = ok and 200 or 403
+    return resp

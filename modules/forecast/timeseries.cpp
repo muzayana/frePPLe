@@ -988,7 +988,6 @@ double Forecast::Croston::generateForecast
         maxdeviation /= standarddeviation;
         // Don't repeat if there are no outliers
         if (maxdeviation < Forecast::Forecast_maxDeviation) break;
-        else logger << "detecting CR outlier! " << maxdeviation<< endl;
       }
     } // End loop: 'scan' or 'filter' mode for outliers
 
