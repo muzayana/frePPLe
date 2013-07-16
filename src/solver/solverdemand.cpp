@@ -356,7 +356,7 @@ DECLARE_EXPORT void SolverMRP::scanExcess(CommandList* l)
       // Detect excess operationplans and undo them
       if (createcmd->getOperationPlan() && createcmd->getOperationPlan()->isExcess())
       {
-        if (getLogLevel())
+        if (getLogLevel()>1)
           logger << "Denying creation of redundant operationplan "
               << createcmd->getOperationPlan()->getOperation() << "  "
               << createcmd->getOperationPlan()->getDates() << "  "
