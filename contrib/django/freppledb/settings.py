@@ -365,6 +365,7 @@ for param in DATABASES.values():
     param['TEST_NAME'] = param['NAME']
     param['TEST_USER'] = 'test_%s' % param['USER']
     param['TEST_PASSWD'] = param['PASSWORD']
+    param['OPTIONS'] = {'threaded': True,}
   elif param['ENGINE'] == 'django.db.backends.postgresql_psycopg2':
     param['TEST_NAME'] = 'test_%s' % param['NAME']
   else:

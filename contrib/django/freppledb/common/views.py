@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 
 
 def handler404(request):
-  messages.add_message(request, messages.ERROR, 
+  messages.add_message(request, messages.ERROR,
      force_unicode(_('Page not found') + ": " + request.prefix + request.get_full_path())
      )
   return HttpResponseRedirect(request.prefix + "/admin/")
@@ -52,7 +52,7 @@ class PreferencesForm(forms.Form):
     required=False,
     initial=100,
     min_value=25,
-    help_text = _('Number of records to fetch in a single page from the server'),                            
+    help_text = _('Number of records to fetch in a single page from the server'),
     )
   theme = forms.ChoiceField(label = _('theme'),
     required=False,
@@ -75,10 +75,10 @@ def preferences(request):
         # Switch to the new theme and language immediately
         request.theme = newdata['theme']
         if newdata['language'] == 'auto':
-          newdata['language'] = translation.get_language_from_request(request)        
+          newdata['language'] = translation.get_language_from_request(request)
         if translation.get_language() != newdata['language']:
           translation.activate(newdata['language'])
-          request.LANGUAGE_CODE = translation.get_language()        
+          request.LANGUAGE_CODE = translation.get_language()
         messages.add_message(request, messages.INFO, force_unicode(_('Successfully updated preferences')))
       except Exception as e:
         logger.error("Failure updating preferences: %s" % e)
@@ -104,30 +104,29 @@ class HorizonForm(forms.Form):
   horizontype = forms.ChoiceField(choices=(("1","1"),("0","0")))
   horizonlength = forms.IntegerField(required=False, min_value=1)
   horizonunit = forms.ChoiceField(choices=(("day","day"),("week","week"),("month","month")))
-    
-  
+
+
 @login_required
 @csrf_protect
 def horizon(request):
   if request.method != 'POST':
-    raise Http404('Only post requests allowed')  
+    raise Http404('Only post requests allowed')
   form = HorizonForm(request.POST)
-  if not form.is_valid(): 
+  if not form.is_valid():
     raise Http404('Invalid form data')
-  try:      
-    request.user.horizonstart = form.cleaned_data['horizonstart'] 
+  try:
+    request.user.horizonstart = form.cleaned_data['horizonstart']
     request.user.horizonbuckets = form.cleaned_data['horizonbuckets']
-    request.user.horizonstart = form.cleaned_data['horizonstart'] 
+    request.user.horizonstart = form.cleaned_data['horizonstart']
     request.user.horizonend = form.cleaned_data['horizonend']
     request.user.horizontype = form.cleaned_data['horizontype'] == '1'
     request.user.horizonlength = form.cleaned_data['horizonlength']
     request.user.horizonunit = form.cleaned_data['horizonunit']
     request.user.save()
-    return HttpResponse(content="OK")     
+    return HttpResponse(content="OK")
   except Exception as e:
     logger.error("Error saving horizon settings: %s" % e)
-    raise Http404('Error saving horizon settings') 
-  
+    raise Http404('Error saving horizon settings')
   
 @login_required
 @csrf_protect
@@ -148,6 +147,26 @@ def settings(request):
     return HttpResponseServerError('Error saving report settings') 
  
 
+
+@login_required
+@csrf_protect
+def settings(request):
+  if request.method != 'POST' or not request.is_ajax():
+    raise Http404('Only ajax post requests allowed')
+  data = json.loads(request.body)
+  for key, value in data.items():
+    request.user.setPreference(key, value);
+  return HttpResponse(content="OK")
+  try:
+    data = json.loads(request.body)
+    for key, value in data.items():
+      request.user.setPreference(key, value);
+    return HttpResponse(content="OK")
+  except Exception as e:
+    logger.error("Error saving report settings: %s" % e)
+    return HttpResponseServerError('Error saving report settings')
+
+
 class UserList(GridReport):
   '''
   A list report to show users.
@@ -159,14 +178,14 @@ class UserList(GridReport):
   adminsite = 'admin'
   frozenColumns = 1
   multiselect = False
-  
+
   rows = (
-    GridFieldInteger('id', title=_('identifier'), key=True, formatter='user'),          
-    GridFieldText('username', title=_('username')),          
-    GridFieldText('email', title=_('E-mail'), formatter='email', width=200),          
-    GridFieldText('first_name', title=_('first_name')),          
-    GridFieldText('last_name', title=_('last name')),          
-    GridFieldBool('is_staff', title=_('staff status')),          
+    GridFieldInteger('id', title=_('identifier'), key=True, formatter='user'),
+    GridFieldText('username', title=_('username')),
+    GridFieldText('email', title=_('E-mail'), formatter='email', width=200),
+    GridFieldText('first_name', title=_('first_name')),
+    GridFieldText('last_name', title=_('last name')),
+    GridFieldBool('is_staff', title=_('staff status')),
     )
 
 
@@ -182,8 +201,8 @@ class GroupList(GridReport):
   frozenColumns = 0
   multiselect = False
   rows = (
-    GridFieldInteger('id', title=_('identifier'), key=True, formatter='group'),          
-    GridFieldText('name', title=_('name'), key=True, width=200),          
+    GridFieldInteger('id', title=_('identifier'), key=True, formatter='group'),
+    GridFieldText('name', title=_('name'), key=True, width=200),
     )
 
 
@@ -212,13 +231,13 @@ def Comments(request, app, model, object_id):
   try:
     modeltype = ContentType.objects.using(request.database).get(app_label=app, model=model)
     modeltype._state.db = request.database
-    modelinstance = modeltype.get_object_for_this_type(pk=object_id) 
+    modelinstance = modeltype.get_object_for_this_type(pk=object_id)
     comments = Comment.objects.using(request.database). \
       filter(content_type__pk = modeltype.id, object_pk = object_id). \
       order_by('-id')
   except:
-    raise Http404('Object not found')  
-  if request.method == 'POST':    
+    raise Http404('Object not found')
+  if request.method == 'POST':
     comment = request.POST['comment']
     if comment:
       request.user._state.db = request.database  # Need to lie a bit
@@ -228,16 +247,16 @@ def Comments(request, app, model, object_id):
            comment = comment
            ).save(using=request.database)
     return HttpResponseRedirect('%s/comments/%s/%s/%s/' % (request.prefix,app, model, object_id))
-  else:       
-    return render_to_response('common/comments.html', { 
+  else:
+    return render_to_response('common/comments.html', {
       'title': capfirst(force_unicode(modelinstance._meta.verbose_name) + " " + object_id),
       'model': model,
       'object_id': object_id,
       'active_tab': 'comments',
       'comments': comments
       },
-      context_instance=RequestContext(request))   
-   
+      context_instance=RequestContext(request))
+
 
 class CommentList(GridReport):
   '''
@@ -252,7 +271,7 @@ class CommentList(GridReport):
   editable = False
   multiselect = False
   frozenColumns = 0
-  
+
   rows = (
     GridFieldInteger('id', title=_('identifier'), key=True),
     GridFieldLastModified('lastmodified'),
@@ -260,7 +279,7 @@ class CommentList(GridReport):
     GridFieldText('type', title=_('type'), field_name='content_type__name', editable=False, align='center'),
     GridFieldText('object', title=_('object ID'), field_name='object_pk', editable=False, align='center', extra='formatter:objectfmt'),
     GridFieldText('comment', title=_('comment'), editable=False, align='center'),
-    )  
+    )
 
 
 class BucketList(GridReport):

@@ -101,9 +101,13 @@ rm -rf %{buildroot}
 %files -f %{name}.lang
 %defattr(-,root,root,-)
 %{_bindir}/frepple
+<<<<<<< HEAD
 %{_bindir}/manage.py
 %{_libdir}/libfrepple.so.0
 %{_libdir}/libfrepple.so.0.0.0
+=======
+%{_bindir}/frepplectl.py
+>>>>>>> dropbox/master
 %dir %{_libdir}/frepple
 %{_libdir}/frepple/mod_forecast.so
 %{_datadir}/frepple

@@ -32,19 +32,24 @@ def printWelcome(database = DEFAULT_DB_ALIAS):
       'PORT' in settings.DATABASES[database] and settings.DATABASES[database]['PORT'] or ''
       )
 
+task = None
 
 def logProgress(val, database = DEFAULT_DB_ALIAS):  
+  global task
   transaction.enter_transaction_management(managed=False, using=database)
   transaction.managed(False, using=database)
   try:
-    p = Parameter.objects.using(database).get_or_create(name="Plan executing")[0]
-    if p.value and "Canceling" in p.value:
-      print "Run canceled by the user.\n" 
-      p.value = 0
-      p.save(using=database)
-      sys.exit(2)
-    p.value = val
-    p.save(using=database)
+    if not task and 'FREPPLE_TASKID' in os.environ:
+      try: task = Task.objects.all().using(database).get(pk=os.environ['FREPPLE_TASKID'])
+      except: raise Exception("Task identifier not found")
+    if task:
+      if task.status == 'Canceling':
+        task.status = 'Cancelled'
+        task.save(using=database)
+        sys.exit(2)
+      else:
+        task.status = '%d%%' % val
+        task.save(using=database)
   finally:
     transaction.commit(using=database)
     transaction.leave_transaction_management(using=database)
