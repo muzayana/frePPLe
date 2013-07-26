@@ -20,7 +20,7 @@ from freppledb.common.db import python_date, sql_max
 from freppledb.common.report import GridReport, GridPivot, getBuckets
 from freppledb.common.report import GridFieldText, GridFieldNumber, GridFieldDateTime, GridFieldBool, GridFieldInteger
 
-  
+
 class OverviewReport(GridPivot):
   '''
   A report showing the loading of each resource.
@@ -44,11 +44,11 @@ class OverviewReport(GridPivot):
     ('utilization',{'title': _('utilization %'),}),
     )
 
-  @classmethod 
+  @classmethod
   def extra_context(reportclass, request, *args, **kwargs):
     if args and args[0]:
       return {
-        'units': reportclass.getUnits(request), 
+        'units': reportclass.getUnits(request),
         'title': capfirst(force_unicode(Resource._meta.verbose_name) + " " + args[0]),
         'post_title': ': ' + capfirst(force_unicode(_('plan'))),
         }
@@ -56,7 +56,7 @@ class OverviewReport(GridPivot):
       return {'units': reportclass.getUnits(request)}
 
   @classmethod
-  def getUnits(reportclass, request):    
+  def getUnits(reportclass, request):
     try:
       units = Parameter.objects.using(request.database).get(name="loading_time_units")
       if units.value == 'hours':
@@ -67,27 +67,27 @@ class OverviewReport(GridPivot):
         return (1.0 / 24.0, _('days'))
     except:
       return (1.0 / 24.0, _('days'))
-          
+
   @staticmethod
   def query(request, basequery, bucket, startdate, enddate, sortsql='1 asc'):
-    basesql, baseparams = basequery.query.get_compiler(basequery.db).as_sql(with_col_aliases=True)        
-        
+    basesql, baseparams = basequery.query.get_compiler(basequery.db).as_sql(with_col_aliases=True)
+
     # Get the time units
     units = OverviewReport.getUnits(request)
-        
+
     # Assure the item hierarchy is up to date
     Resource.rebuildHierarchy(database=basequery.db)
-    
+
     # Execute the query
     cursor = connections[request.database].cursor()
     query = '''
       select res.name as row1, res.location_id as row2,
              coalesce(max(plan_summary.avg_util),0) as avgutil,
-             d.bucket as col1, d.startdate as col2,                   
-             coalesce(sum(out_resourceplan.available),0) * %f as available, 
+             d.bucket as col1, d.startdate as col2,
+             coalesce(sum(out_resourceplan.available),0) * %f as available,
              coalesce(sum(out_resourceplan.unavailable),0) * %f as unavailable,
              coalesce(sum(out_resourceplan.load),0) * %f as loading,
-             coalesce(sum(out_resourceplan.setup),0) * %f as setup                   
+             coalesce(sum(out_resourceplan.setup),0) * %f as setup
       from (%s) res
       -- Multiply with buckets
       cross join (
@@ -107,9 +107,9 @@ class OverviewReport(GridPivot):
       and out_resourceplan.startdate < '%s'
       -- Average utilization info
       left join (
-                select 
-                  theresource, 
-                  ( coalesce(sum(out_resourceplan.load),0) + coalesce(sum(out_resourceplan.setup),0) ) 
+                select
+                  theresource,
+                  ( coalesce(sum(out_resourceplan.load),0) + coalesce(sum(out_resourceplan.setup),0) )
                    * 100.0 / coalesce(%s,1) as avg_util
                 from out_resourceplan
                 where out_resourceplan.startdate >= '%s'
@@ -119,16 +119,16 @@ class OverviewReport(GridPivot):
       on res2.name = plan_summary.theresource
       -- Grouping and sorting
       group by res.name, res.location_id, d.bucket, d.startdate
-      order by %s, d.startdate    
+      order by %s, d.startdate
       ''' % ( units[0], units[0], units[0], units[0],
         basesql, bucket, startdate, enddate,
         connections[basequery.db].ops.quote_name('resource'),
         startdate, enddate,
-        sql_max('sum(out_resourceplan.available)','0.0001'), 
+        sql_max('sum(out_resourceplan.available)','0.0001'),
         startdate, enddate, sortsql
        )
     cursor.execute(query, baseparams)
-    
+
     # Build the python result
     for row in cursor.fetchall():
       if row[5] != 0: util = row[7] * 100 / row[5]
@@ -157,7 +157,7 @@ class DetailReport(GridReport):
   frozenColumns = 0
   editable = False
   multiselect = False
-    
+
   @ classmethod
   def basequeryset(reportclass, request, args, kwargs):
     if args and args[0]:
@@ -167,7 +167,7 @@ class DetailReport(GridReport):
       return LoadPlan.objects.select_related() \
         .extra(select={'operation_in': "select name from operation where out_operationplan.operation = operation.name",})
 
-  @classmethod 
+  @classmethod
   def extra_context(reportclass, request, *args, **kwargs):
     return {'active_tab': 'plandetail'}
 
@@ -184,7 +184,7 @@ class DetailReport(GridReport):
     GridFieldInteger('operationplan', title=_('operationplan'), editable=False),
     )
 
-    
+
 class GanttReport(GridReport):
   '''
   A report showing the loading of each resource.
@@ -202,8 +202,8 @@ class GanttReport(GridReport):
     GridFieldText('util', title=_('utilization %'), field_name='util', formatter='percentage', editable=False, width=100, align='center', search=False),
     GridFieldText('operationplans', width=1000, extra='formatter:gantt', editable=False, sortable=False),
     )
-  
-  @classmethod 
+
+  @classmethod
   def extra_context(reportclass, request, *args, **kwargs):
     return {'active_tab': 'gantt'}
 
@@ -212,19 +212,19 @@ class GanttReport(GridReport):
     if args and args[0]:
       return Resource.objects.all().filter(name=args[0]).extra(select={'util': '1'})
     else:
-      return Resource.objects.all().extra(select={'util': '1'})    
+      return Resource.objects.all().extra(select={'util': '1'})
 
   @classmethod
   def query(reportclass, request, basequery):
-    basesql, baseparams = basequery.query.get_compiler(basequery.db).as_sql(with_col_aliases=True)        
+    basesql, baseparams = basequery.query.get_compiler(basequery.db).as_sql(with_col_aliases=True)
 
-    # Pick up the list of time buckets      
+    # Pick up the list of time buckets
     (bucket,start,end,bucketlist) = getBuckets(request, request.user)
     horizon = (end - start).total_seconds() / 1000
-        
+
     # Assure the item hierarchy is up to date
     Resource.rebuildHierarchy(database=basequery.db)
-    
+
     # Execute the query
     cursor = connections[request.database].cursor()
     query = '''
@@ -235,7 +235,7 @@ class GanttReport(GridReport):
              out_loadplan.enddate as enddate,
              out_operationplan.operation as operation,
              operation.category as description,
-             out_operationplan.locked as locked                 
+             out_operationplan.locked as locked
       from (%s) res
       -- Include child resources
       inner join resource
@@ -251,9 +251,9 @@ class GanttReport(GridReport):
       on out_operationplan.operation = operation.name
       -- Average utilization info
       left join (
-                select 
-                  theresource, 
-                  ( coalesce(sum(out_resourceplan.load),0) + coalesce(sum(out_resourceplan.setup),0) ) 
+                select
+                  theresource,
+                  ( coalesce(sum(out_resourceplan.load),0) + coalesce(sum(out_resourceplan.setup),0) )
                     / coalesce(%s,1) * 100 as avg_util
                 from out_resourceplan
                 where out_resourceplan.startdate >= '%s'
@@ -264,16 +264,16 @@ class GanttReport(GridReport):
       -- Ordering info
       order by %s, res.name, out_loadplan.startdate
       ''' % ( basesql,
-              sql_max('sum(out_resourceplan.available)','0.0001'), 
+              sql_max('sum(out_resourceplan.available)','0.0001'),
               start, end, reportclass.get_sort(request) )
     cursor.execute(query, baseparams)
-    
+
     # Build the Python result
     prevRes = None
     prevUtil = None
     results = []
     for row in cursor.fetchall():
-      if not prevRes or prevRes != row[0]:      
+      if not prevRes or prevRes != row[0]:
         if prevRes:
           yield {
             'name': prevRes,
@@ -285,12 +285,12 @@ class GanttReport(GridReport):
         results = []
       if row[3]:
         results.append( {
-            'operation': row[5], 
+            'operation': row[5],
             'description': row[6],
-            'quantity': float(row[2]), 
-            'x': int((row[3] - start).total_seconds() / horizon), 
+            'quantity': float(row[2]),
+            'x': int((row[3] - start).total_seconds() / horizon),
             'w': int((row[4] - row[3]).total_seconds() / horizon),
-            'startdate': str(row[3]), 
+            'startdate': str(row[3]),
             'enddate': str(row[4]),
             'locked': row[7] and 1 or 0,
             } )

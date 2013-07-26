@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
 	}
 	printf("\n};\n");
 
-  // Echo the public key from a memory buffer. 
+  // Echo the public key from a memory buffer.
   p = buf;
 	len = i2d_RSAPrivateKey(rsa,&p);
   printf ("unsigned char private_key[%d]={", len);

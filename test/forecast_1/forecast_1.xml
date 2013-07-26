@@ -10,7 +10,7 @@
       - D: match at 'customer' + 'parent item' level
       - E: match at 'parent customer' + 'parent item' level
   </description>
-  <current>2009-01-01T00:00:00</current>  
+  <current>2009-01-01T00:00:00</current>
   <calendars>
     <calendar name="Months">
       <buckets>
@@ -261,7 +261,7 @@
   </demands>
 
 <?python
-frepple.solver_forecast(name="Netting orders from forecast",loglevel=2, 
+frepple.solver_forecast(name="Netting orders from forecast",loglevel=2,
   Net_CustomerThenItemHierarchy=True, Net_MatchUsingDeliveryOperation=False).solve()
 frepple.saveXMLfile("output.1.xml")
 ?>

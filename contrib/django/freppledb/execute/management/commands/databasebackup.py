@@ -1,12 +1,12 @@
-#                                                                      
-# Copyright (C) 2013 by Johan De Taeye, frePPLe bvba                   
-#                                                                      
-# All information contained herein is, and remains the property of frePPLe.                                                              
-# You are allowed to use and modify the source code, as long as the    
-# software is used within your company.                                
+#
+# Copyright (C) 2013 by Johan De Taeye, frePPLe bvba
+#
+# All information contained herein is, and remains the property of frePPLe.
+# You are allowed to use and modify the source code, as long as the
+# software is used within your company.
 # You are not allowed to distribute the software, either in the form of
-# source code or in the form of compiled binaries.                     
-#                                                                      
+# source code or in the form of compiled binaries.
+#
 # file : $URL: file:///C:/Users/Johan/Dropbox/SVNrepository/frepple/addon/contrib/django/freppledb_extra/management/commands/databasebackup.py $
 # revision : $LastChangedRevision: 493 $  $LastChangedBy: Johan $
 # date : $LastChangedDate: 2013-05-01 17:50:02 +0200 (Wed, 01 May 2013) $
@@ -38,7 +38,7 @@ class Command(BaseCommand):
       make_option('--nonfatal', action="store_true", dest='nonfatal',
         default=False, help='Dont abort the execution upon an error'),
       )
-  
+
   requires_model_validation = False
 
   def get_version(self):
@@ -49,14 +49,14 @@ class Command(BaseCommand):
     # Pick up the options
     if 'user' in options: user = options['user']
     else: user = ''
-    if 'database' in options: 
+    if 'database' in options:
       global database
       database = options['database'] or DEFAULT_DB_ALIAS
     if not database in settings.DATABASES.keys():
       raise CommandError("No database settings known for '%s'" % database )
     if 'nonfatal' in options: nonfatal = options['nonfatal']
     else: nonfatal = False
-        
+
     try:
       # Run a PG_DUMP process
       now = datetime.now()
@@ -65,11 +65,11 @@ class Command(BaseCommand):
         args.append("--host=%s" % settings.DATABASES[database]['HOST'])
       if settings.DATABASES[database]['PORT']:
         args.append("--port=%s " % settings.DATABASES[database]['PORT'])
-      args.append('--file=%s' % os.path.abspath(os.path.join(settings.FREPPLE_LOGDIR,now.strftime("database.%Y%m%d.%H%M%S.dump")))) 
-      args.append(settings.DATABASES[database]['NAME'])          
-      ret = subprocess.call(args)  
+      args.append('--file=%s' % os.path.abspath(os.path.join(settings.FREPPLE_LOGDIR,now.strftime("database.%Y%m%d.%H%M%S.dump"))))
+      args.append(settings.DATABASES[database]['NAME'])
+      ret = subprocess.call(args)
       if ret: raise Exception("Couldn't create a database dump")
-          
+
       # Delete backups older than a month
       pattern = re.compile("database.*.*.dump")
       for f in os.listdir(settings.FREPPLE_LOGDIR):
@@ -79,13 +79,13 @@ class Command(BaseCommand):
           if pattern.match(f) and  (now - created).days > 31:
             try: os.remove(os.path.join(settings.FREPPLE_LOGDIR,f))
             except: pass
-            
+
       # Logging message
       log(category='BACKUP', theuser=user,
         message="Successfully created a database backup").save(using=database)
-        
+
     except Exception as e:
-      try: 
+      try:
         log(category='BACKUP', theuser=user,
           message="Failure creating a database backup").save(using=database)
       except: pass

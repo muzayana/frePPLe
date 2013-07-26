@@ -30,7 +30,7 @@ class Command(BaseCommand):
   requires_model_validation = False
 
   def handle(self, **options):
-    # Pick up the options    
+    # Pick up the options
     if 'nonfatal' in options: nonfatal = options['nonfatal']
     else: nonfatal = False
     if 'database' in options: database = options['database'] or DEFAULT_DB_ALIAS
@@ -54,7 +54,7 @@ class Command(BaseCommand):
         # Other executables
         os.environ['PYTHONPATH'] = os.path.normpath(os.environ['FREPPLE_APP'])
       ret = os.system('frepple "%s"' % os.path.join(os.path.dirname(freppledb_extra.quoting.__file__),'commands.py').replace('\\','\\\\'))
-      if ret: 
+      if ret:
         raise Exception('Exit code of the batch run is %d' % ret)
 
     except Exception as e:

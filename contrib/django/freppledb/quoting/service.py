@@ -65,13 +65,13 @@ def Server(address=None, port=None):
     'log.access_file': "access.log",
     'log.error_file': "error.log",
     'log.screen': True,
-    #'tools.gzip.on': True,   
-    'error_page.default': error_page, 
+    #'tools.gzip.on': True,
+    'error_page.default': error_page,
     'log.level': 'info',
     'server.threadPool': 10,
-    'engine.autoreload_on': False, 
+    'engine.autoreload_on': False,
     'tools.response_headers.on': True,
-    'tools.response_headers.headers': [('Server', 'frepple/%s' % frepple.version)] 
+    'tools.response_headers.headers': [('Server', 'frepple/%s' % frepple.version)]
     })
   config = {
     '/': {},
@@ -88,7 +88,7 @@ def Server(address=None, port=None):
     '/favicon.ico': {
       'tools.staticfile.on': True,
       'tools.staticfile.filename': os.path.join(settings.FREPPLE_APP, 'static', 'favicon.ico')
-      },            
+      },
     '/static': {
        'tools.staticdir.on': True,
        'tools.staticdir.root': settings.FREPPLE_APP,
@@ -103,15 +103,15 @@ def Server(address=None, port=None):
 class collectdemands:
   def __init__(self):
     self.demands = []
-    
+
   def __call__(self, o):
       if isinstance(o, frepple.demand):
         if o not in self.demands:
-          self.demands.append(o) 
-               
-          
+          self.demands.append(o)
+
+
 class Interface:
-  
+
   top = [
     '<?xml version="1.0" encoding="UTF-8" ?>\n',
     '<plan xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n',
@@ -120,11 +120,11 @@ class Interface:
   bottom = [
     '</plan>\n',
     ]
-         
+
   def __init__(self):
     # Create a solver
     self.solver = frepple.solver_mrp(name="quote", constraints=15, plantype=1, loglevel=2)
-    
+
   # A generic way to expose XML data.
   # Use this decorator function to decorate a generator function.
   def simpleXMLdata(gen):
@@ -135,7 +135,7 @@ class Interface:
         cherrypy.response.headers['content-type'] = 'application/xml'
         res = []
         for i in self.top: res.append(i)
-        for i in gen(self, *__args): 
+        for i in gen(self, *__args):
           if i: res.append(i)
         for i in self.bottom: res.append(i)
         return "".join(res)
@@ -143,7 +143,7 @@ class Interface:
         # Post and put requests
         cherrypy.response.headers['content-type'] = 'application/xml'
         res = []
-        for i in gen(self, *__args): 
+        for i in gen(self, *__args):
           if i: res.append(i)
         return "".join(res)
       else:
@@ -183,7 +183,7 @@ class Interface:
   #    GET /main/
   @simpleXMLdata
   def main(self, name=None):
-    if cherrypy.request.method == 'GET':      
+    if cherrypy.request.method == 'GET':
       # GET request
       res = []
       res.append('<locations>\n')
@@ -219,7 +219,7 @@ class Interface:
       return "".join(res)
     else:
       raise cherrypy.HTTPError(403, "Only GET requests to this URL are allowed")
-    
+
   # Interface for locations handling URLs of the format:
   #    GET /location/
   #    GET /location/<name>/
@@ -350,7 +350,7 @@ class Interface:
           raise cherrypy.HTTPError(404,"Entity not found")
       else:
         # Return all operations
-        for f in frepple.operations(): 
+        for f in frepple.operations():
           t = f.toXML(mode)
           if t: yield t
       yield '</operations>\n'
@@ -519,7 +519,7 @@ class Interface:
           yield "Error: %s\n" % e
           ok = False
       if ok: yield "OK\n"
-      
+
   # Interface for customers handling URLs of the format:
   #    GET /customer/
   #    GET /customer/<name>/
@@ -600,11 +600,11 @@ class Interface:
     request = cherrypy.request
     if request.method not in ('POST','PUT'):
       raise cherrypy.HTTPError(404,"Not supported")
-    if not xmldata: 
+    if not xmldata:
       raise cherrypy.HTTPError(404,"No data")
-    
+
     # Read all demands
-    callback = collectdemands()   
+    callback = collectdemands()
     cherrypy.response.headers['content-type'] = 'application/xml'
     try:
       if not isinstance(xmldata,basestring):
@@ -614,7 +614,7 @@ class Interface:
       raise cherrypy.HTTPError(500,str(e))
     if not callback.demands:
       raise cherrypy.HTTPError(404,"No data")
-    
+
     # Process the demands
     res = []
     for i in self.top: res.append(i)
@@ -625,8 +625,8 @@ class Interface:
         self.solver.solve(d)
         self.solver.commit()
       except Exception as e:
-        errors.append(str(e))      
-      res.append(d.toXML('P'))     
+        errors.append(str(e))
+      res.append(d.toXML('P'))
     res.append('</demands>')
-    for i in self.bottom: res.append(i)     
+    for i in self.bottom: res.append(i)
     return "".join(res)

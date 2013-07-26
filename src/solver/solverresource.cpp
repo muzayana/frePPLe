@@ -332,7 +332,7 @@ DECLARE_EXPORT void SolverMRP::solve(const Resource* res, void* v)
       for (cur = res->getLoadPlans().begin(); cur!=res->getLoadPlans().begin(data->state->q_loadplan); ++cur)
       {
         const LoadPlan* ldplan = dynamic_cast<const LoadPlan*>(&*cur);
-        if (ldplan && !ldplan->getOperationPlan()->getIdentifier() 
+        if (ldplan && !ldplan->getOperationPlan()->getIdentifier()
           && ldplan->getOperationPlan()->getOperation()!=data->state->q_operationplan->getOperation() )
           ignored += ldplan->getQuantity();
       }
@@ -356,7 +356,7 @@ DECLARE_EXPORT void SolverMRP::solve(const Resource* res, void* v)
         }
         */
         const LoadPlan* ldplan = dynamic_cast<const LoadPlan*>(&*cur);
-        if (ldplan && !ldplan->getOperationPlan()->getIdentifier() 
+        if (ldplan && !ldplan->getOperationPlan()->getIdentifier()
           && ldplan->getOperationPlan()->getOperation()!=data->state->q_operationplan->getOperation())
           ignored += ldplan->getQuantity();
 

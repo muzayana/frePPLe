@@ -92,7 +92,7 @@ class Command(BaseCommand):
       cursor.execute('update common_user set horizonbuckets = null')
       transaction.commit(using=database)
       # TODO ERASE MORE GENERICALLY ALL MODELS FROM BOTH ADMIN SITES
-      tables = [ 
+      tables = [
         ['out_demandpegging'],
         ['out_problem','out_resourceplan','out_constraint'],
         ['out_loadplan','out_flowplan','out_operationplan'],
@@ -100,7 +100,7 @@ class Command(BaseCommand):
         ['demand','customer','resourceskill','skill',
          'setuprule','setupmatrix','resourceload','resource',
          'flow','buffer','operationplan','item',
-         'suboperation','operation', 
+         'suboperation','operation',
          'forecast', 'forecastdemand', 'forecastplan', # TODO Required to add for enterprise version on postgresql :
          'location','calendarbucket','calendar',],
         ['common_parameter','common_bucketdetail','common_bucket'],

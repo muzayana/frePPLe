@@ -3,7 +3,7 @@
  * Copyright (C) 2012-2013 by Johan De Taeye, frePPLe bvba                 *
  *                                                                         *
  * All information contained herein is, and remains the property of        *
- * frePPLe.                                                                * 
+ * frePPLe.                                                                *
  * You are allowed to use and modify the source code, as long as the       *
  * software is used within your company.                                   *
  * You are not allowed to distribute the software, either in the form of   *
@@ -76,7 +76,7 @@ MODULE_EXPORT const char* initialize(const Environment::ParameterList& z)
   // Verify you have an enterprise license.
   // This specific value of the flag is when the customer name is "Community Edition users".
   if (flags == 836125) return "";
-  
+
   // Register the Python extensions
   PyGILState_STATE state = PyGILState_Ensure();
   try

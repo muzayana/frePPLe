@@ -29,7 +29,7 @@ void LibraryModel::initialize()
     return;
   }
   init = true;
-  
+
   // Register new types in Python
   int nok = 0;
   nok += Plan::initialize();

@@ -4,9 +4,9 @@
   <description>
   The M3-competition benchmark test for time series forecasts is run to compare
   the results with industry standard solutions.
-  Dataset: 
+  Dataset:
      See http://forecastingprinciples.com/files/xls/M3C.xls
-  Results: 
+  Results:
      See http://forecastingprinciples.com/files/Makridakia-The%20M3%20Competition.pdf
   </description>
   <current>2009-01-01T00:00:00</current>
@@ -66,14 +66,14 @@ solver = frepple.solver_forecast(
   Seasonal_minAlfa=0.03,
   Seasonal_maxAlfa=0.97,
   Seasonal_minBeta=0.01,
-  Seasonal_maxBeta=0.97,    
+  Seasonal_maxBeta=0.97,
   Seasonal_gamma=0.05,
-  Seasonal_minPeriod=2,  
-  Seasonal_maxPeriod=15,  
+  Seasonal_minPeriod=2,
+  Seasonal_maxPeriod=15,
   Seasonal_dampenTrend=0.8,
   Outlier_maxDeviation=5
   )
-  
+
 theitem = frepple.item(name="item")
 thecustomer = frepple.customer(name="customer")
 thecalendar = frepple.calendar(name="planningbuckets")
@@ -82,31 +82,31 @@ thebuckets = [ i.start for i in thecalendar.buckets ]
 fcst = frepple.demand_forecast(name="test", item=theitem, customer=thecustomer, calendar=thecalendar, discrete=False)
 fcstdmd = None
 totalsmape = {
-  'total':0, '1':0, '2':0, '3':0, '4':0, '5':0, '6':0, '8':0, '12':0, '15':0, '18':0, 
+  'total':0, '1':0, '2':0, '3':0, '4':0, '5':0, '6':0, '8':0, '12':0, '15':0, '18':0,
   '1-4':0, '1-6':0, '1-8':0, '1-12':0, '1-15':0
   }
 countsmape = totalsmape.copy()
 
 
 for row in csv.reader(open("M3data.csv", "rb")):
-  
+
   # Skip comment lines
   if row[0].startswith('#'): continue
-  
+
   # Intro
   print row[0], row[3], row[1], row[2]
-  
+
   # Generate forecast
   data = [ float(i) for i in row[6:6+int(row[1])-int(row[2])] ]
   test = [ float(i) for i in row[6+int(row[1])-int(row[2]):6+int(row[1])] ]
   solver.timeseries(fcst, data, thebuckets)
-  
+
   # Evaluate the sMAPE error in the future buckets
   if fcstdmd == None:
     fcstdmd = []
     for i in frepple.demands():
       if not isinstance(i, frepple.demand_forecastbucket): continue
-      fcstdmd.append(i)    
+      fcstdmd.append(i)
   smape = 0
   cnt = 0
   for i in test:
@@ -159,7 +159,7 @@ for row in csv.reader(open("M3data.csv", "rb")):
     if cnt <= 15:
       totalsmape['1-15'] += localsmape
       countsmape['1-15'] += 1
-      
+
 # Print the results
 print "smape 1:", totalsmape['1'] / countsmape['1']
 print "smape 2:", totalsmape['2'] / countsmape['2']

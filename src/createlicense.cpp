@@ -30,7 +30,7 @@ int main(int argc, char* argv[])
 
   // Load the crypto library error strings.
   ERR_load_crypto_strings();
- 
+
   // Private key
   unsigned char private_key[1193]={
   0x30,0x82,0x04,0xA5,0x02,0x01,0x00,0x02,0x82,0x01,0x01,0x00,0xCC,0x9F,0x8B,0xF9,
@@ -113,13 +113,13 @@ int main(int argc, char* argv[])
   // Build private key from data structure
   RSA *rsa;
   const unsigned char *p = private_key;
-  rsa = d2i_RSAPrivateKey(NULL, &p, (long)sizeof(private_key));  
-  if (rsa == NULL) 
-  { 
+  rsa = d2i_RSAPrivateKey(NULL, &p, (long)sizeof(private_key));
+  if (rsa == NULL)
+  {
 	  ERR_print_errors_fp (stderr);
 	  exit (1);
   }
-  
+
   // Prompt the user for input
   string customer;
   while (customer.empty())
@@ -147,7 +147,7 @@ int main(int argc, char* argv[])
   getline(cin, stringtill);
   if (stringtill.empty()) stringtill = string(datetill);
 
-  // Initialize the signature 
+  // Initialize the signature
   EVP_PKEY *evpKey = 0;
   EVP_MD_CTX ctx;
   evpKey = EVP_PKEY_new();
@@ -162,14 +162,14 @@ int main(int argc, char* argv[])
 
   // Finalize the signature
   err = EVP_SignFinal(&ctx, sig_buf, &sig_len, evpKey);
-  if (err != 1) 
+  if (err != 1)
   {
     ERR_print_errors_fp(stderr);
     exit (1);
   }
 
   // Encode the signature in base64
-  string signature = Decryptor::base64(sig_buf, sig_len); 
+  string signature = Decryptor::base64(sig_buf, sig_len);
 
   // Write out the license file
   cout << endl << "License:" << endl << endl;
@@ -187,7 +187,7 @@ int main(int argc, char* argv[])
   cout << "</license>" << endl << endl;
 
   // Finalize
-  EVP_PKEY_free (evpKey);  
+  EVP_PKEY_free (evpKey);
   RSA_free(rsa);
   ERR_free_strings();
   return 0;

@@ -3,7 +3,7 @@
  * Copyright (C) 2012 by Johan De Taeye, frePPLe bvba                      *
  *                                                                         *
  * All information contained herein is, and remains the property of        *
- * frePPLe.                                                                * 
+ * frePPLe.                                                                *
  * You are allowed to use and modify the source code, as long as the       *
  * software is used within your company.                                   *
  * You are not allowed to distribute the software, either in the form of   *
@@ -90,7 +90,7 @@ extern "C" PyObject* ForecastSolver::timeseries(PyObject *self, PyObject *args)
   if (!ok) return NULL;
 
   // Verify the object type
-  PythonObject pyfcst(fcst); 
+  PythonObject pyfcst(fcst);
   if (!pyfcst.check(Forecast::metadata))
   {
     PyErr_SetString(PythonDataException, "first argument must be of type forecast");

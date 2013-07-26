@@ -5,7 +5,7 @@
  * You should never have received this file!                               *
  *                                                                         *
  ***************************************************************************/
-   
+
 #define FREPPLE_CORE
 #include "frepple/utils.h"
 
@@ -19,8 +19,8 @@ namespace frepple
 namespace utils
 {
 
-DECLARE_EXPORT int flags = 836125; 
-  
+DECLARE_EXPORT int flags = 836125;
+
 const MetaClass LicenseValidator::metadata;
 
 
@@ -54,7 +54,7 @@ string Decryptor::base64(const unsigned char *input, int length)
   b64 = BIO_push(b64, bmem);
   BIO_write(b64, input, length);
   BIO_flush(b64);
-  BIO_get_mem_ptr(b64, &bptr);  
+  BIO_get_mem_ptr(b64, &bptr);
   string x( bptr->data, bptr->length-1);
   BIO_free_all(b64);
   return x;
@@ -113,11 +113,11 @@ void LicenseValidator::valid()
   if (customer.empty() || email.empty() || now < valid_from_date
     || now > valid_till_date)
     throw RuntimeException("Invalid license file");
-    
+
   // Build public key.
   RSA *rsa;
   const unsigned char *p = Decryptor::key;
-  rsa = d2i_RSAPublicKey(NULL, &p, sizeof(Decryptor::key));  
+  rsa = d2i_RSAPublicKey(NULL, &p, sizeof(Decryptor::key));
   if (!rsa) throw RuntimeException("Invalid license file");
 
   // Decode the signature from its base64 encoding
@@ -139,7 +139,7 @@ void LicenseValidator::valid()
   // Finalize the signature verification
   int err = EVP_VerifyFinal(&ctx, sig_buf, RSA_size(rsa), evpKey);
   EVP_PKEY_free (evpKey);
-  free(sig_buf);  
+  free(sig_buf);
   if (err != 1) throw RuntimeException("Invalid license file");
 
   // Set a "secret" flag to determine we are running in enterprise mode or not.

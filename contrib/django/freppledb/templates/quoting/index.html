@@ -81,7 +81,7 @@ Update a single object at a time<br/><br/>
 <h3><a href="#postfile">POST a XML file to the engine</a></h3>
 <div>
 The data file is POSTED as a multipart-encoded form to the URL {{request.base}}.<br/>
-The XML-file must follow this XSD-schema:<a href="/frepple.xsd">{{request.base}}/frepple.xsd</a> (which references also 
+The XML-file must follow this XSD-schema:<a href="/frepple.xsd">{{request.base}}/frepple.xsd</a> (which references also
 <a href="/frepple_core.xsd">{{request.base}}/frepple_core.xsd</a>).<br/>
 You can also look at the XML output format of the GET requests to get examples.<br/><br/>
 <form action="/" method="post" enctype="multipart/form-data">
@@ -92,9 +92,9 @@ Data file: <input type="file" name="xmldata"/><br/>
 <h3><a href="#postdata">POST XML data to the engine</a></h3>
 <div>
 The data file is POSTED as a multipart form to the URL {{request.base}}.<br/>
-The XML-file must follow this XSD-schema:<a href="/frepple.xsd">{{request.base}}/frepple.xsd</a> (which references also 
+The XML-file must follow this XSD-schema:<a href="/frepple.xsd">{{request.base}}/frepple.xsd</a> (which references also
 <a href="/frepple_core.xsd">{{request.base}}/frepple_core.xsd</a>).<br/>
-You can also look at the output format of the GET requests to get examples.<br/><br/> 
+You can also look at the output format of the GET requests to get examples.<br/><br/>
 <form action="/" method="post">
 Data: <textarea id="xmldata" name="xmldata" rows="20" cols="100">
 &lt;?xml version="1.0" encoding="UTF-8" ?&gt;
@@ -107,9 +107,9 @@ Data: <textarea id="xmldata" name="xmldata" rows="20" cols="100">
 <h3><a href="#quote">Quote an order</a></h3>
 <div>
 To quote an order an XML document (file or form) is POSTed to URL {{request.base}}/quote.<br/>
-The difference with the previous examples is that the engine now sends back an 
+The difference with the previous examples is that the engine now sends back an
 XML document with a feasible delivery date for all demands that are references in the input
-document.<br/><br/> 
+document.<br/><br/>
 <form action="/quote" method="post" enctype="multipart/form-data">
 Data: <textarea id="xmldata" name="xmldata" rows="20" cols="100">
 &lt;?xml version="1.0" encoding="UTF-8" ?&gt;

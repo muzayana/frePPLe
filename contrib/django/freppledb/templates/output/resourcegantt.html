@@ -1,26 +1,26 @@
 {% extends "admin/base_site_grid.html" %}
 {% load i18n %}
 
-{% block extrahead %}{{block.super}} 
+{% block extrahead %}{{block.super}}
 
 <style type="text/css">
 #grid_location__name, #grid_operationplans, .ui-jqgrid .ui-jqgrid-resize, .ui-jqgrid .ui-jqgrid-htable th div {
   height: 34px;
 }
 .opplan {
-   vector-effect: non-scaling-stroke; 
+   vector-effect: non-scaling-stroke;
    fill:rgb(111,111,255);
    stroke-width:1px;
    stroke:rgb(0,0,0)
 }
 .opplan_locked {
-   vector-effect: non-scaling-stroke; 
+   vector-effect: non-scaling-stroke;
    fill:rgb(0,0,255);
    stroke-width:1px;
    stroke:rgb(0,0,0)
 }
 .time {
-   vector-effect: non-scaling-stroke; 
+   vector-effect: non-scaling-stroke;
    stroke-width:1px;
    stroke:rgb(0,0,0)
 }
@@ -36,7 +36,7 @@ var delta = (viewend.getTime() - viewstart.getTime()) / 86400000.0;
 var ROW = 25;
 
 
-function gantt(cellvalue, options, rowdata) 
+function gantt(cellvalue, options, rowdata)
 {
   var layer = [];
   var result = [];
@@ -51,7 +51,7 @@ function gantt(cellvalue, options, rowdata)
         {
            layer[row] = data["enddate"];
            break;
-        } 
+        }
      };
      if (row >= layer.length) layer.push(data["enddate"]);
      if (data['locked'] == 1)
@@ -61,10 +61,10 @@ function gantt(cellvalue, options, rowdata)
   }
   return '<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="100%" height="' + (ROW*layer.length+3) + 'px">'
     + '<title>' + escape(rowdata["name"]) + '</title>'
-    + '<g class="transformer" transform="scale(1,1) translate(0,' + ((layer.length-1)*ROW+3) +')" title="' + layer.length +'">'    
-    + result.join('\n') 
-    + '</g></svg>'; 
-}; 
+    + '<g class="transformer" transform="scale(1,1) translate(0,' + ((layer.length-1)*ROW+3) +')" title="' + layer.length +'">'
+    + result.join('\n')
+    + '</g></svg>';
+};
 
 
 $(function() {
@@ -76,7 +76,7 @@ function gantt_header()
 {
   // TODO Smarter handling of space available for the text
   var scaling = 86400000 / (viewend.getTime() - viewstart.getTime()) * 1000;
-  var result = [ 
+  var result = [
     '<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="100%" height="34px">',
     '<line class="time" x1="0" y1="17" x2="1000" y2="17"/>'
     ];
@@ -95,7 +95,7 @@ function gantt_header()
     }
     result.push('<text style="text-anchor: middle;" x="' + (x + scaling/2) + '" y="31" font-family="Verdana" font-size="9" fill="black">' + $.datepicker.formatDate((scaling>45) ? "dd M": "d", bucketstart) + '</text>');
     x = x + scaling;
-    bucketstart.setDate(bucketstart.getDate()+1);     
+    bucketstart.setDate(bucketstart.getDate()+1);
   }
   result.push( '</svg>' );
   $("#jqgh_grid_operationplans").html(result.join(''));
@@ -105,7 +105,7 @@ function gantt_reset()
 {
   viewstart = new Date(horizonstart.getTime());
   viewend = new Date(horizonend.getTime());
-  $('.transformer').each(function() {  
+  $('.transformer').each(function() {
     var layers = $(this).attr("title");
     $(this).attr("transform", "scale(1,1) translate(0," + ((layers-1)*ROW+3) + ")");
     });
@@ -117,8 +117,8 @@ function gantt_zoom(zoom_in_or_out, move_in_or_out)
   delta = Math.ceil((viewend.getTime() - viewstart.getTime()) / 86400000.0 * zoom_in_or_out);
   viewstart.setTime(viewstart.getTime() + move_in_or_out);
   viewend.setTime(viewstart.getTime() + delta * 86400000);
-  var scale = (horizonend.getTime() - horizonstart.getTime()) / (delta * 86400000); 
-  var offset = (horizonstart.getTime() - viewstart.getTime()) / (horizonend.getTime() - horizonstart.getTime()) * 1000; 
+  var scale = (horizonend.getTime() - horizonstart.getTime()) / (delta * 86400000);
+  var offset = (horizonstart.getTime() - viewstart.getTime()) / (horizonend.getTime() - horizonstart.getTime()) * 1000;
   $('.transformer').each(function() {
     var layers = $(this).attr("title");
     $(this).attr("transform", "scale(" + scale + ",1) translate(" + offset + "," + ((layers-1)*ROW+3) + ")");
@@ -126,7 +126,7 @@ function gantt_zoom(zoom_in_or_out, move_in_or_out)
   gantt_header();
 }
 
-</script> 
+</script>
 {% endblock %}
 
 {% block tools %}{% if args.0 %}
@@ -152,7 +152,7 @@ function gantt_zoom(zoom_in_or_out, move_in_or_out)
 <a href="javascript:bucket_show();" id="bucketconfig" class="icon"><span class="ui-icon ui-icon-clock"></span>{% trans 'Time' %}</a>
 {% endblock %}
 
-{% block extra_grid %}resizeStop: function(width, index) { 
+{% block extra_grid %}resizeStop: function(width, index) {
    if (index == 2)
       $('.transformer').each(function() {
         $(this).attr("transform", "scale(" + width/1000 + ",1)");

@@ -1,10 +1,10 @@
 #
 # Copyright (C) 2012 by Johan De Taeye, frePPLe bvba
 #
-# All information contained herein is, and remains the property of frePPLe.  
+# All information contained herein is, and remains the property of frePPLe.
 # You are allowed to use and modify the source code, as long as the software is used
 # within your company.
-# You are not allowed to distribute the software, either in the form of source code 
+# You are not allowed to distribute the software, either in the form of source code
 # or in the form of compiled binaries.
 #
 
@@ -42,7 +42,7 @@ class QuoteForm(forms.ModelForm):
     widgets = {
       'item': forms.TextInput(attrs={'cols': 80, 'rows': 20}),
       }
-  
+
 @login_required
 @csrf_protect
 def Main(request):
@@ -68,7 +68,7 @@ def Main(request):
 </plan>''' #% (uuid.uuid1(), )
       except Exception as e:
         print "not ok"
-      
+
   else:
     form = modelform_factory(Demand,
         fields = ('name','customer', 'item', 'quantity', 'due', 'minshipment', 'maxlateness'),
@@ -79,4 +79,4 @@ def Main(request):
      'form': form,
      },
      context_instance=RequestContext(request))
- 
+

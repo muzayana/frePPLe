@@ -1,10 +1,10 @@
 #
 # Copyright (C) 2012 by Johan De Taeye, frePPLe bvba
 #
-# All information contained herein is, and remains the property of frePPLe.  
+# All information contained herein is, and remains the property of frePPLe.
 # You are allowed to use and modify the source code, as long as the software is used
 # within your company.
-# You are not allowed to distribute the software, either in the form of source code 
+# You are not allowed to distribute the software, either in the form of source code
 # or in the form of compiled binaries.
 #
 
@@ -28,7 +28,7 @@ class Forecast(AuditModel):
     ('intermittent',_('Intermittent')),
     ('manual',_('Manual')),
   )
-  
+
   # Database fields
   name = models.CharField(_('name'), max_length=settings.NAMESIZE, primary_key=True)
   description = models.CharField(_('description'), max_length=settings.DESCRIPTIONSIZE, null=True, blank=True)
@@ -60,7 +60,7 @@ class Forecast(AuditModel):
       - If one or more forecast entries already exist in the daterange, the
         quantities of those entries are proportionally rescaled to fit the
         new quantity.
-      - When no entry exists yet, we simply create a single forecast entry 
+      - When no entry exists yet, we simply create a single forecast entry
         for the specified daterange.
     '''
     # Assure the end date is later than the start date.
@@ -77,7 +77,7 @@ class Forecast(AuditModel):
     enddate = enddate.date()
     entries = self.entries.filter(enddate__gt=startdate).filter(startdate__lt=enddate)
     if not entries:
-      # Case 1: No intersecting forecast entries exist yet. 
+      # Case 1: No intersecting forecast entries exist yet.
       # We just create an entry for the given start and end date
       # Note: if the calendar values are updated later on, such changes are
       # obviously not reflected any more in the forecast entries.
