@@ -87,6 +87,8 @@ rm -rf %{buildroot}%{_docdir}/%{name}
 (cd $RPM_BUILD_ROOT && find . -name 'django*.mo') | %{__sed} -e 's|^.||' | %{__sed} -e \
   's:\(.*/locale/\)\([^/_]\+\)\(.*\.mo$\):%lang(\2) \1\2\3:' \
   >> %{name}.lang
+# Remove .py script extension
+mv $RPM_BUILD_ROOT/usr/bin/frepplectl.py $RPM_BUILD_ROOT/usr/bin/frepplectl
 # Install apache configuration
 mkdir -p $RPM_BUILD_ROOT/etc/httpd/conf.d
 install -m 644 -p contrib/rpm/httpd.conf $RPM_BUILD_ROOT/etc/httpd/conf.d/z_frepple.conf
