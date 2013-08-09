@@ -1,24 +1,14 @@
-This package was debianized by jdetaeye <jdetaeye@users.sourceforge.net> on
-Tue, 14 Jul 2009 07:36:24 -0400.
-
-It was downloaded from http://downloads.sourceforge.net/sourceforge/frepple/frepple-0.7.1.tar.gz
 
 Upstream Author(s):
 
-    jdetaeye@users.sourceforge.net
+    frePPLe bvba, Johan De Taeye
 
 Copyright:
 
-    2009-2013 by Johan De Taeye
+    2009-2013 by frePPLe bvba, Johan De Taeye
 
 License:
 
     The frePPLe software is made available under a propietary licence.
     See your license agreement with frePPLe bvba for more details.
 
-The Debian packaging is copyright 2013, jdetaeye <jdetaeye@frepple.com>.
-
-# The optional plugin module mod_lpsolver depends on the GLPK package which is
-# licensed under GPL. 
-# The source code of that module is included here, but it not compiled in
-# the binary packages.

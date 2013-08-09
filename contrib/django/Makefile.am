@@ -6,7 +6,7 @@ EXTRA_DIST = freppledb django.patch django.git_patch README.txt httpd.conf frepp
 
 install-data-local:
 	echo "installing Django web application to $(DESTDIR)$(pythondir)"; \
-	$(PYTHON) setup.py install --prefix $(DESTDIR)$(prefix)
+	$(PYTHON) setup.py install --prefix $(DESTDIR)$(prefix) --install-purelib=$(DESTDIR)$(pythondir)
 	-mkdir static
 	./manage.py collectstatic --noinput --clear
 	find static -type d -exec $(mkinstalldirs) "$(DESTDIR)$(datadir)/frepple/{}" \;; \
