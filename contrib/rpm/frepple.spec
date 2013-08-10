@@ -22,9 +22,10 @@ Group: Applications/Productivity
 URL: http://www.frepple.com
 Source: http://downloads.sourceforge.net/%{name}/%{name}-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-XXXXXX)
-# Note on dependencies: Django is also required, but it needs to be installed manually.
-Requires: xerces-c, openssl, httpd, mod_wsgi
-BuildRequires: python-devel, automake, autoconf, libtool, xerces-c-devel, openssl-devel, graphviz, doxygen
+# Note on dependencies: Django is also required, but we need a custom install.
+# The build also requires the standard django as dependency (for running the command collectstatic)
+Requires: xerces-c, openssl, httpd, mod_wsgi, python
+BuildRequires: python-devel, automake, autoconf, libtool, xerces-c-devel, openssl-devel, graphviz, doxygen, django
 
 %description
 FrePPLe stands for "Free Production PLanning". It is an application for
@@ -70,11 +71,6 @@ sed -i -e 's| -shared | -Wl,--as-needed\0|g' libtool
 make %{?_smp_mflags} all
 
 # No tests in the enterprise version, because we only distribute the license.xml file of the community edition.
-#%check
-## Run test suite, skipping some long and less interesting tests
-#TESTARGS="--regression -e setup_1 -e setup_2 -e setup_3 -e operation_routing -e constraints_combined_1"
-#export TESTARGS
-#make check
 
 %install
 rm -rf %{buildroot}
@@ -103,7 +99,7 @@ rm -rf %{buildroot}
 %files -f %{name}.lang
 %defattr(-,root,root,-)
 %{_bindir}/frepple
-%{_bindir}/frepplectl.py
+%{_bindir}/frepplectl
 %{_libdir}/libfrepple.so.0
 %{_libdir}/libfrepple.so.0.0.0
 %dir %{_libdir}/frepple
@@ -111,6 +107,7 @@ rm -rf %{buildroot}
 %{_datadir}/frepple
 %{python_sitelib}/freppledb*
 %{_mandir}/man1/frepple.1.*
+%{_mandir}/man1/frepplectl.1.*
 %doc COPYING
 %config(noreplace) %{_datadir}/frepple/license.xml
 %config(noreplace) %{python_sitelib}/freppledb/settings.py
@@ -126,5 +123,5 @@ rm -rf %{buildroot}
 
 %files doc
 %defattr(-,root,root,-)
-%doc doc/html
+%doc doc/output
 
