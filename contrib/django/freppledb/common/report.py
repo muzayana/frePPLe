@@ -74,9 +74,10 @@ class GridField(object):
       self.field_name = self.name
 
   def __unicode__(self):
-    o = [ "name:'%s',index:'%s',editable:%s,label:'%s',align:'%s',title:false" %
+    o = [ "name:'%s',index:'%s',editable:%s,label:'%s',width:%s,align:'%s',title:false" %
           (self.name or '', self.name or '', self.editable and "true" or "false",
-           force_unicode(self.title).title().replace("'","\\'"), self.align
+           force_unicode(self.title).title().replace("'","\\'"),
+           self.width, self.align
            ), ]
     if self.key: o.append( ",key:true" )
     if not self.sortable: o.append(",sortable:false")
@@ -278,13 +279,17 @@ class GridReport(View):
   multiselect = True
 
   # Control the height of the grid. By default the full browser window is used.
-  heigth = None
+  height = None
 
   # Number of columns frozen in the report
   frozenColumns = 0
 
   # A list with required user permissions to view the report
   permissions = []
+
+  @classmethod
+  def getKey(cls):
+    return "%s.%s" % (cls.__module__, cls.__name__)
 
   # Extra variables added to the report template
   @classmethod
@@ -323,9 +328,19 @@ class GridReport(View):
     encoding = settings.CSV_CHARSET
     sf.write(getBOM(encoding))
 
+    # Choose fields to export
+    prefs = request.user.getPreference(reportclass.getKey())
+    if prefs:
+      # Customized settings
+      prefs = prefs['rows']
+      writer.writerow([ force_unicode(reportclass.rows[f[0]].title).title().encode(encoding,"ignore") for f in prefs if not f[1] ])
+      fields = [ reportclass.rows[f[0]].field_name for f in prefs if not f[1] ]
+    else:
+      # Default settings
+      writer.writerow([ force_unicode(f.title).title().encode(encoding,"ignore") for f in reportclass.rows if f.title ])
+      fields = [ i.field_name for i in reportclass.rows if i.field_name ]
+
     # Write a header row
-    fields = [ force_unicode(f.title).title().encode(encoding,"ignore") for f in reportclass.rows if f.title ]
-    writer.writerow(fields)
     yield sf.getvalue()
 
     # Write the report content
@@ -333,36 +348,38 @@ class GridReport(View):
       query = reportclass._apply_sort(request, reportclass.filter_items(request, reportclass.basequeryset(request, args, kwargs), False).using(request.database))
     else:
       query = reportclass._apply_sort(request, reportclass.filter_items(request, reportclass.basequeryset).using(request.database))
-
-    fields = [ i.field_name for i in reportclass.rows if i.field_name ]
     for row in hasattr(reportclass,'query') and reportclass.query(request,query) or query.values(*fields):
       # Clear the return string buffer
       sf.truncate(0)
       # Build the return value, encoding all output
       if hasattr(row, "__getitem__"):
-        fields = [ row[f.field_name]==None and ' ' or unicode(_localize(row[f.field_name])).encode(encoding,"ignore") for f in reportclass.rows if f.name ]
+        writer.writerow([ row[f]==None and ' ' or unicode(_localize(row[f])).encode(encoding,"ignore") for f in fields ])
       else:
-        fields = [ getattr(row,f.field_name)==None and ' ' or unicode(_localize(getattr(row,f.field_name))).encode(encoding,"ignore") for f in reportclass.rows if f.name ]
+        writer.writerow([ getattr(row,f)==None and ' ' or unicode(_localize(getattr(row,f))).encode(encoding,"ignore") for f in fields ])
       # Return string
-      writer.writerow(fields)
       yield sf.getvalue()
 
 
   @classmethod
-  def _apply_sort(reportclass, request, query):
+  def _apply_sort(reportclass, request, query, prefs=None):
     '''
     Applies a sort to the query.
     '''
+    asc = True
     sort = None
-    if 'sidx' in request.GET: sort = request.GET['sidx']
+    if 'sidx' in request.GET:
+      sort = request.GET['sidx']
+      if 'sord' in request.GET and request.GET['sord'] == 'desc': asc = False
     if not sort:
-      if reportclass.default_sort:
+      if prefs and 'sidx' in prefs:
+        sort = prefs['sidx']
+        if 'sord' in prefs and prefs['sord'] == 'desc': asc = False
+      if not sort and reportclass.default_sort:
         sort = reportclass.rows[reportclass.default_sort[0]].name
+        if reportclass.default_sort[1] == 'desc': asc = False
       else:
         return query # No sorting
-    if ('sord' in request.GET and request.GET['sord'] == 'desc') or reportclass.default_sort[1] == 'desc':
-      sort = "-%s" % sort
-    return query.order_by(sort)
+    return query.order_by(asc and sort or ('-%s' % sort))
 
 
   @classmethod
@@ -485,16 +502,20 @@ class GridReport(View):
         bucketnames = Bucket.objects.order_by('name').values_list('name', flat=True)
       else:
         bucketnames = bucketlist = start = end = bucket = None
-      reportkey = "%s.%s" % (reportclass.__module__, reportclass.__name__);
+      reportkey = reportclass.getKey()
+      prefs = request.user.getPreference(reportkey)
       context = {
         'reportclass': reportclass,
         'title': (args and args[0] and _('%(title)s for %(entity)s') % {'title': force_unicode(reportclass.title), 'entity':force_unicode(args[0])}) or reportclass.title,
         'object_id': args and args[0] or None,
-        'preferences': request.user.getPreference(reportkey),
+        'preferences': prefs,
+        'page': prefs and prefs.get('page', 1) or 1,
+        'sord': prefs and prefs.get('sord', 'asc') or 'asc',
+        'sidx': prefs and prefs.get('sidx', '') or '',
         'reportkey': reportkey,
         'is_popup': request.GET.has_key('pop'),
         'args': args,
-        'filters': reportclass.getQueryString(request),
+        'filters': prefs and prefs.get('filter',None) or reportclass.getQueryString(request),
         'bucketnames': bucketnames,
         'bucketlist': bucketlist,
         'bucketstart': start,

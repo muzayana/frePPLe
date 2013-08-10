@@ -9,6 +9,7 @@
 }
 </style>
 <script type="text/javascript">
+
   function calcUtil()
   {
     var clusters = parseInt($("#create0").val());
@@ -27,33 +28,22 @@
   }
 
   $(function() {
+    // Buttons
     $("input:submit,#logfile").button();
+    // Accordions
     $("#tasks").accordion({
       collapsible: true, active: false, heightStyle: "content"
       });
+    // Date picker
     $(".date").datepicker({
         showOtherMonths: true, selectOtherMonths: true,
         dateFormat: "yy-mm-dd", changeMonth:true,
         changeYear:true, yearRange: "c-5:c+5"
         });
-    /*TODO REPLACEif (v > 0 && v < 100)
-    {
-      var interval = setInterval(function() {
-         $.ajax({
-           url: "{{request.prefix}}/execute/progressfrepple/",
-           success: function(prct) {
-             v = parseInt(prct);
-             $('#progress').progressbar("option", "value", v);
-             if (v <= 0 || v >= 100) {
-               clearInterval(interval);
-               $("#run").val("{% trans "Run" %}");
-               }
-             }
-           });
-         },
-         2000 // Repeat after 2 seconds
-         );
-    } */
+    // Refresh the grid every 5 seconds
+    setInterval(function() {
+      $("#grid").trigger("reloadGrid",[{current:true}]);
+      }, 5000);
   });
 
 </script>
@@ -132,6 +122,13 @@ and export results into the database<br/>
 {% endif %}
 
 {% if perms.execute.run_db %}
+<h3><a href="#database">{% trans "Backup database" %}</a></h3>
+<div><table>
+<form method="post" action="{{request.prefix}}/execute/launch/backup database/">{% csrf_token %}<tr>
+<td><input id="backup" type="submit" value="{% trans "Launch" %}" /></td>
+<td>{% trans "Backup the database." %}</td>
+</tr></form>
+</table></div>
 
 <h3><a href="#empty database">{% trans "Empty database" %}</a></h3>
 <div>
@@ -139,14 +136,6 @@ and export results into the database<br/>
 <form method="post" action="{{request.prefix}}/execute/launch/empty database/">{% csrf_token %}<tr>
 <td><input id="erase" type="submit" value="{% trans "Launch" %}"/></td>
 <td>{% trans "Erase all data from the database." %}</td>
-</tr></form>
-</table></div>
-
-<h3><a href="#database">{% trans "Backup database" %}</a></h3>
-<div><table>
-<form method="post" action="{{request.prefix}}/execute/launch/backup database/">{% csrf_token %}<tr>
-<td><input id="backup" type="submit" value="{% trans "Launch" %}" /></td>
-<td>{% trans "Backup the database." %}</td>
 </tr></form>
 </table></div>
 
