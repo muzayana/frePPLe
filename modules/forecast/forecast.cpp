@@ -257,7 +257,7 @@ void Forecast::writeElement(XMLOutput *o, const Keyword &tag, mode m) const
   }
 
   // Write the complete object
-  if (m != NOHEADER) o->BeginObject
+  if (m != NOHEAD) o->BeginObject
     (tag, Tags::tag_name, XMLEscape(getName()), Tags::tag_type, getType().type);
 
   o->writeElement(Tags::tag_item, &*getItem());

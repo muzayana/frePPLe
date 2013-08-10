@@ -52,11 +52,11 @@ void ForecastSolver::writeElement(XMLOutput *o, const Keyword& tag, mode m) cons
   }
 
   // Write the complete object
-  if (m != NOHEADER) o->BeginObject
+  if (m != NOHEAD) o->BeginObject
     (tag, Tags::tag_name, XMLEscape(getName()), Tags::tag_type, getType().type);
 
   // Write the parent class
-  Solver::writeElement(o, tag, NOHEADER);
+  Solver::writeElement(o, tag, NOHEAD);
 }
 
 

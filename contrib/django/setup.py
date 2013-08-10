@@ -59,7 +59,7 @@ setup(name = 'freppledb',
       scripts = ['frepplectl.py'],
       packages = packages,
       data_files = data_files,
-      options = { "install" : {'optimize': 2}},
+      options = { "install" : {'compile': False}},
       classifiers = [
         'License :: Other/Proprietary License',
         'Intended Audience :: Manufacturing',

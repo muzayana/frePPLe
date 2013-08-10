@@ -1,2 +1,3 @@
 /usr/share/frepple/license.xml
-/usr/lib/python2.7/dist-packages/freppledb/settings.py
+/usr/share/pyshared/freppledb/settings.py
+

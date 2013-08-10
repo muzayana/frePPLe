@@ -262,6 +262,8 @@ using namespace frepple;
 namespace module_forecast
 {
 
+// Forward declarations
+class ForecastSolver;
 
 /** Initialization routine for the library. */
 MODULE_EXPORT const char* initialize(const Environment::ParameterList&);

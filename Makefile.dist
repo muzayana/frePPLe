@@ -16,7 +16,6 @@
 #     - prep:        Initializes the AutoMake tools.
 #  BUILDING AND COMPILING
 #     - default:     Configures and recreates an optimized build from scratch.
-#     - enterprise:  Configures and recreates an optimized enterprise build from scratch.
 #     - debug:       Configures and recreates a debug build from scratch.
 #     - coverage:    Configures and recompiles the code for coverage testing.
 #     - profile:     Configures and recompiles the code suitable for profiling.
@@ -36,8 +35,6 @@
 
 default: prep config clean build dist check
 
-enterprise: prep configenterprise clean build dist check
-
 debug: prep configdebug clean build check
 
 coverage: prep configcoverage clean build check
@@ -55,14 +52,9 @@ prep:
 
 config:
 	@echo
-	@echo "PHASE: Running configure for optimized build..."
-	./configure --enable-doc
-#--prefix=`pwd`/install-test
-
-configenterprise:
-	@echo
 	@echo "PHASE: Running configure for optimized enterprise build..."
 	./configure --enable-doc --enable-license
+#--prefix=`pwd`/install-test
 
 configdebug:
 	@echo
