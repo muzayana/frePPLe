@@ -3111,8 +3111,8 @@ class PythonExtensionBase : public PyObject
       if (PyObject::ob_refcnt > 1)
         logger << "Warning: Deleting "
           << (PyObject::ob_type->tp_name && PyObject::ob_type ? PyObject::ob_type->tp_name : "NULL")
-          << " object that is still referenced "
-          << (PyObject::ob_refcnt-1) << " times" << endl;
+            << " object that is still referenced "
+            << (PyObject::ob_refcnt-1) << " times" << endl;
     }
 
     /** A function to force an object to be destroyed by the Python garbage
