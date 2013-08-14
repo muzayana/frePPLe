@@ -8,7 +8,7 @@ follows its packaging guidelines:
   See https://wiki.ubuntu.com/PackagingGuide/Complete
 
 Build instructions:
- - You need to install the packages "cdbs", "debhelper", "pbuilder" and "dh-make".  
+ - You need to install the packages "cdbs", "debhelper" and "pbuilder".  
  - Initialize your build environment with the command:
      sudo pbuilder create
  - Build the packages

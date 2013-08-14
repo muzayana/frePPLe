@@ -23,9 +23,8 @@ URL: http://www.frepple.com
 Source: http://downloads.sourceforge.net/%{name}/%{name}-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-XXXXXX)
 # Note on dependencies: Django is also required, but we need a custom install.
-# The build also requires the standard django as dependency (for running the command collectstatic)
 Requires: xerces-c, openssl, httpd, mod_wsgi, python
-BuildRequires: python-devel, automake, autoconf, libtool, xerces-c-devel, openssl-devel, graphviz, doxygen, django
+BuildRequires: python-devel, automake, autoconf, libtool, xerces-c-devel, openssl-devel, graphviz, doxygen
 
 %description
 FrePPLe stands for "Free Production PLanning". It is an application for
