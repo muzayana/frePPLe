@@ -54,7 +54,7 @@ config:
 	@echo
 	@echo "PHASE: Running configure for optimized enterprise build..."
 	./configure --enable-doc --enable-license
-#--prefix=`pwd`/install-test
+#--prefix=`pwd`/install-test --sysconfdir=`pwd`/install-test/etc
 
 configdebug:
 	@echo

@@ -108,7 +108,7 @@ rm -rf %{buildroot}
 %{_mandir}/man1/frepple.1.*
 %{_mandir}/man1/frepplectl.1.*
 %doc COPYING
-%config(noreplace) %{_datadir}/frepple/license.xml
+%config(noreplace) /etc/frepple/license.xml
 %config(noreplace) %{python_sitelib}/freppledb/settings.py
 %config(noreplace) /etc/httpd/conf.d/z_frepple.conf
 

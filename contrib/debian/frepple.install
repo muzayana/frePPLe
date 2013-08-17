@@ -3,5 +3,6 @@ usr/lib/*.so*
 usr/lib/frepple/*.so*
 usr/lib/python2.7/dist-packages/freppledb/*
 etc/apache2/sites-available/frepple
+etc/frepple
 usr/share/frepple
 usr/share/man/man1/*
