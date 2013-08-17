@@ -8,7 +8,7 @@ install-data-local:
 	echo "installing Django web application to $(DESTDIR)$(pythondir)"; \
 	$(PYTHON) setup.py install --prefix $(DESTDIR)$(prefix) --install-purelib=$(DESTDIR)$(pythondir)
 	-mkdir static
-#	$(PYTHON) frepplectl.py collectstatic --noinput --clear
+	$(PYTHON) frepplectl.py collectstatic --noinput --clear
 	find static -type d -exec $(mkinstalldirs) "$(DESTDIR)$(datadir)/frepple/{}" \;; \
 	for p in `find static -type f`; do \
 	  $(INSTALL_DATA) $$p "$(DESTDIR)$(datadir)/frepple/$$p"; \

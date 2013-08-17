@@ -59,7 +59,7 @@ Documentation subpackage for frePPLe - free Production PLanning.
 %configure \
   --disable-static \
   --disable-dependency-tracking \
-  --enable-doc \
+  --disable-doc \
   --disable-lp_solver
 # Remove rpath from libtool
 sed -i 's|^hardcode_libdir_flag_spec=.*|hardcode_libdir_flag_spec=""|g' libtool
