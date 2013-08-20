@@ -5,6 +5,7 @@ from django.db import transaction, DEFAULT_DB_ALIAS
 from django.conf import settings
 
 from freppledb.common.models import Parameter
+from freppledb.execute.models import Task
 
 import frepple
 

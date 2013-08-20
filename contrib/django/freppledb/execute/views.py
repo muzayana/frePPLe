@@ -190,7 +190,7 @@ def LaunchTask(request, action):
       else:
         # Linux standard installation
         Popen([
-          "frepplectl.py",
+          "frepplectl",
           "frepple_runworker",
           "--database=%s" % request.database
           ])

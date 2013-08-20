@@ -202,13 +202,14 @@ class User(AbstractUser):
   def setPreference(self, prop, val):
     pref = self.preferences.get_or_create(property=prop)[0]
     pref.value = val
+    # Always saved in the main database, to have the same preferences for all scenarios
     pref.save(update_fields=['value'])
 
 
 class UserPreference(models.Model):
   id = models.AutoField(_('identifier'), primary_key=True)
   user = models.ForeignKey(User, verbose_name=_('user'), blank=False, null=False, editable=False, related_name='preferences')
-  property = models.CharField(max_length=settings.CATEGORYSIZE, blank=False, null=False)
+  property = models.CharField(max_length=settings.NAMESIZE, blank=False, null=False)
   value = JSONField(max_length=1000, blank=False, null=False)
 
   class Meta:
@@ -216,7 +217,6 @@ class UserPreference(models.Model):
     unique_together = (('user','property'),)
     verbose_name = 'preference'
     verbose_name_plural = 'preferences'
-
 
 
 class Comment(models.Model):
