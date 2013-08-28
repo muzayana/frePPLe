@@ -110,6 +110,7 @@ rm -rf %{buildroot}
 %doc COPYING
 %config(noreplace) /etc/frepple/license.xml
 %config(noreplace) /etc/frepple/djangosettings.py
+%config(noreplace) /etc/frepple/init.xml
 %config(noreplace) /etc/httpd/conf.d/z_frepple.conf
 
 %files devel
