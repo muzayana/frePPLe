@@ -88,7 +88,10 @@ frepple.printsize()
 #frepple.erase(True)
 #frepple.printsize()
 
-from freppledb_extra.quoting.service import Server
-Server()
+#for i in frepple.operationplans():
+#  i.locked = True
+
+from freppledb.quoting.service import Server
+Server(database=db)
 
 print "\nFinished planning at", datetime.now().strftime("%H:%M:%S")

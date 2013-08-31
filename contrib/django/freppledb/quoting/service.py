@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2009-2012 by Johan De Taeye, frePPLe bvba
+# Copyright (C) 2009-2013 by Johan De Taeye, frePPLe bvba
 #
 # All information contained herein is, and remains the property of frePPLe.
 # You are allowed to use and modify the source code, as long as the software is used
@@ -8,16 +8,19 @@
 # or in the form of compiled binaries.
 #
 
-# file : $URL: file:///C:/Users/Johan/Dropbox/SVNrepository/frepple/addon/contrib/django/freppledb_extra/quoting/service.py $
-# revision : $LastChangedRevision: 432 $  $LastChangedBy: Johan $
-# date : $LastChangedDate: 2012-10-31 16:50:04 +0100 (Wed, 31 Oct 2012) $
+import cherrypy, os, thread
 
-import cherrypy
-import os
 from django.conf import settings
 from django.template.loader import render_to_string
+from django.db import DEFAULT_DB_ALIAS
+
+from freppledb.input.models import Demand, Item, Customer
 
 import frepple
+
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 def error_page(status, message, traceback, version):
@@ -38,7 +41,7 @@ def error_page(status, message, traceback, version):
     ''' % {'status':status, 'message':message, 'traceback':traceback, 'version':frepple.version}
 
 
-def Server(address=None, port=None):
+def Server(database=DEFAULT_DB_ALIAS, address=None, port=None):
   import socket
 
   # Pick up the address
@@ -68,7 +71,10 @@ def Server(address=None, port=None):
     #'tools.gzip.on': True,
     'error_page.default': error_page,
     'log.level': 'info',
-    'server.threadPool': 10,
+    # The server MUST be run as a single thread.
+    # Simultaneous write access to the planning engine is not safe and
+    # can crash the application.
+    'server.threadPool': 1,
     'engine.autoreload_on': False,
     'tools.response_headers.on': True,
     'tools.response_headers.headers': [('Server', 'frepple/%s' % frepple.version)]
@@ -96,18 +102,18 @@ def Server(address=None, port=None):
        }
     }
   print 'Order quoting web service starting on http://%s:%s/' % (address, port)
-  cherrypy.quickstart(Interface(), "", config=config)
+  cherrypy.quickstart(Interface(database=database), "", config=config)
   print 'Order quoting web service stopped'
 
 
 class collectdemands:
   def __init__(self):
-    self.demands = []
+    self.demands = {}
 
   def __call__(self, o):
       if isinstance(o, frepple.demand):
         if o not in self.demands:
-          self.demands.append(o)
+          self.demands[o.name] = o
 
 
 class Interface:
@@ -121,9 +127,10 @@ class Interface:
     '</plan>\n',
     ]
 
-  def __init__(self):
-    # Create a solver
-    self.solver = frepple.solver_mrp(name="quote", constraints=15, plantype=1, loglevel=2)
+  def __init__(self, database=DEFAULT_DB_ALIAS):
+    self.solver = frepple.solver_mrp(name="quote", constraints=15, plantype=1, loglevel=0)
+    self.lock = thread.allocate_lock()
+    self.database = database
 
   # A generic way to expose XML data.
   # Use this decorator function to decorate a generator function.
@@ -603,30 +610,66 @@ class Interface:
     if not xmldata:
       raise cherrypy.HTTPError(404,"No data")
 
-    # Read all demands
-    callback = collectdemands()
-    cherrypy.response.headers['content-type'] = 'application/xml'
-    try:
-      if not isinstance(xmldata,basestring):
-        xmldata = xmldata.file.read()
-      frepple.readXMLdata(xmldata,1,0, callback)
-    except Exception as e:
-      raise cherrypy.HTTPError(500,str(e))
-    if not callback.demands:
-      raise cherrypy.HTTPError(404,"No data")
-
-    # Process the demands
-    res = []
-    for i in self.top: res.append(i)
-    res.append('<demands>')
-    errors = []
-    for d in callback.demands:
+    with self.lock:
+      # Read all demands
+      callback = collectdemands()
+      cherrypy.response.headers['content-type'] = 'application/xml'
       try:
-        self.solver.solve(d)
-        self.solver.commit()
+        if not isinstance(xmldata,basestring):
+          xmldata = xmldata.file.read()
+        frepple.readXMLdata(xmldata,1,0, callback)
       except Exception as e:
-        errors.append(str(e))
-      res.append(d.toXML('P'))
-    res.append('</demands>')
-    for i in self.bottom: res.append(i)
-    return "".join(res)
+        raise cherrypy.HTTPError(500,str(e))
+      if not callback.demands:
+        raise cherrypy.HTTPError(404,"No data")
+
+      # Find existing opplans
+      for i in frepple.operationplans():
+        if i.motive and i.motive.name in callback.demands:
+          print "before", i.operation
+
+      # Process the demands
+      res = []
+      for i in self.top: res.append(i)
+      res.append('<demands>\n')
+      for name, dm in callback.demands.items():
+        try:
+          self.solver.solve(dm)
+          self.solver.commit()
+        except Exception as e:
+          logger.error("When planning %s: %s" % (name, e))
+        res.append(dm.toXML('P'))
+
+        item_db = Item.objects.using(self.database).get(pk = dm.item.name)
+        if dm.customer:
+          customer_db = Customer.objects.using(self.database).get(pk = dm.customer.name)
+        else:
+          customer_db = None
+        try:
+          dm_db = Demand.objects.using(self.database).get(pk=name)
+          dm_db.quantity = dm.quantity
+          dm_db.due = dm.due
+          dm_db.priority = dm.priority
+          dm_db.description = dm.description
+          dm_db.status = 'quote'
+          dm_db.item = item_db
+          dm_db.customer = customer_db
+          dm_db.minshipment = dm.minshipment
+          dm_db.maxlateness = dm.maxlateness
+          dm_db.category = dm.category
+          dm_db.subcategory = dm.subcategory
+        except:
+          dm_db = Demand(name=name, quantity=dm.quantity, due=dm.due, priority=dm.priority,
+              description=dm.description, status='quote', item=item_db, customer=customer_db,
+              minshipment=dm.minshipment, maxlateness=dm.maxlateness, category=dm.category,
+              subcategory=dm.subcategory)
+        dm_db.save(using=self.database)
+
+      res.append('</demands>\n')
+      for i in self.bottom: res.append(i)
+
+      # Find existing opplans
+      for i in frepple.operationplans():
+        if i.motive and i.motive.name in callback.demands:
+          print "after", i.operation
+      return "".join(res)

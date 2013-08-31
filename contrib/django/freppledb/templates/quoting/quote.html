@@ -1,24 +1,173 @@
-{% extends "admin/base_site_nav.html" %}
-{% load i18n admin_list %}
+{% extends "admin/base_site_grid.html" %}
+{% load i18n %}
+{% block contextmenus %}
+{% include "demandcontext.html" %}
+{% include "itemcontext.html" %}
+{% include "customercontext.html" %}
+{% include "operationcontext.html" %}
+{% endblock %}
 {% block extrahead %}{{block.super}}
+<style>
+.quotebutton {
+  width: 23%;
+  float: left;
+  margin-left: 5px;
+}
+#status h1 {
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+</style>
 <script type="text/javascript">
+
   $(function() {
-    $(".vDateField").datepicker({
-      showOtherMonths: true, selectOtherMonths: true,
-      changeMonth:true, changeYear:true, yearRange: "c-1:c+5", dateFormat: 'yy-mm-dd'
-      });
+    $(".date, .vDateField").datepicker({
+        showOtherMonths: true, selectOtherMonths: true,
+        dateFormat: "yy-mm-dd", changeMonth:true,
+        changeYear:true, yearRange: "c-1:c+5"
+        });
     $("input:submit").button();
+    $("#fields").resizable({
+      handles:'e',
+      minWidth:350,
+      resize: function() {
+        // Save the configuration if we don't get any more resizing events in 200ms.
+        clearTimeout(resizing);
+        resizing = setTimeout(saveColumnConfiguration, 200);
+        }
+      });
   });
+
+  function extraPreference() {
+    return {
+       "height": $("#gbox_grid").height() - 48,
+       "width": $("#fields").width()
+       };
+  }
+
+  function getQuote() {
+    data = '<plan xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n<demands>\n'
+      + '<demand name="' + $("#id_name").val() + '">\n'
+      + '<description>' + $("#id_description").val() + '</description>\n'
+      + '<customer name="' + $("#id_customer option:selected").text() + '"/>\n'
+      + '<quantity>' + $("#id_quantity").val() + '</quantity>\n'
+      + '<item name="' + $("#id_item option:selected").text() + '"/>\n'
+      + '<due>' + $("#id_due").val() + '</due>\n'
+      + '<priority>1000000</priority>\n';
+    v = $("#id_minshipment").val();
+    console.log('x'+v+'x');
+    if (v!=null && v!='' && !isNaN(v))
+      data += '<minshipment>' + v + '</minshipment>\n';
+    data += '</demand>\n'
+      + '</demands>\n'
+      + '</plan>\n';
+    $.ajax({
+      type: 'POST',
+      url: '{{request.prefix}}/quote/check/',
+      contentType: 'application/xml; charset=utf-8',
+      data: data,
+      dataType: 'xml',
+      success: function (xmldata, status, jqXHR) {
+        $("#id_name").val($(xmldata).find('demands > demand').attr('name'));
+        $("#id_description").val($(xmldata).find('demands > demand > description').text());
+        $("#id_item").val($(xmldata).find('demands > demand > item').attr('name'));
+        $("#id_customer").val($(xmldata).find('demands > demand > customer').attr('name'));
+        $("#id_quantity").val($(xmldata).find('demands > demand > quantity').text());
+        $("#id_due").val($(xmldata).find('demands > demand > due').text());
+        $("#id_minshipment").val($(xmldata).find('demands > demand > minshipment').text());
+        status = '<h1>{% trans "Deliveries" %}</h1>';
+        $(xmldata).find('demands > demand > operationplans > operationplan').each(function() {
+          status += '&nbsp;&nbsp;' + $(this).find('quantity').text() + '&nbsp;&nbsp;' + $(this).find('end').text() + '<br/>';
+          })
+        status += '<h1>{% trans "Problems" %}</h1>';
+        $(xmldata).find('demands > demand > problems > problem').each(function() {
+          status += '&nbsp;&nbsp;' + $(this).find('description').text() + '<br/>';
+          })
+        status += '<h1>{% trans "Why short or late?" %}</h1>';
+        $(xmldata).find('demands > demand > constraints > problem').each(function() {
+          status += '&nbsp;&nbsp;' + $(this).find('name').text() + '&nbsp;&nbsp;' + $(this).find('description').text() + '&nbsp;&nbsp;' + $(this).find('start').text() + '&nbsp;&nbsp;' + $(this).find('end').text() + '<br/>';
+          })
+        $('#status').html(status);
+        jQuery("#grid").trigger('reloadGrid', [{current:true}])
+      },
+      error: function (result, stat, errorThrown) {
+        console.log(stat);
+        console.log(errorThrown);
+        $('#popup').html(result.responseText)
+          .dialog({
+            title: gettext("Error getting quote info"),
+            autoOpen: true,
+            resizable: false,
+            width: 'auto',
+            height: 'auto'
+          });
+        }
+      });
+  }
+
+  function displayInfo(rowid) {
+   $.ajax({
+      type: 'POST',
+      url: '{{request.prefix}}/quote/info/',
+      contentType: 'application/json; charset=utf-8',
+      data: JSON.stringify(['info', rowid]),
+      dataType: 'xml',
+      success: function (xmldata, status, jqXHR) {
+        $("#id_name").val($(xmldata).find('demands > demand').attr('name'));
+        $("#id_description").val($(xmldata).find('demands > demand > description').text());
+        $("#id_item").val($(xmldata).find('demands > demand > item').attr('name'));
+        $("#id_customer").val($(xmldata).find('demands > demand > customer').attr('name'));
+        $("#id_quantity").val($(xmldata).find('demands > demand > quantity').text());
+        $("#id_due").val($(xmldata).find('demands > demand > due').text());
+        status = '<h1>{% trans "Deliveries" %}</h1>';
+        $(xmldata).find('demands > demand > operationplans > operationplan').each(function() {
+          status += '&nbsp;&nbsp;' + $(this).find('quantity').text() + '&nbsp;&nbsp;' + $(this).find('end').text() + '<br/>';
+          })
+        status += '<h1>{% trans "Problems" %}</h1>';
+        $(xmldata).find('demands > demand > problems > problem').each(function() {
+          status += '&nbsp;&nbsp;' + $(this).find('description').text() + '<br/>';
+          })
+        status += '<h1>{% trans "Why short or late?" %}</h1>';
+        $(xmldata).find('demands > demand > constraints > problem').each(function() {
+          status += '&nbsp;&nbsp;' + $(this).find('name').text() + '&nbsp;&nbsp;' + $(this).find('description').text() + '&nbsp;&nbsp;' + $(this).find('start').text() + '&nbsp;&nbsp;' + $(this).find('end').text() + '<br/>';
+          })
+        $('#status').html(status);
+      },
+      error: function (result, stat, errorThrown) {
+        $('#popup').html(result.responseText)
+          .dialog({
+            title: gettext("Error getting quote info"),
+            autoOpen: true,
+            resizable: false,
+            width: 'auto',
+            height: 'auto'
+          });
+        }
+      });
+  }
 </script>
 {% endblock %}
-{% block content %}
-<div id="content-main">
-
-<form action="." method="post" class="form">{% csrf_token %}
-<table>{{form.as_table}}
-<tr><td><input type="submit" value="{% trans 'Quote' %}"/></td></tr>
-</table></form>
-
+{% block extra_grid %}onSelectRow: displayInfo,
+{% endblock %}
+{% block after_table %}
+<br/>
+<div style="overflow:auto">
+<div id="fields" style="float:left; width:{% if "height" in preferences %}{{preferences.width}}{% else %}350{% endif %}px">
+<h1>{% trans "Quote" %}</h1>
+<form action="javascript:getQuote()" method="post" class="form">{% csrf_token %}
+{% for field in form %}<p>
+{{ field.errors }}
+{{ field.label_tag }} {{ field }}
+</p>
+{% endfor %}
+<br/>
+<div class="quotebutton"><input style="width:100%" id="getquote" type="submit" value="{% trans 'Check' %}"/></div>
+<div class="quotebutton"><input style="width:100%" id="getquote" type="submit" value="{% trans 'Save' %}"/></div>
+<div class="quotebutton"><input style="width:100%" id="getquote" type="submit" value="{% trans 'Cancel' %}"/></div>
+<div class="quotebutton"><input style="width:100%" id="getquote" type="submit" value="{% trans 'Confirm' %}"/></div>
+</form>
 </div>
-
+<div id="status"><h1>{% trans "Deliveries" %}</h1><br/>
+<h1>{% trans "Problems" %}</h1><br/>
+<h1>{% trans "Why short or late?" %}</h1></div>
 {% endblock %}

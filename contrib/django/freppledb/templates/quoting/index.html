@@ -11,17 +11,18 @@
     text-decoration:underline
   }
 </style>
-<script type="text/javascript" src="/static/js/jquery-1.6.4.min.js"></script>
-<script type="text/javascript" src="/static/js/jquery-ui-1.8.16.min.js"></script>
+<script type="text/javascript" src="/static/js/jquery-1.10.2.min.js"></script>
+<script type="text/javascript" src="/static/js/jquery-ui-1.10.3.min.js"></script>
 <script type="text/javascript">
   $(function() {
     $("#content-main").accordion({
-      collapsible: true, navigation: true, active: 4
+      collapsible: true, navigation: true, active: 0
       });
     $('form').submit(function() {
         window.open('', 'formpopup', 'width=700,height=400,resizeable,scrollbars');
         this.target = 'formpopup';
     });
+    $('input:submit').button();
   });
 </script>
 </head>
