@@ -470,7 +470,7 @@ def loadDemand(cursor):
      operation_id, customer_id, owner_id, minshipment, maxlateness,
      category, subcategory
      FROM demand
-     where status is null or status ='open' ''')
+     where status is null or status ='open' or status = 'quote' ''')
   for i,j,k,l,m,n,o,p,q,r,s,t in cursor.fetchall():
     cnt += 1
     try:
