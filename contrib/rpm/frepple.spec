@@ -23,7 +23,7 @@ URL: http://www.frepple.com
 Source: http://downloads.sourceforge.net/%{name}/%{name}-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-XXXXXX)
 # Note on dependencies: Django is also required, but we need a custom install.
-Requires: xerces-c, openssl, httpd, mod_wsgi, python
+Requires: xerces-c, openssl, httpd, mod_wsgi, python, python-cherrypy
 BuildRequires: python-devel, automake, autoconf, libtool, xerces-c-devel, openssl-devel, graphviz, doxygen
 
 %description
@@ -87,6 +87,8 @@ mv $RPM_BUILD_ROOT/usr/bin/frepplectl.py $RPM_BUILD_ROOT/usr/bin/frepplectl
 # Install apache configuration
 mkdir -p $RPM_BUILD_ROOT/etc/httpd/conf.d
 install -m 644 -p contrib/rpm/httpd.conf $RPM_BUILD_ROOT/etc/httpd/conf.d/z_frepple.conf
+# Create log directory
+mkdir -p $RPM_BUILD_ROOT/var/log/frepple
 
 %clean
 rm -rf %{buildroot}
@@ -104,6 +106,7 @@ rm -rf %{buildroot}
 %dir %{_libdir}/frepple
 %{_libdir}/frepple/mod_forecast.so
 %{_datadir}/frepple
+%attr(075,root,root) %dir /var/log/frepple
 %{python_sitelib}/freppledb*
 %{_mandir}/man1/frepple.1.*
 %{_mandir}/man1/frepplectl.1.*

@@ -502,20 +502,17 @@ class GridReport(View):
         bucketnames = Bucket.objects.order_by('name').values_list('name', flat=True)
       else:
         bucketnames = bucketlist = start = end = bucket = None
-      reportkey = reportclass.getKey()
-      prefs = request.user.getPreference(reportkey)
       context = {
         'reportclass': reportclass,
         'title': (args and args[0] and _('%(title)s for %(entity)s') % {'title': force_unicode(reportclass.title), 'entity':force_unicode(args[0])}) or reportclass.title,
+        'preferences': None,
         'object_id': args and args[0] or None,
-        'preferences': prefs,
-        'page': prefs and prefs.get('page', 1) or 1,
-        'sord': prefs and prefs.get('sord', 'asc') or 'asc',
-        'sidx': prefs and prefs.get('sidx', '') or '',
-        'reportkey': reportkey,
+        'page': 1,
+        'sord': 'asc',
+        'sidx': '',
         'is_popup': request.GET.has_key('pop'),
         'args': args,
-        'filters': prefs and prefs.get('filter',None) or reportclass.getQueryString(request),
+        'filters': reportclass.getQueryString(request),
         'bucketnames': bucketnames,
         'bucketlist': bucketlist,
         'bucketstart': start,
@@ -649,12 +646,12 @@ class GridReport(View):
               ).save(using=request.database)
           except reportclass.model.DoesNotExist:
             ok = False
-            resp.write(escape(_("Can't find %s" % obj.pk)))
+            resp.write(escape(_("Can't find %s" % rec['id'])))
             resp.write('<br/>')
           except Exception as e:
             ok = False
             for error in form.non_field_errors():
-              resp.write(escape('%s: %s' % (obj.pk, error)))
+              resp.write(escape('%s: %s' % (rec['id'], error)))
               resp.write('<br/>')
             for field in form:
               for error in field.errors:
@@ -1262,13 +1259,13 @@ def getBuckets(request, bucket=None, start=None, end=None):
       start = datetime.now()
       start = start.replace(microsecond=0)
     if pref.horizonunit == 'day':
-      end = start + timedelta(days=pref.horizonlength)
+      end = start + timedelta(days=pref.horizonlength or 60)
       end = end.replace(hour=0, minute=0, second=0)
     elif pref.horizonunit == 'week':
-      end = start.replace(hour=0, minute=0, second=0) + timedelta(weeks=pref.horizonlength, days=7-start.weekday())
+      end = start.replace(hour=0, minute=0, second=0) + timedelta(weeks=pref.horizonlength or 8, days=7-start.weekday())
     else:
       y = start.year
-      m = start.month + pref.horizonlength + (start.day > 1 and 1 or 0)
+      m = start.month + (pref.horizonlength or 2) + (start.day > 1 and 1 or 0)
       while m > 12:
         y += 1
         m -= 12
@@ -1290,11 +1287,11 @@ def getBuckets(request, bucket=None, start=None, end=None):
       end = pref.horizonend
       if not end:
         if pref.horizonunit == 'day':
-          end = start + timedelta(days=pref.horizonlength)
+          end = start + timedelta(days=pref.horizonlength or 60)
         elif pref.horizonunit == 'week':
-          end = start + timedelta(weeks=pref.horizonlength)
+          end = start + timedelta(weeks=pref.horizonlength or 8)
         else:
-          end = start + timedelta(weeks=pref.horizonlength)
+          end = start + timedelta(weeks=pref.horizonlength or 8)
 
   # Filter based on the start and end date
   if not bucket:

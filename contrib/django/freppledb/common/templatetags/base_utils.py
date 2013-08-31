@@ -43,7 +43,6 @@ class ModelsNode(Node):
         self.adminsite = getattr(__import__(adminsite[:dot], {}, {}, ['']), adminsite[dot+1:])
 
     def render(self, context):
-        from django.db import models
         from django.utils.text import capfirst
         user = context['user']
         model_list = []
@@ -98,6 +97,7 @@ class CrumbsNode(Node):
   def render(self, context):
     try: req = context['request']
     except: return ''  # No request found in the context: no crumbs...
+    if not hasattr(req,'session'): return # No session found in the context: no crumbs...
 
     # Pick up the current crumbs from the session cookie
     try:
