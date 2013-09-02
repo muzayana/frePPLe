@@ -133,10 +133,6 @@ def horizon(request):
 def settings(request):
   if request.method != 'POST' or not request.is_ajax():
     raise Http404('Only ajax post requests allowed')
-  data = json.loads(request.body)
-  for key, value in data.items():
-    request.user.setPreference(key, value);
-  return HttpResponse(content="OK")
   try:
     data = json.loads(request.body)
     for key, value in data.items():

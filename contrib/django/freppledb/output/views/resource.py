@@ -222,7 +222,7 @@ class GanttReport(GridReport):
     (bucket,start,end,bucketlist) = getBuckets(request, request.user)
     horizon = (end - start).total_seconds() / 1000
 
-    # Assure the item hierarchy is up to date
+    # Assure the resource hierarchy is up to date
     Resource.rebuildHierarchy(database=basequery.db)
 
     # Execute the query
