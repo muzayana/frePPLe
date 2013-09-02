@@ -193,11 +193,6 @@ class User(AbstractUser):
     verbose_name = _('user')
     verbose_name_plural = _('users')
 
-  def getPreference(self, prop, default = None):
-    try:
-      return self.preferences.get(property=prop).value
-    except:
-      return default
 
   def setPreference(self, prop, val):
     pref = self.preferences.get_or_create(property=prop)[0]
