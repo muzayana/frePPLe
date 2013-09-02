@@ -50,8 +50,8 @@ def Server(database=DEFAULT_DB_ALIAS, address=None, port=None):
     except: address = '127.0.0.1'
 
   # Pick up the port number
-  try: port = int(port or 8080)
-  except: port = 8080
+  try: port = int(port or 8001)
+  except: port = 8001
 
   # Validate the address and port number
   try:

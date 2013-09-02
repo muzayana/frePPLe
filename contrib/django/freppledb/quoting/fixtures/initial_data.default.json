@@ -1,0 +1,3 @@
+[
+{"pk": "quoting.service_url", "model": "common.parameter", "fields": {"value": "http://localhost:8001/", "description": "URL of the quoting service"}}
+]
