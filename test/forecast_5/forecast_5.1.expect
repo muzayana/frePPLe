@@ -15,6 +15,7 @@
 	<current>2009-01-01T00:00:00</current>
 	<solvers>
 		<solver name="forecasting" xsi:type="solver_forecast">
+			<loglevel>5</loglevel>
 		</solver>
 	</solvers>
 	<customers>
@@ -237,28 +238,28 @@
 			<calendar name="planningbuckets"/>
 			<buckets>
 				<bucket start="2009-01-01T00:00:00">
-					<total>11</total>
-					<quantity>11</quantity>
+					<total>10</total>
+					<quantity>10</quantity>
 					<consumed>0</consumed>
 				</bucket>
 				<bucket start="2009-02-01T00:00:00">
-					<total>11</total>
-					<quantity>11</quantity>
+					<total>10</total>
+					<quantity>10</quantity>
 					<consumed>0</consumed>
 				</bucket>
 				<bucket start="2009-03-01T00:00:00">
-					<total>17</total>
-					<quantity>17</quantity>
+					<total>20</total>
+					<quantity>20</quantity>
 					<consumed>0</consumed>
 				</bucket>
 				<bucket start="2009-04-01T00:00:00">
-					<total>30</total>
-					<quantity>30</quantity>
+					<total>31</total>
+					<quantity>31</quantity>
 					<consumed>0</consumed>
 				</bucket>
 				<bucket start="2009-05-01T00:00:00">
-					<total>29</total>
-					<quantity>29</quantity>
+					<total>22</total>
+					<quantity>22</quantity>
 					<consumed>0</consumed>
 				</bucket>
 				<bucket start="2009-06-01T00:00:00">
@@ -528,35 +529,35 @@
 			<description>Demand &apos;seasonal demand - 2009-01-01T00:00:00&apos; is not planned</description>
 			<start>2009-01-01T00:00:00</start>
 			<end>2009-01-01T00:00:00</end>
-			<weight>11</weight>
+			<weight>10</weight>
 		</problem>
 		<problem>
 			<name>unplanned</name>
 			<description>Demand &apos;seasonal demand - 2009-02-01T00:00:00&apos; is not planned</description>
 			<start>2009-02-01T00:00:00</start>
 			<end>2009-02-01T00:00:00</end>
-			<weight>11</weight>
+			<weight>10</weight>
 		</problem>
 		<problem>
 			<name>unplanned</name>
 			<description>Demand &apos;seasonal demand - 2009-03-01T00:00:00&apos; is not planned</description>
 			<start>2009-03-01T00:00:00</start>
 			<end>2009-03-01T00:00:00</end>
-			<weight>17</weight>
+			<weight>20</weight>
 		</problem>
 		<problem>
 			<name>unplanned</name>
 			<description>Demand &apos;seasonal demand - 2009-04-01T00:00:00&apos; is not planned</description>
 			<start>2009-04-01T00:00:00</start>
 			<end>2009-04-01T00:00:00</end>
-			<weight>30</weight>
+			<weight>31</weight>
 		</problem>
 		<problem>
 			<name>unplanned</name>
 			<description>Demand &apos;seasonal demand - 2009-05-01T00:00:00&apos; is not planned</description>
 			<start>2009-05-01T00:00:00</start>
 			<end>2009-05-01T00:00:00</end>
-			<weight>29</weight>
+			<weight>22</weight>
 		</problem>
 		<problem>
 			<name>unplanned</name>

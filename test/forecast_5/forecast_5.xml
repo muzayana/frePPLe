@@ -41,7 +41,7 @@ theitem = frepple.item(name="item")
 thecustomer = frepple.customer(name="customer")
 thecalendar = frepple.calendar(name="planningbuckets")
 thebuckets = [ i.start for i in thecalendar.buckets ]
-solver = frepple.solver_forecast(name="forecasting", Net_CustomerThenItemHierarchy=True)
+solver = frepple.solver_forecast(name="forecasting", Net_CustomerThenItemHierarchy=True, loglevel=5)
 
 def testcase(fcstname, series):
   print series

@@ -486,7 +486,7 @@ double Forecast::DoubleExponential::generateForecast
         sum12 += weight[i] * d_forecast_d_alfa * d_forecast_d_gamma;
         sum22 += weight[i] * d_forecast_d_gamma * d_forecast_d_gamma;
         sum13 += weight[i] * d_forecast_d_alfa * (history_i - constant_i - trend_i);
-        sum23 += weight[i] * d_forecast_d_gamma * (history_i_min_1 - constant_i - trend_i);
+        sum23 += weight[i] * d_forecast_d_gamma * (history_i - constant_i - trend_i);
         if (i >= fcst->getForecastSkip()) // Don't measure during the warmup period
         {
           error += (constant_i + trend_i - history_i) * (constant_i + trend_i - history_i) * weight[i];
