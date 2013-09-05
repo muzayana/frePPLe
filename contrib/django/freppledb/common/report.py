@@ -345,9 +345,9 @@ class GridReport(View):
 
     # Write the report content
     if callable(reportclass.basequeryset):
-      query = reportclass._apply_sort(request, reportclass.filter_items(request, reportclass.basequeryset(request, args, kwargs), False).using(request.database))
+      query = reportclass._apply_sort(request, reportclass.filter_items(request, reportclass.basequeryset(request, args, kwargs), False).using(request.database), prefs)
     else:
-      query = reportclass._apply_sort(request, reportclass.filter_items(request, reportclass.basequeryset).using(request.database))
+      query = reportclass._apply_sort(request, reportclass.filter_items(request, reportclass.basequeryset).using(request.database), prefs)
     for row in hasattr(reportclass,'query') and reportclass.query(request,query) or query.values(*fields):
       # Clear the return string buffer
       sf.truncate(0)
@@ -415,7 +415,7 @@ class GridReport(View):
     total_pages = math.ceil(float(recs) / request.pagesize)
     if page > total_pages: page = total_pages
     if page < 1: page = 1
-    query = reportclass._apply_sort(request, query)
+    query = reportclass._apply_sort(request, query, request.user.getPreference(reportclass.getKey()))
 
     yield '{"total":%d,\n' % total_pages
     yield '"page":%d,\n' % page
@@ -502,15 +502,20 @@ class GridReport(View):
         bucketnames = Bucket.objects.order_by('name').values_list('name', flat=True)
       else:
         bucketnames = bucketlist = start = end = bucket = None
+      reportkey = reportclass.getKey()
+      prefs = request.user.getPreference(reportkey)
       context = {
         'reportclass': reportclass,
         'title': (args and args[0] and _('%(title)s for %(entity)s') % {'title': force_unicode(reportclass.title), 'entity':force_unicode(args[0])}) or reportclass.title,
-        'preferences': None,
+        'preferences': prefs,
+        'reportkey': reportkey,
         'object_id': args and args[0] or None,
-        'page': 1,
-        'sord': 'asc',
-        'sidx': '',
+        'preferences': prefs,
+        'page': prefs and prefs.get('page', 1) or 1,
+        'sord': prefs and prefs.get('sord', 'asc') or 'asc',
+        'sidx': prefs and prefs.get('sidx', '') or '',
         'is_popup': request.GET.has_key('pop'),
+        'filters': prefs and prefs.get('filter',None) or reportclass.getQueryString(request),
         'args': args,
         'filters': reportclass.getQueryString(request),
         'bucketnames': bucketnames,
@@ -1035,15 +1040,22 @@ class GridPivot(GridReport):
   multiselect = False
 
   @classmethod
-  def _apply_sort(reportclass, request):
+  def _apply_sort(reportclass, request, prefs=None):
     '''
     Returns the index of the column to sort on.
     '''
-    sort = 'sidx' in request.GET and request.GET['sidx'] or reportclass.rows[0].name
+    if 'sidx' in request.GET:
+      sort = request.GET['sidx']
+    elif prefs and 'sidx' in prefs:
+      sort = prefs['sidx']
+    else:
+      sort = reportclass.rows[0].name
     idx = 1
     for i in reportclass.rows:
       if i.name == sort:
         if 'sord' in request.GET and request.GET['sord'] == 'desc':
+          return idx > 1 and "%d desc, 1 asc" % idx or "1 desc"
+        elif prefs and 'sord' in prefs and prefs['sord'] == 'desc':
           return idx > 1 and "%d desc, 1 asc" % idx or "1 desc"
         else:
           return idx > 1 and "%d asc, 1 asc" % idx or "1 asc"
