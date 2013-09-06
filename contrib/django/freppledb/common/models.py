@@ -20,6 +20,10 @@ from django.contrib.auth.models import AbstractUser
 from freppledb.common.fields import JSONField
 
 
+import logging
+logger = logging.getLogger(__name__)
+
+
 class HierarchyModel(models.Model):
   lft = models.PositiveIntegerField(db_index = True, editable=False, null=True, blank=True)
   rght = models.PositiveIntegerField(null=True, editable=False, blank=True)
@@ -196,6 +200,9 @@ class User(AbstractUser):
   def getPreference(self, prop, default = None):
     try:
       return self.preferences.get(property=prop).value
+    except ValueError:
+      logger.error("Invalid preference '%s' of user '%s'" % (prop, self.username))
+      return default
     except:
       return default
 
