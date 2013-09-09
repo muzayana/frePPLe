@@ -98,23 +98,6 @@ var upload = {
 
 
 //----------------------------------------------------------------------------
-// Popup row selection.
-// The popup window present a list of objects. The user clicks on a row to
-// select it and a "select" button appears. When this button is clicked the
-// popup is closed and the selected id is passed to the calling page.
-//----------------------------------------------------------------------------
-
-var selected;
-
-function setSelectedRow(id) {
-  if (selected!=undefined)
-    $(this).jqGrid('setCell', selected, 'select', null);
-  selected = id;
-  $(this).jqGrid('setCell', id, 'select', '<button onClick="opener.dismissRelatedLookupPopup(window, selected);" class="ui-button ui-button-text-only ui-widget ui-state-default ui-corner-all"><span class="ui-button-text" style="font-size:66%">'+gettext('Select')+'</span></button>');
-}
-
-
-//----------------------------------------------------------------------------
 // Custom formatter functions for the grid cells. Most of the custom handlers
 // just add an appropriate context menu.
 //----------------------------------------------------------------------------
@@ -227,6 +210,9 @@ jQuery.extend($.fn.fmatter, {
     if (cellvalue === undefined || cellvalue ==='') return '';
     if (options['colModel']['popup']) return cellvalue;
     return cellvalue + "<span class='context ui-icon ui-icon-triangle-1-e' role='projectdeel'></span>";
+  },
+  graph : function (cellvalue, options, rowdata) {
+    return '<div class="graph"></div>';
   }
 });
 jQuery.extend($.fn.fmatter.percentage, {
@@ -290,35 +276,545 @@ jQuery.extend($.fn.fmatter.resourceskill, {
 });
 
 
-//----------------------------------------------------------------------------
-// This function is called when a cell is just being selected in an editable
-// grid. It is used to either a) select the content of the cell (to make
-// editing it easier) or b) display a date picker it the field is of type
-// date.
-//----------------------------------------------------------------------------
+//
+// Functions related to jqgrid
+//
 
-function afterEditCell(rowid, cellname, value, iRow, iCol)
-{
-  var cell = document.getElementById(iRow+'_'+cellname);
-  var colmodel = jQuery("#grid").jqGrid ('getGridParam', 'colModel')[iCol];
-  if (colmodel.formatter == 'date')
+var grid = {
+
+   // Popup row selection.
+   // The popup window present a list of objects. The user clicks on a row to
+   // select it and a "select" button appears. When this button is clicked the
+   // popup is closed and the selected id is passed to the calling page.
+   selected: undefined,
+
+   setSelectedRow: function(id)
+   {
+     if (grid.selected != undefined)
+       $(this).jqGrid('setCell', selected, 'select', null);
+     grid.selected = id;
+     $(this).jqGrid('setCell', id, 'select', '<button onClick="opener.dismissRelatedLookupPopup(window, grid.selected);" class="ui-button ui-button-text-only ui-widget ui-state-default ui-corner-all"><span class="ui-button-text" style="font-size:66%">'+gettext('Select')+'</span></button>');
+   },
+
+  // Renders the cross list in a pivot grid
+  pivotcolumns : function  (cellvalue, options, rowdata)
   {
-    if (colmodel.formatoptions['srcformat'] == "Y-m-d")
-      $(cell).datepicker({
-        showOtherMonths: true, selectOtherMonths: true,
-        dateFormat: "yy-mm-dd", changeMonth:true,
-        changeYear:true, yearRange: "c-1:c+5"
-        });
+    var result = '';
+    for (i in cross_idx)
+    {
+      if (result != '') result += '<br/>';
+      result += cross[cross_idx[i]]['name'];
+    }
+    return result;
+  },
+
+  // Render the customization popup window
+  showCustomize: function (pivot)
+  {
+    $.jgrid.hideModal("#searchmodfbox_grid");
+    val = "<select id='configure' multiple='multiple' class='multiselect' name='fields' style='width:440px; height:200px; margin:10px; padding:10px'>" +
+    "<optgroup label='Rows'>";
+    var colModel = $("#grid")[0].p.colModel;
+    var maxfrozen = 0;
+    var skipped = 0;
+    for (var i = 0; i < colModel.length; i++)
+    {
+      if (colModel[i].name != "rn" && colModel[i].name != "cb" && colModel[i].counter != null && colModel[i].label != '')
+      {
+        if (colModel[i].frozen) maxfrozen = i + 1 - skipped;
+        val += "<option value='" + (i) + "'";
+        if (!colModel[i].hidden) val += " selected='selected'";
+        if (colModel[i].key) val += " disabled='disabled'";
+        val += ">" + colModel[i].label + "</option>";
+      }
+      else if (colModel[i].name == 'columns')
+        break;
+      else
+        skipped++;
+    }
+    val += "</optgroup>";
+    if (pivot)
+    {
+      // Add list of crosses
+      val += "<optgroup label='Crosses'>";
+      for (var j in cross_idx)
+      {
+        val += "<option value='" + (100+parseInt(cross_idx[j],10)) + "' selected='selected'";
+        val += ">" + cross[cross_idx[j]]['name'] + "</option>";
+      }
+      for (var j in cross)
+      {
+        if (cross_idx.indexOf(parseInt(j,10)) > -1) continue;
+        val += "<option value='" + (100+parseInt(j,10)) + "'";
+        val += ">" + cross[j]['name'] + "</option>";
+      }
+      val += "</optgroup></select>";
+    }
     else
-      $(cell).datepicker({
-        showOtherMonths: true, selectOtherMonths: true,
-        dateFormat: "yy-mm-dd 00:00:00", changeMonth:true,
-        changeYear:true, yearRange: "c-1:c+5"
+    {
+      // Add selection of number of frozen columns
+      val += "</select>Frozen columns <select id='frozen'>";
+      for (var i = 0; i <= 4; i++)
+        if (i == maxfrozen)
+          val += "<option value'" + i + "' selected='selected'>" + i + "</option>";
+        else
+          val += "<option value'" + i + "'>" + i + "</option>";
+      val += "</select>";
+    }
+    $('#popup').html(val).dialog({
+       title: gettext("Customize"),
+       width: 465,
+       height: 'auto',
+       autoOpen: true,
+       resizable: false,
+       buttons: [{
+         text: gettext("OK"),
+         click: function() {
+           var colModel = $("#grid")[0].p.colModel;
+           var perm = [];
+           if (colModel[0].name == "cb") perm.push(0);
+           cross_idx = [];
+           $('#configure option').each(function() {
+             val = parseInt(this.value,10);
+             if (val < 100)
+             {
+               $("#grid").jqGrid(this.selected ? "showCol" : "hideCol", colModel[val].name);
+               perm.push(val);
+             }
+             else if (this.selected)
+               cross_idx.push(val-100);
+           });
+           var numfrozen = 0;
+           if (pivot)
+           {
+             var firstnonfrozen = 0;
+             for (var i = 0; i < colModel.length; i++)
+               if ("counter" in colModel[i])
+                 numfrozen = i+1;
+               else
+                 perm.push(i);
+           }
+           else
+             numfrozen = parseInt($("#frozen :selected").text())
+           $("#grid").jqGrid("remapColumns", perm, true);
+           $("#grid").jqGrid('destroyFrozenColumns');
+           var skipped = 0;
+           for (var i = 0; i < colModel.length; i++)
+             if (colModel[i].name != "rn" && colModel[i].name != "cb" && colModel[i].counter != null)
+               $("#grid").jqGrid('setColProp', colModel[i].name, {frozen:i-skipped<numfrozen});
+             else
+               skipped++;
+           $("#grid").jqGrid('setFrozenColumns');
+           $("#grid").trigger('reloadGrid', [{current:true}]);
+           grid.saveColumnConfiguration();
+           $(this).dialog("close");
+         }},
+         {
+         text: gettext("Cancel"),
+         click: function() { $(this).dialog("close"); }
+         }]
+       });
+    $("#configure").multiselect({
+      collapsableGroups: false,
+      sortable: true,
+      showEmptyGroups: true,
+      locale: $("html")[0].lang,
+      searchField: false
+      });
+  },
+
+  // Save the customized column configuration
+  saveColumnConfiguration : function(pgButton)
+  {
+    // This function can be called with different arguments:
+    //   - no arguments, when called from our code
+    //   - paging button string, when called from jqgrid paging event
+    //   - number argument, when called from jqgrid resizeStop event
+    var colArray = new Array();
+    var colModel = $("#grid")[0].p.colModel;
+    var maxfrozen = 0;
+    var pivot = false;
+    var skipped = 0;
+    var page = $('#grid').getGridParam('page');
+    if (typeof pgButton === 'string')
+    {
+      // JQgrid paging gives only the current page
+      if (pgButton.indexOf("next") >= 0)
+        ++page;
+      else if (pgButton.indexOf("prev") >= 0)
+        --page;
+      else if (pgButton.indexOf("last") >= 0)
+        page = $("#grid").getGridParam('lastpage');
+      else if (pgButton.indexOf("first") >= 0)
+        page = 1;
+      else if (pgButton.indexOf("user") >= 0)
+        page = $('input.ui-pg-input').val();
+    }
+    for (var i = 0; i < colModel.length; i++)
+    {
+      if (colModel[i].name != "rn" && colModel[i].name != "cb" && "counter" in colModel[i])
+      {
+        colArray.push([colModel[i].counter, colModel[i].hidden, colModel[i].width]);
+        if (colModel[i].frozen) maxfrozen = i + 1 - skipped;
+      }
+      else if (colModel[i].name == 'columns')
+      {
+        pivot = true;
+        break;
+      }
+      else
+        skipped++;
+    }
+    var result = {};
+    result[reportkey] = {
+      "rows": colArray,
+      "page": page,
+      "filter": $('#grid').getGridParam("postData").filters
+      };
+    var sidx = $('#grid').getGridParam('sortname');
+    if (sidx !== '')
+    {
+      // Report is sorted
+      result[reportkey]['sidx'] = sidx;
+      result[reportkey]['sord'] = $('#grid').getGridParam('sortorder');
+    }
+    if (pivot)
+      result[reportkey]['crosses'] = cross_idx;
+    else
+      result[reportkey]['frozen'] = maxfrozen;
+    if(typeof extraPreference == 'function')
+    {
+      var extra = extraPreference();
+      for (var idx in extra)
+        result[reportkey][idx] = extra[idx];
+    }
+    $.ajax({
+      url: '/settings/',
+      type: 'POST',
+      contentType: 'application/json; charset=utf-8',
+      data: JSON.stringify(result),
+      error: function (result, stat, errorThrown) {
+        $('#popup').html(result.responseText)
+          .dialog({
+            title: gettext("Error saving report settings"),
+            autoOpen: true,
+            resizable: false,
+            width: 'auto',
+            height: 'auto'
+          });
+        }
+    });
+  },
+
+  //This function is called when a cell is just being selected in an editable
+  //grid. It is used to either a) select the content of the cell (to make
+  //editing it easier) or b) display a date picker it the field is of type
+  //date.
+  afterEditCell: function (rowid, cellname, value, iRow, iCol)
+  {
+   var cell = document.getElementById(iRow+'_'+cellname);
+   var colmodel = jQuery("#grid").jqGrid ('getGridParam', 'colModel')[iCol];
+   if (colmodel.formatter == 'date')
+   {
+     if (colmodel.formatoptions['srcformat'] == "Y-m-d")
+       $(cell).datepicker({
+         showOtherMonths: true, selectOtherMonths: true,
+         dateFormat: "yy-mm-dd", changeMonth:true,
+         changeYear:true, yearRange: "c-1:c+5"
+         });
+     else
+       $(cell).datepicker({
+         showOtherMonths: true, selectOtherMonths: true,
+         dateFormat: "yy-mm-dd 00:00:00", changeMonth:true,
+         changeYear:true, yearRange: "c-1:c+5"
+         });
+   }
+   else
+     $(cell).select();
+  },
+
+  // Display dialog for exporting CSV-files
+  showExport: function(only_list)
+  {
+    // The argument is true when we show a "list" report.
+    // It is false for "table" reports.
+    $('#popup').html(
+      gettext("CSV style") + '&nbsp;&nbsp;:&nbsp;&nbsp;<select name="csvformat" id="csvformat"' + (only_list ? ' disabled="true"' : '')+ '>'+
+      '<option value="csvtable"' + (only_list ? '' : ' selected="selected"') + '>' + gettext("Table") +'</option>'+
+      '<option value="csvlist"' + (only_list ?  ' selected="selected"' : '') + '>' + gettext("List") +'</option></select>'
+      ).dialog({
+        title: gettext("Export data"),
+        autoOpen: true, resizable: false, width: 390, height: 'auto',
+        buttons: [
+          {
+            text: gettext("Export"),
+            click: function() {
+              // Fetch the report data
+              var url = (location.href.indexOf("#") != -1 ? location.href.substr(0,location.href.indexOf("#")) : location.href);
+              if (location.search.length > 0)
+                // URL already has arguments
+                url += "&format=" + $('#csvformat').val();
+              else if (url.charAt(url.length - 1) == '?')
+                // This is the first argument for the URL, but we already have a question mark at the end
+                url += "format=" + $('#csvformat').val();
+              else
+                // This is the first argument for the URL
+                url += "?format=" + $('#csvformat').val();
+              // Append current filter and sort settings to the URL
+              var postdata = $("#grid").jqGrid('getGridParam', 'postData');
+              url +=  "&" + jQuery.param(postdata);
+              // Open the window
+              window.open(url,'_blank');
+              $('#popup').dialog().dialog('close');
+            }
+          },
+          {
+            text: gettext("Cancel"),
+            click: function() { $(this).dialog("close"); }
+          }
+          ]
         });
+    $('#timebuckets').dialog().dialog('close');
+    $.jgrid.hideModal("#searchmodfbox_grid");
+  },
+
+  // Display time bucket selection dialog
+  showBucket: function()
+  {
+    // Show popup
+    $('#popup').dialog().dialog('close');
+    $.jgrid.hideModal("#searchmodfbox_grid");
+    $( "#horizonstart" ).datepicker({
+        showOtherMonths: true, selectOtherMonths: true,
+        changeMonth:true, changeYear:true, yearRange: "c-1:c+5", dateFormat: 'yy-mm-dd'
+      });
+    $( "#horizonend" ).datepicker({
+        showOtherMonths: true, selectOtherMonths: true,
+        changeMonth:true, changeYear:true, yearRange: "c-1:c+5", dateFormat: 'yy-mm-dd'
+      });
+    $('#timebuckets').dialog({
+       autoOpen: true, resizable: false, width: 390,
+       buttons: [
+         {
+           text: gettext("OK"),
+           click: function() {
+            // Compare old and new parameters
+            var params = $('#horizonbuckets').val() + '|' +
+              $('#horizonstart').val() + '|' +
+              $('#horizonend').val() + '|' +
+              ($('#horizontype').is(':checked') ? "True" : "False") + '|' +
+              $('#horizonlength').val() + '|' +
+              $('#horizonunit').val();
+            if (params == $('#horizonoriginal').val())
+              // No changes to the settings. Close the popup.
+              $(this).dialog('close');
+            else {
+              // Ajax request to update the horizon preferences
+              $.ajax({
+                  type: 'POST',
+                  url: '/horizon/',
+                  data: {
+                    horizonbuckets: $('#horizonbuckets').val(),
+                    horizonstart: $('#horizonstart').val(),
+                    horizonend: $('#horizonend').val(),
+                    horizontype: ($('#horizontype').is(':checked') ? '1' : '0'),
+                    horizonlength: $('#horizonlength').val(),
+                    horizonunit: $('#horizonunit').val()
+                    },
+                  dataType: 'text/html',
+                  async: false  // Need to wait for the update to be processed!
+                });
+            // Reload the report
+            window.location.href = window.location.href;
+            }
+           }
+         },
+         {
+           text: gettext("Cancel"),
+           click: function() { $(this).dialog("close"); }
+         }
+         ]
+      });
+  },
+
+  //Display dialog for copying or deleting records
+  showDelete : function()
+  {
+    if ($('#delete_selected').hasClass("ui-state-disabled")) return;
+    var sel = jQuery("#grid").jqGrid('getGridParam','selarrrow');
+    if (sel.length == 1)
+    {
+      // Redirect to a page for deleting a single entity
+      location.href = location.pathname + encodeURI(sel[0]) + '/delete/';
+    }
+    else if (sel.length > 0)
+    {
+     $('#popup').html(
+       interpolate(gettext('You are about to delete %s objects AND ALL RELATED RECORDS!'), [sel.length], false)
+       ).dialog({
+         title: gettext("Delete data"),
+         autoOpen: true,
+         resizable: false,
+         width: 'auto',
+         height: 'auto',
+         buttons: [
+           {
+             text: gettext("Confirm"),
+             click: function() {
+               $.ajax({
+                 url: location.pathname,
+                 data: JSON.stringify([{'delete': sel}]),
+                 type: "POST",
+                 contentType: "application/json",
+                 success: function () {
+                   $("#delete_selected").addClass("ui-state-disabled").removeClass("bold");
+                   $("#copy_selected").addClass("ui-state-disabled").removeClass("bold");
+                   $('.cbox').prop("checked", false);
+                   $('#cb_grid.cbox').prop("checked", false);
+                   $("#grid").trigger("reloadGrid");
+                   $('#popup').dialog('close');
+                   },
+                 error: function (result, stat, errorThrown) {
+                   $('#popup').html(result.responseText)
+                     .dialog({
+                       title: gettext("Error deleting data"),
+                       autoOpen: true,
+                       resizable: true,
+                       width: 'auto',
+                       height: 'auto'
+                     });
+                   $('#timebuckets').dialog('close');
+                   $.jgrid.hideModal("#searchmodfbox_grid");
+                   }
+               });
+             }
+           },
+           {
+             text: gettext("Cancel"),
+             click: function() { $(this).dialog("close"); }
+           }
+           ]
+       });
+     $('#timebuckets').dialog().dialog('close');
+     $.jgrid.hideModal("#searchmodfbox_grid");
+   }
+  },
+
+  showCopy: function()
+  {
+   if ($('#copy_selected').hasClass("ui-state-disabled")) return;
+   var sel = jQuery("#grid").jqGrid('getGridParam','selarrrow');
+   if (sel.length > 0)
+   {
+     $('#popup').html(
+       interpolate(gettext('You are about to duplicate %s objects'), [sel.length], false)
+       ).dialog({
+         title: gettext("Copy data"),
+         autoOpen: true,
+         resizable: false,
+         width: 'auto',
+         height: 'auto',
+         buttons: [
+           {
+             text: gettext("Confirm"),
+             click: function() {
+               $.ajax({
+                 url: location.pathname,
+                 data: JSON.stringify([{'copy': sel}]),
+                 type: "POST",
+                 contentType: "application/json",
+                 success: function () {
+                   $("#delete_selected").addClass("ui-state-disabled").removeClass("bold");
+                   $("#copy_selected").addClass("ui-state-disabled").removeClass("bold");
+                   $('.cbox').prop("checked", false);
+                   $('#cb_grid.cbox').prop("checked", false);
+                   $("#grid").trigger("reloadGrid");
+                   $('#popup').dialog().dialog('close');
+                   },
+                 error: function (result, stat, errorThrown) {
+                   $('#popup').html(result.responseText)
+                     .dialog({
+                       title: gettext("Error copying data"),
+                       autoOpen: true,
+                       resizable: true,
+                       width: 'auto',
+                       height: 'auto'
+                     });
+                   $('#timebuckets').dialog().dialog('close');
+                   $.jgrid.hideModal("#searchmodfbox_grid");
+                   }
+               });
+             }
+           },
+           {
+             text: gettext("Cancel"),
+             click: function() { $(this).dialog("close"); }
+           }
+           ]
+       });
+     $('#timebuckets').dialog().dialog('close');
+     $.jgrid.hideModal("#searchmodfbox_grid");
+   }
+  },
+
+  // Display filter dialog
+  showFilter: function()
+  {
+    if ($('#filter').hasClass("ui-state-disabled")) return;
+    $('#timebuckets,#popup').dialog().dialog('close');
+    jQuery("#grid").jqGrid('searchGrid', {
+      closeOnEscape: true,
+      multipleSearch:true,
+      multipleGroup:true,
+      overlay: 0,
+      sopt: ['eq','ne','lt','le','gt','ge','bw','bn','in','ni','ew','en','cn','nc'],
+      onSearch : function() {
+        grid.saveColumnConfiguration();
+        var s = jQuery("#fbox_grid").jqFilter('toSQLString');
+        if (s) $('#curfilter').html(gettext("Filtered where") + " " + s);
+        else $('#curfilter').html("");
+        },
+      onReset : function() {
+        if (initialfilter != '') $('#curfilter').html(gettext("Filtered where") + " " + jQuery("#fbox_grid").jqFilter('toSQLString'));
+        else $('#curfilter').html("");
+        }
+      });
+  },
+
+  markSelectedRow: function(id)
+  {
+    var sel = jQuery("#grid").jqGrid('getGridParam','selarrrow').length;
+    if (sel > 0)
+    {
+      $("#copy_selected").removeClass("ui-state-disabled").addClass("bold");
+      $("#delete_selected").removeClass("ui-state-disabled").addClass("bold");
+    }
+    else
+    {
+      $("#copy_selected").addClass("ui-state-disabled").removeClass("bold");
+      $("#delete_selected").addClass("ui-state-disabled").removeClass("bold");
+    }
+  },
+
+  markAllRows: function()
+  {
+    if ($(this).is(':checked'))
+    {
+      $("#copy_selected").removeClass("ui-state-disabled").addClass("bold");
+      $("#delete_selected").removeClass("ui-state-disabled").addClass("bold");
+      $('.cbox').prop("checked", true);
+    }
+    else
+    {
+      $("#copy_selected").addClass("ui-state-disabled").removeClass("bold");
+      $("#delete_selected").addClass("ui-state-disabled").removeClass("bold");
+      $('.cbox').prop("checked", false);
+    }
   }
-  else
-    $(cell).select();
 }
+
+
+
 
 
 //----------------------------------------------------------------------------
@@ -336,7 +832,10 @@ $.widget( "custom.catcomplete", $.ui.autocomplete, {
       .data( "item.autocomplete", item )
       .append( $( "<a></a>" ).text( item.value ) )
       .appendTo( ul );
-  }
+  },
+
+
+
 });
 
 
@@ -510,161 +1009,6 @@ function sameOrigin(url) {
         !(/^(\/\/|http:|https:).*/.test(url));
 }
 
-//----------------------------------------------------------------------------
-// Display dialog for copying or deleting records
-//----------------------------------------------------------------------------
-
-function delete_show()
-{
-  if ($('#delete_selected').hasClass("ui-state-disabled")) return;
-  var sel = jQuery("#grid").jqGrid('getGridParam','selarrrow');
-  if (sel.length == 1)
-  {
-    // Redirect to a page for deleting a single entity
-    location.href = location.pathname + encodeURI(sel[0]) + '/delete/';
-  }
-  else if (sel.length > 0)
-  {
-    $('#popup').html(
-      interpolate(gettext('You are about to delete %s objects AND ALL RELATED RECORDS!'), [sel.length], false)
-      ).dialog({
-        title: gettext("Delete data"),
-        autoOpen: true,
-        resizable: false,
-        width: 'auto',
-        height: 'auto',
-        buttons: [
-          {
-            text: gettext("Confirm"),
-            click: function() {
-              $.ajax({
-                url: location.pathname,
-                data: JSON.stringify([{'delete': sel}]),
-                type: "POST",
-                contentType: "application/json",
-                success: function () {
-                  $("#delete_selected").addClass("ui-state-disabled").removeClass("bold");
-                  $("#copy_selected").addClass("ui-state-disabled").removeClass("bold");
-                  $('.cbox').prop("checked", false);
-                  $('#cb_grid.cbox').prop("checked", false);
-                  $("#grid").trigger("reloadGrid");
-                  $('#popup').dialog('close');
-                  },
-                error: function (result, stat, errorThrown) {
-                  $('#popup').html(result.responseText)
-                    .dialog({
-                      title: gettext("Error deleting data"),
-                      autoOpen: true,
-                      resizable: true,
-                      width: 'auto',
-                      height: 'auto'
-                    });
-                  $('#timebuckets').dialog('close');
-                  $.jgrid.hideModal("#searchmodfbox_grid");
-                  }
-              });
-            }
-          },
-          {
-            text: gettext("Cancel"),
-            click: function() { $(this).dialog("close"); }
-          }
-          ]
-      });
-    $('#timebuckets').dialog().dialog('close');
-    $.jgrid.hideModal("#searchmodfbox_grid");
-  }
-}
-
-
-function copy_show()
-{
-  if ($('#copy_selected').hasClass("ui-state-disabled")) return;
-  var sel = jQuery("#grid").jqGrid('getGridParam','selarrrow');
-  if (sel.length > 0)
-  {
-    $('#popup').html(
-      interpolate(gettext('You are about to duplicate %s objects'), [sel.length], false)
-      ).dialog({
-        title: gettext("Copy data"),
-        autoOpen: true,
-        resizable: false,
-        width: 'auto',
-        height: 'auto',
-        buttons: [
-          {
-            text: gettext("Confirm"),
-            click: function() {
-              $.ajax({
-                url: location.pathname,
-                data: JSON.stringify([{'copy': sel}]),
-                type: "POST",
-                contentType: "application/json",
-                success: function () {
-                  $("#delete_selected").addClass("ui-state-disabled").removeClass("bold");
-                  $("#copy_selected").addClass("ui-state-disabled").removeClass("bold");
-                  $('.cbox').prop("checked", false);
-                  $('#cb_grid.cbox').prop("checked", false);
-                  $("#grid").trigger("reloadGrid");
-                  $('#popup').dialog().dialog('close');
-                  },
-                error: function (result, stat, errorThrown) {
-                  $('#popup').html(result.responseText)
-                    .dialog({
-                      title: gettext("Error copying data"),
-                      autoOpen: true,
-                      resizable: true,
-                      width: 'auto',
-                      height: 'auto'
-                    });
-                  $('#timebuckets').dialog().dialog('close');
-                  $.jgrid.hideModal("#searchmodfbox_grid");
-                  }
-              });
-            }
-          },
-          {
-            text: gettext("Cancel"),
-            click: function() { $(this).dialog("close"); }
-          }
-          ]
-      });
-    $('#timebuckets').dialog().dialog('close');
-    $.jgrid.hideModal("#searchmodfbox_grid");
-  }
-}
-
-function markSelectedRow(id)
-{
-  var sel = jQuery("#grid").jqGrid('getGridParam','selarrrow').length;
-  if (sel > 0)
-  {
-    $("#copy_selected").removeClass("ui-state-disabled").addClass("bold");
-    $("#delete_selected").removeClass("ui-state-disabled").addClass("bold");
-  }
-  else
-  {
-  $("#copy_selected").addClass("ui-state-disabled").removeClass("bold");
-  $("#delete_selected").addClass("ui-state-disabled").removeClass("bold");
-  }
-}
-
-function markAllRows()
-{
-  if ($(this).is(':checked'))
-  {
-    $("#copy_selected").removeClass("ui-state-disabled").addClass("bold");
-    $("#delete_selected").removeClass("ui-state-disabled").addClass("bold");
-    $('.cbox').prop("checked", true);
-  }
-  else
-  {
-    $("#copy_selected").addClass("ui-state-disabled").removeClass("bold");
-    $("#delete_selected").addClass("ui-state-disabled").removeClass("bold");
-    $('.cbox').prop("checked", false);
-  }
-}
-
 
 //----------------------------------------------------------------------------
 // Display import dialog for CSV-files
@@ -697,557 +1041,6 @@ function import_show(url)
   $('#timebuckets').dialog().dialog('close');
   $.jgrid.hideModal("#searchmodfbox_grid");
 }
-
-
-//----------------------------------------------------------------------------
-// Display filter dialog
-//----------------------------------------------------------------------------
-
-function filter_show()
-{
-  if ($('#filter').hasClass("ui-state-disabled")) return;
-  $('#timebuckets,#popup').dialog().dialog('close');
-  jQuery("#grid").jqGrid('searchGrid', {
-    closeOnEscape: true,
-    multipleSearch:true,
-    multipleGroup:true,
-    overlay: 0,
-    sopt: ['eq','ne','lt','le','gt','ge','bw','bn','in','ni','ew','en','cn','nc'],
-    onSearch : function() {
-      saveColumnConfiguration();
-      var s = jQuery("#fbox_grid").jqFilter('toSQLString');
-      if (s) $('#curfilter').html(gettext("Filtered where") + " " + s);
-      else $('#curfilter').html("");
-      },
-    onReset : function() {
-      if (initialfilter != '') $('#curfilter').html(gettext("Filtered where") + " " + jQuery("#fbox_grid").jqFilter('toSQLString'));
-      else $('#curfilter').html("");
-      }
-    });
-}
-
-
-//----------------------------------------------------------------------------
-// Display and close export dialog for CSV-files
-//----------------------------------------------------------------------------
-
-function export_show(only_list)
-{
-  // The argument is true when we show a "list" report.
-  // It is false for "table" reports.
-  $('#popup').html(
-    gettext("CSV style") + '&nbsp;&nbsp;:&nbsp;&nbsp;<select name="csvformat" id="csvformat"' + (only_list ? ' disabled="true"' : '')+ '>'+
-    '<option value="csvtable"' + (only_list ? '' : ' selected="selected"') + '>' + gettext("Table") +'</option>'+
-    '<option value="csvlist"' + (only_list ?  ' selected="selected"' : '') + '>' + gettext("List") +'</option></select>'
-    ).dialog({
-      title: gettext("Export data"),
-      autoOpen: true, resizable: false, width: 390, height: 'auto',
-      buttons: [
-        {
-          text: gettext("Export"),
-          click: function() { export_close(); }
-        },
-        {
-          text: gettext("Cancel"),
-          click: function() { $(this).dialog("close"); }
-        }
-        ]
-      });
-  $('#timebuckets').dialog().dialog('close');
-  $.jgrid.hideModal("#searchmodfbox_grid");
-}
-
-
-function export_close()
-{
-  // Fetch the report data
-  var url = (location.href.indexOf("#") != -1 ? location.href.substr(0,location.href.indexOf("#")) : location.href);
-  if (location.search.length > 0)
-    // URL already has arguments
-    url += "&format=" + $('#csvformat').val();
-  else if (url.charAt(url.length - 1) == '?')
-    // This is the first argument for the URL, but we already have a question mark at the end
-    url += "format=" + $('#csvformat').val();
-  else
-    // This is the first argument for the URL
-    url += "?format=" + $('#csvformat').val();
-  // Append current filter and sort settings to the URL
-  var postdata = $("#grid").jqGrid('getGridParam', 'postData');
-  url +=  "&" + jQuery.param(postdata);
-  // Open the window
-  window.open(url,'_blank');
-  $('#popup').dialog().dialog('close');
-}
-
-
-//----------------------------------------------------------------------------
-// Display time bucket selection dialog
-//----------------------------------------------------------------------------
-
-function bucket_show()
-{
-  // Show popup
-  $('#popup').dialog().dialog('close');
-  $.jgrid.hideModal("#searchmodfbox_grid");
-  $( "#horizonstart" ).datepicker({
-      showOtherMonths: true, selectOtherMonths: true,
-      changeMonth:true, changeYear:true, yearRange: "c-1:c+5", dateFormat: 'yy-mm-dd'
-    });
-  $( "#horizonend" ).datepicker({
-      showOtherMonths: true, selectOtherMonths: true,
-      changeMonth:true, changeYear:true, yearRange: "c-1:c+5", dateFormat: 'yy-mm-dd'
-    });
-  $('#timebuckets').dialog({
-     autoOpen: true, resizable: false, width: 390,
-     buttons: [
-       {
-         text: gettext("OK"),
-         click: function() {
-          // Compare old and new parameters
-          var params = $('#horizonbuckets').val() + '|' +
-            $('#horizonstart').val() + '|' +
-            $('#horizonend').val() + '|' +
-            ($('#horizontype').is(':checked') ? "True" : "False") + '|' +
-            $('#horizonlength').val() + '|' +
-            $('#horizonunit').val();
-          if (params == $('#horizonoriginal').val())
-            // No changes to the settings. Close the popup.
-            $(this).dialog('close');
-          else {
-            // Ajax request to update the horizon preferences
-            $.ajax({
-                type: 'POST',
-                url: '/horizon/',
-                data: {
-                  horizonbuckets: $('#horizonbuckets').val(),
-                  horizonstart: $('#horizonstart').val(),
-                  horizonend: $('#horizonend').val(),
-                  horizontype: ($('#horizontype').is(':checked') ? '1' : '0'),
-                  horizonlength: $('#horizonlength').val(),
-                  horizonunit: $('#horizonunit').val()
-                  },
-                dataType: 'text/html',
-                async: false  // Need to wait for the update to be processed!
-              });
-          // Reload the report
-          window.location.href = window.location.href;
-          }
-         }
-       },
-       {
-         text: gettext("Cancel"),
-         click: function() { $(this).dialog("close"); }
-       }
-       ]
-    });
-}
-
-
-//----------------------------------------------------------------------------
-// Display report customization screen
-//----------------------------------------------------------------------------
-
-function customize_show()
-{
-  $.jgrid.hideModal("#searchmodfbox_grid");
-  val = "<select id='configure' multiple='multiple' class='multiselect' name='fields' style='width:420px; height:200px; margin:10px; padding:10px'>" +
-  "<optgroup label='Rows'>";
-  var colModel = $("#grid")[0].p.colModel;
-  for (var i = 0; i < colModel.length; i++)
-  {
-    if (colModel[i].name != "rn" && colModel[i].name != "cb" && colModel[i].counter != null && colModel[i].label != '')
-    {
-      val += "<option value='" + (i) + "'";
-      if (!colModel[i].hidden) val += " selected='selected'";
-      if (colModel[i].key) val += " disabled='disabled'";
-      val += ">" + colModel[i].label + "</option>";
-    }
-    else if (colModel[i].name == 'columns')
-    {
-          val += "</optgroup><optgroup label='Crosses'>";
-          for (var j = 0; j < colModel[i].crosses.length; j++)
-          {
-            val += "<option value='" + (100+j) + "'";
-              if (!colModel[i].crosses[j].hidden) val += " selected='selected'";
-              val += ">" + colModel[i].crosses[j].name + "</option>";
-          }
-          break;
-    }
-  }
-  val += "</optgroup></select>";
-  $('#popup').html(val);
-  $("#configure").multiselect({
-      collapsableGroups: false,
-      sortable: true,
-      showEmptyGroups: true,
-      locale: $("html")[0].lang,
-      searchField: false
-      });
-  $('#popup').dialog({
-     title: gettext("Customize"),
-     width: 440,
-     height: 'auto',
-     autoOpen: true,
-     resizable: false,
-     buttons: [
-               {
-                 text: gettext("OK"),
-                 click: function()
-                 {
-                   var colModel = $("#grid")[0].p.colModel;
-                     $('#configure option').each(function() {
-                         if (this.selected) {
-                             $("#grid").jqGrid("showCol", colModel[parseInt(this.value,10)].name);
-                         } else {
-                             $("#grid").jqGrid("hideCol", colModel[parseInt(this.value,10)].name);
-                         }
-                     });
-
-                     var perm = [0];
-                     $('#configure option').each(function() { perm.push(parseInt(this.value,10)); });
-                     /*$.each(perm, function() { delete colMap[colModel[parseInt(this,10)].name]; });
-                     $.each(colMap, function() {
-                         var ti = parseInt(this,10);
-                         perm = insert(perm,ti,ti);
-                     });*/
-
-                   $("#grid").jqGrid("remapColumns", perm, true);
-
-                   /*
-                    jQuery("#grid")
-                   .jqGrid('destroyFrozenColumns');
-                   .jqGrid('setColProp','invdate', {frozen:true});
-                   .jqGrid('setFrozenColumns');
-                   .trigger('reloadGrid', [{current:true}]);
-                    */
-
-                   saveColumnConfiguration();
-                   $(this).dialog("close");
-                 }
-               },
-               {
-                 text: gettext("Cancel"),
-                 click: function() { $(this).dialog("close"); }
-               }
-               ]
-     });
-
-  /*$("#grid").jqGrid('columnChooser', {
-    done: function(perm) {
-       if (perm) {
-           alert(perm);
-         $("#grid").jqGrid("remapColumns", perm, true);
-         saveColumnConfiguration();
-         }
-      }
-    });*/
-
-}
-
-
-//----------------------------------------------------------------------------
-// Save report settings as preferences
-//----------------------------------------------------------------------------
-
-function saveColumnConfiguration()
-{
-  var colArray = new Array();
-  var colModel = $("#grid")[0].p.colModel;
-  for (var i = 0; i < colModel.length; i++)
-  {
-    if (colModel[i].name != "rn" && colModel[i].name != "cb" && colModel[i].counter != null)
-      colArray.push([colModel[i].counter, colModel[i].hidden, colModel[i].width]);
-  }
-  var result = {};
-  result[reportkey] = {
-     "rows": colArray,
-     "page": $('#grid').getGridParam('page'),
-     "sidx": $('#grid').getGridParam('sortname'),
-     "sord": $('#grid').getGridParam('sortorder'),
-     "filter": $('#grid').getGridParam("postData").filters
-  }
-  if(typeof extraPreference == 'function')
-  {
-    var extra = extraPreference();
-    for (var idx in extra) {result[reportkey][idx] = extra[idx];}
-  }
-  $.ajax({
-      url: '/settings/',
-      type: 'POST',
-      contentType: 'application/json; charset=utf-8',
-      data: JSON.stringify(result),
-      error: function (result, stat, errorThrown) {
-        $('#popup').html(result.responseText)
-          .dialog({
-            title: gettext("Error saving report settings"),
-            autoOpen: true,
-            resizable: false,
-            width: 'auto',
-            height: 'auto'
-          });
-        }
-  });
-}
-
-
-function savePagingConfiguration(pgButton)
-{
-  // JQgrid paging gives only the current page
-  var newValue = 0;
-  var currentValue = $("#grid").getGridParam('page');
-  if (pgButton.indexOf("next") >= 0)
-    newValue = ++currentValue;
-  else if (pgButton.indexOf("prev") >= 0)
-    newValue = --currentValue;
-  else if (pgButton.indexOf("last") >= 0)
-    newValue = $("#grid").getGridParam('lastpage');
-  else if (pgButton.indexOf("first") >= 0)
-    newValue = 1;
-  else if (pgButton.indexOf("user") >= 0)
-    newValue = $('input.ui-pg-input').val();
-  // Save the settings
-  var colArray = new Array();
-  var colModel = $("#grid")[0].p.colModel;
-  for (var i = 0; i < colModel.length; i++)
-  {
-    if (colModel[i].name != "rn" && colModel[i].name != "cb" && colModel[i].counter != null)
-      colArray.push([colModel[i].counter, colModel[i].hidden, colModel[i].width]);
-  }
-  var result = {};
-  result[reportkey] = {
-     "rows": colArray,
-     "page": newValue,
-     "sidx": $('#grid').getGridParam('sortname'),
-     "sord": $('#grid').getGridParam('sortorder'),
-     "filter": $('#grid').getGridParam("postData").filters
-  }
-  $.ajax({
-      url: '/settings/',
-      type: 'POST',
-      contentType: 'application/json; charset=utf-8',
-      data: JSON.stringify(result),
-      error: function (result, stat, errorThrown) {
-        $('#popup').html(result.responseText)
-          .dialog({
-            title: gettext("Error saving report settings"),
-            autoOpen: true,
-            resizable: false,
-            width: 'auto',
-            height: 'auto'
-          });
-        }
-  });
-}
-
-
-//----------------------------------------------------------------------------
-// Display report customization screen
-//----------------------------------------------------------------------------
-
-function customize_show()
-{
-  $.jgrid.hideModal("#searchmodfbox_grid");
-  val = "<select id='configure' multiple='multiple' class='multiselect' name='fields' style='width:440px; height:200px; margin:10px; padding:10px'>" +
-  "<optgroup label='Rows'>";
-  var colModel = $("#grid")[0].p.colModel;
-  var maxfrozen = 0;
-  var skipped = 0;
-  for (var i = 0; i < colModel.length; i++)
-  {
-    if (colModel[i].name != "rn" && colModel[i].name != "cb" && colModel[i].counter != null && colModel[i].label != '')
-    {
-      if (colModel[i].frozen) maxfrozen = i + 1 - skipped;
-      val += "<option value='" + (i) + "'";
-      if (!colModel[i].hidden) val += " selected='selected'";
-      if (colModel[i].key) val += " disabled='disabled'";
-      val += ">" + colModel[i].label + "</option>";
-    }
-    else if (colModel[i].name == 'columns')
-    {
-      val += "</optgroup><optgroup label='Crosses'>";
-      for (var j = 0; j < colModel[i].crosses.length; j++)
-      {
-        val += "<option value='" + (100+j) + "'";
-        if (!colModel[i].crosses[j].hidden) val += " selected='selected'";
-        val += ">" + colModel[i].crosses[j].name + "</option>";
-      }
-      break;
-    }
-    else
-      skipped++;
-  }
-  val += "</optgroup></select>";
-  val += "Frozen columns <select id='frozen'>";
-  for (var i = 0; i <= 3; i++)
-  if (i == maxfrozen)
-    val += "<option value'" + i + "' selected='selected'>" + i + "</option>";
-  else
-    val += "<option value'" + i + "'>" + i + "</option>";
-  val += "</select>"
-  $('#popup').html(val).dialog({
-     title: gettext("Customize"),
-     width: 465,
-     height: 'auto',
-     autoOpen: true,
-     resizable: false,
-     buttons: [
-               {
-                 text: gettext("OK"),
-                 click: function()
-                 {
-                   var colModel = $("#grid")[0].p.colModel;
-                     $('#configure option').each(function() {
-                         if (this.selected) {
-                             $("#grid").jqGrid("showCol", colModel[parseInt(this.value,10)].name);
-                         } else {
-                             $("#grid").jqGrid("hideCol", colModel[parseInt(this.value,10)].name);
-                         }
-                     });
-
-                     var perm = [0];
-                     $('#configure option').each(function() { perm.push(parseInt(this.value,10)); });
-                     /*$.each(perm, function() { delete colMap[colModel[parseInt(this,10)].name]; });
-                     $.each(colMap, function() {
-                         var ti = parseInt(this,10);
-                         perm = insert(perm,ti,ti);
-                     });*/
-
-                   $("#grid").jqGrid("remapColumns", perm, true);
-                   var numfrozen = parseInt($("#frozen :selected").text());
-                   $("#grid").jqGrid('destroyFrozenColumns');
-                   var skipped = 0;
-                   for (var i = 0; i < colModel.length; i++)
-                      if (colModel[i].name != "rn" && colModel[i].name != "cb" && colModel[i].counter != null && colModel[i].label != '')
-                        $("#grid").jqGrid('setColProp', colModel[i].name, {frozen:i-skipped<numfrozen});
-                      else
-                        skipped++;
-                   $("#grid").jqGrid('setFrozenColumns');
-                   $("#grid").trigger('reloadGrid', [{current:true}]);
-                   saveColumnConfiguration();
-                   for (var i = 0; i < colModel.length; i++)
-                     console.log(colModel[i].name + "  " + colModel[i].frozen)
-                   $(this).dialog("close");
-                 }
-               },
-               {
-                 text: gettext("Cancel"),
-                 click: function() { $(this).dialog("close"); }
-               }
-               ]
-     });
-  $("#configure").multiselect({
-      collapsableGroups: false,
-      sortable: true,
-      showEmptyGroups: true,
-      locale: $("html")[0].lang,
-      searchField: false
-      });
-}
-
-
-//----------------------------------------------------------------------------
-// Save report settings as preferences
-//----------------------------------------------------------------------------
-
-function saveColumnConfiguration()
-{
-  var colArray = new Array();
-  var colModel = $("#grid")[0].p.colModel;
-  var maxfrozen = 0;
-  var skipped = 0;
-  for (var i = 0; i < colModel.length; i++)
-  {
-    if (colModel[i].name != "rn" && colModel[i].name != "cb" && colModel[i].counter != null)
-    {
-      colArray.push([colModel[i].counter, colModel[i].hidden, colModel[i].width]);
-      if (colModel[i].frozen) maxfrozen = i + 1 - skipped;
-    }
-    else
-      skipped++;
-  }
-  var result = {};
-  result[reportkey] = {
-     "rows": colArray,
-     "page": $('#grid').getGridParam('page'),
-     "sidx": $('#grid').getGridParam('sortname'),
-     "sord": $('#grid').getGridParam('sortorder'),
-     "filter": $('#grid').getGridParam("postData").filters,
-     "frozen": maxfrozen
-  }
-  if(typeof extraPreference == 'function')
-  {
-    var extra = extraPreference();
-    for (var idx in extra)
-      result[reportkey][idx] = extra[idx];
-  }
-  $.ajax({
-      url: '/settings/',
-      type: 'POST',
-      contentType: 'application/json; charset=utf-8',
-      data: JSON.stringify(result),
-      error: function (result, stat, errorThrown) {
-        $('#popup').html(result.responseText)
-          .dialog({
-            title: gettext("Error saving report settings"),
-            autoOpen: true,
-            resizable: false,
-            width: 'auto',
-            height: 'auto'
-          });
-        }
-  });
-}
-
-
-function savePagingConfiguration(pgButton)
-{
-  // JQgrid paging gives only the current page
-  var newValue = 0;
-  var currentValue = $("#grid").getGridParam('page');
-  if (pgButton.indexOf("next") >= 0)
-    newValue = ++currentValue;
-  else if (pgButton.indexOf("prev") >= 0)
-    newValue = --currentValue;
-  else if (pgButton.indexOf("last") >= 0)
-    newValue = $("#grid").getGridParam('lastpage');
-  else if (pgButton.indexOf("first") >= 0)
-    newValue = 1;
-  else if (pgButton.indexOf("user") >= 0)
-    newValue = $('input.ui-pg-input').val();
-  // Save the settings
-  var colArray = new Array();
-  var colModel = $("#grid")[0].p.colModel;
-  for (var i = 0; i < colModel.length; i++)
-  {
-    if (colModel[i].name != "rn" && colModel[i].name != "cb" && colModel[i].counter != null)
-      colArray.push([colModel[i].counter, colModel[i].hidden, colModel[i].width]);
-  }
-  var result = {};
-  result[reportkey] = {
-     "rows": colArray,
-     "page": newValue,
-     "sidx": $('#grid').getGridParam('sortname'),
-     "sord": $('#grid').getGridParam('sortorder'),
-     "filter": $('#grid').getGridParam("postData").filters
-  }
-  $.ajax({
-      url: '/settings/',
-      type: 'POST',
-      contentType: 'application/json; charset=utf-8',
-      data: JSON.stringify(result),
-      error: function (result, stat, errorThrown) {
-        $('#popup').html(result.responseText)
-          .dialog({
-            title: gettext("Error saving report settings"),
-            autoOpen: true,
-            resizable: false,
-            width: 'auto',
-            height: 'auto'
-          });
-        }
-  });
-}
-
 
 //----------------------------------------------------------------------------
 // This function returns all arguments in the current URL as a dictionary.
@@ -1327,19 +1120,19 @@ function selectDatabase()
 //----------------------------------------------------------------------------
 
 $.fn.bindFirst = function(name, fn) {
-    // bind as you normally would
-    // don't want to miss out on any jQuery magic
-    this.on(name, fn);
+  // bind as you normally would
+  // don't want to miss out on any jQuery magic
+  this.on(name, fn);
 
-    // Thanks to a comment by @Martin, adding support for
-    // namespaced events too.
-    this.each(function() {
-        var handlers = $._data(this, 'events')[name.split('.')[0]];
-        // take out the handler we just inserted from the end
-        var handler = handlers.pop();
-        // move it at the beginning
-        handlers.splice(0, 0, handler);
-    });
+  // Thanks to a comment by @Martin, adding support for
+  // namespaced events too.
+  this.each(function() {
+    var handlers = $._data(this, 'events')[name.split('.')[0]];
+    // take out the handler we just inserted from the end
+    var handler = handlers.pop();
+    // move it at the beginning
+    handlers.splice(0, 0, handler);
+  });
 };
 
 
@@ -1360,7 +1153,6 @@ function gantt_header()
     ];
   var x = 0;
   var bucketstart = new Date(viewstart.getTime());
-  console.log(scaling);
   if (scaling < 20)
   {
 	// Monthly + weekly buckets

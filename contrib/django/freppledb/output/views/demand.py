@@ -12,16 +12,11 @@ from django.db import connections
 from django.utils.translation import ugettext_lazy as _
 from django.utils.text import capfirst
 from django.utils.encoding import force_unicode
-from django.contrib.admin.views.decorators import staff_member_required
-from django.http import HttpResponse
-from django.template import RequestContext, loader
-from django.conf import settings
 
 from freppledb.input.models import Item
 from freppledb.output.models import Demand
-from freppledb.common.db import python_date, sql_datediff, sql_overlap
-from freppledb.common.report import getBuckets
-from freppledb.common.report import GridReport, GridPivot, GridFieldText, GridFieldNumber, GridFieldDateTime, GridFieldInteger
+from freppledb.common.db import python_date
+from freppledb.common.report import GridReport, GridPivot, GridFieldText, GridFieldNumber, GridFieldDateTime, GridFieldInteger, GridFieldGraph
 
 
 class OverviewReport(GridPivot):
@@ -34,7 +29,7 @@ class OverviewReport(GridPivot):
   model = Item
   rows = (
     GridFieldText('item', title=_('item'), key=True, field_name='name', formatter='item', editable=False),
-    GridFieldText(None, width="(5*numbuckets<200 ? 5*numbuckets : 200)", extra='formatter:graph', editable=False),
+    GridFieldGraph('graph', title=_('graph'), width="(5*numbuckets<200 ? 5*numbuckets : 200)"),
     )
   crosses = (
     ('forecast',{'title': _('net forecast')}),
@@ -79,12 +74,12 @@ class OverviewReport(GridPivot):
     for row in cursor.fetchall():
       if row[0]: startbacklogdict[row[0]] = float(row[1])
 
-    # Execute the query
+    # Execute the query    TODO THIS QUERY ASSUMES FORECAST MODULE IS INSTALLED!
     query = '''
         select y.name as row1,
                y.bucket as col1, y.startdate as col2, y.enddate as col3,
                min(y.orders),
-               coalesce(sum(fcst.quantity * %s / %s),0),
+               coalesce(sum(fcst.quantity),0),
                min(y.planned), y.lft as lft, y.rght as rght
         from (
           select x.name as name, x.lft as lft, x.rght as rght,
@@ -130,20 +125,18 @@ class OverviewReport(GridPivot):
         -- Forecasted quantity
         inner join item
         on item.lft between y.lft and y.rght
-        left join (select forecast.item_id as item_id, out_forecast.startdate as startdate,
-		        out_forecast.enddate as enddate, out_forecast.net as quantity
-          from out_forecast, forecast
-          where out_forecast.forecast = forecast.name
+        left join (select forecast.item_id as item_id, forecastplan.startdate as startdate,
+		        forecastplan.forecastnet as quantity
+          from forecastplan, forecast
+          where forecastplan.forecast_id = forecast.name
           ) fcst
         on item.name = fcst.item_id
-        and fcst.enddate >= y.startdate
-        and fcst.startdate <= y.enddate
+        and fcst.startdate >= y.startdate
+        and fcst.startdate < y.enddate
         -- Ordering and grouping
         group by y.name, y.lft, y.rght, y.bucket, y.startdate, y.enddate
         order by %s, y.startdate
-       ''' % (sql_overlap('fcst.startdate','fcst.enddate','y.startdate','y.enddate'),
-         sql_datediff('fcst.enddate','fcst.startdate'),
-         basesql,bucket,startdate,enddate,startdate,enddate,startdate,enddate,sortsql)
+       ''' % (basesql,bucket,startdate,enddate,startdate,enddate,startdate,enddate,sortsql)
     cursor.execute(query,baseparams)
 
     # Build the python result

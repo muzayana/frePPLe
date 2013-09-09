@@ -1,10 +1,6 @@
 {% extends "admin/base_site_gridpivot.html" %}
 {% load i18n %}
 
-{% block extrahead %}{{block.super}}
-<script type="text/javascript" src="{{STATIC_URL}}js/flotr2.min.js"></script>
-{% endblock %}
-
 {% block contextmenus %}
 {% include "operationcontext.html" %}
 {% include "locationcontext.html" %}
@@ -132,27 +128,14 @@ function drawGraphs(jsondata)
     });
 }
 
-function graph(cellvalue, options, rowdata) {
-  return '<div class="graph" style="width:' + (5*numbuckets < 200 ? 5*numbuckets : 200) +'px; height:60px;"></div>';
-};
-
-function crosses (cellvalue, options, rowdata) {
-  if (cellvalue[0] != 0.0)
-    var result = cellvalue[0] + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail0'></span><br/>";
-  else
-    result = '0.0<br/>';
-  if (cellvalue[1] != 0.0)
-    result += cellvalue[1] + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail1'></span><br/>";
-  else
-    result += '0.0<br/>';
-  if (cellvalue[2] != 0.0)
-    result += cellvalue[2] + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail2'></span><br/>";
-  else
-    result += '0.0<br/>';
-  if (cellvalue[3] != 0.0)
-    result += cellvalue[3] + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail3'></span>";
-  else
-    result += cellvalue[3];
+function crosses (cellvalue, options, rowdata) 
+{
+  var result = '';
+  for (var i in cross_idx)
+    if (cellvalue[cross_idx[i]] != 0.0)
+      result += cellvalue[cross_idx[i]] + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail" + cross_idx[i] + "'></span><br/>";
+    else
+      result += '0.0</br>';
   return result;
 };
 {% endblock %}

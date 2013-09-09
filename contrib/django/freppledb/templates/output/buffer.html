@@ -1,10 +1,6 @@
 {% extends "admin/base_site_gridpivot.html" %}
 {% load i18n %}
 
-{% block extrahead %}{{block.super}}
-<script type="text/javascript" src="{{STATIC_URL}}js/flotr2.min.js"></script>
-{% endblock %}
-
 {% block contextmenus %}
 {% include "buffercontext.html" %}
 {% include "itemcontext.html" %}
@@ -153,24 +149,33 @@ function drawGraphs(jsondata)
     });
 }
 
-function graph(cellvalue, options, rowdata) {
-  return '<div class="graph" style="width:100px; height:60px;"></div>';
-};
-
-function crosses (cellvalue, options, rowdata) {
-  var result = cellvalue[0] + '<br/>';
-  if (cellvalue[1] != 0.0)
-    result += cellvalue[1] + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail0'></span><br/>";
-  else
-    result += '0.0<br/>';
-  if (cellvalue[2] != 0.0)
-    result += cellvalue[2] + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail1'></span><br/>";
-  else
-    result += '0.0<br/>';
-  if (cellvalue[2] != 0.0 || cellvalue[1] != 0.0)
-    result += cellvalue[3] + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail2'></span>";
-  else
-    result += cellvalue[3];
+function crosses (cellvalue, options, rowdata)
+{
+  var result = '';
+  for (var i in cross_idx)
+    switch(cross_idx[i])
+    {
+      case 1:
+        if (cellvalue[1] != 0.0)
+          result += cellvalue[1] + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail0'></span><br/>";
+        else
+          result += '0.0</br>';
+        break;
+      case 2:
+        if (cellvalue[2] != 0.0)
+          result += cellvalue[2] + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail1'></span><br/>";
+        else
+          result += '0.0<br/>';
+        break;
+      case 3:
+        if (cellvalue[2] != 0.0 || cellvalue[1] != 0.0)
+          result += cellvalue[3] + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail2'></span><br/>";
+        else
+          result += cellvalue[3] + '<br/>';
+        break;
+      default:
+        result += cellvalue[cross_idx[i]] + '</br>';
+    }
   return result;
 };
 {% endblock %}

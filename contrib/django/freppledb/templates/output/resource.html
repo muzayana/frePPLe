@@ -1,10 +1,6 @@
 {% extends "admin/base_site_gridpivot.html" %}
 {% load i18n %}
 
-{% block extrahead %}{{block.super}}
-<script type="text/javascript" src="{{STATIC_URL}}js/flotr2.min.js"></script>
-{% endblock %}
-
 {% block contextmenus %}
 {% include "resourcecontext.html" %}
 {% include "locationcontext.html" %}
@@ -77,13 +73,35 @@ function drawGraphs(jsondata)
     first = false;
 
     // Draw the graph
-    Flotr.draw({% if args.0 %}$("#graph").get(0){% else %}this{% endif %},[
-      { data:d1, label:"{{_('unavailable')|capfirst}}" },
-      { data:d2, label:"{{_('setup')|capfirst}}" },
-      { data:d3, label:"{{_('load')|capfirst}}" },
-      { data:d4, label:"{{_('free')|capfirst}}" },
-      { data:d5, label:"{{_('overload')|capfirst}}" }
-      ], {
+    var data = [];
+    var colors = [];
+    if (cross_idx.indexOf(1) > -1)
+    {
+      colors.push('#F6BD0F');
+      data.push({ data:d1, label:"{{_('unavailable')|capfirst}}" });
+    }
+    if (cross_idx.indexOf(2) > -1)
+    {
+      colors.push('#2B95EC');
+      data.push({ data:d2, label:"{{_('setup')|capfirst}}" });
+    }
+    if (cross_idx.indexOf(3) > -1)
+    {
+      colors.push('#AFD8F8');
+      data.push({ data:d3, label:"{{_('load')|capfirst}}" });
+    }
+    if (cross_idx.indexOf(0) > -1)
+    {
+      colors.push('#8BBA00');
+      data.push({ data:d4, label:"{{_('free')|capfirst}}" });
+    }
+    if (cross_idx.indexOf(3) > -1)
+    {
+      colors.push('#FF0000');
+      data.push({ data:d5, label:"{{_('overload')|capfirst}}" });
+    }
+    Flotr.draw({% if args.0 %}$("#graph").get(0){% else %}this{% endif %},
+      data, {
       HtmlText: false,
       bars : {
         show : true,
@@ -133,26 +151,33 @@ function drawGraphs(jsondata)
           return x_minor[Math.round(obj.x)][1] + "<br/>" + obj.y; // TODO not good JSON.stringify(obj);
           }
         },
-      colors: ['#F6BD0F','#2B95EC','#AFD8F8','#8BBA00','#FF0000'],
+      colors: colors,
       parseFloat: false
       });
     });
 }
 
-function graph(cellvalue, options, rowdata) {
-  return '<div class="graph" style="width:' + (5*numbuckets < 200 ? 5*numbuckets : 200) +'px; height:80px;"></div>';
-};
-
-function crosses (cellvalue, options, rowdata) {
-  var result = cellvalue[0] + '<br/>' + cellvalue[1] + '<br/>' + cellvalue[2] + '<br/>';
-  if (cellvalue[3] != 0.0)
-    result += cellvalue[3] + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail'></span><br/>";
-  else
-    result += '0.0<br/>';
-  if (cellvalue[4] > 95)
-    result += '<span class="highutil">' + cellvalue[4] + '%</span>';
-  else
-    result += cellvalue[4] + '%';
+function crosses (cellvalue, options, rowdata)
+{
+  var result = '';
+  for (var i in cross_idx)
+    switch(cross_idx[i])
+    {
+      case 3:
+        if (cellvalue[3] != 0.0)
+          result += cellvalue[3] + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail'></span></br>";
+        else
+          result += '0.0</br>';
+        break;
+      case 4:
+        if (cellvalue[4] > 95)
+          result += '<span class="highutil">' + cellvalue[4] + '%</span></br>';
+        else
+          result += cellvalue[4] + '%</br>';
+        break;
+      default:
+        result += cellvalue[cross_idx[i]] + '</br>';
+    }
   return result;
 };
 {% endblock %}
