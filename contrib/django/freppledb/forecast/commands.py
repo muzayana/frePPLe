@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os, inspect
 from datetime import datetime, timedelta
 from time import time
@@ -11,7 +12,7 @@ from freppledb.execute.commands import printWelcome, logProgress, createPlan, ex
 
 
 def loadForecast(cursor):
-  print 'Importing forecast...'
+  print('Importing forecast...')
   cnt = 0
   starttime = time()
   cursor.execute('''SELECT name, customer_id, item_id, priority,
@@ -28,7 +29,7 @@ def loadForecast(cursor):
     if o: fcst.calendar = frepple.calendar(name=o)
     if not p: fcst.discrete = False
     if q != None: fcst.maxlateness = q
-  print 'Loaded %d forecasts in %.2f seconds' % (cnt, time() - starttime)
+  print('Loaded %d forecasts in %.2f seconds' % (cnt, time() - starttime))
 
 
 def loadForecastdemand(cursor):
@@ -37,14 +38,14 @@ def loadForecastdemand(cursor):
   if not 'demand_forecast' in [ a[0] for a in inspect.getmembers(frepple) ]:
     return
 
-  print 'Importing forecast demand...'
+  print('Importing forecast demand...')
   cnt = 0
   starttime = time()
   cursor.execute("SELECT forecast_id, quantity, startdate, enddate FROM forecastdemand")
   for i, j, k, l in cursor.fetchall():
     cnt += 1
     frepple.demand_forecast(name=i).setQuantity(j,k,l)
-  print 'Loaded %d forecast demands in %.2f seconds' % (cnt, time() - starttime)
+  print('Loaded %d forecast demands in %.2f seconds' % (cnt, time() - starttime))
 
 
 def aggregateDemand(cursor):
@@ -52,7 +53,7 @@ def aggregateDemand(cursor):
   starttime = time()
   cursor.execute('update forecastplan set orderstotal = 0, ordersopen = 0')
   transaction.commit(using=db)
-  print 'Aggregate - reset records in %.2f seconds' % (time() - starttime)
+  print('Aggregate - reset records in %.2f seconds' % (time() - starttime))
 
   # Create a temp table with the aggregated demand
   starttime = time()
@@ -77,7 +78,7 @@ def aggregateDemand(cursor):
       group by forecast.name, fcustomer.lft, fitem.lft, common_bucketdetail.startdate
      ''')
   cursor.execute('''CREATE UNIQUE INDEX demand_history_idx ON demand_history (forecast, startdate)''')
-  print 'Aggregate - temp table in %.2f seconds' % (time() - starttime)
+  print('Aggregate - temp table in %.2f seconds' % (time() - starttime))
 
   # Create all active history pairs
   starttime = time()
@@ -96,7 +97,7 @@ def aggregateDemand(cursor):
       where forecastplan.forecast_id is null
       '''
   )
-  print 'Aggregate - init past records in %.2f seconds' % (time() - starttime)
+  print('Aggregate - init past records in %.2f seconds' % (time() - starttime))
 
   # Merge aggregate demand history into the forecastplan table
   starttime = time()
@@ -107,7 +108,7 @@ def aggregateDemand(cursor):
       and forecastplan.startdate = demand_history.startdate
     ''')
   transaction.commit(using=db)
-  print 'Aggregate - update order records in %.2f seconds' % (time() - starttime)
+  print('Aggregate - update order records in %.2f seconds' % (time() - starttime))
 
   # Initialize all buckets in the past and future
   starttime = time()
@@ -133,7 +134,7 @@ def aggregateDemand(cursor):
       group by forecast.name, customer.lft, item.lft, calendarbucket.startdate
     ''' % (frepple.settings.current, frepple.settings.current + timedelta(days=horizon_future))
   )
-  print 'Aggregate - init future records in %.2f seconds' % (time() - starttime)
+  print('Aggregate - init future records in %.2f seconds' % (time() - starttime))
 
 
 def generateBaseline(solver_fcst, cursor, db):
@@ -199,7 +200,7 @@ def exportForecast(cursor):
       if isinstance(i, frepple.demand_forecastbucket):
         yield i
 
-  print "Exporting forecast..."
+  print("Exporting forecast...")
   starttime = time()
   #cursor.execute('''VACUUM ANALYZE forecastplan''')
   cursor.execute('''update forecastplan
@@ -207,7 +208,7 @@ def exportForecast(cursor):
     where startdate > '%s'
     ''' % frepple.settings.current)
   #cursor.execute('''VACUUM ANALYZE forecastplan''')
-  print 'Export set to 0 in %.2f seconds' % (time() - starttime)
+  print('Export set to 0 in %.2f seconds' % (time() - starttime))
   starttime = time()
   cursor.executemany(
     '''update forecastplan
@@ -221,7 +222,7 @@ def exportForecast(cursor):
      ) for i in generator(cursor)
     ])
   transaction.commit(using=db)
-  print 'Exported forecast in %.2f seconds' % (time() - starttime)
+  print('Exported forecast in %.2f seconds' % (time() - starttime))
 
 
 # Select database
@@ -261,7 +262,7 @@ if __name__ == "__main__":
   # Detect whether the forecast module is available
   with_forecasting = 'demand_forecast' in [ a[0] for a in inspect.getmembers(frepple) ]
 
-  print "\nStart loading data from the database at", datetime.now().strftime("%H:%M:%S")
+  print("\nStart loading data from the database at", datetime.now().strftime("%H:%M:%S"))
   frepple.printsize()
   from freppledb.execute.load import loadfrepple
   loadfrepple()
@@ -288,29 +289,29 @@ if __name__ == "__main__":
     solver_fcst = frepple.solver_forecast(**kw)
 
     # Assure the hierarchies are up to date
-    print "\nStart building hierarchies at", datetime.now().strftime("%H:%M:%S")
+    print("\nStart building hierarchies at", datetime.now().strftime("%H:%M:%S"))
     Item.rebuildHierarchy(database=db)
     Customer.rebuildHierarchy(database=db)
     logProgress(33, db)
 
-    print "\nStart aggregating demand at", datetime.now().strftime("%H:%M:%S")
+    print("\nStart aggregating demand at", datetime.now().strftime("%H:%M:%S"))
     aggregateDemand(cursor)
     logProgress(50, db)
 
-    print "\nStart generation of baseline forecast at", datetime.now().strftime("%H:%M:%S")
+    print("\nStart generation of baseline forecast at", datetime.now().strftime("%H:%M:%S"))
     generateBaseline(solver_fcst, cursor, db)
     logProgress(66, db)
 
-    print "\nStart forecast netting at", datetime.now().strftime("%H:%M:%S")
+    print("\nStart forecast netting at", datetime.now().strftime("%H:%M:%S"))
     solver_fcst.solve()
     frepple.printsize()
     logProgress(83, db)
 
-  print "\nStart plan generation at", datetime.now().strftime("%H:%M:%S")
+  print("\nStart plan generation at", datetime.now().strftime("%H:%M:%S"))
   createPlan()
   logProgress(94, db)
 
-  print "\nStart exporting plan to the database at", datetime.now().strftime("%H:%M:%S")
+  print("\nStart exporting plan to the database at", datetime.now().strftime("%H:%M:%S"))
   exportPlan(db)
   exportForecast(cursor)
 
@@ -333,5 +334,5 @@ if __name__ == "__main__":
   #frepple.erase(True)
   #frepple.printsize()
 
-  print "\nFinished planning at", datetime.now().strftime("%H:%M:%S")
+  print("\nFinished planning at", datetime.now().strftime("%H:%M:%S"))
   logProgress(100, db)
