@@ -194,11 +194,13 @@ class GanttReport(GridReport):
   model = Resource
   editable = False
   multiselect = False
+  heightmargin = 82
   frozenColumns = 0   # TODO freeze 2 columns - doesn't work now because row height is not good in the frozen cols
   default_sort = (1,'asc')
   hasTimeBuckets = True
   rows = (
     GridFieldText('name', title=_('resource'), key=True, field_name='name', formatter='resource', editable=False),
+    GridFieldText('location', title=_('location'), field_name='location', formatter='location', editable=False),
     GridFieldText('util', title=_('utilization %'), field_name='util', formatter='percentage', editable=False, width=100, align='center', search=False),
     GridFieldText('operationplans', width=1000, extra='formatter:ganttcell', editable=False, sortable=False),
     )
@@ -229,6 +231,7 @@ class GanttReport(GridReport):
     cursor = connections[request.database].cursor()
     query = '''
       select res.name as row1,
+             res.location_id as row2,
              plan_summary.avg_util as avgutil,
              out_loadplan.quantity as quantity,
              out_loadplan.startdate as startdate,
@@ -271,32 +274,36 @@ class GanttReport(GridReport):
     # Build the Python result
     prevRes = None
     prevUtil = None
+    prevLocation = None
     results = []
     for row in cursor.fetchall():
       if not prevRes or prevRes != row[0]:
         if prevRes:
           yield {
             'name': prevRes,
+            'location': prevLocation,
             'util': prevUtil,
             'operationplans': results,
             }
         prevRes = row[0]
-        prevUtil = row[1] and round(row[1],2) or 0
+        prevLocation = row[1]
+        prevUtil = row[2] and round(row[2],2) or 0
         results = []
-      if row[3]:
+      if row[4]:
         results.append( {
-            'operation': row[5],
-            'description': row[6],
-            'quantity': float(row[2]),
-            'x': round((row[3] - start).total_seconds() / horizon, 3),
-            'w': round((row[4] - row[3]).total_seconds() / horizon, 3),
-            'startdate': str(row[3]),
-            'enddate': str(row[4]),
-            'locked': row[7] and 1 or 0,
+            'operation': row[6],
+            'description': row[7],
+            'quantity': float(row[3]),
+            'x': round((row[4] - start).total_seconds() / horizon, 3),
+            'w': round((row[5] - row[4]).total_seconds() / horizon, 3),
+            'startdate': str(row[4]),
+            'enddate': str(row[5]),
+            'locked': row[8] and 1 or 0,
             } )
     if prevRes:
       yield {
         'name': prevRes,
+        'location': prevLocation,
         'util': prevUtil,
         'operationplans': results,
         }
