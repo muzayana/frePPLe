@@ -317,9 +317,9 @@ var grid = {
     var colModel = $("#grid")[0].p.colModel;
     var maxfrozen = 0;
     var skipped = 0;
-    for (var i = 0; i < colModel.length; i++)
+    for (var i in colModel)
     {
-      if (colModel[i].name != "rn" && colModel[i].name != "cb" && colModel[i].counter != null && colModel[i].label != '')
+      if (colModel[i].name != "rn" && colModel[i].name != "cb" && colModel[i].counter != null && colModel[i].label != '' && !('alwayshidden' in colModel[i]))
       {
         if (colModel[i].frozen) maxfrozen = i + 1 - skipped;
         val += "<option value='" + (i) + "'";
@@ -327,8 +327,6 @@ var grid = {
         if (colModel[i].key) val += " disabled='disabled'";
         val += ">" + colModel[i].label + "</option>";
       }
-      else if (colModel[i].name == 'columns')
-        break;
       else
         skipped++;
     }
@@ -372,14 +370,23 @@ var grid = {
          click: function() {
            var colModel = $("#grid")[0].p.colModel;
            var perm = [];
+           var hiddenrows = [];
            if (colModel[0].name == "cb") perm.push(0);
            cross_idx = [];
            $('#configure option').each(function() {
              val = parseInt(this.value,10);
              if (val < 100)
              {
-               $("#grid").jqGrid(this.selected ? "showCol" : "hideCol", colModel[val].name);
-               perm.push(val);
+               if (this.selected)
+               {
+                 $("#grid").jqGrid("showCol", colModel[val].name);
+                 perm.push(val);
+               }
+               else
+               {
+                 hiddenrows.push(val);
+                 $("#grid").jqGrid("hideCol", colModel[val].name);
+               }
              }
              else if (this.selected)
                cross_idx.push(val-100);
@@ -388,7 +395,7 @@ var grid = {
            if (pivot)
            {
              var firstnonfrozen = 0;
-             for (var i = 0; i < colModel.length; i++)
+             for (var i in colModel)
                if ("counter" in colModel[i])
                  numfrozen = i+1;
                else
@@ -396,10 +403,12 @@ var grid = {
            }
            else
              numfrozen = parseInt($("#frozen :selected").text())
+           for (var i in hiddenrows)
+             perm.push(hiddenrows[i]);
            $("#grid").jqGrid("remapColumns", perm, true);
            $("#grid").jqGrid('destroyFrozenColumns');
            var skipped = 0;
-           for (var i = 0; i < colModel.length; i++)
+           for (var i in colModel)
              if (colModel[i].name != "rn" && colModel[i].name != "cb" && colModel[i].counter != null)
                $("#grid").jqGrid('setColProp', colModel[i].name, {frozen:i-skipped<numfrozen});
              else
@@ -450,18 +459,15 @@ var grid = {
       else if (pgButton.indexOf("user") >= 0)
         page = $('input.ui-pg-input').val();
     }
-    for (var i = 0; i < colModel.length; i++)
+    for (var i in colModel)
     {
-      if (colModel[i].name != "rn" && colModel[i].name != "cb" && "counter" in colModel[i])
+      if (colModel[i].name != "rn" && colModel[i].name != "cb" && "counter" in colModel[i] && !('alwayshidden' in colModel[i]))
       {
         colArray.push([colModel[i].counter, colModel[i].hidden, colModel[i].width]);
         if (colModel[i].frozen) maxfrozen = i + 1 - skipped;
       }
       else if (colModel[i].name == 'columns')
-      {
         pivot = true;
-        break;
-      }
       else
         skipped++;
     }

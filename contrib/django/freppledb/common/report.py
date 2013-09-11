@@ -86,6 +86,7 @@ class GridField(object):
     if self.formatter: o.append(",formatter:'%s'" % self.formatter)
     if self.unformat: o.append(",unformat:'%s'" % self.unformat)
     if self.searchrules: o.append(",searchrules:{%s}" % self.searchrules)
+    if self.hidden: o.append(",hidden:true,alwayshidden:true")
     if self.extra: o.append(",%s" % force_unicode(self.extra))
     return ''.join(o)
 
@@ -102,6 +103,7 @@ class GridField(object):
   extra = None
   align = 'center'
   searchrules = None
+  hidden = False
 
 
 class GridFieldDateTime(GridField):
@@ -338,7 +340,7 @@ class GridReport(View):
          cls.rows[index], width, index,
          count < frozencolumns and ',frozen:true' or '',
          is_popup and ',popup:true' or '',
-         hidden and ',hidden:true' or ''
+         hidden and not cls.rows[index].hidden and ',hidden:true' or ''
          ))
     return ',\n'.join(result)
 
@@ -361,12 +363,12 @@ class GridReport(View):
     if prefs:
       # Customized settings
       prefs = prefs['rows']
-      writer.writerow([ force_unicode(reportclass.rows[f[0]].title).title().encode(encoding,"ignore") for f in prefs if not f[1] and not isinstance(reportclass.rows[f[0]],GridFieldGraph) ])
-      fields = [ reportclass.rows[f[0]].field_name for f in prefs if not f[1] and not isinstance(reportclass.rows[f[0]],GridFieldGraph)]
+      writer.writerow([ force_unicode(reportclass.rows[f[0]].title).title().encode(encoding,"ignore") for f in prefs if not f[1] and not isinstance(reportclass.rows[f[0]],GridFieldGraph) and not reportclass.rows[f[0]].hidden ])
+      fields = [ reportclass.rows[f[0]].field_name for f in prefs if not f[1] and not isinstance(reportclass.rows[f[0]],GridFieldGraph) and not reportclass.rows[f[0]].hidden ]
     else:
       # Default settings
-      writer.writerow([ force_unicode(f.title).title().encode(encoding,"ignore") for f in reportclass.rows if f.title and not isinstance(f,GridFieldGraph)])
-      fields = [ i.field_name for i in reportclass.rows if i.field_name and not isinstance(i,GridFieldGraph) ]
+      writer.writerow([ force_unicode(f.title).title().encode(encoding,"ignore") for f in reportclass.rows if f.title and not isinstance(f,GridFieldGraph) and not f.hidden ])
+      fields = [ i.field_name for i in reportclass.rows if i.field_name and not isinstance(i,GridFieldGraph) and not i.hidden ]
 
     # Write a header row
     yield sf.getvalue()
@@ -1106,7 +1108,7 @@ class GridPivot(GridReport):
       result.append(u"{%s,width:%s,counter:%d,frozen:true%s%s,searchoptions:{searchhidden: true}}" % (
          cls.rows[index], width, index,
          is_popup and ',popup:true' or '',
-         hidden and ',hidden:true' or ''
+         hidden and not cls.rows[index].hidden and ',hidden:true' or ''
          ))
     result.append(
       "{ name:'columns',label:' ',sortable:false,width:150,align:'left',"
@@ -1239,9 +1241,9 @@ class GridPivot(GridReport):
     # Pick up the preferences
     prefs = request.user.getPreference(reportclass.getKey())
     if prefs and 'rows' in prefs:
-      myrows = [ reportclass.rows[f[0]] for f in prefs['rows'] if not f[1] and not isinstance(reportclass.rows[f[0]],GridFieldGraph) ]
+      myrows = [ reportclass.rows[f[0]] for f in prefs['rows'] if not f[1] and not isinstance(reportclass.rows[f[0]],GridFieldGraph) and not reportclass.rows[f[0]].hidden ]
     else:
-      myrows = [ f for f in reportclass.rows if f.name and not isinstance(f,GridFieldGraph) ]
+      myrows = [ f for f in reportclass.rows if f.name and not isinstance(f,GridFieldGraph) and not f.hidden ]
     if prefs and 'crosses' in prefs:
       mycrosses = [ reportclass.crosses[f] for f in prefs['crosses'] ]
     else:
