@@ -200,7 +200,7 @@ class GanttReport(GridReport):
   rows = (
     GridFieldText('name', title=_('resource'), key=True, field_name='name', formatter='resource', editable=False),
     GridFieldText('util', title=_('utilization %'), field_name='util', formatter='percentage', editable=False, width=100, align='center', search=False),
-    GridFieldText('operationplans', width=1000, extra='formatter:gantt', editable=False, sortable=False),
+    GridFieldText('operationplans', width=1000, extra='formatter:ganttcell', editable=False, sortable=False),
     )
 
   @classmethod
