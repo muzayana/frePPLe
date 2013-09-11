@@ -7,7 +7,7 @@
 # You are not allowed to distribute the software, either in the form of source code
 # or in the form of compiled binaries.
 #
-
+from __future__ import print_function
 
 from django.db import models, transaction, DEFAULT_DB_ALIAS
 from django.utils.translation import ugettext_lazy as _
@@ -87,7 +87,7 @@ class Scenario(models.Model):
           else:
             Scenario(name=db, status=u"Free").save()
     except Exception as e:
-      print "Error synchronizing the scenario table with the settings:", e
+      print("Error synchronizing the scenario table with the settings:", e)
       transaction.rollback()
     finally:
       transaction.commit()

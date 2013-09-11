@@ -7,7 +7,7 @@
 # You are not allowed to distribute the software, either in the form of source code
 # or in the form of compiled binaries.
 #
-
+from __future__ import print_function
 import random
 from optparse import make_option
 from datetime import timedelta, datetime, date
@@ -129,7 +129,7 @@ class Command(BaseCommand):
       database = options['database'] or DEFAULT_DB_ALIAS
     else:
       database = DEFAULT_DB_ALIAS
-    if not database in settings.DATABASES.keys():
+    if not database in settings.DATABASES:
       raise CommandError("No database settings known for '%s'" % database )
     if 'user' in options and options['user']:
       try: user = User.objects.all().using(database).get(username=options['user'])
@@ -173,23 +173,23 @@ class Command(BaseCommand):
         raise CommandError("Database must be empty before creating a model")
 
       # Plan start date
-      if verbosity>0: print "Updating current date..."
+      if verbosity>0: print("Updating current date...")
       param = Parameter.objects.using(database).get_or_create(name="currentdate")[0]
       param.value = datetime.strftime(startdate, "%Y-%m-%d %H:%M:%S")
       param.save(using=database)
 
       # Planning horizon
       # minimum 10 daily buckets, weekly buckets till 40 days after current
-      if verbosity>0: print "Updating buckets..."
+      if verbosity>0: print("Updating buckets...")
       management.call_command('frepple_createbuckets', user=user, database=database)
-      if verbosity>0: print "Updating horizon telescope..."
+      if verbosity>0: print("Updating horizon telescope...")
       updateTelescope(10, 40, 730, database)
       task.status = '2%'
       task.save(using=database)
       transaction.commit(using=database)
 
       # Weeks calendar
-      if verbosity>0: print "Creating weeks calendar..."
+      if verbosity>0: print("Creating weeks calendar...")
       weeks = Calendar.objects.using(database).create(name="Weeks")
       for i in BucketDetail.objects.using(database).filter(bucket="week").all():
         CalendarBucket(startdate=i.startdate, enddate=i.enddate, value=1, calendar=weeks).save(using=database)
@@ -198,7 +198,7 @@ class Command(BaseCommand):
       transaction.commit(using=database)
 
       # Working days calendar
-      if verbosity>0: print "Creating working days..."
+      if verbosity>0: print("Creating working days...")
       workingdays = Calendar.objects.using(database).create(name="Working Days", defaultvalue=0)
       minmax = BucketDetail.objects.using(database).filter(bucket="week").aggregate(Min('startdate'),Max('startdate'))
       CalendarBucket(startdate=minmax['startdate__min'], enddate=minmax['startdate__max'],
@@ -211,7 +211,7 @@ class Command(BaseCommand):
       categories = [ 'cat A','cat B','cat C','cat D','cat E','cat F','cat G' ]
 
       # Create customers
-      if verbosity>0: print "Creating customers..."
+      if verbosity>0: print("Creating customers...")
       cust = []
       for i in range(100):
         c = Customer.objects.using(database).create(name = 'Cust %03d' % i)
@@ -221,7 +221,7 @@ class Command(BaseCommand):
       transaction.commit(using=database)
 
       # Create resources and their calendars
-      if verbosity>0: print "Creating resources and calendars..."
+      if verbosity>0: print("Creating resources and calendars...")
       res = []
       for i in range(resource):
         loc = Location(name='Loc %05d' % int(random.uniform(1,cluster)))
@@ -238,7 +238,7 @@ class Command(BaseCommand):
       transaction.commit(using=database)
 
       # Create the components
-      if verbosity>0: print "Creating raw materials..."
+      if verbosity>0: print("Creating raw materials...")
       comps = []
       comploc = Location.objects.using(database).create(name='Procured materials')
       for i in range(components):
@@ -264,7 +264,7 @@ class Command(BaseCommand):
       durations = [ 86400, 86400*2, 86400*3, 86400*5, 86400*6 ]
       progress = 88.0 / cluster
       for i in range(cluster):
-        if verbosity>0: print "Creating supply chain for end item %d..." % i
+        if verbosity>0: print("Creating supply chain for end item %d..." % i)
 
         # location
         loc = Location.objects.using(database).get_or_create(name='Loc %05d' % i)[0]

@@ -7,7 +7,7 @@
 # You are not allowed to distribute the software, either in the form of source code
 # or in the form of compiled binaries.
 #
-
+from __future__ import print_function
 import sys
 import os
 import socket
@@ -32,7 +32,7 @@ class frePPLeService(win32serviceutil.ServiceFramework):
         # Log stop event
         msg = "frePPLe web server stopped"
         servicemanager.LogInfoMsg(msg)
-        print datetime.now().strftime("%Y-%m-%d %H:%M:%S"), msg
+        print(datetime.now().strftime("%Y-%m-%d %H:%M:%S"), msg)
 
     def SvcDoRun(self):
         # Environment settings (which are used in the Django settings file and need
@@ -81,7 +81,7 @@ class frePPLeService(win32serviceutil.ServiceFramework):
           sys.stdout = open(log, 'a', 0)
           msg = "frePPLe web server listening on http://%s:%d and logging to %s" % (address, port, log)
           servicemanager.LogInfoMsg(msg)
-          print datetime.now().strftime("%Y-%m-%d %H:%M:%S"), msg
+          print(datetime.now().strftime("%Y-%m-%d %H:%M:%S"), msg)
         except:
           # Too bad if we can't write log info
           servicemanager.LogInfoMsg("frePPLe web server listening on http://%s:%d without log file" % (address, port))
@@ -97,7 +97,7 @@ class frePPLeService(win32serviceutil.ServiceFramework):
           # Log an error event
           msg = "frePPLe web server failed to start:\n%s" % e
           servicemanager.LogErrorMsg(msg)
-          print datetime.now().strftime("%Y-%m-%d %H:%M:%S"), msg
+          print(datetime.now().strftime("%Y-%m-%d %H:%M:%S"), msg)
 
 
 if __name__=='__main__':

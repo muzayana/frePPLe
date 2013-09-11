@@ -17,7 +17,7 @@ interpreter from the frePPLe engine.
 The code iterates over all objects in the C++ core engine, and writes this
 information to a set of text files.
 '''
-
+from __future__ import print_function
 from time import time
 from datetime import datetime, timedelta
 import csv, inspect
@@ -29,7 +29,7 @@ import frepple
 encoding = settings.CSV_CHARSET
 
 def exportProblems():
-  print "Exporting problems..."
+  print("Exporting problems...")
   starttime = time()
   writer = csv.writer(open("problems.csv", "wb"), quoting=csv.QUOTE_ALL)
   writer.writerow(('#entity','name','description','start date','end date','weight'))
@@ -38,11 +38,11 @@ def exportProblems():
       i.entity, i.name.encode(encoding,"ignore"), i.owner.name.encode(encoding,"ignore"),
       i.description.encode(encoding,"ignore"), i.start, i.end, i.weight
       ))
-  print 'Exported problems in %.2f seconds' % (time() - starttime)
+  print('Exported problems in %.2f seconds' % (time() - starttime))
 
 
 def exportConstraints():
-  print "Exporting constraints..."
+  print("Exporting constraints...")
   starttime = time()
   writer = csv.writer(open("constraints.csv", "wb"), quoting=csv.QUOTE_ALL)
   writer.writerow(('#demand','entity','name','owner','description','start date','end date','weight'))
@@ -53,11 +53,11 @@ def exportConstraints():
         i.owner.name.encode(encoding,"ignore"), i.description.encode(encoding,"ignore"),
         i.start, i.end, i.weight
         ))
-  print 'Exported constraints in %.2f seconds' % (time() - starttime)
+  print('Exported constraints in %.2f seconds' % (time() - starttime))
 
 
 def exportOperationplans():
-  print "Exporting operationplans..."
+  print("Exporting operationplans...")
   starttime = time()
   writer = csv.writer(open("operations.csv", "wb"), quoting=csv.QUOTE_ALL)
   writer.writerow(('#id','operation','quantity','start date','end date','locked'))
@@ -66,11 +66,11 @@ def exportOperationplans():
        i.id, i.operation.name.encode(encoding,"ignore"), i.quantity, i.start, i.end,
        i.locked, i.unavailable, i.owner and i.owner.id or None
      ))
-  print 'Exported operationplans in %.2f seconds' % (time() - starttime)
+  print('Exported operationplans in %.2f seconds' % (time() - starttime))
 
 
 def exportFlowplans():
-  print "Exporting flowplans..."
+  print("Exporting flowplans...")
   starttime = time()
   writer = csv.writer(open("flowplans.csv", "wb"), quoting=csv.QUOTE_ALL)
   writer.writerow(('#operationplan id','buffer','quantity','date','on hand'))
@@ -80,11 +80,11 @@ def exportFlowplans():
        j.operationplan.id, j.buffer.name.encode(encoding,"ignore"),
        j.quantity, j.date, j.onhand
        ))
-  print 'Exported flowplans in %.2f seconds' % (time() - starttime)
+  print('Exported flowplans in %.2f seconds' % (time() - starttime))
 
 
 def exportLoadplans():
-  print "Exporting loadplans..."
+  print("Exporting loadplans...")
   starttime = time()
   writer = csv.writer(open("loadplans.csv", "wb"), quoting=csv.QUOTE_ALL)
   writer.writerow(('#operationplan id','resource','quantity','start date','end date','setup'))
@@ -95,11 +95,11 @@ def exportLoadplans():
           j.operationplan.id, j.resource.name.encode(encoding,"ignore"),
           j.quantity, j.startdate, j.enddate, j.setup and j.setup.encode(encoding,"ignore") or None
           ))
-  print 'Exported loadplans in %.2f seconds' % (time() - starttime)
+  print('Exported loadplans in %.2f seconds' % (time() - starttime))
 
 
 def exportResourceplans():
-  print "Exporting resourceplans..."
+  print("Exporting resourceplans...")
   starttime = time()
   writer = csv.writer(open("resources.csv", "wb"), quoting=csv.QUOTE_ALL)
   writer.writerow(('#resource','startdate','available','unavailable','setup','load','free'))
@@ -136,7 +136,7 @@ def exportResourceplans():
         i.name.encode(encoding,"ignore"), j['start'], j['available'],
         j['unavailable'], j['setup'], j['load'], j['free']
         ))
-  print 'Exported resourceplans in %.2f seconds' % (time() - starttime)
+  print('Exported resourceplans in %.2f seconds' % (time() - starttime))
 
 
 def exportDemand():
@@ -162,7 +162,7 @@ def exportDemand():
         d.customer and d.customer.name.encode(encoding,"ignore") or None, d.due,
         d.quantity - cumplanned, None, None, None)
 
-  print "Exporting demand plans..."
+  print("Exporting demand plans...")
   starttime = time()
   writer = csv.writer(open("demands.csv", "wb"), quoting=csv.QUOTE_ALL)
   writer.writerow(('#demand','item','customer','due date','requested quantity',
@@ -171,11 +171,11 @@ def exportDemand():
     if i.quantity == 0: continue
     for j in deliveries(i):
       writer.writerow(j)
-  print 'Exported demand plans in %.2f seconds' % (time() - starttime)
+  print('Exported demand plans in %.2f seconds' % (time() - starttime))
 
 
 def exportPegging():
-  print "Exporting pegging..."
+  print("Exporting pegging...")
   starttime = time()
   writer = csv.writer(open("demand_pegging.csv", "wb"), quoting=csv.QUOTE_ALL)
   writer.writerow(('#demand','level','consuming operationplan id','consuming date',
@@ -196,7 +196,7 @@ def exportPegging():
        (j.buffer and j.buffer.item and j.buffer.item.name.encode(encoding,"ignore")) or '',
        j.quantity_demand, j.quantity_buffer
        ))
-  print 'Exported pegging in %.2f seconds' % (time() - starttime)
+  print('Exported pegging in %.2f seconds' % (time() - starttime))
 
 
 def exportForecast():
@@ -204,7 +204,7 @@ def exportForecast():
   if not 'demand_forecast' in [ a[0] for a in inspect.getmembers(frepple) ]:
     return
 
-  print "Exporting forecast plans..."
+  print("Exporting forecast plans...")
   starttime = time()
   writer = csv.writer(open("forecast.csv", "wb"), quoting=csv.QUOTE_ALL)
   writer.writerow(('#forecast','start date','end date','total quantity',
@@ -215,7 +215,7 @@ def exportForecast():
     writer.writerow((
       i.name.encode(encoding,"ignore"), i.startdate, i.enddate, i.total, i.quantity, i.consumed
       ))
-  print 'Exported forecast plans in %.2f seconds' % (time() - starttime)
+  print('Exported forecast plans in %.2f seconds' % (time() - starttime))
 
 
 def exportfrepple():

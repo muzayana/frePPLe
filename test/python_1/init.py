@@ -7,6 +7,7 @@
 # You are not allowed to distribute the software, either in the form of source code
 # or in the form of compiled binaries.
 #
+from __future__ import print_function
 import csv
 
 def read_csv_file():
@@ -43,8 +44,8 @@ def create_files(cnt):
   return
 
 def my_function(a):
-  print 'in my function with argument %s' % a,
+  print('in my function with argument %s' % a, end="")
   return 'OK'
 
-print '0. Initialization frePPLe version:', frepple.version
+print('0. Initialization frePPLe version:', frepple.version)
 

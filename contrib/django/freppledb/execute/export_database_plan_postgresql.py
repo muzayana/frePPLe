@@ -18,8 +18,7 @@ The code iterates over all objects in the C++ core engine, and creates
 database records with the information. The Django database wrappers are used
 to keep the code portable between different databases.
 '''
-
-
+from __future__ import print_function
 from datetime import timedelta, datetime, date
 from time import time
 import inspect, os
@@ -38,17 +37,17 @@ else:
 encoding = 'UTF8'
 
 def truncate(process):
-  print "Emptying database plan tables..."
+  print("Emptying database plan tables...")
   starttime = time()
   process.stdin.write('truncate table out_demandpegging;\n')
   process.stdin.write('truncate table out_problem, out_resourceplan, out_constraint;\n')
   process.stdin.write('truncate table out_loadplan, out_flowplan, out_operationplan;\n')
   process.stdin.write('truncate table out_demand;\n')
-  print "Emptied plan tables in %.2f seconds" % (time() - starttime)
+  print("Emptied plan tables in %.2f seconds" % (time() - starttime))
 
 
 def exportProblems(process):
-  print "Exporting problems..."
+  print("Exporting problems...")
   starttime = time()
   process.stdin.write('COPY out_problem (entity, name, owner, description, startdate, enddate, weight) FROM STDIN;\n')
   for i in frepple.problems():
@@ -59,11 +58,11 @@ def exportProblems(process):
        round(i.weight,settings.DECIMAL_PLACES)
     ))
   process.stdin.write('\\.\n')
-  print 'Exported problems in %.2f seconds' % (time() - starttime)
+  print('Exported problems in %.2f seconds' % (time() - starttime))
 
 
 def exportConstraints(process):
-  print "Exporting constraints..."
+  print("Exporting constraints...")
   starttime = time()
   process.stdin.write('COPY out_constraint (demand,entity,name,owner,description,startdate,enddate,weight) FROM STDIN;\n')
   for d in frepple.demands():
@@ -75,11 +74,11 @@ def exportConstraints(process):
          round(i.weight,settings.DECIMAL_PLACES)
        ))
   process.stdin.write('\\.\n')
-  print 'Exported constraints in %.2f seconds' % (time() - starttime)
+  print('Exported constraints in %.2f seconds' % (time() - starttime))
 
 
 def exportOperationplans(process):
-  print "Exporting operationplans..."
+  print("Exporting operationplans...")
   starttime = time()
   process.stdin.write('COPY out_operationplan (id,operation,quantity,startdate,enddate,locked,unavailable,owner) FROM STDIN;\n')
   for i in frepple.operations():
@@ -90,11 +89,11 @@ def exportOperationplans(process):
         j.locked, j.unavailable, j.owner and j.owner.id or "\\N"
         ))
   process.stdin.write('\\.\n')
-  print 'Exported operationplans in %.2f seconds' % (time() - starttime)
+  print('Exported operationplans in %.2f seconds' % (time() - starttime))
 
 
 def exportFlowplans(process):
-  print "Exporting flowplans..."
+  print("Exporting flowplans...")
   starttime = time()
   process.stdin.write('COPY out_flowplan (operationplan_id, thebuffer, quantity, flowdate, onhand) FROM STDIN;\n')
   for i in frepple.buffers():
@@ -105,11 +104,11 @@ def exportFlowplans(process):
          str(j.date), round(j.onhand,settings.DECIMAL_PLACES)
          ))
   process.stdin.write('\\.\n')
-  print 'Exported flowplans in %.2f seconds' % (time() - starttime)
+  print('Exported flowplans in %.2f seconds' % (time() - starttime))
 
 
 def exportLoadplans(process):
-  print "Exporting loadplans..."
+  print("Exporting loadplans...")
   starttime = time()
   process.stdin.write('COPY out_loadplan (operationplan_id, theresource, quantity, startdate, enddate, setup) FROM STDIN;\n')
   for i in frepple.resources():
@@ -121,11 +120,11 @@ def exportLoadplans(process):
          str(j.startdate), str(j.enddate), j.setup and j.setup.encode(encoding) or "\\N"
        ))
   process.stdin.write('\\.\n')
-  print 'Exported loadplans in %.2f seconds' % (time() - starttime)
+  print('Exported loadplans in %.2f seconds' % (time() - starttime))
 
 
 def exportResourceplans(process):
-  print "Exporting resourceplans..."
+  print("Exporting resourceplans...")
   starttime = time()
 
   # Determine start and end date of the reporting horizon
@@ -164,7 +163,7 @@ def exportResourceplans(process):
        round(j['free'],settings.DECIMAL_PLACES)
        ))
   process.stdin.write('\\.\n')
-  print 'Exported resourceplans in %.2f seconds' % (time() - starttime)
+  print('Exported resourceplans in %.2f seconds' % (time() - starttime))
 
 
 def exportDemand(process):
@@ -192,7 +191,7 @@ def exportDemand(process):
         "\\N", "\\N"
         )
 
-  print "Exporting demand plans..."
+  print("Exporting demand plans...")
   starttime = time()
   process.stdin.write('COPY out_demand (demand,item,customer,due,quantity,plandate,planquantity,operationplan) FROM STDIN;\n')
   for i in frepple.demands():
@@ -200,11 +199,11 @@ def exportDemand(process):
     for j in deliveries(i):
       process.stdin.write("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" % j)
   process.stdin.write('\\.\n')
-  print 'Exported demand plans in %.2f seconds' % (time() - starttime)
+  print('Exported demand plans in %.2f seconds' % (time() - starttime))
 
 
 def exportPegging(process):
-  print "Exporting pegging..."
+  print("Exporting pegging...")
   starttime = time()
   process.stdin.write('COPY out_demandpegging (demand,depth,cons_operationplan,cons_date,prod_operationplan,prod_date, buffer,item,quantity_demand,quantity_buffer) FROM STDIN;\n')
   for i in frepple.demands():
@@ -224,7 +223,7 @@ def exportPegging(process):
         round(j.quantity_buffer,settings.DECIMAL_PLACES)
        ))
   process.stdin.write('\\.\n')
-  print 'Exported pegging in %.2f seconds' % (time() - starttime)
+  print('Exported pegging in %.2f seconds' % (time() - starttime))
 
 
 def exportfrepple():
@@ -274,5 +273,5 @@ def exportfrepple():
     order by 1
     ''')
   for table, recs in cursor.fetchall():
-    print "Table %s: %d records" % (table, recs)
+    print("Table %s: %d records" % (table, recs))
 

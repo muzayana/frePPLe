@@ -7,7 +7,7 @@
 # You are not allowed to distribute the software, either in the form of source code
 # or in the form of compiled binaries.
 #
-
+from __future__ import print_function
 from datetime import datetime
 
 from django.db import models, DEFAULT_DB_ALIAS, connections, transaction
@@ -85,7 +85,7 @@ class HierarchyModel(models.Model):
     # Load all nodes in memory
     for i in cls.objects.using(database).values('name','owner'):
       if i['name'] == i['owner']:
-        print "Data error: '%s' points to itself as owner" % i['name']
+        print("Data error: '%s' points to itself as owner" % i['name'])
         nodes[i['name']] = None
       else:
         nodes[i['name']] = i['owner']
@@ -116,7 +116,7 @@ class HierarchyModel(models.Model):
             # If none of the bad keys points to me as a parent, I am unguilty
             del bad[i]
             updated = True
-      print "Data error: Hierarchy loops among %s" % sorted(bad.keys())
+      print("Data error: Hierarchy loops among %s" % sorted(bad.keys()))
       for i, j in sorted(bad.items()):
         nodes[i] = None
 

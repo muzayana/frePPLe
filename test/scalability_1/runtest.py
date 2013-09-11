@@ -8,6 +8,7 @@
 # You are not allowed to distribute the software, either in the form of source code
 # or in the form of compiled binaries.
 #
+from __future__ import print_function
 import os, sys
 
 runtimes = {}
@@ -19,28 +20,28 @@ def createdata(outfile,duplicates,header,body,footer,subst):
   # Iteration
   if subst == 0:
     for cnt in range(duplicates):
-      print >>outfile, body
+      print(body, file=outfile)
   elif subst == 1:
    for cnt in range(duplicates):
-      print >>outfile, body % (cnt)
+      print(body % (cnt), file=outfile)
   elif subst == 2:
    for cnt in range(duplicates):
-      print >>outfile, body % (cnt,cnt)
+      print(body % (cnt,cnt), file=outfile)
   elif subst == 3:
    for cnt in range(duplicates):
-      print >>outfile, body % (cnt,cnt,cnt)
+      print(body % (cnt,cnt,cnt), file=outfile)
   elif subst == 4:
    for cnt in range(duplicates):
-      print >>outfile, body % (cnt,cnt,cnt,cnt)
+      print(body % (cnt,cnt,cnt,cnt), file=outfile)
   elif subst == 5:
    for cnt in range(duplicates):
-      print >>outfile, body % (cnt,cnt,cnt,cnt,cnt)
+      print(body % (cnt,cnt,cnt,cnt,cnt), file=outfile)
   elif subst == 6:
    for cnt in range(duplicates):
-      print >>outfile, body % (cnt,cnt,cnt,cnt,cnt,cnt)
+      print(body % (cnt,cnt,cnt,cnt,cnt,cnt), file=outfile)
   elif subst == 7:
    for cnt in range(duplicates):
-      print >>outfile, body % (cnt,cnt,cnt,cnt,cnt,cnt,cnt)
+      print(body % (cnt,cnt,cnt,cnt,cnt,cnt,cnt), file=outfile)
 
   # Finalize
   outfile.write(footer)
@@ -48,7 +49,7 @@ def createdata(outfile,duplicates,header,body,footer,subst):
 
 # Main loop
 for counter in [5000, 10000, 15000, 20000, 25000]:
-  print "\ncounter", counter
+  print("\ncounter", counter)
   outfile = open("input.xml","wt")
 
   createdata(
@@ -116,15 +117,15 @@ for counter in [5000, 10000, 15000, 20000, 25000]:
   while True:
     i = out.readline()
     if not i: break
-    print i.strip()
+    print(i.strip())
   if out.close() != None:
-    print "Planner exited abnormally\n"
+    print("Planner exited abnormally\n")
     sys.exit(1)
 
   # Measure the time
   endtime = os.times()
   runtimes[counter] = endtime[4]-starttime[4]
-  print "time: %.3f" % (endtime[4]-starttime[4])
+  print("time: %.3f" % (endtime[4]-starttime[4]))
 
   # Clean up the input and the output
   os.remove("input.xml")
@@ -138,7 +139,7 @@ for counter in [5000, 10000, 15000, 20000, 25000]:
 
 # Define failure criterium
 if runtimes[25000] > runtimes[5000]*5*1.05:
-  print "\nTest failed. Run time scales worse than linear with model size.\n"
+  print("\nTest failed. Run time scales worse than linear with model size.\n")
   sys.exit(1)
 
-print "\nTest passed\n"
+print("\nTest passed\n")

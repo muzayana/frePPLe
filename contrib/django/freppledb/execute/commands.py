@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os, sys
 from datetime import datetime
 
@@ -19,19 +20,19 @@ def printWelcome(database = DEFAULT_DB_ALIAS):
 
   # Welcome message
   if settings.DATABASES[database]['ENGINE'] == 'django.db.backends.sqlite3':
-    print "frePPLe on %s using sqlite3 database '%s'" % (
+    print("frePPLe on %s using sqlite3 database '%s'" % (
       sys.platform,
       'NAME' in settings.DATABASES[database] and settings.DATABASES[db]['NAME'] or ''
-      )
+      ))
   else:
-    print "frePPLe on %s using %s database '%s' as '%s' on '%s:%s'" % (
+    print("frePPLe on %s using %s database '%s' as '%s' on '%s:%s'" % (
       sys.platform,
       'ENGINE' in settings.DATABASES[database] and settings.DATABASES[database]['ENGINE'] or '',
       'NAME' in settings.DATABASES[database] and settings.DATABASES[database]['NAME'] or '',
       'USER' in settings.DATABASES[database] and settings.DATABASES[database]['USER'] or '',
       'HOST' in settings.DATABASES[database] and settings.DATABASES[database]['HOST'] or '',
       'PORT' in settings.DATABASES[database] and settings.DATABASES[database]['PORT'] or ''
-      )
+      ))
 
 task = None
 
@@ -74,14 +75,14 @@ def createPlan():
   # Auxilary functions for debugging
   def debugResource(res,mode):
     # if res.name != 'my favorite resource': return
-    print "=> Situation on resource", res.name
+    print("=> Situation on resource", res.name)
     for j in res.loadplans:
-      print "=>  ", j.quantity, j.onhand, j.startdate, j.enddate, j.operation.name, j.operationplan.quantity, j.setup
+      print("=>  ", j.quantity, j.onhand, j.startdate, j.enddate, j.operation.name, j.operationplan.quantity, j.setup)
 
 
   def debugDemand(dem,mode):
     if dem.name == 'my favorite demand':
-      print "=> Starting to plan demand ", dem.name
+      print("=> Starting to plan demand ", dem.name)
       solver.loglevel = 2
     else:
       solver.loglevel = 0
@@ -98,8 +99,8 @@ def createPlan():
     #userexit_demand=debugDemand,
     loglevel=2
     )
-  print "Plan type: ", plantype
-  print "Constraints: ", constraint
+  print("Plan type: ", plantype)
+  print("Constraints: ", constraint)
   solver.solve()
 
 
@@ -114,13 +115,13 @@ def exportPlan(database = DEFAULT_DB_ALIAS):
 if __name__ == "__main__":
   printWelcome(db)
   logProgress(1, db)
-  print "\nStart loading data from the database at", datetime.now().strftime("%H:%M:%S")
+  print("\nStart loading data from the database at", datetime.now().strftime("%H:%M:%S"))
   frepple.printsize()
   from freppledb.execute.load import loadfrepple
   loadfrepple()
   frepple.printsize()
   logProgress(33, db)
-  print "\nStart plan generation at", datetime.now().strftime("%H:%M:%S")
+  print("\nStart plan generation at", datetime.now().strftime("%H:%M:%S"))
   createPlan()
   frepple.printsize()
   logProgress(66, db)
@@ -129,7 +130,7 @@ if __name__ == "__main__":
   #from freppledb.execute.export_database_static import exportfrepple as export_static_to_database
   #export_static_to_database()
 
-  print "\nStart exporting plan to the database at", datetime.now().strftime("%H:%M:%S")
+  print("\nStart exporting plan to the database at", datetime.now().strftime("%H:%M:%S"))
   exportPlan(db)
 
   #print "\nStart saving the plan to flat files at", datetime.now().strftime("%H:%M:%S")
@@ -145,5 +146,5 @@ if __name__ == "__main__":
   #frepple.erase(True)
   #frepple.printsize()
 
-  print "\nFinished planning at", datetime.now().strftime("%H:%M:%S")
+  print("\nFinished planning at", datetime.now().strftime("%H:%M:%S"))
   logProgress(100, db)

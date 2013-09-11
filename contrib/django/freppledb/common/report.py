@@ -541,7 +541,7 @@ class GridReport(View):
       else:
         cross_idx = ','.join([str(i) for i in range(len(reportclass.crosses)) if not reportclass.crosses[i][1].get('hidden',False)])
         cross_list = reportclass._render_cross()
-      is_popup = request.GET.has_key('pop')
+      is_popup = 'pop' in request.GET
       context = {
         'reportclass': reportclass,
         'title': (args and args[0] and _('%(title)s for %(entity)s') % {'title': force_unicode(reportclass.title), 'entity':force_unicode(args[0])}) or reportclass.title,
@@ -1120,7 +1120,6 @@ class GridPivot(GridReport):
     '''
     Returns the index of the column to sort on.
     '''
-    print "sss", prefs
     if 'sidx' in request.GET:
       sort = request.GET['sidx']
     elif prefs and 'sidx' in prefs:
