@@ -296,6 +296,9 @@ class GridReport(View):
   # A list with required user permissions to view the report
   permissions = []
 
+  # Defines the difference between height of the grid and its boundaries
+  heightmargin = 70
+
   @classmethod
   def getKey(cls):
     return "%s.%s" % (cls.__module__, cls.__name__)
@@ -454,37 +457,8 @@ class GridReport(View):
     cnt = (page-1)*request.pagesize+1
     first = True
 
-    # # TREEGRID
-    #from django.db import connections, DEFAULT_DB_ALIAS
-    #cursor = connections[DEFAULT_DB_ALIAS].cursor()
-    #cursor.execute('''
-    #  select node.name,node.description,node.category,node.subcategory,node.operation_id,node.owner_id,node.price,node.lastmodified,node.level,node.lft,node.rght,node.rght=node.lft+1
-    #  from item as node
-    #  left outer join item as parent0
-    #    on node.lft between parent0.lft and parent0.rght and parent0.level = 0 and node.level >= 0
-    #  left outer join item as parent1
-    #    on node.lft between parent1.lft and parent1.rght and parent1.level = 1 and node.level >= 1
-    #  left outer join item as parent2
-    #    on node.lft between parent2.lft and parent2.rght and parent2.level = 2 and node.level >= 2
-    #  where node.level = 0
-    #  order by parent0.description asc, parent1.description asc, parent2.description asc, node.level, node.description, node.name
-    #  ''')
-    #for row in cursor.fetchall():
-    #  if first:
-    #    first = False
-    #    yield '{"%s","%s","%s","%s","%s","%s","%s","%s",%d,%d,%d,%s,false]}\n' %(row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11] and 'true' or 'false')
-    #  else:
-    #    yield ',{"%s","%s","%s","%s","%s","%s","%s","%s",%d,%d,%d,%s,false]}\n' %(row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11] and 'true' or 'false')
-    #yield ']}\n'
-
     # GridReport
     fields = [ i.field_name for i in reportclass.rows if i.field_name ]
-    #if False: # TREEGRID
-    #  fields.append('level')
-    #  fields.append('lft')
-    #  fields.append('rght')
-    #  fields.append('isLeaf')
-    #  fields.append('expanded')
     for i in hasattr(reportclass,'query') and reportclass.query(request,query) or query[cnt-1:cnt+request.pagesize].values(*fields):
       if first:
         r = [ '{' ]
@@ -504,8 +478,6 @@ class GridReport(View):
           first2 = False
         elif i[f.field_name] != None:
           r.append(', "%s":%s' % (f.name,s))
-      #if False:    # TREEGRID
-      #  r.append(', %d, %d, %d, %s, %s' % (i['level'],i['lft'],i['rght'], i['isLeaf'] and 'true' or 'false', i['expanded'] and 'true' or 'false' ))
       r.append('}')
       yield ''.join(r)
     yield '\n]}\n'
