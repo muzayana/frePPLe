@@ -15,7 +15,7 @@
 #define MODEL_H
 
 /** @mainpage
-  * FrePPLe provides a framework for modeling a manufacturing environment 
+  * FrePPLe provides a framework for modeling a manufacturing environment
   * and generating production plans.<br>
   * This document describes its C++ API.<P>
   *
@@ -117,7 +117,7 @@ class Calendar : public HasName<Calendar>
           */
         int priority;
 
-        /** Weekdays on which the entry is effective. 
+        /** Weekdays on which the entry is effective.
           * - Bit 0: Sunday
           * - Bit 1: Monday
           * - Bit 2: Tueday
@@ -125,7 +125,7 @@ class Calendar : public HasName<Calendar>
           * - Bit 4: Thursday
           * - Bit 5: Friday
           * - Bit 6: Saturday
-          */ 
+          */
         short days;
 
         /** Starting time on the effective days. */
@@ -141,7 +141,7 @@ class Calendar : public HasName<Calendar>
           * inside the week where the entry changes effectivity. */
         long offsets[14];
 
-        /** An internal counter for the number of indices used in the 
+        /** An internal counter for the number of indices used in the
           * offset array. */
         short offsetcounter;
 
@@ -169,7 +169,7 @@ class Calendar : public HasName<Calendar>
         /** Constructor. */
         Bucket(Calendar *c, Date start, Date end, int ident=INT_MIN, int priority=0) :
           startdate(start), enddate(end), nextBucket(NULL),
-          prevBucket(NULL), priority(priority), days(127), starttime(0L), 
+          prevBucket(NULL), priority(priority), days(127), starttime(0L),
           endtime(86400L), cal(c)
         {
           setId(ident);
@@ -190,7 +190,7 @@ class Calendar : public HasName<Calendar>
         /** Get the identifier. */
         int getId() const {return id;}
 
-        /** Generate the identfier.<br> 
+        /** Generate the identfier.<br>
           * If a bucket with the given identifier already exists a unique
           * number is generated instead. This is done by incrementing the
           * value passed until it is unique.
@@ -201,7 +201,7 @@ class Calendar : public HasName<Calendar>
         Date getEnd() const {return enddate;}
 
         /** Updates the end date of the bucket. */
-        DECLARE_EXPORT void setEnd(const Date d); 
+        DECLARE_EXPORT void setEnd(const Date d);
 
         /** Returns the start date of the bucket. */
         Date getStart() const {return startdate;}
@@ -231,7 +231,7 @@ class Calendar : public HasName<Calendar>
         short getDays() const {return days;}
 
         /** Update the days on which the entry is valid. */
-        void setDays(short p) 
+        void setDays(short p)
         {
           if (p<0 || p>127)
             throw DataException("Calendar bucket days must be between 0 and 127");
@@ -339,7 +339,7 @@ class Calendar : public HasName<Calendar>
         const Bucket* curBucket;
         const Bucket* lastBucket;
         Date curDate;
-        int curPriority;        
+        int curPriority;
         int lastPriority;
       public:
         const Date& getDate() const {return curDate;}
@@ -535,7 +535,7 @@ class CalendarDouble : public Calendar
     }
 
     /** Updates the value in a certain date range.<br>
-      * This will create a new bucket if required. 
+      * This will create a new bucket if required.
       */
     void setValue(Date start, Date end, const double v);
 
@@ -553,7 +553,7 @@ class CalendarDouble : public Calendar
     /** Update the default calendar value when no entry is matching. */
     virtual void setDefault(const double v) {defaultValue = v;}
 
-  private: 
+  private:
     /** Factory method to add new buckets to the calendar.
       * @see Calendar::addBucket()
       */
@@ -2997,7 +2997,7 @@ class BufferProcure : public Buffer
     TimePeriod getFence() const {return fence;}
 
     /** Update the release time fence. */
-    void setFence(TimePeriod p) 
+    void setFence(TimePeriod p)
     {
       fence = p;
       getOperation()->setFence(p);
@@ -3379,6 +3379,58 @@ class FlowEnd : public Flow
 };
 
 
+/** @brief This class represents a flow at end date of the
+  * operation and with a fiwed quantity.
+  */
+class FlowFixedEnd : public FlowEnd
+{
+  public:
+    /** Constructor. */
+    explicit FlowFixedEnd(Operation* o, Buffer* b, double q) : FlowEnd(o,b,q) {}
+
+    /** Constructor. */
+    explicit FlowFixedEnd(Operation* o, Buffer* b, double q, DateRange e) : FlowEnd(o,b,q,e) {}
+
+    /** This constructor is called from the plan begin_element function. */
+    explicit FlowFixedEnd() {}
+
+    /** This method holds the logic the compute the quantity of a flowplan. */
+    virtual double getFlowplanQuantity(const FlowPlan*) const;
+
+    virtual void solve(Solver &s, void* v = NULL) const {s.solve(this,v);}
+
+    virtual const MetaClass& getType() const {return *metadata;}
+    static DECLARE_EXPORT const MetaClass* metadata;
+    virtual size_t getSize() const {return sizeof(FlowFixedEnd);}
+};
+
+
+/** @brief This class represents a flow at start date of the
+  * operation and with a fiwed quantity.
+  */
+class FlowFixedStart : public FlowStart
+{
+  public:
+    /** Constructor. */
+    explicit FlowFixedStart(Operation* o, Buffer* b, double q) : FlowStart(o,b,q) {}
+
+    /** Constructor. */
+    explicit FlowFixedStart(Operation* o, Buffer* b, double q, DateRange e) : FlowStart(o,b,q,e) {}
+
+    /** This constructor is called from the plan begin_element function. */
+    explicit FlowFixedStart() {}
+
+    /** This method holds the logic the compute the quantity of a flowplan. */
+    virtual double getFlowplanQuantity(const FlowPlan*) const;
+
+    virtual void solve(Solver &s, void* v = NULL) const {s.solve(this,v);}
+
+    virtual const MetaClass& getType() const {return *metadata;}
+    static DECLARE_EXPORT const MetaClass* metadata;
+    virtual size_t getSize() const {return sizeof(FlowFixedStart);}
+};
+
+
 /** @brief A flowplan represents a planned material flow in or out of a buffer.
   *
   * Flowplans are owned by operationplans, which manage a container to store
@@ -3445,7 +3497,21 @@ class FlowPlan : public TimeLine<FlowPlan>::EventChangeOnhand, public PythonExte
       */
     void setQuantity(double qty, bool b=false, bool u = true)
     {
-      if (getFlow()->getEffective().within(getDate()))
+      if (!getFlow()->getEffective().within(getDate())) return;
+      if (getFlow()->getType() == *FlowFixedEnd::metadata
+        || getFlow()->getType() == *FlowFixedStart::metadata)
+      {
+        // Fixed quantity flows only allow resizing to 0
+        if (qty == 0.0 && oper->getQuantity()!= 0.0)
+          oper->setQuantity(0.0, b, u);
+        else if (qty != 0.0 && oper->getQuantity()== 0.0)
+          oper->setQuantity(
+            (oper->getOperation()->getSizeMinimum()<=0) ? 0.001
+              : oper->getOperation()->getSizeMinimum(),
+            b, u);
+      }
+      else
+        // Normal, proportional flows
         oper->setQuantity(qty / getFlow()->getQuantity(), b, u);
     }
 
@@ -3468,8 +3534,24 @@ class FlowPlan : public TimeLine<FlowPlan>::EventChangeOnhand, public PythonExte
 inline double Flow::getFlowplanQuantity(const FlowPlan* fl) const
 {
   return getEffective().within(fl->getDate()) ?
-      fl->getOperationPlan()->getQuantity() * getQuantity() :
-      0.0;
+    fl->getOperationPlan()->getQuantity() * getQuantity() :
+    0.0;
+}
+
+
+inline double FlowFixedStart::getFlowplanQuantity(const FlowPlan* fl) const
+{
+  return getEffective().within(fl->getDate()) ?
+    getQuantity() :
+    0.0;
+}
+
+
+inline double FlowFixedEnd::getFlowplanQuantity(const FlowPlan* fl) const
+{
+  return getEffective().within(fl->getDate()) ?
+    getQuantity() :
+    0.0;
 }
 
 
@@ -3636,7 +3718,7 @@ class SetupMatrix : public HasName<SetupMatrix>
       return i;
     }
 
-    size_t extrasize() const 
+    size_t extrasize() const
     {
       size_t i = getName().size();
       for (RuleIterator j = beginRules(); j!= endRules(); ++j)
@@ -3729,7 +3811,7 @@ class Skill : public HasName<Skill>
       return i;
     }
 
-    size_t extrasize() const 
+    size_t extrasize() const
     {
       return getName().size() + resources.size() * 3 * sizeof(Resource*);
     }
@@ -3838,7 +3920,7 @@ class Resource : public HasHierarchy<Resource>,
 
     size_t extrasize() const
     {
-      return getName().size() + HasDescription::extrasize() 
+      return getName().size() + HasDescription::extrasize()
         + setup.size() + skills.size() * 3 * sizeof(Skill*);
     }
 
@@ -3948,18 +4030,18 @@ class Resource::PlanIterator : public PythonExtension<Resource::PlanIterator>
       */
     PlanIterator(Resource*, PyObject*);
 
-    /** Destructor. */ 
-    ~PlanIterator(); 
+    /** Destructor. */
+    ~PlanIterator();
 
   private:
     /** Pointer to the resource we're investigating. */
     Resource* res;
 
     /** A Python object pointing to a list of start dates of buckets. */
-    PyObject* bucketiterator;    
+    PyObject* bucketiterator;
 
     /** An iterator over all events in the resource timeline. */
-    Resource::loadplanlist::iterator ldplaniter;    
+    Resource::loadplanlist::iterator ldplaniter;
 
     /** Python function to iterate over the periods. */
     PyObject* iternext();
@@ -4020,7 +4102,7 @@ class ResourceInfinite : public Resource
 
 
 /** @brief This class associates a resource with its skills. */
-class ResourceSkill : public Object, public Association<Resource,Skill,ResourceSkill>::Node 
+class ResourceSkill : public Object, public Association<Resource,Skill,ResourceSkill>::Node
 {
   public:
     /** Default constructor. */
@@ -4197,7 +4279,7 @@ class Load
     {return sizeof(Load) + getName().size() + getSetup().size();}
 
     /** Default constructor. */
-    Load() : qty(1.0), hasAlts(false), altLoad(NULL), 
+    Load() : qty(1.0), hasAlts(false), altLoad(NULL),
       search(PRIORITY), skill(NULL) {initType(metadata);}
 
     /** Return the search mode. */
@@ -4584,7 +4666,7 @@ class LoadPlan : public TimeLine<LoadPlan>::EventChangeOnhand, public PythonExte
 
     /** Update the resource.<br>
       * The optional second argument specifies whether or not we need to verify
-      * if the assigned resource is valid. A valid resource must a) be a 
+      * if the assigned resource is valid. A valid resource must a) be a
       * subresource of the resource specified on the load, and b) must also
       * have the skill specified on the resource.
       */
@@ -4655,8 +4737,8 @@ class LoadPlan : public TimeLine<LoadPlan>::EventChangeOnhand, public PythonExte
     /** A pointer to the load model. */
     const Load *ld;
 
-    /** A pointer to the selected resource.<br> 
-      * In case we use skills, the resource of the loadplan can be different 
+    /** A pointer to the selected resource.<br>
+      * In case we use skills, the resource of the loadplan can be different
       * than the resource on the load.
       */
     Resource *res;

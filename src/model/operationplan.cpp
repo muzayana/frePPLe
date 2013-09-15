@@ -844,6 +844,15 @@ DECLARE_EXPORT bool OperationPlan::isExcess(bool strict) const
     // Skip consuming flowplans
     if (i->getQuantity() <= 0) continue;
 
+    // Find the total produced quantity, including all suboperationplans
+    double prod_qty = i->getQuantity();
+    for (OperationPlan* subopplan = firstsubopplan; subopplan; subopplan = subopplan->nextsubopplan)
+      for (OperationPlan::FlowPlanIterator k = subopplan->beginFlowPlans();
+        k != subopplan->endFlowPlans(); ++k)
+        if (k->getBuffer() == i->getBuffer())
+          prod_qty += k->getQuantity();
+    if (prod_qty <= 0) continue;
+
     // Loop over all flowplans in the buffer (starting at the end) and verify
     // that the onhand is bigger than the flowplan quantity
     double current_maximum(0.0);
@@ -857,8 +866,8 @@ DECLARE_EXPORT bool OperationPlan::isExcess(bool strict) const
     for (; j != i->getBuffer()->getFlowPlans().end(); --j)
     {
       if ( (current_maximum > 0
-          && j->getOnhand() < i->getQuantity() + current_maximum - ROUNDING_ERROR)
-          || j->getOnhand() < i->getQuantity() + current_minimum - ROUNDING_ERROR )
+          && j->getOnhand() < prod_qty + current_maximum - ROUNDING_ERROR)
+          || j->getOnhand() < prod_qty + current_minimum - ROUNDING_ERROR )
         return false;
       if (j->getType() == 4 && !strict) current_maximum = j->getMax(false);
       if (j->getType() == 3 && !strict) current_minimum = j->getMin(false);
@@ -1023,14 +1032,20 @@ PyObject* OperationPlan::create(PyTypeObject* pytype, PyObject* args, PyObject* 
       while (PyDict_Next(kwds, &pos, &key, &value))
       {
         PythonObject field(value);
+#if PY_MAJOR_VERSION >= 3
+        PyObject* key_utf8 = PyUnicode_AsUTF8String(key);
+        Attribute attr(PyBytes_AsString(key_utf8));
+        Py_DECREF(key_utf8);
+#else
         Attribute attr(PyString_AsString(key));
+#endif
         if (!attr.isA(Tags::tag_operation) && !attr.isA(Tags::tag_id) && !attr.isA(Tags::tag_action))
         {
           int result = x->setattro(attr, field);
           if (result && !PyErr_Occurred())
             PyErr_Format(PyExc_AttributeError,
-                "attribute '%s' on '%s' can't be updated",
-                PyString_AsString(key), x->ob_type->tp_name);
+                "attribute '%S' on '%s' can't be updated",
+                key, Py_TYPE(x)->tp_name);
         }
       };
     }

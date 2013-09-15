@@ -84,7 +84,7 @@ int main (int argc, char *argv[])
         if (!input)
         {
           // Initialize the library if this wasn't done before
-          FreppleInitialize(argc, argv);
+          FreppleInitialize();
           input = true;
         }
         if (strlen(argv[i])>=3 && !strcmp(argv[i]+strlen(argv[i])-3,".py"))
@@ -99,7 +99,7 @@ int main (int argc, char *argv[])
     // When no filenames are specified, we read the standard input
     if (!input)
     {
-      FreppleInitialize(argc, argv);
+      FreppleInitialize();
       FreppleReadXMLFile(NULL, validate, validate_only);
     }
   }
