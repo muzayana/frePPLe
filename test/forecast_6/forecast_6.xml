@@ -47,7 +47,7 @@
   </demands>
 
 <?python
-
+from __future__ import print_function
 import csv
 
 solver = frepple.solver_forecast(
@@ -88,13 +88,13 @@ totalsmape = {
 countsmape = totalsmape.copy()
 
 
-for row in csv.reader(open("M3data.csv", "rb")):
+for row in csv.reader(open("M3data.csv", "rt")):
 
   # Skip comment lines
   if row[0].startswith('#'): continue
 
   # Intro
-  print row[0], row[3], row[1], row[2]
+  print(row[0], row[3], row[1], row[2])
 
   # Generate forecast
   data = [ float(i) for i in row[6:6+int(row[1])-int(row[2])] ]
@@ -161,21 +161,21 @@ for row in csv.reader(open("M3data.csv", "rb")):
       countsmape['1-15'] += 1
 
 # Print the results
-print "smape 1:", totalsmape['1'] / countsmape['1']
-print "smape 2:", totalsmape['2'] / countsmape['2']
-print "smape 3:", totalsmape['3'] / countsmape['3']
-print "smape 4:", totalsmape['4'] / countsmape['4']
-print "smape 5:", totalsmape['5'] / countsmape['5']
-print "smape 6:", totalsmape['6'] / countsmape['6']
-print "smape 8:", totalsmape['8'] / countsmape['8']
-print "smape 12:", totalsmape['12'] / countsmape['12']
-print "smape 15:", totalsmape['15'] / countsmape['15']
-print "smape 18:", totalsmape['18'] / countsmape['18']
-print "smape 1-4:", totalsmape['1-4'] / countsmape['1-4']
-print "smape 1-6:", totalsmape['1-6'] / countsmape['1-6']
-print "smape 1-8:", totalsmape['1-8'] / countsmape['1-8']
-print "smape 1-12:", totalsmape['1-12'] / countsmape['1-12']
-print "smape 1-15:", totalsmape['1-15'] / countsmape['1-15']
-print "smape total:", totalsmape['total'] / countsmape['total']
+print("smape 1:", totalsmape['1'] / countsmape['1'])
+print("smape 2:", totalsmape['2'] / countsmape['2'])
+print("smape 3:", totalsmape['3'] / countsmape['3'])
+print("smape 4:", totalsmape['4'] / countsmape['4'])
+print("smape 5:", totalsmape['5'] / countsmape['5'])
+print("smape 6:", totalsmape['6'] / countsmape['6'])
+print("smape 8:", totalsmape['8'] / countsmape['8'])
+print("smape 12:", totalsmape['12'] / countsmape['12'])
+print("smape 15:", totalsmape['15'] / countsmape['15'])
+print("smape 18:", totalsmape['18'] / countsmape['18'])
+print("smape 1-4:", totalsmape['1-4'] / countsmape['1-4'])
+print("smape 1-6:", totalsmape['1-6'] / countsmape['1-6'])
+print("smape 1-8:", totalsmape['1-8'] / countsmape['1-8'])
+print("smape 1-12:", totalsmape['1-12'] / countsmape['1-12'])
+print("smape 1-15:", totalsmape['1-15'] / countsmape['1-15'])
+print("smape total:", totalsmape['total'] / countsmape['total'])
 ?>
 </plan>
