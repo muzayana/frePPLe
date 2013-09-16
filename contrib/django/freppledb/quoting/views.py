@@ -94,7 +94,6 @@ def InfoView(request, action):
       data = json.loads(request.body)
       conn.request("GET", '/demand/' + iri_to_uri(data[1]) + '/?plan=P')
     elif action == 'check':
-      print request.body
       data = '\r\n'.join([
         '--' + BOUNDARY,
         'Content-Disposition: form-data; name="xmldata"',
@@ -110,26 +109,8 @@ def InfoView(request, action):
       conn.request("POST", "/quote", data, headers)
     response = conn.getresponse()
     result = response.read()
-    print result
     conn.close()
-    return HttpResponse(result, mimetype="text/plain") #application/xml")
-#    data = json.loads(request.body)
-#    quote = Demand.objects.all().using(request.database).get(pk=data[1])
-#    constraints = Constraint.objects.all().using(request.database).filter(demand=quote).order_by('weight')
-#    deliveries = DemandOut.objects.all().using(request.database).filter(demand=quote).order_by('plandate')
-#    problems = Problem.objects.all().using(request.database).filter(entity='demand',owner=quote).order_by('startdate')
-#    result = {
-#      'name': quote.name,
-#      'description': quote.description,
-#      'due': str(quote.due),
-#      'item': quote.item.name,
-#      'customer': quote.customer.name,
-#      'quantity': float(quote.quantity),
-#      'deliveries': [ {'date':str(i.plandate), 'quantity': float(i.planquantity)} for i in deliveries ],
-#      'problems': [ {'description':i.description} for i in problems ],
-#      'constraints': [ {'entity':i.entity, 'owner': i.owner, 'startdate': str(i.startdate), 'enddate': str(i.enddate), 'weight': float(i.weight), 'name': i.name} for i in constraints ]
-#      }
-#    return HttpResponse(content=json.dumps(result))
+    return HttpResponse(result, mimetype="text/plain")
   except Exception as e:
     msg = "Error getting quote info: %s" % e
     logger.error(msg)

@@ -35,7 +35,7 @@ function drawGraphs(jsondata)
   var ticks = Math.ceil((cols.length-5)/20.0);
 
   // Loop over all graph cells
-  $("#grid_frozen").find(".graph").each(function(index)
+  $("#grid_frozen").find(".graph:visible").each(function(index)
   {
     // Collect the graph data
     var d1=[], d2=[], d3=[], d4=[], d5=[];
