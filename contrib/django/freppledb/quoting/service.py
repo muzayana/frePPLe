@@ -7,7 +7,7 @@
 # You are not allowed to distribute the software, either in the form of source code
 # or in the form of compiled binaries.
 #
-
+from __future__ import print_function
 import cherrypy, os, thread
 
 from django.conf import settings
@@ -101,9 +101,9 @@ def Server(database=DEFAULT_DB_ALIAS, address=None, port=None):
        'tools.staticdir.dir': 'static'
        }
     }
-  print 'Order quoting web service starting on http://%s:%s/' % (address, port)
+  print('Order quoting web service starting on http://%s:%s/' % (address, port))
   cherrypy.quickstart(Interface(database=database), "", config=config)
-  print 'Order quoting web service stopped'
+  print('Order quoting web service stopped')
 
 
 class collectdemands:
@@ -626,7 +626,7 @@ class Interface:
       # Find existing opplans
       for i in frepple.operationplans():
         if i.motive and i.motive.name in callback.demands:
-          print "before", i.operation
+          print("before", i.operation, i.start, i.end, i.quantity)
 
       # Process the demands
       res = []
@@ -671,5 +671,5 @@ class Interface:
       # Find existing opplans
       for i in frepple.operationplans():
         if i.motive and i.motive.name in callback.demands:
-          print "after", i.operation
+          print("after", i.operation, i.start, i.end, i.quantity)
       return "".join(res)

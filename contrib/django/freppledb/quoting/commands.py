@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os, sys, inspect
 from datetime import datetime
 
@@ -35,21 +36,21 @@ solver = frepple.solver_mrp(name="MRP",
 
 # Welcome message
 if settings.DATABASES[db]['ENGINE'] == 'django.db.backends.sqlite3':
-  print "frePPLe on %s using sqlite3 database '%s'" % (
+  print("frePPLe on %s using sqlite3 database '%s'" % (
     sys.platform,
     'NAME' in settings.DATABASES[db] and settings.DATABASES[db]['NAME'] or ''
-    )
+    ))
 else:
-  print "frePPLe on %s using %s database '%s' as '%s' on '%s:%s'" % (
+  print("frePPLe on %s using %s database '%s' as '%s' on '%s:%s'" % (
     sys.platform,
     'ENGINE' in settings.DATABASES[db] and settings.DATABASES[db]['ENGINE'] or '',
     'NAME' in settings.DATABASES[db] and settings.DATABASES[db]['NAME'] or '',
     'USER' in settings.DATABASES[db] and settings.DATABASES[db]['USER'] or '',
     'HOST' in settings.DATABASES[db] and settings.DATABASES[db]['HOST'] or '',
     'PORT' in settings.DATABASES[db] and settings.DATABASES[db]['PORT'] or ''
-    )
+    ))
 
-print "\nStart loading data from the database at", datetime.now().strftime("%H:%M:%S")
+print("\nStart loading data from the database at", datetime.now().strftime("%H:%M:%S"))
 frepple.printsize()
 from freppledb.execute.load import loadfrepple
 loadfrepple()
@@ -57,34 +58,34 @@ frepple.printsize()
 
 if 'solver_forecast' in [ a for a, b in inspect.getmembers(frepple) ]:
   # The forecast module is available
-  print "\nStart forecast netting at", datetime.now().strftime("%H:%M:%S")
+  print("\nStart forecast netting at", datetime.now().strftime("%H:%M:%S"))
   frepple.solver_forecast(name="Netting orders from forecast",loglevel=0).solve()
 
-print "\nStart plan generation at", datetime.now().strftime("%H:%M:%S")
+print("\nStart plan generation at", datetime.now().strftime("%H:%M:%S"))
 solver.solve()
 frepple.printsize()
 
-#print "\nStart exporting static model to the database at", datetime.now().strftime("%H:%M:%S")
+#print("\nStart exporting static model to the database at", datetime.now().strftime("%H:%M:%S"))
 #from freppledb.execute.export_database_static import exportfrepple as export_static_to_database
 #export_static_to_database()
 
-#print "\nStart exporting plan to the database at", datetime.now().strftime("%H:%M:%S")
+#print("\nStart exporting plan to the database at", datetime.now().strftime("%H:%M:%S"))
 #if settings.DATABASES[db]['ENGINE'] == 'django.db.backends.postgresql_psycopg2':
 #  from freppledb.execute.export_database_plan_postgresql import exportfrepple as export_plan_to_database
 #else:
 #  from freppledb.execute.export_database_plan import exportfrepple as export_plan_to_database
 #export_plan_to_database()
 
-#print "\nStart saving the plan to flat files at", datetime.now().strftime("%H:%M:%S")
+#print("\nStart saving the plan to flat files at", datetime.now().strftime("%H:%M:%S"))
 #from freppledb.execute.export_file_plan import exportfrepple as export_plan_to_file
 #export_plan_to_file()
 
-#print "\nStart saving the plan to an XML file at", datetime.now().strftime("%H:%M:%S")
+#print("\nStart saving the plan to an XML file at", datetime.now().strftime("%H:%M:%S"))
 #frepple.saveXMLfile("output.1.xml","PLANDETAIL")
 #frepple.saveXMLfile("output.2.xml","PLAN")
 #frepple.saveXMLfile("output.3.xml","STANDARD")
 
-#print "Start deleting model data at", datetime.now().strftime("%H:%M:%S")
+#print("Start deleting model data at", datetime.now().strftime("%H:%M:%S"))
 #frepple.erase(True)
 #frepple.printsize()
 
@@ -94,4 +95,4 @@ frepple.printsize()
 from freppledb.quoting.service import Server
 Server(database=db)
 
-print "\nFinished planning at", datetime.now().strftime("%H:%M:%S")
+print("\nFinished planning at", datetime.now().strftime("%H:%M:%S"))

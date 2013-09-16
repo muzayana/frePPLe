@@ -321,16 +321,16 @@ if __name__ == "__main__":
   #  from freppledb.execute.export_database_plan import exportfrepple as export_plan_to_database
   #export_plan_to_database()
 
-  #print "\nStart saving the plan to flat files at", datetime.now().strftime("%H:%M:%S")
+  #print("\nStart saving the plan to flat files at", datetime.now().strftime("%H:%M:%S"))
   #from freppledb.execute.export_file_plan import exportfrepple as export_plan_to_file
   #export_plan_to_file()
 
-  #print "\nStart saving the plan to an XML file at", datetime.now().strftime("%H:%M:%S")
+  #print("\nStart saving the plan to an XML file at", datetime.now().strftime("%H:%M:%S"))
   #frepple.saveXMLfile("output.1.xml","PLANDETAIL")
   #frepple.saveXMLfile("output.2.xml","PLAN")
   #frepple.saveXMLfile("output.3.xml","STANDARD")
 
-  #print "Start deleting model data at", datetime.now().strftime("%H:%M:%S")
+  #print("Start deleting model data at", datetime.now().strftime("%H:%M:%S"))
   #frepple.erase(True)
   #frepple.printsize()
 
