@@ -5,6 +5,13 @@
 
   var refresh = null;
 
+  function extraPreference() {
+    return {
+       "height": $("#gbox_grid").height() - 48,
+       "refresh": (refresh !== null)
+       };
+  }
+
   function updateRefresh()
   {
     if (refresh !== null)
