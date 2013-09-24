@@ -88,9 +88,9 @@ def createPlan():
       solver.loglevel = 0
 
   # Create a solver where the plan type are defined by an environment variable
-  try: plantype = int(os.environ['PLANTYPE'])
+  try: plantype = int(os.environ['FREPPLE_PLANTYPE'])
   except: plantype = 1  # Default is a constrained plan
-  try: constraint = int(os.environ['CONSTRAINT'])
+  try: constraint = int(os.environ['FREPPLE_CONSTRAINT'])
   except: constraint = 15  # Default is with all constraints enabled
   solver = frepple.solver_mrp(name="MRP",
     constraints=constraint,
