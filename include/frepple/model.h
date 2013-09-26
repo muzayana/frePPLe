@@ -5347,6 +5347,11 @@ class CommandDeleteOperationPlan : public Command
         if (opplan->getDemand())
           opplan->getDemand()->addDelivery(opplan);
       }
+      for (OperationPlan::iterator x(opplan); x != OperationPlan::end(); x++)
+      {
+        x->createFlowLoads();
+        if (x->getIdentifier()) x->insertInOperationplanList();
+      }
     }
     virtual void redo()
     {
@@ -5357,6 +5362,11 @@ class CommandDeleteOperationPlan : public Command
         opplan->removeFromOperationplanList();
         if (opplan->getDemand())
           opplan->getDemand()->removeDelivery(opplan);
+      }
+      for (OperationPlan::iterator x(opplan); x != OperationPlan::end(); x++)
+      {
+        x->deleteFlowLoads();
+        if (x->getIdentifier()) x->removeFromOperationplanList();
       }
     }
     virtual void rollback()
