@@ -131,5 +131,29 @@ Data: <textarea id="xmldata" name="xmldata" rows="20" cols="100">
 <br/>
 <input type="submit"/></form>
 </div>
+<h3><a href="#reload">Reload data</a></h3>
+<div>
+Erase the current data from memory and reload the model again from the database.<br/>
+No new plan is created yet.<br/><br/>
+<table>
+<tr><td><a href="/reload/">GET {{request.base}}/reload/</a></td><td>Refresh the data</td></tr>
+</table>
+</div><h3><a href="#replan">Regenerate the plan</a></h3>
+<div>
+Erase the previous plan and generate a new one.<br/><br/>
+<table>
+<tr><td><a href="/replan/">GET {{request.base}}/replan/</a></td><td>Regenerate a constrained plan</td></tr>
+<tr><td><a href="/replan/?plantype=2">GET {{request.base}}/replan/?plantype=2</a></td><td>Regenerate an unconstrained plan</td></tr>
+<tr><td>GET {{request.base}}/replan/?plantype=X&constraint=Y&loglevel=Z</a></td><td>Regenerate a plan with specified type, constraints and logging level</td></tr>
+</table>
+</div>
+<h3><a href="#stop">Shut down the service</a></h3>
+<div>
+Stop handling requests and shut down the planning service.<br/><br/>
+<table>
+<tr><td><a href="/stop/">GET {{request.base}}/stop/</a></td><td>Graceful stop after finishing all pending activities</td></tr>
+<tr><td><a href="/stop/?hard=1">GET {{request.base}}/stop/?hard=1</a></td><td>Immediate hard stop</td></tr>
+</table>
+</div>
 </div>
 </body></html>

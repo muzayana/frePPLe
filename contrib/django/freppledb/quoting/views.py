@@ -88,7 +88,10 @@ def InfoView(request, action):
   if request.method != 'POST' or not request.is_ajax():
     raise Http404('Only ajax get requests allowed')
   try:
-    url = Parameter.getValue('quoting.service_url', database=request.database)
+    # Should we cache the url value?
+    #   +: one less database query
+    #   -: parameter value change only takes effect upon restart
+    url = Parameter.getValue('quoting.service_location', database=request.database, default="localhost:8001")
     conn = httplib.HTTPConnection(url)
     if action == 'info':
       data = json.loads(request.body)

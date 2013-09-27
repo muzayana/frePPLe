@@ -8,13 +8,16 @@
 # or in the form of compiled binaries.
 #
 from __future__ import print_function
-import cherrypy, os, thread
+import os, thread, sys, inspect, socket
+from datetime import datetime
+import cherrypy
 
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.db import DEFAULT_DB_ALIAS
 
 from freppledb.input.models import Demand, Item, Customer
+from freppledb.common.models import Parameter
 
 import frepple
 
@@ -41,17 +44,11 @@ def error_page(status, message, traceback, version):
     ''' % {'status':status, 'message':message, 'traceback':traceback, 'version':frepple.version}
 
 
-def Server(database=DEFAULT_DB_ALIAS, address=None, port=None):
-  import socket
-
+def Server(database=DEFAULT_DB_ALIAS):
   # Pick up the address
-  if address == None:
-    try: address = socket.gethostbyname(socket.gethostname())
-    except: address = '127.0.0.1'
-
-  # Pick up the port number
-  try: port = int(port or 8001)
-  except: port = 8001
+  url = Parameter.getValue('quoting.service_location', database=database, default="localhost:8001")
+  (address, port) = url.split(':')
+  port = int(port)
 
   # Validate the address and port number
   try:
@@ -101,9 +98,9 @@ def Server(database=DEFAULT_DB_ALIAS, address=None, port=None):
        'tools.staticdir.dir': 'static'
        }
     }
-  print('Order quoting web service starting on http://%s:%s/' % (address, port))
+  logger.info('Order quoting web service starting on http://%s:%s/' % (address, port))
   cherrypy.quickstart(Interface(database=database), "", config=config)
-  print('Order quoting web service stopped')
+  logger.info('Order quoting web service stopped')
 
 
 class collectdemands:
@@ -127,10 +124,13 @@ class Interface:
     '</plan>\n',
     ]
 
+
   def __init__(self, database=DEFAULT_DB_ALIAS):
-    self.solver = frepple.solver_mrp(name="quote", constraints=15, plantype=1, loglevel=0)
+    self.solver = frepple.solver_mrp(name="quote",
+      constraints=15, plantype=1, loglevel=int(Parameter.getValue('plan.loglevel', database, 0)))
     self.lock = thread.allocate_lock()
     self.database = database
+
 
   # A generic way to expose XML data.
   # Use this decorator function to decorate a generator function.
@@ -157,6 +157,7 @@ class Interface:
         # Other HTTP verbs (such as head, delete, ...) are not supported
         raise cherrypy.HTTPError(404,"Not found")
     return decorator
+
 
   # Top-level interface handling URLs of the format:
   #    POST /
@@ -185,6 +186,7 @@ class Interface:
       if len(error) > 0:
         raise cherrypy.HTTPError(500,'\n'.join(error))
       return "OK\n"
+
 
   #  Top-level interface for getting all in-memory objects
   #    GET /main/
@@ -227,6 +229,7 @@ class Interface:
     else:
       raise cherrypy.HTTPError(403, "Only GET requests to this URL are allowed")
 
+
   # Interface for locations handling URLs of the format:
   #    GET /location/
   #    GET /location/<name>/
@@ -263,6 +266,7 @@ class Interface:
           yield "Error: %s\n" % e
           ok = False
       if ok: yield "OK\n"
+
 
   # Interface for buffers handling URLs of the format:
   #    GET /buffer/
@@ -302,6 +306,7 @@ class Interface:
           ok = False
       if ok: yield "OK\n"
 
+
   # Interface for items handling URLs of the format:
   #    GET /item/
   #    GET /item/<name>/
@@ -337,6 +342,7 @@ class Interface:
           yield "Error: %s\n" % e
           ok = False
       if ok: yield "OK\n"
+
 
   # Interface for operations handling URLs of the format:
   #    GET /operation/
@@ -378,6 +384,7 @@ class Interface:
           ok = False
       if ok: yield "OK\n"
 
+
   # Interface for demands handling URLs of the format:
   #    GET /demand/
   #    GET /demand/<name>/
@@ -416,6 +423,7 @@ class Interface:
           ok = False
       if ok: yield "OK\n"
 
+
   # Interface for resources handling URLs of the format:
   #    GET /resource/
   #    GET /resource/<name>/
@@ -453,6 +461,7 @@ class Interface:
           yield "Error: %s\n" % e
           ok = False
       if ok: yield "OK\n"
+
 
   # Interface for calendars handling URLs of the format:
   #    GET /calendar/
@@ -527,6 +536,7 @@ class Interface:
           ok = False
       if ok: yield "OK\n"
 
+
   # Interface for customers handling URLs of the format:
   #    GET /customer/
   #    GET /customer/<name>/
@@ -563,6 +573,7 @@ class Interface:
           ok = False
       if ok: yield "OK\n"
 
+
   # Interface for flows handling URLs of the format:
   #    GET /flow/
   @simpleXMLdata
@@ -574,6 +585,7 @@ class Interface:
       yield '</flows>\n'
     else:
       raise cherrypy.HTTPError(404,"Not supported")
+
 
   # Interface for loads handling URLs of the format:
   #    GET /load/
@@ -587,6 +599,7 @@ class Interface:
     else:
       raise cherrypy.HTTPError(404,"Not supported")
 
+
   # Interface for problems handling URLs of the format:
   #    GET /problem/
   @simpleXMLdata
@@ -597,6 +610,65 @@ class Interface:
       yield '</problems>\n'
     else:
       raise cherrypy.HTTPError(404,"Not supported")
+
+
+  # Top-level interface handling URLs of the format:
+  #    GET /reload
+  #    POST /reload
+  #    PUT /reload
+  @cherrypy.expose
+  def reload(self):
+    with self.lock:
+      logger.info("Reloading data from the database")
+      frepple.erase(True)
+      from freppledb.execute.load import loadfrepple
+      loadfrepple() # TODO self.database)
+      frepple.printsize()
+    raise cherrypy.HTTPRedirect('/')
+
+
+  # Top-level interface handling URLs of the format:
+  #    GET /replan
+  #    POST /replan
+  #    PUT /replan
+  @cherrypy.expose
+  def replan(self, plantype=1, constraint=15, loglevel=0):
+    with self.lock:
+      logger.info("Regenerating the plan of type %s and constraints %s" % (plantype, constraint))
+      solver = frepple.solver_mrp(name="MRP",
+        constraints=int(constraint),
+        plantype=int(plantype),
+        loglevel=int(loglevel)
+        )
+
+      if 'solver_forecast' in [ a for a, b in inspect.getmembers(frepple) ]:
+        # The forecast module is available
+        logger.info("Start forecast netting at %s" % datetime.now().strftime("%H:%M:%S"))
+        frepple.solver_forecast(name="Netting orders from forecast",loglevel=int(loglevel)).solve()
+
+      logger.info("Start plan generation at %s" % datetime.now().strftime("%H:%M:%S"))
+      solver.solve()
+      frepple.printsize()
+    raise cherrypy.HTTPRedirect('/')
+
+
+  # Top-level interface handling URLs of the format:
+  #    GET /stop
+  #    POST /stop
+  #    PUT /stop
+  #    GET /stop?hard=true
+  #    POST /stop?hard=true
+  #    PUT /stop?hard=true
+  @cherrypy.expose
+  def stop(self, hard = False):
+    if hard:
+      logger.info("Immediate shutdown of the service")
+      sys.exit(0)
+    else:
+      logger.info("Graceful shutdown of the service requested")
+      with self.lock:
+        cherrypy.engine.exit()
+
 
   # Top-level interface handling URLs of the format:
   #    POST /quote
