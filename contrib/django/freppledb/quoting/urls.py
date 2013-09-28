@@ -17,8 +17,5 @@ autodiscover = True
 
 urlpatterns = patterns('',
     (r'^quote/$', freppledb.quoting.views.QuoteReport.as_view()),
-    (r'^quote/info/$', freppledb.quoting.views.InfoView, {'action': 'info'}),
-    (r'^quote/check/$', freppledb.quoting.views.InfoView, {'action': 'check'}),
-    (r'^quote/cancel/$', freppledb.quoting.views.InfoView, {'action': 'cancel'}),
-    (r'^quote/save/$', freppledb.quoting.views.InfoView, {'action': 'save'}),
+    (r'^quote/([^/]+)/$', freppledb.quoting.views.InfoView),
     )

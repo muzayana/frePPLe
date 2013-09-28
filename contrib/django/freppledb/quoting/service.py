@@ -670,11 +670,7 @@ class Interface:
         cherrypy.engine.exit()
 
 
-  # Top-level interface handling URLs of the format:
-  #    POST /quote
-  #    PUT /quote
-  @cherrypy.expose
-  def quote(self, xmldata=None):
+  def quote_and_inquiry(self, keepreservation, xmldata):
     # Verify request type
     request = cherrypy.request
     if request.method not in ('POST','PUT'):
@@ -707,7 +703,10 @@ class Interface:
       for name, dm in callback.demands.items():
         try:
           self.solver.solve(dm)
-          self.solver.commit()
+          if keepreservation:
+            self.solver.commit()
+          else:
+            self.solver.rollback()
         except Exception as e:
           logger.error("When planning %s: %s" % (name, e))
         res.append(dm.toXML('P'))
@@ -745,3 +744,18 @@ class Interface:
         if i.motive and i.motive.name in callback.demands:
           print("after", i.operation, i.start, i.end, i.quantity)
       return "".join(res)
+
+
+  # Top-level interface handling URLs of the format:
+  #    POST /quote
+  #    PUT /quote
+  @cherrypy.expose
+  def quote(self, xmldata=None):
+    return self.quote_and_inquiry(True, xmldata)
+
+  # Top-level interface handling URLs of the format:
+  #    POST /inquiry
+  #    PUT /inquiry
+  @cherrypy.expose
+  def inquiry(self, xmldata=None):
+    return self.quote_and_inquiry(False, xmldata)

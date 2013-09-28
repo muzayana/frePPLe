@@ -96,7 +96,13 @@ def InfoView(request, action):
     if action == 'info':
       data = json.loads(request.body)
       conn.request("GET", '/demand/' + iri_to_uri(data[1]) + '/?plan=P')
-    elif action == 'check':
+    elif action == 'cancel':
+      data = json.loads(request.body)
+      conn.request("POST", '/demand/' + iri_to_uri(data[1]) + '/?action=D')
+    elif action == 'confirm':
+      data = json.loads(request.body)
+      conn.request("POST", '/demand/' + iri_to_uri(data[1]) + '/?status=open')
+    elif action == 'enquiry' or action == 'quote':
       data = '\r\n'.join([
         '--' + BOUNDARY,
         'Content-Disposition: form-data; name="xmldata"',
@@ -109,7 +115,9 @@ def InfoView(request, action):
         "Content-type": 'multipart/form-data; boundary=%s' % BOUNDARY,
         "content-length": len(data)
         }
-      conn.request("POST", "/quote", data, headers)
+      conn.request("POST", "/%s" % action, data, headers)
+    else:
+      raise Exception('Invalid action')
     response = conn.getresponse()
     result = response.read()
     conn.close()

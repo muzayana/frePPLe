@@ -92,6 +92,7 @@ frepple.printsize()
 #for i in frepple.operationplans():
 #  i.locked = True
 
+# Start the quoting service
 from freppledb.quoting.service import Server
 Server(database=db)
 
