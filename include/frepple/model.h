@@ -5619,7 +5619,10 @@ class PeggingIterator : public Object
 {
   public:
     /** Constructor. */
-    DECLARE_EXPORT PeggingIterator(const Demand* e);
+    DECLARE_EXPORT PeggingIterator(const Demand*);
+
+    /** Constructor. */
+    DECLARE_EXPORT PeggingIterator(const OperationPlan*, bool = true);
 
     /** Constructor. */
     PeggingIterator(const FlowPlan* e, bool b = true)
