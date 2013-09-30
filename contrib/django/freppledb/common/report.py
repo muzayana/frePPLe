@@ -575,15 +575,15 @@ class GridReport(View):
 
   @classmethod
   def get(reportclass, request, *args, **kwargs):
-    fmt = request.GET.get('format', None)
+    # Pick up the list of time buckets
     if reportclass.hasTimeBuckets:
       reportclass.getBuckets(request, args, kwargs)
       bucketnames = Bucket.objects.order_by('name').values_list('name', flat=True)
     else:
       bucketnames =  None
+    fmt = request.GET.get('format', None)
     if not fmt:
       # Return HTML page
-      # Pick up the list of time buckets
       reportkey = reportclass.getKey()
       prefs = request.user.getPreference(reportkey)
       if not hasattr(reportclass,'crosses'):
