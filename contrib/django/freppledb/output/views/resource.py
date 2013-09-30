@@ -17,7 +17,7 @@ from freppledb.input.models import Resource
 from freppledb.output.models import LoadPlan
 from freppledb.common.models import Parameter
 from freppledb.common.db import python_date, sql_max
-from freppledb.common.report import GridReport, GridPivot, getBuckets
+from freppledb.common.report import GridReport, GridPivot
 from freppledb.common.report import GridFieldText, GridFieldNumber, GridFieldDateTime, GridFieldBool, GridFieldInteger, GridFieldGraph
 
 
@@ -220,10 +220,6 @@ class GanttReport(GridReport):
   def query(reportclass, request, basequery):
     basesql, baseparams = basequery.query.get_compiler(basequery.db).as_sql(with_col_aliases=True)
 
-    # Pick up the list of time buckets
-    (bucket,start,end,bucketlist) = getBuckets(request, request.user)
-    horizon = (end - start).total_seconds() / 1000
-
     # Assure the resource hierarchy is up to date
     Resource.rebuildHierarchy(database=basequery.db)
 
@@ -268,7 +264,7 @@ class GanttReport(GridReport):
       order by %s, res.name, out_loadplan.startdate
       ''' % ( basesql,
               sql_max('sum(out_resourceplan.available)','0.0001'),
-              start, end, reportclass.get_sort(request) )
+              request.report_startdate, request.report_enddate, reportclass.get_sort(request) )
     cursor.execute(query, baseparams)
 
     # Build the Python result
@@ -276,6 +272,7 @@ class GanttReport(GridReport):
     prevUtil = None
     prevLocation = None
     results = []
+    horizon = (request.report_enddate - request.report_startdate).total_seconds() / 1000
     for row in cursor.fetchall():
       if not prevRes or prevRes != row[0]:
         if prevRes:
@@ -294,7 +291,7 @@ class GanttReport(GridReport):
             'operation': row[6],
             'description': row[7],
             'quantity': float(row[3]),
-            'x': round((row[4] - start).total_seconds() / horizon, 3),
+            'x': round((row[4] - request.report_startdate).total_seconds() / horizon, 3),
             'w': round((row[5] - row[4]).total_seconds() / horizon, 3),
             'startdate': str(row[4]),
             'enddate': str(row[5]),
