@@ -20,7 +20,10 @@ Main Django configuration file.
 '''
 import os, sys, locale
 
-DEBUG = 'runserver' in sys.argv
+try:
+  DEBUG = 'runserver' in sys.argv
+except:
+  DEBUG = False
 
 ADMINS = (
     # ('Your Name', 'your_email@domain.com'),
