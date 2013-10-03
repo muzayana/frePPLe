@@ -129,6 +129,11 @@ DECLARE_EXPORT(void) FreppleExit();
   */
 DECLARE_EXPORT(void) FreppleLog(const std::string&);
 
+#if defined(WIN32) && !defined(__CYGWIN__)
+/** Install, uninstall or run frePPLe as a Windows service. */
+DECLARE_EXPORT(int) FreppleService(short int);
+#endif
+
 /* The functions listed below can be called from C. */
 extern "C"
 {

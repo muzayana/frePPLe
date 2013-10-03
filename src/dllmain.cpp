@@ -130,6 +130,19 @@ DECLARE_EXPORT(void) FreppleLog(const string& msg)
   logger << msg << endl;
 }
 
+#if defined(WIN32) && !defined(__CYGWIN__)
+DECLARE_EXPORT(int) FreppleService(short int action)
+{
+  switch(action)
+  {
+    case 0: return Service::install();
+    case 1: return Service::uninstall();
+    case 2: return Service::run();
+  }
+  logger << "Invalid argument for method FreppleService" << endl;
+}
+#endif
+
 
 extern "C" DECLARE_EXPORT(void) FreppleLog(const char* msg)
 {

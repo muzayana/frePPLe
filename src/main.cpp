@@ -18,7 +18,6 @@
 #include <cstdlib>
 using namespace std;
 
-
 void usage()
 {
   cout << "\nfrePPLe v" << FreppleVersion() << " command line application\n"
@@ -37,6 +36,11 @@ void usage()
       "\nOptions:\n"
       "  -validate -v  Validate the XML input for correctness.\n"
       "  -check -c     Only validate the input, without executing the content.\n"
+#if defined(WIN32) && !defined(__CYGWIN__)
+      "  -install      Install frePPLe as a Windows service.\n"
+      "  -uninstall    Uninstall frePPLe as a Windows service.\n"
+      "  -service      Run as a Windows service.\n"
+#endif
       "  -? -h -help   Show these instructions.\n"
       "\nEnvironment: The variable FREPPLE_HOME optionally points to a\n"
       "     directory where the initialization files init.xml, init.py,\n"
@@ -57,6 +61,22 @@ int main (int argc, char *argv[])
 
   try
   {
+#if defined(WIN32) && !defined(__CYGWIN__)
+    // Install, uninstall or run the Windows service
+    for (int i = 1; i < argc; ++i)
+    {
+      if (!strcmp(argv[i],"-install"))
+        return FreppleService(0);
+      else if (!strcmp(argv[i],"-uninstall"))
+        return FreppleService(1);
+      else if (!strcmp(argv[i],"-service"))
+      {
+        FreppleInitialize();
+        return FreppleService(2);
+      }
+    }
+#endif
+
     // Analyze the command line arguments.
     for (int i = 1; i < argc; ++i)
     {

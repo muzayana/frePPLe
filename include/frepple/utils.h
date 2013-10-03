@@ -120,13 +120,15 @@ using namespace std;
 #if defined(MT)
 #if defined(HAVE_PTHREAD_H)
 #include <pthread.h>
-#elif defined(WIN32)
+#elif !defined(WIN32)
+#error Multithreading not supported on your platform
+#endif
+#endif
+
+#ifdef WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <process.h>
-#else
-#error Multithreading not supported on your platform
-#endif
 #endif
 
 // For the disabled and ansi-challenged people...
@@ -4575,7 +4577,7 @@ class XMLInput : public NonCopyable,  private xercesc::DefaultHandler
     PythonFunction getUserExit() const {return userexit;}
 
     /** Transcode the Xerces XML characters to our UTF8 encoded buffer.
-      * This method uses a statically allocated buffer, and subsequent 
+      * This method uses a statically allocated buffer, and subsequent
       * calls to this method will overwrite the previous results.
       */
     static char* transcodeUTF8(const XMLCh*);
@@ -5680,7 +5682,46 @@ class Decryptor
     static unsigned char* unbase64(string input);
 };
 
+#if defined(WIN32) && !defined(__CYGWIN__)
+class Service
+{
+  public:
+    /** Install the service. */
+    static int install();
 
+    /** Uninstall the service. */
+    static int uninstall();
+
+    /** Execute as a service. */
+    static int run();
+
+  private:
+    static void SetStatus(unsigned long dwCurrentState,
+        unsigned long dwWin32ExitCode = 0,
+        unsigned long dwWaitHint = 0);
+
+    /** Log a message to the Application event log. */
+    static void WriteEventLogEntry(const char* pszMessage, unsigned short wType);
+
+    /** Log an error message to the Application event log. */
+    static void WriteErrorLogEntry(const char* pszFunction,
+        unsigned long dwError = 0);
+
+    /** Entry point for the service. It registers the handler function for
+      * the service and starts the service. */
+    static DECLARE_EXPORT void WINAPI ServiceMain(DWORD argc, LPTSTR *);
+
+    /** The function is called by the SCM whenever a control code is sent to
+      * the service. */
+    static DECLARE_EXPORT void WINAPI CtrlHandler(DWORD dwCtrl);
+
+    /** The status of the service. */
+    static SERVICE_STATUS status;
+
+    /** The service status handle. */
+    static SERVICE_STATUS_HANDLE statusHandle;
+};
+#endif
 } // end namespace
 } // end namespace
 

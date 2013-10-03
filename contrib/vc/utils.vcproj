@@ -209,6 +209,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\utils\service.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\utils\xmlparser.cpp"
 				>
 			</File>
