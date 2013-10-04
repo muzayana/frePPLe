@@ -28,12 +28,11 @@
 
 <script type="text/javascript">
 
-var horizonstart = new Date({{bucketstart|date:"Y"}},{{bucketstart|date:"n"}}-1,{{bucketstart|date:"j"}});
-var horizonend = new Date({{bucketend|date:"Y"}},{{bucketend|date:"n"}}-1,{{bucketend|date:"j"}});
-var viewstart = new Date({{bucketstart|date:"Y"}},{{bucketstart|date:"n"}}-1,{{bucketstart|date:"j"}});
-var viewend = new Date({{bucketend|date:"Y"}},{{bucketend|date:"n"}}-1,{{bucketend|date:"j"}});
+var horizonstart = new Date({{request.report_startdate|date:"Y"}},{{request.report_startdate|date:"n"}}-1,{{request.report_startdate|date:"j"}});
+var horizonend = new Date({{request.report_enddate|date:"Y"}},{{request.report_enddate|date:"n"}}-1,{{request.report_enddate|date:"j"}});
+var viewstart = new Date({{request.report_startdate|date:"Y"}},{{request.report_startdate|date:"n"}}-1,{{request.report_startdate|date:"j"}});
+var viewend = new Date({{request.report_enddate|date:"Y"}},{{request.report_enddate|date:"n"}}-1,{{request.report_enddate|date:"j"}});
 var delta = (viewend.getTime() - viewstart.getTime()) / 86400000.0;
-
 
 function ganttcell(cellvalue, options, rowdata)
 {
