@@ -171,8 +171,7 @@ class Menu:
     content_type = None
     for i in self._groups:
       for j in i[3]:
-        if j.__module__.startswith(app):
-          if not j.report: continue
+        if j.report and j.report.__module__.startswith(app):
           # Loop over all permissions of the class
           for k in j.report.permissions:
             if content_type == None:
@@ -181,6 +180,7 @@ class Menu:
             # Create the permission object
             # TODO: cover the case where the permission refers to a permission of a model in the same app.
             # TODO: cover the case where app X wants to refer to a permission defined in app Y.
+            print app, content_type, k
             p = Permission.objects.get_or_create(codename=k[0], content_type=content_type)[0]
             p.name = k[1]
             p.save()
