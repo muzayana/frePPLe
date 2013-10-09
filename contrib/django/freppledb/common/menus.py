@@ -171,9 +171,10 @@ class Menu:
     content_type = None
     for i in self._groups:
       for j in i[3]:
-        if j[2].__module__.startswith(app):
+        if j.__module__.startswith(app):
+          if not j.report: continue
           # Loop over all permissions of the class
-          for k in j[2].permissions:
+          for k in j.report.permissions:
             if content_type == None:
               # Create a dummy contenttype in the app
               content_type = ContentType.objects.get_or_create(name="reports", model="", app_label=app.split('.')[-1])[0]
