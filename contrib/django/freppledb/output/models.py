@@ -29,7 +29,6 @@ class OperationPlan(models.Model):
 
   class Meta:
     db_table = 'out_operationplan'
-    permissions = (("view_operationplan", "Can view operation plans"),)
     verbose_name = _('operationplan')
     verbose_name_plural = _('operationplans')
 
@@ -48,7 +47,6 @@ class Problem(models.Model):
 
   class Meta:
     db_table = 'out_problem'
-    permissions = (("view_problem", "Can view problems"),)
     ordering = ['startdate']
     verbose_name = _('problem')
     verbose_name_plural = _('problems')
@@ -69,7 +67,6 @@ class Constraint(models.Model):
 
   class Meta:
     db_table = 'out_constraint'
-    permissions = (("view_constraint", "Can view constraints"),)
     ordering = ['demand','startdate']
     verbose_name = _('constraint')
     verbose_name_plural = _('constraints')
@@ -86,7 +83,6 @@ class ResourceSummary(models.Model):
 
   class Meta:
     db_table = 'out_resourceplan'
-    permissions = (("view_loadplans", "Can view load plans"),)
     ordering = ['theresource','startdate']
     unique_together = (('theresource', 'startdate'),)
     verbose_name = 'resource summary'  # No need to translate these since only used internally
@@ -107,7 +103,6 @@ class LoadPlan(models.Model):
 
   class Meta:
     db_table = 'out_loadplan'
-    permissions = (("view_loadplans", "Can view load plans"),)
     ordering = ['theresource','startdate']
     verbose_name = _('loadplan')
     verbose_name_plural = _('loadplans')
@@ -126,7 +121,6 @@ class FlowPlan(models.Model):
 
   class Meta:
     db_table = 'out_flowplan'
-    permissions = (("view_flowplans", "Can view flow plans"),)
     ordering = ['thebuffer','flowdate']
     verbose_name = _('flowplan')
     verbose_name_plural = _('flowplans')

@@ -295,14 +295,32 @@ class GridReport(View):
   frozenColumns = 0
 
   # A list with required user permissions to view the report
-  permissions = []
+  permissions = ()
 
   # Defines the difference between height of the grid and its boundaries
   heightmargin = 70
 
+
   @classmethod
   def getKey(cls):
     return "%s.%s" % (cls.__module__, cls.__name__)
+
+
+  @classmethod
+  def getAppLabel(cls):
+    '''
+    Return the name of the Django application which defines this report.
+    '''
+    if hasattr(cls,'app_label'):
+      return cls.app_label
+    s = cls.__module__.split('.')
+    for i in range(len(s),0,-1):
+      x = '.'.join(s[0:i])
+      if x in settings.INSTALLED_APPS:
+        cls.app_label = s[i-1]
+        return cls.app_label
+    raise Exception("Can't identify app of reportclass %s" % cls)
+
 
   # Extra variables added to the report template
   @classmethod
@@ -390,7 +408,7 @@ class GridReport(View):
   def dispatch(self, request, *args, **kwargs):
     # Verify the user is authorized to view the report
     for perm in self.permissions:
-      if not request.user.has_perm(perm):
+      if not request.user.has_perm(u"%s.%s" % (self.getAppLabel(), perm[0])):
         return HttpResponseForbidden('<h1>%s</h1>' % _('Permission denied'))
 
     # Dispatch to the correct method
@@ -631,7 +649,7 @@ class GridReport(View):
          content_type = 'application/json; charset=%s' % settings.DEFAULT_CHARSET,
          streaming_content = reportclass._generate_json_data(request, *args, **kwargs)
          )
-    elif fmt == 'csvlist' or fmt == 'csvtable':
+    elif fmt in ('csvlist','csvtable','csv'):
       # Return CSV data to export the data
       # Response is not returned as an iterator to assure that the database
       # connection is properly closed.
@@ -1197,7 +1215,7 @@ class GridPivot(GridReport):
       page = 1
       recs = 1
       total_pages = 1
-      query = reportclass.query(request, reportclass.basequeryset.filter(pk__exact=args[0]).using(request.database), request.report_bucket, request.report_startdate, request.report_enddate, sortsql="1 asc")
+      query = reportclass.query(request, reportclass.basequeryset.filter(pk__exact=args[0]).using(request.database), sortsql="1 asc")
     else:
       page = 'page' in request.GET and int(request.GET['page']) or 1
       if callable(reportclass.basequeryset):
@@ -1209,9 +1227,9 @@ class GridPivot(GridReport):
       if page < 1: page = 1
       cnt = (page-1)*request.pagesize+1
       if callable(reportclass.basequeryset):
-        query = reportclass.query(request, reportclass.filter_items(request, reportclass.basequeryset(request, args, kwargs), False).using(request.database)[cnt-1:cnt+request.pagesize], request.report_bucket, request.report_startdate, request.report_enddate, sortsql=reportclass._apply_sort(request))
+        query = reportclass.query(request, reportclass.filter_items(request, reportclass.basequeryset(request, args, kwargs), False).using(request.database)[cnt-1:cnt+request.pagesize], sortsql=reportclass._apply_sort(request))
       else:
-        query = reportclass.query(request, reportclass.filter_items(request, reportclass.basequeryset).using(request.database)[cnt-1:cnt+request.pagesize], request.report_bucket, request.report_startdate, request.report_enddate, sortsql=reportclass._apply_sort(request))
+        query = reportclass.query(request, reportclass.filter_items(request, reportclass.basequeryset).using(request.database)[cnt-1:cnt+request.pagesize], sortsql=reportclass._apply_sort(request))
 
     # Generate header of the output
     yield '{"total":%d,\n' % total_pages
@@ -1270,11 +1288,11 @@ class GridPivot(GridReport):
 
     # Prepare the query
     if args and args[0]:
-      query = reportclass.query(request, reportclass.basequeryset.filter(pk__exact=args[0]).using(request.database), request.report_bucket, request.report_startdate, request.report_enddate, sortsql="1 asc")
+      query = reportclass.query(request, reportclass.basequeryset.filter(pk__exact=args[0]).using(request.database), sortsql="1 asc")
     elif callable(reportclass.basequeryset):
-      query = reportclass.query(request, reportclass.filter_items(request, reportclass.basequeryset(request, args, kwargs), False).using(request.database), request.report_bucket, request.report_startdate, request.report_enddate, sortsql=reportclass._apply_sort(request))
+      query = reportclass.query(request, reportclass.filter_items(request, reportclass.basequeryset(request, args, kwargs), False).using(request.database), sortsql=reportclass._apply_sort(request))
     else:
-      query = reportclass.query(request, reportclass.filter_items(request, reportclass.basequeryset).using(request.database), request.report_bucket, request.report_startdate, request.report_enddate, sortsql=reportclass._apply_sort(request))
+      query = reportclass.query(request, reportclass.filter_items(request, reportclass.basequeryset).using(request.database), sortsql=reportclass._apply_sort(request))
 
     # Write a Unicode Byte Order Mark header, aka BOM (Excel needs it to open UTF-8 file properly)
     encoding = settings.CSV_CHARSET

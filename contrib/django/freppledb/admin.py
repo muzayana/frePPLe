@@ -20,6 +20,6 @@ admin_site = admin.sites.AdminSite(name='admin')
 for app in settings.INSTALLED_APPS:
   try:
     mod = import_module('%s.admin' % app)
-  except ImportError:
-    # Silently ignore
-    pass
+  except ImportError as e:
+    # Silently ignore if it's the menu module which isn't found
+    if e.message != 'No module named admin': raise e

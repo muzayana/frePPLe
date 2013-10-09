@@ -27,6 +27,7 @@ class OverviewReport(GridPivot):
   title = _('Demand report')
   basequeryset = Item.objects.all()
   model = Item
+  permissions = (("view_demand_report", "Can view demand report"),)
   rows = (
     GridFieldText('item', title=_('item'), key=True, field_name='name', formatter='item', editable=False),
     GridFieldGraph('graph', title=_('graph'), width="(5*numbuckets<200 ? 5*numbuckets : 200)"),
@@ -50,7 +51,7 @@ class OverviewReport(GridPivot):
       return {}
 
   @staticmethod
-  def query(request, basequery, bucket, startdate, enddate, sortsql='1 asc'):
+  def query(request, basequery, sortsql='1 asc'):
     basesql, baseparams = basequery.query.get_compiler(basequery.db).as_sql(with_col_aliases=True)
     cursor = connections[request.database].cursor()
 
@@ -69,7 +70,7 @@ class OverviewReport(GridPivot):
         and (plandate is null or plandate >= '%s')
         and due < '%s'
       group by items.name
-      ''' % (basesql, startdate, startdate)
+      ''' % (basesql, request.report_startdate, request.report_startdate)
     cursor.execute(query, baseparams)
     for row in cursor.fetchall():
       if row[0]: startbacklogdict[row[0]] = float(row[1])
@@ -136,7 +137,10 @@ class OverviewReport(GridPivot):
         -- Ordering and grouping
         group by y.name, y.lft, y.rght, y.bucket, y.startdate, y.enddate
         order by %s, y.startdate
-       ''' % (basesql,bucket,startdate,enddate,startdate,enddate,startdate,enddate,sortsql)
+       ''' % (basesql, request.report_bucket, request.report_startdate,
+              request.report_enddate, request.report_startdate,
+              request.report_enddate, request.report_startdate,
+              request.report_enddate, sortsql)
     cursor.execute(query,baseparams)
 
     # Build the python result
@@ -168,6 +172,7 @@ class DetailReport(GridReport):
   title = _("Demand plan detail")
   basequeryset = Demand.objects.extra(select={'forecast': "select name from forecast where out_demand.demand like forecast.name || ' - %%'",})
   model = Demand
+  permissions = (("view_demand_report", "Can view demand report"),)
   frozenColumns = 0
   editable = False
   multiselect = False
