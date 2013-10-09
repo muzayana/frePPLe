@@ -52,6 +52,7 @@ class QuoteReport(GridReport):
   template = 'quoting/quote.html'
   title = _('Order quotes')
   basequeryset = Demand.objects.all().filter(status='quote')
+  permissions = (('view_quote_report','Can view quote report'),)
   model = Demand
   frozenColumns = 1
   multiselect = False

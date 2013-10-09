@@ -1,17 +1,11 @@
-# Copyright (C) 2013 by Johan De Taeye, frePPLe bvba
 #
-# This library is free software; you can redistribute it and/or modify it
-# under the terms of the GNU Affero General Public License as published
-# by the Free Software Foundation; either version 3 of the License, or
-# (at your option) any later version.
+# Copyright (C) 2007-2012 by Johan De Taeye, frePPLe bvba
 #
-# This library is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
-# General Public License for more details.
-#
-# You should have received a copy of the GNU Affero General Public
-# License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# All information contained herein is, and remains the property of frePPLe.
+# You are allowed to use and modify the source code, as long as the software is used
+# within your company.
+# You are not allowed to distribute the software, either in the form of source code
+# or in the form of compiled binaries.
 #
 
 from freppledb.menu import menu
@@ -26,6 +20,7 @@ import freppledb.output.views.kpi
 # Adding reports. We use an index value to keep the same order of the entries in all languages.
 menu.addItem("reports", "inventory report", url="/buffer/", report=freppledb.output.views.buffer.OverviewReport, index=100)
 menu.addItem("reports", "resource report", url="/resource/", report=freppledb.output.views.resource.OverviewReport, index=200)
+menu.addItem("reports", "resource gantt report", url="/resourcegantt/", report=freppledb.output.views.resource.GanttReport, index=200)
 menu.addItem("reports", "demand report", url="/demand/", report=freppledb.output.views.demand.OverviewReport, index=300)
 menu.addItem("reports", "operation report", url="/operation/", report=freppledb.output.views.operation.OverviewReport, index=400)
 menu.addItem("reports", "operation detail report", url="/operationplan/", report=freppledb.output.views.operation.DetailReport, index=500)

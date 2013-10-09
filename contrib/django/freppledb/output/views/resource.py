@@ -195,6 +195,7 @@ class GanttReport(GridReport):
   template = 'output/resourcegantt.html'
   title = _('Resource Gantt report')
   model = Resource
+  permissions = (("view_resource_report", "Can view resource report"),)
   editable = False
   multiselect = False
   heightmargin = 82
