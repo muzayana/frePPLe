@@ -115,7 +115,7 @@ class OverviewReport(GridPivot):
       return {}
 
   @staticmethod
-  def query(request, basequery, bucket, startdate, enddate, sortsql='1 asc'):
+  def query(request, basequery, sortsql='1 asc'):
     basesql, baseparams = basequery.query.get_compiler(basequery.db).as_sql(with_col_aliases=True)
     # Execute the query
     cursor = connections[request.database].cursor()
@@ -156,7 +156,7 @@ class OverviewReport(GridPivot):
         group by fcst.name, fcst.item_id, fcst.customer_id,
                d.bucket, d.startdate, d.enddate
         order by %s, d.startdate
-        ''' % (basesql,bucket,startdate,enddate,sortsql)
+        ''' % (basesql,request.report_bucket,request.report_startdate,request.report_enddate,sortsql)
     cursor.execute(query, baseparams)
 
     # Build the python result
