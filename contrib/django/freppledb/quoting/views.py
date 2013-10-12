@@ -89,21 +89,22 @@ def InfoView(request, action):
   if request.method != 'POST' or not request.is_ajax():
     raise Http404('Only ajax get requests allowed')
   try:
-    # Should we cache the url value?
+    # Should we cache the URL parameter?
     #   +: one less database query
     #   -: parameter value change only takes effect upon restart
     url = Parameter.getValue('quoting.service_location', database=request.database, default="localhost:8001")
+    #import urllib  # urllib.urlencode({'action': 'D', 'quantity': 333,})
     conn = httplib.HTTPConnection(url)
     if action == 'info':
       data = json.loads(request.body)
-      conn.request("GET", '/demand/' + iri_to_uri(data[1]) + '/?plan=P')
+      conn.request("GET", '/demand/' + iri_to_uri(data[0]) + '/?plan=P')
     elif action == 'cancel':
-      data = json.loads(request.body)
-      conn.request("POST", '/demand/' + iri_to_uri(data[1]) + '/?action=D')
+      data = request.GET['name']
+      conn.request("POST", '/demand/' + iri_to_uri(data) + '/?action=R&persist=1', "", {"content-length": 0})
     elif action == 'confirm':
-      data = json.loads(request.body)
-      conn.request("POST", '/demand/' + iri_to_uri(data[1]) + '/?status=open')
-    elif action == 'enquiry' or action == 'quote':
+      data = request.GET['name']
+      conn.request("POST", '/demand/' + iri_to_uri(data) + '/?status=open&persist=1', "", {"content-length": 0})
+    elif action == 'inquiry' or action == 'quote':
       data = '\r\n'.join([
         '--' + BOUNDARY,
         'Content-Disposition: form-data; name="xmldata"',
@@ -122,9 +123,12 @@ def InfoView(request, action):
     response = conn.getresponse()
     result = response.read()
     conn.close()
-    return HttpResponse(result, mimetype="text/plain")
+    if response.status == httplib.OK:
+      return HttpResponse(result, mimetype="text/plain")
+    else:
+      return HttpResponseServerError(result, mimetype="text/plain")
   except Exception as e:
-    msg = "Error getting quote info: %s" % e
+    msg = "Error: %s" % e
     logger.error(msg)
     return HttpResponseServerError(msg)
 

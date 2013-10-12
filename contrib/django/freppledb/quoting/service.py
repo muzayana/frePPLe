@@ -8,7 +8,7 @@
 # or in the form of compiled binaries.
 #
 from __future__ import print_function
-import os, thread, sys, inspect, socket
+import os, thread, sys, inspect
 from datetime import datetime
 import cherrypy
 
@@ -52,10 +52,8 @@ def Server(database=DEFAULT_DB_ALIAS):
 
   # Validate the address and port number
   try:
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind( (address, port) )
-    s.close()
-  except socket.error as e:
+    cherrypy.process.servers.check_port(address, port)
+  except Exception as e:
     raise Exception("Invalid address '%s' and/or port '%s': %s" % (address, port, e))
 
   cherrypy.config.update({
@@ -410,17 +408,30 @@ class Interface:
       # Create or update a demand
       if name == None: raise cherrypy.HTTPError(404,"Entity not found")
       try:
-        loc = frepple.demand(name=name)
+        loc = frepple.demand(name=name, action=cherrypy.request.params.get('action','AC'))
       except:
         # Demand not found
         raise cherrypy.HTTPError(404,"Entity not found")
       ok = True
-      for i in cherrypy.request.params:
-        try:
-          setattr(loc, i, cherrypy.request.params[i])
-        except Exception as e:
-          yield "Error: %s\n" % e
-          ok = False
+      if loc:
+        for i in cherrypy.request.params:
+          if i in ['action','persist','status']: continue
+          try:
+            setattr(loc, i, cherrypy.request.params[i])
+          except Exception as e:
+            yield "Error: %s\n" % e
+            ok = False
+      if ok and cherrypy.request.params.get('persist','0') == '1':
+        # Save the changes to the database as well
+        if loc:
+          dm = Demand.objects.using(self.database).get(name=name)
+          if 'status' in cherrypy.request.params:
+            dm.status = cherrypy.request.params['status']
+          for attr in ['due','quantity','priority','item','operation','customer','minshipment','maxlateness', 'category','subcategory']:
+            setattr(dm, attr, getattr(loc,attr))
+          dm.save(using=self.database)
+        else:
+          Demand.objects.using(self.database).get(name=name).delete()
       if ok: yield "OK\n"
 
 
@@ -693,8 +704,8 @@ class Interface:
 
       # Find existing opplans
       for i in frepple.operationplans():
-        if i.motive and i.motive.name in callback.demands:
-          print("before", i.operation, i.start, i.end, i.quantity)
+        #if i.motive and i.motive.name in callback.demands:
+        print("before", i.operation, i.start, i.end, i.quantity)
 
       # Process the demands
       res = []
@@ -741,8 +752,8 @@ class Interface:
 
       # Find existing opplans
       for i in frepple.operationplans():
-        if i.motive and i.motive.name in callback.demands:
-          print("after", i.operation, i.start, i.end, i.quantity)
+        #if i.motive and i.motive.name in callback.demands:
+        print("after", i.operation, i.start, i.end, i.quantity)
       return "".join(res)
 
 

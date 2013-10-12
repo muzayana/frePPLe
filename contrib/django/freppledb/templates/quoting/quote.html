@@ -73,11 +73,9 @@ function getQuote(event)
       jQuery("#grid").trigger('reloadGrid', [{current:true}])
     },
     error: function (result, stat, errorThrown) {
-      console.log(stat);
-      console.log(errorThrown);
       $('#popup').html(result.responseText)
         .dialog({
-          title: gettext("Error getting quote info"),
+          title: gettext("Error"),
           autoOpen: true,
           resizable: false,
           width: 'auto',
@@ -134,11 +132,9 @@ function inquireQuote(event)
       jQuery("#grid").trigger('reloadGrid', [{current:true}])
     },
     error: function (result, stat, errorThrown) {
-      console.log(stat);
-      console.log(errorThrown);
       $('#popup').html(result.responseText)
         .dialog({
-          title: gettext("Error getting quote info"),
+          title: gettext("Error"),
           autoOpen: true,
           resizable: false,
           width: 'auto',
@@ -151,11 +147,65 @@ function inquireQuote(event)
 
 function cancelQuote(event)
 {
+  var name = $("#id_name").val();
+  $.ajax({
+    type: 'POST',
+    url: '{{request.prefix}}/quote/cancel/?name=' + encodeURIComponent(name),
+    dataType: 'html',
+    success: function (xmldata, status, jqXHR) {
+      jQuery("#grid").trigger('reloadGrid', [{current:true}]);
+      $("#id_name").val('');
+      $("#id_description").val('');
+      $("#id_item").val('');
+      $("#id_customer").val('');
+      $("#id_quantity").val('');
+      $("#id_due").val('');
+      $("#id_minshipment").val('');
+      $('#status').html('');
+    },
+    error: function (result, stat, errorThrown) {
+      $('#popup').html(result.responseText)
+        .dialog({
+          title: gettext("Error"),
+          autoOpen: true,
+          resizable: false,
+          width: 'auto',
+          height: 'auto'
+        });
+      }
+    });
   event.preventDefault();
 }
 
 function confirmQuote(event)
 {
+  var name = $("#id_name").val();
+  $.ajax({
+    type: 'POST',
+    url: '{{request.prefix}}/quote/confirm/?name=' + encodeURIComponent(name),
+    dataType: 'html',
+    success: function (xmldata, status, jqXHR) {
+      jQuery("#grid").trigger('reloadGrid', [{current:true}]);
+      $("#id_name").val('');
+      $("#id_description").val('');
+      $("#id_item").val('');
+      $("#id_customer").val('');
+      $("#id_quantity").val('');
+      $("#id_due").val('');
+      $("#id_minshipment").val('');
+      $('#status').html('');
+    },
+    error: function (result, stat, errorThrown) {
+      $('#popup').html(result.responseText)
+        .dialog({
+          title: gettext("Error"),
+          autoOpen: true,
+          resizable: false,
+          width: 'auto',
+          height: 'auto'
+        });
+      }
+    });
   event.preventDefault();
 }
 
@@ -164,7 +214,7 @@ function displayInfo(rowid) {
     type: 'POST',
     url: '{{request.prefix}}/quote/info/',
     contentType: 'application/json; charset=utf-8',
-    data: JSON.stringify(['info', rowid]),
+    data: JSON.stringify([rowid]),
     dataType: 'xml',
     success: function (xmldata, status, jqXHR) {
       $("#id_name").val($(xmldata).find('demands > demand').attr('name'));
@@ -243,7 +293,7 @@ $(function() {
 <div class="quotebutton"><button style="width:100%" id="form_confirm">{% trans 'Confirm' %}</button></div>
 </form>
 </div>
-<div id="status"><h1>{% trans "Deliveries" %}</h1><br/>
+<div id="status" style="float:left"><h1>{% trans "Deliveries" %}</h1><br/>
 <h1>{% trans "Problems" %}</h1><br/>
 <h1>{% trans "Why short or late?" %}</h1></div>
 {% endblock %}
