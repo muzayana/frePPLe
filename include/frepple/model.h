@@ -4499,10 +4499,20 @@ class Demand
       * The (optional) boolean parameter controls whether we delete also locked
       * operationplans or not.<br>
       * The second (optional) argument is a command list that can be used to
-      * remove the operationplans in an undo-able way.
+      * remove the operationplans in an undo-able way.<br>
+      * The optional third argument is used to flag whether or not we also
+      * want to delete the upstream pegged operationplans along the supply
+      * path.
+      *
+      * \attention This method is implemented differently in the enterprise
+      * edition. The community edition only deletes the delivery
+      * operationplans.
       */
-    DECLARE_EXPORT void deleteOperationPlans
-    (bool deleteLockedOpplans = false, CommandManager* = NULL);
+    DECLARE_EXPORT void deleteOperationPlans (
+      bool deleteLockedOpplans = false,
+      CommandManager* = NULL,
+      bool deleteUpstream = true
+      );
 
     /** Returns the due date of the demand. */
     const Date& getDue() const {return dueDate;}
@@ -5702,6 +5712,15 @@ class PeggingIterator : public Object
       * -either completely or paritally- unconsumed at the next level.
       */
     bool getPegged() const {return states.top().pegged;}
+
+    /** Update the portion of the current flowplan that is fed/supplied by
+      * the original flowplan. */
+    void setFactor(double f) 
+    {
+      if (f<0 || f>1.0)
+        throw LogicException("Pegging factor must be between 0.0 and 1.0");
+      states.top().factor = f;
+    }
 
     /** Move the iterator foward to the next downstream flowplan. */
     DECLARE_EXPORT PeggingIterator& operator++();

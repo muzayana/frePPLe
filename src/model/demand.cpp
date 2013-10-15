@@ -58,7 +58,7 @@ DECLARE_EXPORT void Demand::setQuantity(double f)
 
 
 DECLARE_EXPORT void Demand::deleteOperationPlans
-(bool deleteLocked, CommandManager* cmds)
+(bool deleteLocked, CommandManager* cmds, bool deleteUpstream)
 {
   // Delete all delivery operationplans.
   // Note that an extra loop is used to assure that our iterator doesn't get
@@ -74,12 +74,59 @@ DECLARE_EXPORT void Demand::deleteOperationPlans
         break;
       }
     if (!candidate) break;
-    if (cmds)
-      // Use delete command
-      cmds->add(new CommandDeleteOperationPlan(candidate));
+    if (!deleteUpstream)
+    {
+      // Delete only the delivery, immediately or through a delete command
+      if (cmds)
+        cmds->add(new CommandDeleteOperationPlan(candidate));
+      else
+        delete candidate;
+    }
     else
-      // Delete immediately
-      delete candidate;
+    {
+      // Walk upstream and find pegged supply
+      // We don't reduce it yet, because that would disturb the pegging results
+      PeggingIterator p(candidate, false);
+      /*
+      logger << "****\t" << candidate->getOperation()->getName()
+          << "\t" << candidate->getDates() << "\t" << candidate->getQuantity()
+          << "\t" << candidate->getQuantity() << endl;
+      */
+      if (cmds)
+        cmds->add(new CommandDeleteOperationPlan(candidate));
+      else
+        delete candidate;
+      do
+      {
+        OperationPlan *opplan = p.getProducingOperationplan();
+        double newsize;
+        if (opplan)
+        {
+          newsize = opplan->setQuantity(opplan->getQuantity()*(1.0-p.getFactor()), false, false, false);
+          /*
+          logger << "****\t" <<  opplan->getOperation()->getName()
+            << "\t" << opplan->getDates() << "\t" << opplan->getQuantity()
+            << "\t" << p.getQuantityBuffer() << "\t" << newsize << "\t" << ( (opplan->getQuantity()-newsize)/opplan->getQuantity() ) << endl;
+          */
+          // Note: update the factor before incrementing the iterator, to propagate the change
+          p.setFactor( (opplan->getQuantity()-newsize)/opplan->getQuantity() );
+        }
+        p--;
+        if (opplan && newsize != opplan->getQuantity())
+        {
+          // Note: update the operationplan size after incrementing the iterator, to avoid disrupting existing pegging
+          if (cmds)
+            cmds->add(new CommandMoveOperationPlan(opplan, Date::infinitePast, opplan->getDates().getEnd(), newsize));
+          else
+            opplan->setQuantity(newsize);
+        }
+      }
+      while (p);
+      if (cmds)
+        cmds->add(new CommandDeleteOperationPlan(candidate));
+      else
+        delete candidate;
+    }
   }
 
   // Reset the motive on all operationplans marked with this demand.
