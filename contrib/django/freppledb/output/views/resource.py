@@ -276,7 +276,7 @@ class GanttReport(GridReport):
     prevUtil = None
     prevLocation = None
     results = []
-    horizon = (request.report_enddate - request.report_startdate).total_seconds() / 1000
+    horizon = (request.report_enddate - request.report_startdate).total_seconds() / 10000
     for row in cursor.fetchall():
       if not prevRes or prevRes != row[0]:
         if prevRes:

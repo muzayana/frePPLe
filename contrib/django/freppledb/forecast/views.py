@@ -85,8 +85,8 @@ class OverviewReport(GridPivot):
   editable = True
   rows = (
     GridFieldText('forecast', title=_('forecast'), key=True, field_name='name', formatter='forecast', editable=False),
-    GridFieldText('item', title=_('item'), key=True, field_name='item__name', formatter='item', editable=False),
-    GridFieldText('customer', title=_('customer'), key=True, field_name='customer__name', formatter='customer', editable=False),
+    GridFieldText('item', title=_('item'), field_name='item__name', formatter='item', editable=False),
+    GridFieldText('customer', title=_('customer'), field_name='customer__name', formatter='customer', editable=False),
     GridFieldGraph('graph', title=_('graph'), width="(5*numbuckets<200 ? 5*numbuckets : 200)"),
     )
   crosses = (
