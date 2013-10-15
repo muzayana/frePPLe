@@ -223,6 +223,7 @@ function displayInfo(rowid) {
       $("#id_customer").val($(xmldata).find('demands > demand > customer').attr('name'));
       $("#id_quantity").val($(xmldata).find('demands > demand > quantity').text());
       $("#id_due").val($(xmldata).find('demands > demand > due').text());
+      $("#id_minshipment").val($(xmldata).find('demands > demand > minshipment').text());
       status = '<h1>{% trans "Deliveries" %}</h1>';
       $(xmldata).find('demands > demand > operationplans > operationplan').each(function() {
         status += '&nbsp;&nbsp;' + $(this).find('quantity').text() + '&nbsp;&nbsp;' + $(this).find('end').text() + '<br/>';
