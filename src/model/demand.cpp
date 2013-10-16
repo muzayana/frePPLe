@@ -122,10 +122,6 @@ DECLARE_EXPORT void Demand::deleteOperationPlans
         }
       }
       while (p);
-      if (cmds)
-        cmds->add(new CommandDeleteOperationPlan(candidate));
-      else
-        delete candidate;
     }
   }
 

@@ -40,6 +40,9 @@ function getQuote(event)
   v = $("#id_minshipment").val();
   if (v!=null && v!='' && !isNaN(v))
     data += '<minshipment>' + v + '</minshipment>\n';
+  v = $("#id_maxlateness").val();
+  if (v!=null && v!='')
+    data += '<maxlateness>' + v + '</maxlateness>\n';
   data += '</demand>\n'
     + '</demands>\n'
     + '</plan>\n';
@@ -99,6 +102,9 @@ function inquireQuote(event)
   v = $("#id_minshipment").val();
   if (v!=null && v!='' && !isNaN(v))
     data += '<minshipment>' + v + '</minshipment>\n';
+  v = $("#id_maxlateness").val();
+  if (v!=null && v!='')
+    data += '<maxlateness>' + v + '</maxlateness>\n';
   data += '</demand>\n'
     + '</demands>\n'
     + '</plan>\n';
@@ -116,6 +122,7 @@ function inquireQuote(event)
       $("#id_quantity").val($(xmldata).find('demands > demand > quantity').text());
       $("#id_due").val($(xmldata).find('demands > demand > due').text());
       $("#id_minshipment").val($(xmldata).find('demands > demand > minshipment').text());
+      $("#id_maxlateness").val($(xmldata).find('demands > demand > maxlateness').text());
       status = '<h1>{% trans "Deliveries" %}</h1>';
       $(xmldata).find('demands > demand > operationplans > operationplan').each(function() {
         status += '&nbsp;&nbsp;' + $(this).find('quantity').text() + '&nbsp;&nbsp;' + $(this).find('end').text() + '<br/>';
@@ -161,6 +168,7 @@ function cancelQuote(event)
       $("#id_quantity").val('');
       $("#id_due").val('');
       $("#id_minshipment").val('');
+      $("#id_maxlateness").val('');
       $('#status').html('');
     },
     error: function (result, stat, errorThrown) {
@@ -193,6 +201,7 @@ function confirmQuote(event)
       $("#id_quantity").val('');
       $("#id_due").val('');
       $("#id_minshipment").val('');
+      $("#id_maxlateness").val('');
       $('#status').html('');
     },
     error: function (result, stat, errorThrown) {
@@ -224,6 +233,7 @@ function displayInfo(rowid) {
       $("#id_quantity").val($(xmldata).find('demands > demand > quantity').text());
       $("#id_due").val($(xmldata).find('demands > demand > due').text());
       $("#id_minshipment").val($(xmldata).find('demands > demand > minshipment').text());
+      $("#id_maxlateness").val($(xmldata).find('demands > demand > maxlateness').text());
       status = '<h1>{% trans "Deliveries" %}</h1>';
       $(xmldata).find('demands > demand > operationplans > operationplan').each(function() {
         status += '&nbsp;&nbsp;' + $(this).find('quantity').text() + '&nbsp;&nbsp;' + $(this).find('end').text() + '<br/>';

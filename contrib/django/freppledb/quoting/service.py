@@ -16,7 +16,7 @@ from django.conf import settings
 from django.template.loader import render_to_string
 from django.db import DEFAULT_DB_ALIAS
 
-from freppledb.input.models import Demand, Item, Customer
+from freppledb.input.models import Demand, Item, Customer, Operation
 from freppledb.common.models import Parameter
 
 import frepple
@@ -427,8 +427,18 @@ class Interface:
           dm = Demand.objects.using(self.database).get(name=name)
           if 'status' in cherrypy.request.params:
             dm.status = cherrypy.request.params['status']
-          for attr in ['due','quantity','priority','item','operation','customer','minshipment','maxlateness', 'category','subcategory']:
-            setattr(dm, attr, getattr(loc,attr))
+          dm.due = loc.due
+          dm.quantity = loc.quantity
+          dm.priority = loc.priority
+          dm.item = Item.objects.using(self.database).get(name=loc.item.name)
+          if loc.operation:
+            dm.operation = Operation.objects.using(self.database).get(name=loc.operation.name)
+          if loc.customer:
+            dm.customer = Customer.objects.using(self.database).get(name=loc.customer.name)
+          dm.minshipment = loc.minshipment
+          dm.maxlateness = loc.maxlateness
+          dm.category = loc.category
+          dm.subcategory = loc.subcategory
           dm.save(using=self.database)
         else:
           Demand.objects.using(self.database).get(name=name).delete()
