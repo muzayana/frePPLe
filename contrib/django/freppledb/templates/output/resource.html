@@ -100,6 +100,7 @@ function drawGraphs(jsondata)
       colors.push('#FF0000');
       data.push({ data:d5, label:"{{_('overload')|capfirst}}" });
     }
+    {% if not args.0 %}$(this).height($(this).parent().height());{% endif %}
     Flotr.draw({% if args.0 %}$("#graph").get(0){% else %}this{% endif %},
       data, {
       HtmlText: false,

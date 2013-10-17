@@ -65,6 +65,7 @@ function drawGraphs(jsondata)
     first = false;
 
     // Draw the graph
+    {% if not args.0 %}$(this).height($(this).parent().height());{% endif %}
     Flotr.draw({% if args.0 %}$("#graph").get(0){% else %}this{% endif %},[
       { data:d0,
         label:"{{_('total orders')|capfirst}}",
