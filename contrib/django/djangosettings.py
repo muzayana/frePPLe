@@ -149,6 +149,8 @@ INSTALLED_APPS = (
     'freppledb.output',
     'freppledb.execute',
     'freppledb.common',
+    'freppledb.forecast',
+    'freppledb.quoting'
     #'openerp',
 )
 
