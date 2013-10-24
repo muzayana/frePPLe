@@ -16,6 +16,8 @@ from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 
+from freppledb.common.fields import JSONField
+
 
 import logging
 logger = logging.getLogger(__name__)
