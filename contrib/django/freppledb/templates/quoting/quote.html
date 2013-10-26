@@ -7,7 +7,11 @@
 {% include "operationcontext.html" %}
 {% endblock %}
 {% block extrahead %}{{block.super}}
+<script type="text/javascript" src="/static/admin/js/admin/RelatedObjectLookups.js"></script>
 <style>
+#id_name, #id_description {
+  width: 20em;
+}
 .quotebutton {
   width: 23%;
   float: left;
@@ -35,7 +39,7 @@ function getQuote(event)
     + '<customer name="' + $("#id_customer option:selected").text() + '"/>\n'
     + '<quantity>' + $("#id_quantity").val() + '</quantity>\n'
     + '<item name="' + $("#id_item option:selected").text() + '"/>\n'
-    + '<due>' + $("#id_due").val() + '</due>\n'
+    + '<due>' + $("#id_due_0").val() + 'T' + $("#id_due_1").val() + '</due>\n'
     + '<priority>1000000</priority>\n';
   v = $("#id_minshipment").val();
   if (v!=null && v!='' && !isNaN(v))
@@ -58,7 +62,9 @@ function getQuote(event)
       $("#id_item").val($(xmldata).find('demands > demand > item').attr('name'));
       $("#id_customer").val($(xmldata).find('demands > demand > customer').attr('name'));
       $("#id_quantity").val($(xmldata).find('demands > demand > quantity').text());
-      $("#id_due").val($(xmldata).find('demands > demand > due').text());
+      var due = $(xmldata).find('demands > demand > due').text();
+      $("#id_due_0").val(due.substring(0,10));
+      $("#id_due_1").val(due.substring(11,19));
       $("#id_minshipment").val($(xmldata).find('demands > demand > minshipment').text());
       status = '<h1>{% trans "Deliveries" %}</h1>';
       $(xmldata).find('demands > demand > operationplans > operationplan').each(function() {
@@ -97,7 +103,7 @@ function inquireQuote(event)
     + '<customer name="' + $("#id_customer option:selected").text() + '"/>\n'
     + '<quantity>' + $("#id_quantity").val() + '</quantity>\n'
     + '<item name="' + $("#id_item option:selected").text() + '"/>\n'
-    + '<due>' + $("#id_due").val() + '</due>\n'
+    + '<due>' + $("#id_due_0").val() + 'T' + $("#id_due_1").val() + '</due>\n'
     + '<priority>1000000</priority>\n';
   v = $("#id_minshipment").val();
   if (v!=null && v!='' && !isNaN(v))
@@ -120,7 +126,9 @@ function inquireQuote(event)
       $("#id_item").val($(xmldata).find('demands > demand > item').attr('name'));
       $("#id_customer").val($(xmldata).find('demands > demand > customer').attr('name'));
       $("#id_quantity").val($(xmldata).find('demands > demand > quantity').text());
-      $("#id_due").val($(xmldata).find('demands > demand > due').text());
+      var due = $(xmldata).find('demands > demand > due').text();
+      $("#id_due_0").val(due.substring(0,10));
+      $("#id_due_1").val(due.substring(11,19));
       $("#id_minshipment").val($(xmldata).find('demands > demand > minshipment').text());
       $("#id_maxlateness").val($(xmldata).find('demands > demand > maxlateness').text());
       status = '<h1>{% trans "Deliveries" %}</h1>';
@@ -165,8 +173,9 @@ function cancelQuote(event)
       $("#id_description").val('');
       $("#id_item").val('');
       $("#id_customer").val('');
-      $("#id_quantity").val('');
-      $("#id_due").val('');
+      $("#id_quantity").val('1');
+      $("#id_due_0").val('');
+      $("#id_due_1").val('00:00:00');
       $("#id_minshipment").val('');
       $("#id_maxlateness").val('');
       $('#status').html('');
@@ -198,8 +207,9 @@ function confirmQuote(event)
       $("#id_description").val('');
       $("#id_item").val('');
       $("#id_customer").val('');
-      $("#id_quantity").val('');
-      $("#id_due").val('');
+      $("#id_quantity").val('1');
+      $("#id_due_0").val('');
+      $("#id_due_1").val('00:00:00');
       $("#id_minshipment").val('');
       $("#id_maxlateness").val('');
       $('#status').html('');
@@ -231,7 +241,9 @@ function displayInfo(rowid) {
       $("#id_item").val($(xmldata).find('demands > demand > item').attr('name'));
       $("#id_customer").val($(xmldata).find('demands > demand > customer').attr('name'));
       $("#id_quantity").val($(xmldata).find('demands > demand > quantity').text());
-      $("#id_due").val($(xmldata).find('demands > demand > due').text());
+      var due = $(xmldata).find('demands > demand > due').text();
+      $("#id_due_0").val(due.substring(0,10));
+      $("#id_due_1").val(due.substring(11,19));
       $("#id_minshipment").val($(xmldata).find('demands > demand > minshipment').text());
       $("#id_maxlateness").val($(xmldata).find('demands > demand > maxlateness').text());
       status = '<h1>{% trans "Deliveries" %}</h1>';
@@ -289,14 +301,14 @@ $(function() {
 {% block after_table %}
 <br/>
 <div style="overflow:auto">
-<div id="fields" style="float:left; width:{% if "height" in preferences %}{{preferences.width}}{% else %}350{% endif %}px">
+<div id="fields" style="float:left; width:{% if "height" in preferences %}{{preferences.width}}{% else %}600{% endif %}px">
 <h1>{% trans "Quote" %}</h1>
-<form class="form" class="form">{% csrf_token %}
-{% for field in form %}<p>
-{{ field.errors }}
-{{ field.label_tag }} {{ field }}
-</p>
-{% endfor %}
+<form class="form" id="quoteform" class="form">{% csrf_token %}
+<table><tbody>{% for field in form %}<tr>
+<th style="text-align:right; vertical-align:middle;">{{ field.label_tag }}</th>
+<td>{{ field.errors }}{{ field }}</td>
+</tr>
+{% endfor %}</tbody></table>
 <br/>
 <div class="quotebutton"><button style="width:100%" id="form_inquiry">{% trans 'Inquiry' %}</button></div>
 <div class="quotebutton"><button style="width:100%" id="form_quote">{% trans 'Quote' %}</button></div>

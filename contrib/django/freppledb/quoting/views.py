@@ -8,26 +8,21 @@
 # or in the form of compiled binaries.
 #
 
-import json, httplib, urllib, urllib2
+import json, httplib
 
 from django.views.decorators.csrf import csrf_protect
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render_to_response
-from django.db.models.fields.related import RelatedField
 from django.utils.translation import ugettext_lazy as _
-from django.template import RequestContext
 from django import forms
 from django.utils.encoding import iri_to_uri
-from django.forms.models import modelform_factory
 from django.http import Http404, HttpResponseServerError, HttpResponse
+from django.contrib.admin.widgets import ForeignKeyRawIdWidget, AdminSplitDateTime
+from django.db import DEFAULT_DB_ALIAS
 
-from freppledb.input.models import Demand
-from freppledb.output.models import Demand as DemandOut
-from freppledb.output.models import Constraint, Problem
+from freppledb.input.models import Demand, Item, Customer
 from freppledb.common.models import Parameter
 from freppledb.common.report import GridReport, GridFieldDateTime, GridFieldText, GridFieldInteger
 from freppledb.common.report import GridFieldNumber, GridFieldLastModified
-
 
 import logging
 logger = logging.getLogger(__name__)
@@ -35,17 +30,16 @@ logger = logging.getLogger(__name__)
 
 BOUNDARY = '----------ThIs_Is_tHe_bouNdaRY_$'
 
+from freppledb.admin import data_site
 
 class QuoteForm(forms.ModelForm):
+  # ASSUMPTION: quoting is assumed to be on the default database only
+  due = forms.DateField(widget=AdminSplitDateTime())
+  customer = forms.ModelChoiceField(queryset=Customer.objects.all(), widget=ForeignKeyRawIdWidget(Demand._meta.get_field("customer").rel, data_site, using=DEFAULT_DB_ALIAS))
+  item = forms.ModelChoiceField(queryset=Item.objects.all(), widget=ForeignKeyRawIdWidget(Demand._meta.get_field("item").rel, data_site, using=DEFAULT_DB_ALIAS))
   class Meta:
     model = Demand
-    #customer = forms.ModelChoiceField(queryset=Customer.objects.all(), widget=forms.TextInput)
-    #item = forms.ModelChoiceField(queryset=Item.objects.all(), widget=forms.TextInput)
     fields = ('name', 'description', 'item', 'customer', 'quantity', 'due', 'minshipment', 'maxlateness')
-    #formfield_callback = lambda f: (isinstance(f, RelatedField) and f.formfield(using=request.database, localize=True)) or f.formfield(localize=True)
-    #widgets = {
-    #  'item': forms.TextInput(attrs={'cols': 80, 'rows': 20}),
-    #  }
 
 
 class QuoteReport(GridReport):
@@ -86,6 +80,15 @@ class QuoteReport(GridReport):
 @login_required
 @csrf_protect
 def InfoView(request, action):
+  '''
+  This view is a proxy for the order quoting service.
+  This design mimics the interaction with the order quoting service which also
+  external systems (eg ERP system or web shop frontend) would make.
+
+  TODO  A more robust and secure version of this view would better validate and
+  control the data sent to order quoting service: less logic in the browser HTML
+  and more in this view...
+  '''
   if request.method != 'POST' or not request.is_ajax():
     raise Http404('Only ajax get requests allowed')
   try:
