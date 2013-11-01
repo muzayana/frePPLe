@@ -49,6 +49,7 @@ class ForecastList(GridReport):
     GridFieldNumber('maxlateness', title=_('maximum lateness')),
     GridFieldNumber('minshipment', title=_('minimum shipment')),
     GridFieldBool('discrete', title=_('discrete')),
+    GridFieldText('source', title=_('source')),
     GridFieldLastModified('lastmodified'),
     )
 
@@ -69,6 +70,7 @@ class ForecastDemandList(GridReport):
     GridFieldDate('startdate', title=_('start date')),
     GridFieldDate('enddate', title=_('end date')),
     GridFieldNumber('quantity', title=_('quantity')),
+    GridFieldText('source', title=_('source')),
     GridFieldLastModified('lastmodified'),
     )
 
