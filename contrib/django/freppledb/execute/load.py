@@ -30,8 +30,6 @@ from freppledb.input.models import Resource
 
 import frepple
 
-database = DEFAULT_DB_ALIAS
-
 
 def loadParameter(cursor):
   print('Importing parameters...')
@@ -288,7 +286,7 @@ def loadResources(cursor):
   cursor.execute('''SELECT
     name, description, maximum, maximum_calendar_id, location_id, type, cost,
     maxearly, setup, setupmatrix_id, category, subcategory, owner_id
-    FROM %s order by lvl asc, name'''% connections[database].ops.quote_name('resource'))
+    FROM %s order by lvl asc, name'''% connections[cursor.db.alias].ops.quote_name('resource'))
   for i,j,t,k,l,m,n,o,p,q,r,s,u in cursor.fetchall():
     cnt += 1
     try:
@@ -489,13 +487,14 @@ class DatabaseTask(Thread):
   An auxiliary class that allows us to run a function with its own
   database connection in its own thread.
   '''
-  def __init__(self, *f):
+  def __init__(self, database = DEFAULT_DB_ALIAS, *f):
     super(DatabaseTask, self).__init__()
     self.functions = f
+    self.database = database
 
   def run(self):
     # Create a database connection
-    cursor = connections[database].cursor()
+    cursor = connections[self.database].cursor()
 
     # Run the functions sequentially
     for f in self.functions:
@@ -506,7 +505,7 @@ class DatabaseTask(Thread):
     cursor.close()
 
 
-def loadfrepple():
+def loadfrepple(database = DEFAULT_DB_ALIAS):
   '''
   This function is expected to be run by the python interpreter in the
   frepple application.
@@ -516,11 +515,7 @@ def loadfrepple():
   # When it is set, the django database wrapper collects a list of all sql
   # statements executed and their timings. This consumes plenty of memory
   # and cpu time.
-  global database
   settings.DEBUG = False
-
-  if 'FREPPLE_DATABASE' in os.environ:
-    database = os.environ['FREPPLE_DATABASE']
 
   if True:
     # Create a database connection
@@ -557,27 +552,27 @@ def loadfrepple():
     # It is unclear what the limiting bottleneck is: python or frepple, definately
     # not the database...
     tasks = (
-      DatabaseTask(loadParameter, loadLocations),
-      DatabaseTask(loadCalendars, loadCalendarBuckets),
-      DatabaseTask(loadCustomers),
+      DatabaseTask(loadParameter, loadLocations, database=database),
+      DatabaseTask(loadCalendars, loadCalendarBuckets, database=database),
+      DatabaseTask(loadCustomers, database=database),
       )
     for i in tasks: i.start()
     for i in tasks: i.join()
     tasks = (
-      DatabaseTask(loadOperations,loadSuboperations),
+      DatabaseTask(loadOperations,loadSuboperations, database=database),
       )
     for i in tasks: i.start()
     for i in tasks: i.join()
     loadItems(cursor)
     tasks = (
-      DatabaseTask(loadBuffers,loadFlows),
-      DatabaseTask(loadSetupMatrices, loadResources, loadLoads),
+      DatabaseTask(loadBuffers,loadFlows, database=database),
+      DatabaseTask(loadSetupMatrices, loadResources, loadLoads, database=database),
       )
     for i in tasks: i.start()
     for i in tasks: i.join()
     tasks = (
-      DatabaseTask(loadOperationPlans),
-      DatabaseTask(loadDemand),
+      DatabaseTask(loadOperationPlans, database=database),
+      DatabaseTask(loadDemand, database=database),
       )
     for i in tasks: i.start()
     for i in tasks: i.join()

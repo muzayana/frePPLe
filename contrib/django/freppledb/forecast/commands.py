@@ -225,27 +225,27 @@ def exportForecast(cursor):
   print('Exported forecast in %.2f seconds' % (time() - starttime))
 
 
-# Select database
-try: db = os.environ['FREPPLE_DATABASE'] or DEFAULT_DB_ALIAS
-except: db = DEFAULT_DB_ALIAS
-
-# Use the test database if we are running the test suite
-if 'FREPPLE_TEST' in os.environ:
-  settings.DATABASES[db]['NAME'] = settings.DATABASES[db]['TEST_NAME']
-  if 'TEST_CHARSET' in os.environ:
-    settings.DATABASES[db]['CHARSET'] = settings.DATABASES[db]['TEST_CHARSET']
-  if 'TEST_COLLATION' in os.environ:
-    settings.DATABASES[db]['COLLATION'] = settings.DATABASES[db]['TEST_COLLATION']
-  if 'TEST_USER' in os.environ:
-    settings.DATABASES[db]['USER'] = settings.DATABASES[db]['TEST_USER']
-
 if __name__ == "__main__":
+  # Select database
+  try: db = os.environ['FREPPLE_DATABASE'] or DEFAULT_DB_ALIAS
+  except: db = DEFAULT_DB_ALIAS
+
+  # Use the test database if we are running the test suite
+  if 'FREPPLE_TEST' in os.environ:
+    settings.DATABASES[db]['NAME'] = settings.DATABASES[db]['TEST_NAME']
+    if 'TEST_CHARSET' in os.environ:
+      settings.DATABASES[db]['CHARSET'] = settings.DATABASES[db]['TEST_CHARSET']
+    if 'TEST_COLLATION' in os.environ:
+      settings.DATABASES[db]['COLLATION'] = settings.DATABASES[db]['TEST_COLLATION']
+    if 'TEST_USER' in os.environ:
+      settings.DATABASES[db]['USER'] = settings.DATABASES[db]['TEST_USER']
+
   # Welcome message
-  printWelcome(db)
+  printWelcome(database=db)
   logProgress(1, db)
 
   # Make sure the debug flag is not set!
-  # When it is set, the django database wrapper collects a list of all sql
+  # When it is set, the Django database wrapper collects a list of all sql
   # statements executed and their timings. This consumes plenty of memory
   # and cpu time.
   settings.DEBUG = False
@@ -265,7 +265,7 @@ if __name__ == "__main__":
   print("\nStart loading data from the database at", datetime.now().strftime("%H:%M:%S"))
   frepple.printsize()
   from freppledb.execute.load import loadfrepple
-  loadfrepple()
+  loadfrepple(db)
   if with_forecasting:
     loadForecast(cursor)
     loadForecastdemand(cursor)
@@ -308,7 +308,7 @@ if __name__ == "__main__":
     logProgress(83, db)
 
   print("\nStart plan generation at", datetime.now().strftime("%H:%M:%S"))
-  createPlan()
+  createPlan(db)
   logProgress(94, db)
 
   print("\nStart exporting plan to the database at", datetime.now().strftime("%H:%M:%S"))

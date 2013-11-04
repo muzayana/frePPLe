@@ -96,7 +96,6 @@ def InfoView(request, action):
     #   +: one less database query
     #   -: parameter value change only takes effect upon restart
     url = Parameter.getValue('quoting.service_location', database=request.database, default="localhost:8001")
-    #import urllib  # urllib.urlencode({'action': 'D', 'quantity': 333,})
     conn = httplib.HTTPConnection(url)
     if action == 'info':
       data = json.loads(request.body)

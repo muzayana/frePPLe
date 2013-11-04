@@ -11,6 +11,7 @@ from __future__ import print_function
 import os, thread, sys, inspect
 from datetime import datetime
 import cherrypy
+import httplib
 
 from django.conf import settings
 from django.template.loader import render_to_string
@@ -44,7 +45,21 @@ def error_page(status, message, traceback, version):
     ''' % {'status':status, 'message':message, 'traceback':traceback, 'version':frepple.version}
 
 
-def Server(database=DEFAULT_DB_ALIAS):
+def stopWebService(hard=False, database=DEFAULT_DB_ALIAS):
+  # Connect to the url "/stop/"
+  url = Parameter.getValue('quoting.service_location', database=database, default="localhost:8001")
+  try:
+    conn = httplib.HTTPConnection(url)
+    if hard:
+      conn.request("GET", '/stop/?hard=1')
+    else:
+      conn.request("GET", '/stop/')
+  except Exception:
+    # We assume the service isn't up
+    pass
+
+
+def runWebService(database=DEFAULT_DB_ALIAS):
   # Pick up the address
   url = Parameter.getValue('quoting.service_location', database=database, default="localhost:8001")
   (address, port) = url.split(':')
