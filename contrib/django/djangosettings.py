@@ -141,16 +141,15 @@ CURRENCY=("","$")    # Prefix and suffix for currency strings
 INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
-    'django.contrib.sessions',
     'django.contrib.admin',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'freppledb.quoting',
+    'freppledb.forecast',
     'freppledb.input',
     'freppledb.output',
     'freppledb.execute',
-    'freppledb.common',
-    'freppledb.forecast',
-    'freppledb.quoting'
+    'freppledb.common'
     #'openerp',
 )
 
