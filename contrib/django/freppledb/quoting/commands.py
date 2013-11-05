@@ -1,9 +1,11 @@
 from __future__ import print_function
+
 import os, inspect
 from datetime import datetime
 
 from django.db import connections, DEFAULT_DB_ALIAS
 from django.conf import settings
+from django.core import management
 
 from freppledb.execute.commands import printWelcome, logProgress, createPlan, exportPlan, logMessage
 
@@ -72,10 +74,11 @@ if __name__ == "__main__":
     #  -: During the creation of the plan we have 2 processes both writing to the same log file.
     #  -: Double memory consumption.
     print("\nPrevious order quoting service shutting down at", datetime.now().strftime("%H:%M:%S"))
-    from freppledb.quoting.service import stopWebService, runWebService
-    stopWebService(hard=True, database=db) # Need a hard stop to avoid messing up the log file
+    # Need a hard stop to avoid messing up the log file
+    management.call_command('frepple_stop_web_service', force=True, database=db)
 
     # Start the quoting service
+    from freppledb.quoting.service import runWebService
     print("\nOrder quoting service starting at", datetime.now().strftime("%H:%M:%S"))
     logMessage("Order quoting service active", database=db)
     runWebService(database=db)

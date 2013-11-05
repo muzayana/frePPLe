@@ -11,7 +11,6 @@ from __future__ import print_function
 import os, thread, sys, inspect
 from datetime import datetime
 import cherrypy
-import httplib
 
 from django.conf import settings
 from django.template.loader import render_to_string
@@ -21,7 +20,6 @@ from freppledb.input.models import Demand, Item, Customer, Operation
 from freppledb.common.models import Parameter
 
 import frepple
-
 
 import logging
 logger = logging.getLogger(__name__)
@@ -43,20 +41,6 @@ def error_page(status, message, traceback, version):
     </body>
     </html>
     ''' % {'status':status, 'message':message, 'traceback':traceback, 'version':frepple.version}
-
-
-def stopWebService(hard=False, database=DEFAULT_DB_ALIAS):
-  # Connect to the url "/stop/"
-  url = Parameter.getValue('quoting.service_location', database=database, default="localhost:8001")
-  try:
-    conn = httplib.HTTPConnection(url)
-    if hard:
-      conn.request("GET", '/stop/?hard=1')
-    else:
-      conn.request("GET", '/stop/')
-  except Exception:
-    # We assume the service isn't up
-    pass
 
 
 def runWebService(database=DEFAULT_DB_ALIAS):

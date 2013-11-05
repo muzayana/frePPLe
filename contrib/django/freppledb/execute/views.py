@@ -66,6 +66,12 @@ class TaskReport(GridReport):
     # Synchronize the scenario table with the settings
     Scenario.syncWithSettings()
 
+    # Check if web service is required
+    if 'freppledb.quoting' in settings.INSTALLED_APPS:
+      webservice = request.session.get('webservice',False)=="1" and 1 or -1
+    else:
+      webservice = 0
+
     # Loop over all fixtures of all apps and directories
     fixtures = set()
     folders = list(settings.FIXTURE_DIRS)
@@ -87,6 +93,7 @@ class TaskReport(GridReport):
             'materialconstrained': constraint & 2,
             'leadtimeconstrained': constraint & 1,
             'fenceconstrained': constraint & 8,
+            'webservice': webservice,
             'scenarios': Scenario.objects.all(),
             'fixtures': fixtures
             }
@@ -111,11 +118,15 @@ def LaunchTask(request, action):
         try: constraint += int(value)
         except: pass
       task = Task(name='generate plan', submitted=now, status='Waiting', user=request.user)
-      task.arguments = "--constraint=%s --plantype=%s" % (constraint, request.POST.get('plantype'))
+      if request.POST.get('webservice','0') == u'1':
+        task.arguments = "--constraint=%s --plantype=%s --env=webservice" % (constraint, request.POST.get('plantype'))
+      else:
+        task.arguments = "--constraint=%s --plantype=%s" % (constraint, request.POST.get('plantype'))
       task.save(using=request.database)
       # Update the session object   TODO REPLACE WITH PREFERENCE INFO
       request.session['plantype'] = request.POST.get('plantype')
       request.session['constraint'] = constraint
+      request.session['webservice'] = request.POST.get('webservice','0')
     # B
     elif action == 'generate model':
       task = Task(name='generate model', submitted=now, status='Waiting', user=request.user)
@@ -172,6 +183,10 @@ def LaunchTask(request, action):
         request.POST['start'], request.POST['end'], request.POST['weekstart']
         )
       task.save(using=request.database)
+    # H
+    elif action == 'stop web service':
+      from django.core import management
+      management.call_command('frepple_stop_web_service', force=True, database=request.database)
     else:
       # Task not recognized
       raise Http404('Invalid launching task')
