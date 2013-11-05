@@ -55,10 +55,10 @@ function drawGraphs(jsondata)
             if (j % ticks == 0) x_major.push([j,cols[i]['name']]);
           }
           var data = jsondata['rows'][index][cols[i]['name']];
-          {% if args.0 %}d1.push([j-0.25,data[0]]);
-          d2.push([j+0.25,data[1]]);
-          {% else %}d1.push([j,data[0]]);
-          {% endif %}d3.push([j,data[2]]);
+          {% if args.0 %}d1.push([j-0.25,data[2]]);
+          d2.push([j+0.25,data[3]]);
+          {% else %}d1.push([j,data[2]]);
+          {% endif %}d3.push([j,data[4]]);
           j = j + 1;
        }
     }
