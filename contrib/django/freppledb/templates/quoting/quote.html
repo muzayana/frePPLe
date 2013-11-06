@@ -36,9 +36,9 @@ function getQuote(event)
   data = '<plan xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n<demands>\n'
     + '<demand name="' + $("#id_name").val() + '">\n'
     + '<description>' + $("#id_description").val() + '</description>\n'
-    + '<customer name="' + $("#id_customer option:selected").text() + '"/>\n'
+    + '<customer name="' + $("#id_customer").val() + '"/>\n'
     + '<quantity>' + $("#id_quantity").val() + '</quantity>\n'
-    + '<item name="' + $("#id_item option:selected").text() + '"/>\n'
+    + '<item name="' + $("#id_item").val() + '"/>\n'
     + '<due>' + $("#id_due_0").val() + 'T' + $("#id_due_1").val() + '</due>\n'
     + '<priority>1000000</priority>\n';
   v = $("#id_minshipment").val();
@@ -100,9 +100,9 @@ function inquireQuote(event)
   data = '<plan xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n<demands>\n'
     + '<demand name="' + $("#id_name").val() + '">\n'
     + '<description>' + $("#id_description").val() + '</description>\n'
-    + '<customer name="' + $("#id_customer option:selected").text() + '"/>\n'
+    + '<customer name="' + $("#id_customer").val() + '"/>\n'
     + '<quantity>' + $("#id_quantity").val() + '</quantity>\n'
-    + '<item name="' + $("#id_item option:selected").text() + '"/>\n'
+    + '<item name="' + $("#id_item").val() + '"/>\n'
     + '<due>' + $("#id_due_0").val() + 'T' + $("#id_due_1").val() + '</due>\n'
     + '<priority>1000000</priority>\n';
   v = $("#id_minshipment").val();
@@ -176,7 +176,7 @@ function cancelQuote(event)
       $("#id_quantity").val('1');
       $("#id_due_0").val('');
       $("#id_due_1").val('00:00:00');
-      $("#id_minshipment").val('');
+      $("#id_minshipment").val('1');
       $("#id_maxlateness").val('');
       $('#status').html('');
     },
@@ -279,6 +279,7 @@ $(function() {
       dateFormat: "yy-mm-dd", changeMonth:true,
       changeYear:true, yearRange: "c-1:c+5"
       });
+  $("#id_due_1").val('00:00:00');
   $("#form_quote").button().click(getQuote);
   $("#form_inquiry").button().click(inquireQuote);
   $("#form_cancel").button().click(cancelQuote);
