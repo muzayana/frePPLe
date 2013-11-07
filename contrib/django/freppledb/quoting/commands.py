@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-import os, inspect
+import os, inspect, time
 from datetime import datetime
 
 from django.db import connections, DEFAULT_DB_ALIAS
@@ -76,6 +76,7 @@ if __name__ == "__main__":
     print("\nPrevious order quoting service shutting down at", datetime.now().strftime("%H:%M:%S"))
     # Need a hard stop to avoid messing up the log file
     management.call_command('frepple_stop_web_service', force=True, database=db)
+    time.sleep(2)
 
     # Start the quoting service
     from freppledb.quoting.service import runWebService
