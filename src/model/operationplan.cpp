@@ -283,7 +283,7 @@ DECLARE_EXPORT void OperationPlan::deactivate()
   id = 0;
 
   // Delete from the list of deliveries
-  if (id && dmd) dmd->removeDelivery(this);
+  if (dmd) dmd->removeDelivery(this);
 
   // Delete from the operationplan list
   removeFromOperationplanList();
@@ -503,7 +503,7 @@ DECLARE_EXPORT OperationPlan::~OperationPlan()
   }
 
   // Delete from the list of deliveries
-  if (id && dmd) dmd->removeDelivery(this);
+  if (dmd) dmd->removeDelivery(this);
 
   // Delete from the operationplan list
   removeFromOperationplanList();
