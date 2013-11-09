@@ -96,7 +96,6 @@ class Command(BaseCommand):
     settings.DEBUG = False
 
     transaction.enter_transaction_management(using=self.database)
-    transaction.managed(True, using=self.database)
     try:
       # Logging message
       log(category='IMPORT', theuser=user,
@@ -158,7 +157,6 @@ class Command(BaseCommand):
   #        - 'OpenERP' -> subcategory
   def import_customers(self, cursor):
     transaction.enter_transaction_management(using=self.database)
-    transaction.managed(True, using=self.database)
     try:
       starttime = time()
       if self.verbosity > 0:
@@ -239,7 +237,6 @@ class Command(BaseCommand):
 
   def import_products(self, cursor):
     transaction.enter_transaction_management(using=self.database)
-    transaction.managed(True, using=self.database)
     try:
       starttime = time()
       if self.verbosity > 0:
@@ -313,7 +310,6 @@ class Command(BaseCommand):
   def import_locations(self, cursor):
     global locations
     transaction.enter_transaction_management(using=self.database)
-    transaction.managed(True, using=self.database)
     try:
       starttime = time()
       if self.verbosity > 0:
@@ -407,7 +403,6 @@ class Command(BaseCommand):
   def import_salesorders(self, cursor):
     global warehouses, shops
     transaction.enter_transaction_management(using=self.database)
-    transaction.managed(True, using=self.database)
     try:
       starttime = time()
 
@@ -558,7 +553,6 @@ class Command(BaseCommand):
   #
   def import_workcenters(self, cursor):
     transaction.enter_transaction_management(using=self.database)
-    transaction.managed(True, using=self.database)
     try:
       starttime = time()
       if self.verbosity > 0:
@@ -635,7 +629,6 @@ class Command(BaseCommand):
   #        - 'OpenERP' -> subcategory
   def import_onhand(self, cursor):
     transaction.enter_transaction_management(using=self.database)
-    transaction.managed(True, using=self.database)
     try:
       starttime = time()
       if self.verbosity > 0:
@@ -744,7 +737,6 @@ class Command(BaseCommand):
           yield (i[0], i[4],)
 
     transaction.enter_transaction_management(using=self.database)
-    transaction.managed(True, using=self.database)
     try:
       starttime = time()
       if self.verbosity > 0:
@@ -856,7 +848,6 @@ class Command(BaseCommand):
   #
   def import_boms(self, cursor):
     transaction.enter_transaction_management(using=self.database)
-    transaction.managed(True, using=self.database)
     try:
       starttime = time()
       if self.verbosity > 0:
@@ -1116,7 +1107,6 @@ class Command(BaseCommand):
   #   - adapter is NOT implemented in delta mode!
   def import_setupmatrices(self, cursor):
     transaction.enter_transaction_management(using=self.database)
-    transaction.managed(True, using=self.database)
     try:
       starttime = time()
       if self.verbosity > 0:
@@ -1184,7 +1174,6 @@ class Command(BaseCommand):
   #        - 'OpenERP' -> subcategory
   def import_policies(self, cursor):
     transaction.enter_transaction_management(using=self.database)
-    transaction.managed(True, using=self.database)
     try:
       starttime = time()
       if self.verbosity > 0:

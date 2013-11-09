@@ -77,6 +77,9 @@ DATABASES = {
 LANGUAGE_CODE = 'en'
 # ================= END UPDATED BLOCK BY WINDOWS INSTALLER =================
 
+# Keep each database connection alive for 10 minutes.
+CONN_MAX_AGE = 600
+
 # A list of strings representing the host/domain names the application can serve.
 # This is a security measure to prevent an attacker from poisoning caches and
 # password reset emails with links to malicious hosts by submitting requests
@@ -138,6 +141,9 @@ MIDDLEWARE_CLASSES = (
 
 CURRENCY=("","$")    # Prefix and suffix for currency strings
 
+# Installed applications.
+# The order is important: urls, templates and menus of the earlier entries
+# take precedence over and override later entries.
 INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',

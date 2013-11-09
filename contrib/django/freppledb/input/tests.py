@@ -10,6 +10,7 @@
 from __future__ import print_function
 import tempfile
 
+from django.conf import settings
 from django.test import TestCase
 
 from freppledb.input.models import Location
@@ -19,6 +20,8 @@ class DataLoadTest(TestCase):
 
   def setUp(self):
     # Login
+    if not 'django.contrib.sessions' in settings.INSTALLED_APPS:
+      settings.INSTALLED_APPS += ('django.contrib.sessions',)
     self.client.login(username='frepple', password='frepple')
 
   def test_input_customer(self):
