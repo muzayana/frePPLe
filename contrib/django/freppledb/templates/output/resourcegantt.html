@@ -57,9 +57,10 @@ function ganttcell(cellvalue, options, rowdata)
      else
        result.push( '<rect x="' + data["x"] + '" y="' + (-row*gantt.rowsize) + '" width="' + Math.max(data["w"],1) + '" height="' + (gantt.rowsize-3) + '" class="opplan"><title>Operation: ' + data["operation"] + (data["description"] ? ('<br/>Description: ' + data["description"]) : '') + '<br/>Quantity: ' + data["quantity"] + '<br/>Start Date: ' + data["startdate"] + '<br/>End Date: ' + data["enddate"] + '</title></rect>');
   }
+  var scale = $("#jqgh_grid_operationplans").width() / 10000;
   return '<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="100%" height="' + (gantt.rowsize*layer.length+3) + 'px">'
     + '<title>' + escape(rowdata["name"]) + '</title>'
-    + '<g class="transformer" transform="scale(0.1,1) translate(0,' + ((layer.length-1)*gantt.rowsize+3) +')" title="' + layer.length +'">'
+    + '<g class="transformer" transform="scale(' + scale + ',1) translate(0,' + ((layer.length-1)*gantt.rowsize+3) +')" title="' + layer.length +'">'
     + result.join('\n')
     + '</g></svg>';
 };
