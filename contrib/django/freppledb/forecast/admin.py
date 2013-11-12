@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2012 by Johan De Taeye, frePPLe bvba
+# Copyright (C) 2012-2013 by Johan De Taeye, frePPLe bvba
 #
 # All information contained herein is, and remains the property of frePPLe.
 # You are allowed to use and modify the source code, as long as the software is used
@@ -19,13 +19,14 @@ class ForecastDemand_admin(MultiDBModelAdmin):
   model = ForecastDemand
   raw_id_fields = ('forecast',)
   save_on_top = True
+  exclude = ('source',)
 data_site.register(ForecastDemand,ForecastDemand_admin)
 
 
 class ForecastDemand_inline(MultiDBTabularInline):
   model = ForecastDemand
   extra = 5
-
+  exclude = ('source',)
 
 class Forecast_admin(MultiDBModelAdmin):
   model = Forecast
