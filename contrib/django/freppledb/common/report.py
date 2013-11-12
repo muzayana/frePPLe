@@ -614,7 +614,7 @@ class GridReport(View):
       else:
         cross_idx = ','.join([str(i) for i in range(len(reportclass.crosses)) if not reportclass.crosses[i][1].get('hidden',False)])
         cross_list = reportclass._render_cross()
-      is_popup = 'pop' in request.GET
+      is_popup = '_popup' in request.GET
       context = {
         'reportclass': reportclass,
         'title': (args and args[0] and _('%(title)s for %(entity)s') % {'title': force_unicode(reportclass.title), 'entity':force_unicode(args[0])}) or reportclass.title,
