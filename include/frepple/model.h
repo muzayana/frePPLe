@@ -4427,10 +4427,7 @@ class Demand
 
     /** Destructor. Deleting the demand will also delete all delivery operation
       * plans (including locked ones). */
-    virtual ~Demand()
-    {
-      deleteOperationPlans(true);
-    }
+    virtual DECLARE_EXPORT ~Demand();
 
     /** Returns the quantity of the demand. */
     double getQuantity() const {return qty;}
