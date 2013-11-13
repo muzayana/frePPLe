@@ -18,7 +18,7 @@ from django.forms.util import ErrorList
 from django.utils.translation import ugettext_lazy as _
 
 from freppledb.common.models import User, Parameter, Comment, Bucket, BucketDetail
-from freppledb.common import MultiDBModelAdmin, MultiDBTabularInline
+from freppledb.common.adminforms import MultiDBModelAdmin, MultiDBTabularInline
 from freppledb.admin import admin_site
 
 
@@ -65,6 +65,7 @@ class Parameter_admin(MultiDBModelAdmin):
   model = Parameter
   save_on_top = True
   form = ParameterForm
+  exclude = ('source',)
 admin_site.register(Parameter, Parameter_admin)
 
 
@@ -78,10 +79,12 @@ class BucketDetail_inline(MultiDBTabularInline):
   model = BucketDetail
   max_num = 10
   extra = 3
+  exclude = ('source',)
 
 class BucketDetail_admin(MultiDBModelAdmin):
   model = BucketDetail
   save_on_top = True
+  exclude = ('source',)
 admin_site.register(BucketDetail, BucketDetail_admin)
 
 
@@ -89,4 +92,5 @@ class Bucket_admin(MultiDBModelAdmin):
   model = Bucket
   save_on_top = True
   inlines = [ BucketDetail_inline, ]
+  exclude = ('source',)
 admin_site.register(Bucket, Bucket_admin)

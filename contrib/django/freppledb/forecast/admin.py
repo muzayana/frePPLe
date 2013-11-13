@@ -12,7 +12,7 @@ from django.utils.translation import ugettext_lazy as _
 
 from freppledb.forecast.models import Forecast, ForecastDemand
 from freppledb.admin import data_site
-from freppledb.common import MultiDBModelAdmin, MultiDBTabularInline
+from freppledb.common.adminforms import MultiDBModelAdmin, MultiDBTabularInline
 
 
 class ForecastDemand_admin(MultiDBModelAdmin):
