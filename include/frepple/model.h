@@ -5715,15 +5715,6 @@ class PeggingIterator : public Object
       */
     bool getPegged() const {return states.top().pegged;}
 
-    /** Update the portion of the current flowplan that is fed/supplied by
-      * the original flowplan. */
-    void setFactor(double f)
-    {
-      if (f<0 || f>1.0)
-        throw LogicException("Pegging factor must be between 0.0 and 1.0");
-      states.top().factor = f;
-    }
-
     /** Move the iterator foward to the next downstream flowplan. */
     DECLARE_EXPORT PeggingIterator& operator++();
 
