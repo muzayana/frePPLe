@@ -70,12 +70,39 @@ DECLARE_EXPORT Demand::~Demand()
 }
 
 
+void pushConsumingBuffers(OperationPlan* opplan, vector<const Buffer*> &buffersToScan)
+{
+  for (OperationPlan::FlowPlanIterator i = opplan->beginFlowPlans();
+      i != opplan->endFlowPlans(); ++i)
+  {
+    // Skip producing flowplans
+    // Todo: Scan procurement buffers also.
+    if (i->getQuantity() >= 0 || i->getBuffer()->getType() != *BufferDefault::metadata)
+      continue;
+
+    // Check if the buffer is already found on the stack
+    bool found = false;
+    for (int j = buffersToScan.size()-1; j>=0 && !found; --j)
+      if (buffersToScan[j] == i->getBuffer())
+        found = true;
+
+    // Add the buffer to the stack
+    if (!found) buffersToScan.push_back(i->getBuffer());
+  }
+
+  // Recursive call for all suboperationplans
+  for (OperationPlan::iterator subopplan(opplan); subopplan != opplan->end(); ++subopplan)
+    pushConsumingBuffers(&*subopplan, buffersToScan);
+}
+
+
 DECLARE_EXPORT void Demand::deleteOperationPlans
 (bool deleteLocked, CommandManager* cmds, bool deleteUpstream)
 {
   // Delete all delivery operationplans.
   // Note that an extra loop is used to assure that our iterator doesn't get
   // invalidated during the deletion.
+  vector<const Buffer*> buffersToScan;
   while (true)
   {
     // Find a candidate to delete
@@ -87,57 +114,84 @@ DECLARE_EXPORT void Demand::deleteOperationPlans
         break;
       }
     if (!candidate) break;
-    if (!deleteUpstream)
-    {
-      // Delete only the delivery, immediately or through a delete command
-      if (cmds)
-        cmds->add(new CommandDeleteOperationPlan(candidate));
-      else
-        delete candidate;
-    }
+
+    // Push the buffer on the stack in which the deletion creates excess inventory
+    if (deleteUpstream)
+      pushConsumingBuffers(candidate, buffersToScan);
+
+    // Delete only the delivery, immediately or through a delete command
+    if (cmds)
+      cmds->add(new CommandDeleteOperationPlan(candidate));
     else
-    {
-      // Walk upstream and find pegged supply
-      // We don't reduce it yet, because that would disturb the pegging results
-      PeggingIterator p(candidate, false);
-      /*
-      logger << "****\t" << candidate->getOperation()->getName()
-          << "\t" << candidate->getDates() << "\t" << candidate->getQuantity()
-          << "\t" << candidate->getQuantity() << endl;
-      */
-      if (cmds)
-        cmds->add(new CommandDeleteOperationPlan(candidate));
-      else
-        delete candidate;
-      do
-      {
-        OperationPlan *opplan = p.getProducingOperationplan();
-        double newsize;
-        if (opplan)
-        {
-          newsize = opplan->setQuantity(opplan->getQuantity()*(1.0-p.getFactor()), false, false, false);
-          /*
-          logger << "****\t" <<  opplan->getOperation()->getName()
-            << "\t" << opplan->getDates() << "\t" << opplan->getQuantity()
-            << "\t" << p.getQuantityBuffer() << "\t" << newsize << "\t" << ( (opplan->getQuantity()-newsize)/opplan->getQuantity() ) << endl;
-          */
-          // Note: update the factor before incrementing the iterator, to propagate the change
-          p.setFactor( (opplan->getQuantity()-newsize)/opplan->getQuantity() );
-        }
-        p--;
-        if (opplan && newsize != opplan->getQuantity())
-        {
-          // Note: update the operationplan size after incrementing the iterator, to avoid disrupting existing pegging
-          if (cmds)
-            cmds->add(new CommandMoveOperationPlan(opplan, Date::infinitePast, opplan->getDates().getEnd(), newsize));
-          else
-            opplan->setQuantity(newsize);
-        }
-      }
-      while (p);
-    }
+      delete candidate;
   }
 
+  // Delete upstream operation plans as well
+  if (deleteUpstream)
+  {
+    // Pick a next buffer from the stack
+    while(!buffersToScan.empty())
+    {
+      const Buffer* curbuf = buffersToScan.back();
+      buffersToScan.pop_back();
+
+      Buffer::flowplanlist::const_iterator fiter = curbuf->getFlowPlans().rbegin();
+      Buffer::flowplanlist::const_iterator fend = curbuf->getFlowPlans().end();
+      if (fiter == fend)
+        continue; // There isn't a single flowplan in the buffer
+      double excess = fiter->getOnhand() - fiter->getMin();
+
+      // Find the earliest occurence of the excess
+      fiter = curbuf->getFlowPlans().begin();
+      while (excess > ROUNDING_ERROR && fiter != fend)
+      {
+        if (fiter->getQuantity() <= 0)
+        {
+          // Not a producer
+          ++fiter;
+          continue;
+        }
+        FlowPlan* fp = const_cast<FlowPlan*>(dynamic_cast<const FlowPlan*>(&*fiter));
+        double cur_excess = curbuf->getFlowPlans().getExcess(&*fiter);
+        if (!fp || fp->getOperationPlan()->getLocked() || cur_excess < ROUNDING_ERROR)
+        {
+          // No excess producer, or it's locked
+          ++fiter;
+          continue;
+        }
+        assert(fp);
+        ++fiter;  // Increment the iterator here, because it can get invalidated later on
+        if (cur_excess >= fp->getQuantity() - ROUNDING_ERROR)
+        {
+          // The complete operationplan is excess.
+          // Find upstream buffers
+          pushConsumingBuffers(fp->getOperationPlan(), buffersToScan);
+          // Reduce the excess
+          excess -= fp->getQuantity();
+          // Delete operationplan
+          if (cmds)
+            cmds->add(new CommandDeleteOperationPlan(fp->getOperationPlan()));
+          else
+            delete fp->getOperationPlan();
+        }
+        else
+        {
+          // Reduce the operationplan
+          double newsize = fp->setQuantity(fp->getQuantity() - cur_excess, false, false);
+          if (newsize == fp->getQuantity())
+            // No resizing is feasible
+            continue;
+          // Reduce the excess
+          excess -= fp->getQuantity() - newsize;
+          // Resize operationplan
+          if (cmds)
+            cmds->add(new CommandMoveOperationPlan(fp->getOperationPlan(), Date::infinitePast, fp->getOperationPlan()->getDates().getEnd(), newsize));
+          else
+            fp->getOperationPlan()->setQuantity(newsize);
+        }
+      }
+    }
+  }
 
   // Mark the demand as being changed, so the problems can be redetected
   setChanged();
