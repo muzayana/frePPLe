@@ -322,6 +322,30 @@ template <class type> class TimeLine
       return m ? m : NULL;
     }
 
+    /** Return the lowest excess inventory level between this event
+      * and the end of the horizon.<br>
+      * If the boolean argument is true, excess is defined as the difference
+      * between the onhand level and the minimum stock level.<br>
+      * If the boolean argument is falsee, excess is defined as the onhand level.
+      */
+    double getExcess(const Event* curevent, bool consider_min_stock = true) const
+    {
+      double excess = DBL_MAX;
+      double cur_min = consider_min_stock ? curevent->getMin(false) : 0.0;
+      double cur_excess = 0.0;
+      for (const_iterator cur(curevent); cur != end(); ++cur)
+      {
+        if (consider_min_stock && cur->getType() == 3)
+          // New minimum value
+          cur_min = cur->getMin();
+        cur_excess = cur->getOnhand() - cur_min;
+        if (cur_excess < excess)
+          // New minimum excess value
+          excess = cur_excess;
+      }
+      return excess;
+    }
+
     /** This function is used to trace the consistency of the data structure. */
     bool check() const;
 
