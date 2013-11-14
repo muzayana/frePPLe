@@ -140,6 +140,7 @@ DECLARE_EXPORT(int) FreppleService(short int action)
     case 2: return Service::run();
   }
   logger << "Invalid argument for method FreppleService" << endl;
+  return EXIT_FAILURE;
 }
 #endif
 
