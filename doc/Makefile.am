@@ -2,9 +2,9 @@
 FILES_COMMON = generate.py frepple.doxyfile frepple.1 frepplectl.1 apiheader.html apifooter.html apistyles.css search.html index.html
 
 if DOC
-EXTRA_DIST = output ${FILES_COMMON}
+EXTRA_DIST = output modules ${FILES_COMMON}
 else
-EXTRA_DIST = ${FILES_COMMON}
+EXTRA_DIST = modules ${FILES_COMMON}
 endif
 
 all-local: output
