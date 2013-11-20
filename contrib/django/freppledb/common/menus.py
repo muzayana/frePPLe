@@ -22,9 +22,10 @@ logger = logging.getLogger(__name__)
 
 class MenuItem:
 
-  def __init__(self, name, model=None, report=None, url=None, label=None, index=None, prefix=True, window=False):
+  def __init__(self, name, model=None, report=None, url=None, javascript=None, label=None, index=None, prefix=True, window=False):
     self.name = name
     self.url = url
+    self.javascript = javascript
     self.report = report
     self.model = model
     self.label = None
@@ -100,7 +101,7 @@ class Menu:
     # No action required when the group isn't found
 
 
-  def addItem(self, group, name, admin=None, report=None, url=None, label=None, index=None, prefix=True, window=False):
+  def addItem(self, group, name, admin=None, report=None, url=None, javascript=None, label=None, index=None, prefix=True, window=False):
     for i in range(len(self._groups)):
       if self._groups[i][0] == group:
         # Found the group
@@ -110,6 +111,7 @@ class Menu:
             it = self._groups[i][3][j]
             if index: it['index'] = index
             if url: it['url'] = url
+            if javascript: it['javascript'] = javascript
             if report: it['report'] = report
             if label: it['label'] = label
             it['prefix'] = prefix
@@ -127,7 +129,10 @@ class Menu:
                 ) )
         else:
           # Add a single item
-          self._groups[i][3].append( MenuItem(name, report=report, url=url, label=label, index=index, prefix=prefix, window=window) )
+          self._groups[i][3].append( MenuItem(
+               name, report=report, url=url, javascript=javascript,
+               label=label, index=index, prefix=prefix, window=window
+               ) )
         return
     # Couldn't locate the group
     raise Exception("Menu group %s not found" % group)
