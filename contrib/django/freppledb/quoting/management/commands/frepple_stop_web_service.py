@@ -7,11 +7,8 @@
 # You are not allowed to distribute the software, either in the form of
 # source code or in the form of compiled binaries.
 #
-# file : $URL: file:///C:/Users/Johan/Dropbox/SVNrepository/frepple/addon/contrib/django/freppledb_extra/management/commands/databasebackup.py $
-# revision : $LastChangedRevision: 493 $  $LastChangedBy: Johan $
-# date : $LastChangedDate: 2013-05-01 17:50:02 +0200 (Wed, 01 May 2013) $
 
-import time, httplib
+import httplib
 from optparse import make_option
 
 from django.core.management.base import BaseCommand, CommandError

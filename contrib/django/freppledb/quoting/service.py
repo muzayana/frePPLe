@@ -642,7 +642,7 @@ class Interface:
       logger.info("Reloading data from the database")
       frepple.erase(True)
       from freppledb.execute.load import loadfrepple
-      loadfrepple() # TODO self.database)
+      loadfrepple(self.database)
       frepple.printsize()
     raise cherrypy.HTTPRedirect('/')
 
@@ -697,7 +697,6 @@ class Interface:
       raise cherrypy.HTTPError(404,"Not supported")
     if not xmldata:
       raise cherrypy.HTTPError(404,"No data")
-
     with self.lock:
       # Read all demands
       callback = collectdemands()
@@ -711,11 +710,6 @@ class Interface:
       if not callback.demands:
         raise cherrypy.HTTPError(404,"No data")
 
-      # Find existing opplans
-      for i in frepple.operationplans():
-        #if i.motive and i.motive.name in callback.demands:
-        print("before", i.operation, i.start, i.end, i.quantity)
-
       # Process the demands
       res = []
       for i in self.top: res.append(i)
@@ -725,11 +719,12 @@ class Interface:
           self.solver.solve(dm)
           if keepreservation:
             self.solver.commit()
+            res.append(dm.toXML('P'))
           else:
+            res.append(dm.toXML('P')) # TODO UNCOMMITTED OPPLANS DON'T SHOW AS DELIVERIES. PROBLEMS AREN'T SHOWN EITHER.
             self.solver.rollback()
         except Exception as e:
           logger.error("When planning %s: %s" % (name, e))
-        res.append(dm.toXML('P'))
 
         item_db = Item.objects.using(self.database).get(pk = dm.item.name)
         if dm.customer:
@@ -759,10 +754,6 @@ class Interface:
       res.append('</demands>\n')
       for i in self.bottom: res.append(i)
 
-      # Find existing opplans
-      for i in frepple.operationplans():
-        #if i.motive and i.motive.name in callback.demands:
-        print("after", i.operation, i.start, i.end, i.quantity)
       return "".join(res)
 
 
