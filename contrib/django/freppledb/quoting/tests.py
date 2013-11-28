@@ -103,6 +103,7 @@ class baseTest(TestCase):
 
 
   def parseQuoteResponse(self, data):
+    #print ('XML reply', data)
     result = []
     for i in minidom.parseString(data).getElementsByTagName("operationplan"):
       end = i.getElementsByTagName("end")[0]
@@ -236,45 +237,58 @@ class quoteTest(baseTest):
   def testQuote(self):
     # Send a first inquiry
     conn = httplib.HTTPConnection(self.url)
-    (msg, headers) = self.buildQuoteXML(
+    (msg1, headers1) = self.buildQuoteXML(
         name = "test", customer = "Customer near factory 1",
-        quantity = 1, item = "product",
+        quantity = 100, item = "product",
         due = '2013-01-01T00:00:00', minshipment = 1
         )
-    conn.request("POST", "/inquiry/", msg, headers)
+    conn.request("POST", "/inquiry/", msg1, headers1)
     resp = conn.getresponse()
     self.assertEqual(resp.status, httplib.OK)
     firstInquiry = self.parseQuoteResponse(resp.read())
 
     # Repeat the first inquiry
-    conn.request("POST", "/inquiry/", msg, headers)
+    conn.request("POST", "/inquiry/", msg1, headers1)
     resp = conn.getresponse()
     self.assertEqual(resp.status, httplib.OK)
     firstInquiryDouble = self.parseQuoteResponse(resp.read())
-    self.assertEqual(firstInquiry, firstInquiryDouble, "Repeated quote should return the same result")
+    self.assertEqual(firstInquiry, firstInquiryDouble, "Resending a inquiry should return the same result")
 
     # Send a first quote
-    conn.request("POST", "/quote/", msg, headers)
+    conn.request("POST", "/quote/", msg1, headers1)
     resp = conn.getresponse()
     self.assertEqual(resp.status, httplib.OK)
     firstQuote = self.parseQuoteResponse(resp.read())
-    self.assertEqual(firstInquiry, firstQuote, "Inquiry and quote give different results")
+    self.assertEqual(firstInquiry, firstQuote, "Inquiry and quote should return the same result")
 
     # Send a second inquiry
-    (msg, headers) = self.buildQuoteXML(
+    (msg2, headers2) = self.buildQuoteXML(
         name = "test2", customer = "Customer near factory 1",
-        quantity = 1, item = "product",
+        quantity = 100, item = "product",
         due = '2013-01-01T00:00:00', minshipment = 1
         )
-    conn.request("POST", "/inquiry/", msg, headers)
+    conn.request("POST", "/inquiry/", msg2, headers2)
     resp = conn.getresponse()
     self.assertEqual(resp.status, httplib.OK)
     secondInquiry = self.parseQuoteResponse(resp.read())
 
     # Send a second quote
-    conn.request("POST", "/quote/", msg, headers)
+    conn.request("POST", "/quote/", msg2, headers2)
     resp = conn.getresponse()
     self.assertEqual(resp.status, httplib.OK)
     secondQuote = self.parseQuoteResponse(resp.read())
-    self.assertEqual(secondInquiry, secondQuote, "Inquiry and quote give different results")
+    self.assertEqual(secondInquiry, secondQuote, "Inquiry and quote should return the same result")
     self.assertNotEqual(firstQuote, secondQuote, "Expected a different quote")
+
+    # Cancel the second quote
+    conn.request("POST", '/demand/test2/?action=R&persist=1', "", {"content-length": 0})
+    resp = conn.getresponse()
+    self.assertEqual(resp.status, httplib.OK)
+    resp.read()
+
+    # Resend the second quote again
+    conn.request("POST", "/quote/", msg2, headers2)
+    resp = conn.getresponse()
+    self.assertEqual(resp.status, httplib.OK)
+    secondQuoteRetry = self.parseQuoteResponse(resp.read())
+    self.assertEqual(secondQuoteRetry, secondQuote, "Expecting the second quote to be identical to the first")

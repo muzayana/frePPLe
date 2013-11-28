@@ -407,38 +407,42 @@ class Interface:
       # Create or update a demand
       if name == None: raise cherrypy.HTTPError(404,"Entity not found")
       try:
-        loc = frepple.demand(name=name, action=cherrypy.request.params.get('action','AC'))
+        # Update the demand in memory.
+        # In case of a delete, the deletion also cleans up all upstream supply.
+        frepple.saveplan("output.before.xml")
+        dm = frepple.demand(name=name, action=cherrypy.request.params.get('action','AC'))
+        frepple.saveplan("output.after.xml")
       except:
         # Demand not found
         raise cherrypy.HTTPError(404,"Entity not found")
       ok = True
-      if loc:
+      if dm:
         for i in cherrypy.request.params:
           if i in ['action','persist','status']: continue
           try:
-            setattr(loc, i, cherrypy.request.params[i])
+            setattr(dm, i, cherrypy.request.params[i])
           except Exception as e:
             yield "Error: %s\n" % e
             ok = False
       if ok and cherrypy.request.params.get('persist','0') == '1':
         # Save the changes to the database as well
-        if loc:
-          dm = Demand.objects.using(self.database).get(name=name)
+        if dm:
+          dmdb = Demand.objects.using(self.database).get(name=name)
           if 'status' in cherrypy.request.params:
-            dm.status = cherrypy.request.params['status']
-          dm.due = loc.due
-          dm.quantity = loc.quantity
-          dm.priority = loc.priority
-          dm.item = Item.objects.using(self.database).get(name=loc.item.name)
-          if loc.operation:
-            dm.operation = Operation.objects.using(self.database).get(name=loc.operation.name)
-          if loc.customer:
-            dm.customer = Customer.objects.using(self.database).get(name=loc.customer.name)
-          dm.minshipment = loc.minshipment
-          dm.maxlateness = loc.maxlateness
-          dm.category = loc.category
-          dm.subcategory = loc.subcategory
-          dm.save(using=self.database)
+            dmdb.status = cherrypy.request.params['status']
+          dmdb.due = dm.due
+          dmdb.quantity = dm.quantity
+          dmdb.priority = dm.priority
+          dmdb.item = Item.objects.using(self.database).get(name=dm.item.name)
+          if dm.operation:
+            dmdb.operation = Operation.objects.using(self.database).get(name=dm.operation.name)
+          if dm.customer:
+            dmdb.customer = Customer.objects.using(self.database).get(name=dm.customer.name)
+          dmdb.minshipment = dm.minshipment
+          dmdb.maxlateness = dm.maxlateness
+          dmdb.category = dm.category
+          dmdb.subcategory = dm.subcategory
+          dmdb.save(using=self.database)
         else:
           Demand.objects.using(self.database).get(name=name).delete()
       if ok: yield "OK\n"
@@ -721,7 +725,7 @@ class Interface:
             self.solver.commit()
             res.append(dm.toXML('P'))
           else:
-            res.append(dm.toXML('P')) # TODO UNCOMMITTED OPPLANS DON'T SHOW AS DELIVERIES. PROBLEMS AREN'T SHOWN EITHER.
+            res.append(dm.toXML('P'))
             self.solver.rollback()
         except Exception as e:
           logger.error("When planning %s: %s" % (name, e))
