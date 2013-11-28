@@ -550,11 +550,11 @@ class Demand(AuditModel,HierarchyModel):
 
   # Status
   demandstatus = (
-    ('inquiry',_('inquiry')),
-    ('quote',_('quote')),
-    ('open',_('open')),
-    ('closed',_('closed')),
-    ('canceled',_('canceled')),
+    ('inquiry',_('Inquiry')),
+    ('quote',_('Quote')),
+    ('open',_('Open')),
+    ('closed',_('Closed')),
+    ('canceled',_('Canceled')),
     )
 
   # Database fields
