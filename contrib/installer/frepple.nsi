@@ -201,9 +201,12 @@ Section "Application" SecAppl
   File "..\bin\init.xml"
 
   ; Copy the license file the user specified
-  File "..\bin\license.xml"
-  StrCmp $LicenseFile "" +3 0
-    Rename license.xml license_community_edition.xml
+  ; WATCH OUT!!!
+  ; The next couple of lines absolutely need to be different between the
+  ; Community and Enterprise edition. Otherwise we distribute a development
+  ; key with our installer.
+  File "..\bin\license_community_edition.xml"
+  StrCmp $LicenseFile "" +2 0
     CopyFiles $LicenseFile "$INSTDIR\bin"
 
   ; Copy the django and python redistributables created by py2exe
