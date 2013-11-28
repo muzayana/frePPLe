@@ -70,7 +70,7 @@ function getQuote(event)
       $(xmldata).find('demands > demand > operationplans > operationplan').each(function() {
         status += '&nbsp;&nbsp;' + $(this).find('quantity').text() + '&nbsp;&nbsp;' + $(this).find('end').text() + '<br/>';
         })
-      status += '<h1>{% trans "Problems" %}</h1>';
+      status += '<h1>{% trans "problems"|capfirst %}</h1>';
       $(xmldata).find('demands > demand > problems > problem').each(function() {
         status += '&nbsp;&nbsp;' + $(this).find('description').text() + '<br/>';
         })
@@ -135,7 +135,7 @@ function inquireQuote(event)
       $(xmldata).find('demands > demand > operationplans > operationplan').each(function() {
         status += '&nbsp;&nbsp;' + $(this).find('quantity').text() + '&nbsp;&nbsp;' + $(this).find('end').text() + '<br/>';
         })
-      status += '<h1>{% trans "Problems" %}</h1>';
+      status += '<h1>{% trans "problems"|capfirst %}</h1>';
       $(xmldata).find('demands > demand > problems > problem').each(function() {
         status += '&nbsp;&nbsp;' + $(this).find('description').text() + '<br/>';
         })
@@ -250,7 +250,7 @@ function displayInfo(rowid) {
       $(xmldata).find('demands > demand > operationplans > operationplan').each(function() {
         status += '&nbsp;&nbsp;' + $(this).find('quantity').text() + '&nbsp;&nbsp;' + $(this).find('end').text() + '<br/>';
         })
-      status += '<h1>{% trans "Problems" %}</h1>';
+      status += '<h1>{% trans "problems"|capfirst %}</h1>';
       $(xmldata).find('demands > demand > problems > problem').each(function() {
         status += '&nbsp;&nbsp;' + $(this).find('description').text() + '<br/>';
         })
@@ -318,6 +318,6 @@ $(function() {
 </form>
 </div>
 <div id="status" style="float:left"><h1>{% trans "Deliveries" %}</h1><br/>
-<h1>{% trans "Problems" %}</h1><br/>
+<h1>{% trans "problems"|capfirst %}</h1><br/>
 <h1>{% trans "Why short or late?" %}</h1></div>
 {% endblock %}

@@ -59,7 +59,7 @@ class ForecastDemandList(GridReport):
   A list report to show forecastdemands.
   '''
   template = 'forecast/forecastdemandlist.html'
-  title = _("Forecast demand List")
+  title = _("Forecasted Demand List")
   basequeryset = ForecastDemand.objects.all()
   model = ForecastDemand
   frozenColumns = 1

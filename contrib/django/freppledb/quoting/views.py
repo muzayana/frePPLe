@@ -44,7 +44,7 @@ class QuoteForm(forms.ModelForm):
 
 class QuoteReport(GridReport):
   template = 'quoting/quote.html'
-  title = _('Order quotes')
+  title = _('Quotes')
   basequeryset = Demand.objects.all().filter(status='quote')
   permissions = (('view_quote_report','Can view quote report'),)
   model = Demand
