@@ -232,9 +232,9 @@ class apiTest(baseTest):
     self.assertTrue(resp.read())
 
 
-class quoteTest(baseTest):
+class quoteAndInquiry(baseTest):
 
-  def testQuote(self):
+  def testQuoteAndInquiry(self):
     # Send a first inquiry
     conn = httplib.HTTPConnection(self.url)
     (msg1, headers1) = self.buildQuoteXML(
@@ -280,15 +280,31 @@ class quoteTest(baseTest):
     self.assertEqual(secondInquiry, secondQuote, "Inquiry and quote should return the same result")
     self.assertNotEqual(firstQuote, secondQuote, "Expected a different quote")
 
-    # Cancel the second quote
-    conn.request("POST", '/demand/test2/?action=R&persist=1', "", {"content-length": 0})
+
+class requoteTest(baseTest):
+
+  def testRequote(self):
+    # Send a quote
+    conn = httplib.HTTPConnection(self.url)
+    (msg, headers) = self.buildQuoteXML(
+        name = "test", customer = "Customer near factory 1",
+        quantity = 100, item = "product",
+        due = '2013-01-01T00:00:00', minshipment = 1
+        )
+    conn.request("POST", "/quote/", msg, headers)
+    resp = conn.getresponse()
+    self.assertEqual(resp.status, httplib.OK)
+    firstQuote = self.parseQuoteResponse(resp.read())
+
+    # Cancel the quote
+    conn.request("POST", '/demand/test/?action=R&persist=1', "", {"content-length": 0})
     resp = conn.getresponse()
     self.assertEqual(resp.status, httplib.OK)
     resp.read()
 
-    # Resend the second quote again
-    conn.request("POST", "/quote/", msg2, headers2)
+    # Resend the quote
+    conn.request("POST", "/quote/", msg, headers)
     resp = conn.getresponse()
     self.assertEqual(resp.status, httplib.OK)
-    secondQuoteRetry = self.parseQuoteResponse(resp.read())
-    self.assertEqual(secondQuoteRetry, secondQuote, "Expecting the second quote to be identical to the first")
+    secondQuote = self.parseQuoteResponse(resp.read())
+    self.assertEqual(firstQuote, secondQuote, "Expecting the repeated quote to be identical to the original")

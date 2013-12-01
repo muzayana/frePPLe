@@ -17,7 +17,7 @@
 
 from django.test import TestCase
 
-from freppledb.common.models import User, UserPreference
+from freppledb.common.models import User
 from django.conf import settings
 
 class DataLoadTest(TestCase):
@@ -30,7 +30,7 @@ class DataLoadTest(TestCase):
 
   def test_common_parameter(self):
     response = self.client.get('/admin/common/parameter/?format=json')
-    self.assertContains(response, '"records":3,')
+    self.assertContains(response, '"records":')
 
 
 class UserPreferenceTest(TestCase):
