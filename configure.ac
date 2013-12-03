@@ -270,7 +270,7 @@ AM_PATH_PYTHON([2.6], [],
 [AC_MSG_ERROR([
   This package requires Python 2.6 or higher.
   Preferred versions are 2.6 and 2.7.
-  Support for Python 3.0 and higher is experimental. 
+  Support for Python 3.0 and higher is experimental.
 ])])
 LIBS="-L/usr/lib/python$PYTHON_VERSION/config $LIBS"
 CPPFLAGS="-I/usr/include/python$PYTHON_VERSION $CPPFLAGS"

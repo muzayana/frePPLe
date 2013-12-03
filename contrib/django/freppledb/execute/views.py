@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2007-2012 by Johan De Taeye, frePPLe bvba
+# Copyright (C) 2007-2013 by Johan De Taeye, frePPLe bvba
 #
 # All information contained herein is, and remains the property of frePPLe.
 # You are allowed to use and modify the source code, as long as the software is used
@@ -25,6 +25,7 @@ from django.contrib import messages
 from django.utils.encoding import force_unicode
 
 from freppledb.execute.models import Task, Scenario
+from freppledb.common.report import exportWorkbook, importWorkbook
 from freppledb.common.report import GridReport, GridFieldDateTime, GridFieldText, GridFieldInteger
 from freppledb.execute.management.commands.frepple_runworker import checkActive
 
@@ -184,6 +185,12 @@ def LaunchTask(request, action):
         )
       task.save(using=request.database)
     # H
+    elif action == 'exportworkbook':
+      return exportWorkbook(request)
+    # I
+    elif action == 'importworkbook':
+      return importWorkbook(request)
+    # J
     elif action == 'stop web service':
       from django.core import management
       management.call_command('frepple_stop_web_service', force=True, database=request.database)

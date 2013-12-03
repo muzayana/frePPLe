@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2010-2012 by Johan De Taeye, frePPLe bvba
+# Copyright (C) 2010-2013 by Johan De Taeye, frePPLe bvba
 #
 # All information contained herein is, and remains the property of frePPLe.
 # You are allowed to use and modify the source code, as long as the software is used
@@ -785,7 +785,7 @@ class Command(BaseCommand):
       cursor.executemany(
         "insert into flow \
           (operation_id,thebuffer_id,type,quantity,lastmodified) \
-          values(%%s,%%s,'flow_end',1,'%s')" % self.date,
+          values(%%s,%%s,'end',1,'%s')" % self.date,
         [ i for i in newFlows(insert) ]
         )
       cursor.executemany(

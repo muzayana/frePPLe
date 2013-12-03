@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2007-2012 by Johan De Taeye, frePPLe bvba
+# Copyright (C) 2007-2013 by Johan De Taeye, frePPLe bvba
 #
 # All information contained herein is, and remains the property of frePPLe.
 # You are allowed to use and modify the source code, as long as the software is used
@@ -112,6 +112,7 @@ rm -rf %{buildroot}
 %{_mandir}/man1/frepplectl.1.*
 %doc COPYING
 %config(noreplace) /etc/frepple/license.xml
+%config(noreplace) /etc/frepple/init.xml
 %config(noreplace) /etc/frepple/djangosettings.py
 %config(noreplace) /etc/frepple/init.xml
 %config(noreplace) /etc/httpd/conf.d/z_frepple.conf

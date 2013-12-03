@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2007-2012 by Johan De Taeye, frePPLe bvba
+# Copyright (C) 2007-2013 by Johan De Taeye, frePPLe bvba
 #
 # All information contained herein is, and remains the property of frePPLe.
 # You are allowed to use and modify the source code, as long as the software is used
@@ -330,6 +330,10 @@ register.filter(app_label)
 def object_name(obj):
   return obj._meta.object_name
 register.filter(object_name)
+
+def model_name(obj):
+  return "%s.%s" % (obj._meta.app_label, obj._meta.model_name)
+register.filter(model_name)
 
 
 #

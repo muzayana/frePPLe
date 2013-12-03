@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2007-2012 by Johan De Taeye, frePPLe bvba
+# Copyright (C) 2007-2013 by Johan De Taeye, frePPLe bvba
 #
 # All information contained herein is, and remains the property of frePPLe.
 # You are allowed to use and modify the source code, as long as the software is used
@@ -169,7 +169,7 @@ class Operation(AuditModel):
     help_text=_("A variable duration for the operation"))
   search = models.CharField(_('search mode'), max_length=20,
     null=True, blank=True, choices=searchmode,
-    help_text=_('Method to select prefered alternate')
+    help_text=_('Method to select preferred alternate')
     )
 
   def __unicode__(self): return self.name
@@ -420,7 +420,7 @@ class ResourceSkill(AuditModel):
     help_text=_('Validity end date')
     )
   priority = models.IntegerField(_('priority'), default=1, null=True, blank=True,
-    help_text=_('Priority of this flow in a group of alternates'))
+    help_text=_('Priority of this skill in a group of alternates'))
 
   class Meta(AuditModel.Meta):
     db_table = 'resourceskill'
@@ -464,7 +464,7 @@ class Flow(AuditModel):
     help_text=_('Priority of this flow in a group of alternates'))
   search = models.CharField(_('search mode'), max_length=20,
     null=True, blank=True, choices=searchmode,
-    help_text=_('Method to select prefered alternate')
+    help_text=_('Method to select preferred alternate')
     )
 
   def __unicode__(self):
@@ -504,7 +504,7 @@ class Load(AuditModel):
     )
   search = models.CharField(_('search mode'), max_length=20,
     null=True, blank=True, choices=searchmode,
-    help_text=_('Method to select prefered alternate')
+    help_text=_('Method to select preferred alternate')
     )
 
   def __unicode__(self):
