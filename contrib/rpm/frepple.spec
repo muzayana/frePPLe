@@ -106,7 +106,7 @@ rm -rf %{buildroot}
 %dir %{_libdir}/frepple
 %{_libdir}/frepple/mod_forecast.so
 %{_datadir}/frepple
-%attr(075,root,root) %dir /var/log/frepple
+%attr(0770,root,adm) %dir /var/log/frepple
 %{python_sitelib}/freppledb*
 %{_mandir}/man1/frepple.1.*
 %{_mandir}/man1/frepplectl.1.*
