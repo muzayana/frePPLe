@@ -1748,6 +1748,9 @@ class OperationPlan
     /** Destructor. */
     virtual DECLARE_EXPORT ~OperationPlan();
 
+    /** Push all consuming flowplans on a stack. */
+    void DECLARE_EXPORT pushConsumingBuffers(vector<Buffer*>*) const;
+
     virtual DECLARE_EXPORT void setChanged(bool b = true);
 
     /** Returns the quantity. */
@@ -2813,6 +2816,9 @@ class Buffer : public HasHierarchy<Buffer>, public HasLevel,
     virtual DECLARE_EXPORT void followPegging
     (PeggingIterator&, FlowPlan*, short, double, double);
 
+    /** Clean up excess producing operationplans from the buffer. */
+    virtual void removeExcess(vector<Buffer*>* buflist = NULL, CommandManager* = NULL) {}
+
   private:
     /** A constant defining the default max inventory target.\\
       * Theoretically we should set this to DBL_MAX, but then the results
@@ -2887,6 +2893,9 @@ class BufferDefault : public Buffer
     {return sizeof(BufferDefault) + Buffer::extrasize();}
     static DECLARE_EXPORT const MetaClass* metadata;
     static int initialize();
+    
+    /** Clean up excess producing operationplans from the buffer. */
+    virtual DECLARE_EXPORT void removeExcess(vector<Buffer*>* buflist = NULL, CommandManager* = NULL);
 };
 
 

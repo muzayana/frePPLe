@@ -679,6 +679,67 @@ DECLARE_EXPORT void Buffer::followPegging
 }
 
 
+DECLARE_EXPORT void BufferDefault::removeExcess(vector<Buffer*>* buflist, CommandManager* mgr)
+{
+  Buffer::flowplanlist::const_iterator fiter = getFlowPlans().rbegin();
+  Buffer::flowplanlist::const_iterator fend = getFlowPlans().end();
+  if (fiter == fend)
+    return; // There isn't a single flowplan in the buffer
+  double excess = fiter->getOnhand() - fiter->getMin();
+
+  // Find the earliest occurence of the excess
+  fiter = getFlowPlans().begin();
+  while (excess > ROUNDING_ERROR && fiter != fend)
+  {
+    if (fiter->getQuantity() <= 0)
+    {
+      // Not a producer
+      ++fiter;
+      continue;
+    }
+    FlowPlan* fp = const_cast<FlowPlan*>(dynamic_cast<const FlowPlan*>(&*fiter));
+    double cur_excess = getFlowPlans().getExcess(&*fiter);
+    if (!fp || fp->getOperationPlan()->getLocked() || cur_excess < ROUNDING_ERROR)
+    {
+      // No excess producer, or it's locked
+      ++fiter;
+      continue;
+    }
+    assert(fp);
+    ++fiter;  // Increment the iterator here, because it can get invalidated later on
+    if (cur_excess >= fp->getQuantity() - ROUNDING_ERROR)
+    {
+      // The complete operationplan is excess.
+      // Find upstream buffers
+      if (buflist)
+        fp->getOperationPlan()->pushConsumingBuffers(buflist);
+      // Reduce the excess
+      excess -= fp->getQuantity();
+      // Delete operationplan
+      if (mgr)
+        mgr->add(new CommandDeleteOperationPlan(fp->getOperationPlan()));
+      else
+        delete fp->getOperationPlan();
+    }
+    else
+    {
+      // Reduce the operationplan
+      double newsize = fp->setQuantity(fp->getQuantity() - cur_excess, false, false);
+      if (newsize == fp->getQuantity())
+        // No resizing is feasible
+        continue;
+      // Reduce the excess
+      excess -= fp->getQuantity() - newsize;
+      // Resize operationplan
+      if (mgr)
+        mgr->add(new CommandMoveOperationPlan(fp->getOperationPlan(), Date::infinitePast, fp->getOperationPlan()->getDates().getEnd(), newsize));
+      else
+        fp->getOperationPlan()->setQuantity(newsize);
+    }
+  }
+}
+
+
 DECLARE_EXPORT void BufferInfinite::writeElement
 (XMLOutput *o, const Keyword &tag, mode m) const
 {
