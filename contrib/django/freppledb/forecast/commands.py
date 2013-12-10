@@ -10,6 +10,7 @@ from freppledb.common.models import Parameter
 from freppledb.input.models import Item, Customer
 from freppledb.execute.commands import printWelcome, logProgress, createPlan, exportPlan
 
+import frepple
 
 def loadForecast(cursor):
   print('Importing forecast...')
@@ -52,14 +53,14 @@ def aggregateDemand(cursor):
   # Aggregate demand history
   starttime = time()
   cursor.execute('update forecastplan set orderstotal = 0, ordersopen = 0')
-  transaction.commit(using=db)
+  transaction.commit(using=cursor.db.alias)
   print('Aggregate - reset records in %.2f seconds' % (time() - starttime))
 
   # Create a temp table with the aggregated demand
   starttime = time()
   cursor.execute('''
      create temp table demand_history
-     on commit drop
+     on commit preserve rows
      as
       select forecast.name as forecast, common_bucketdetail.startdate as startdate,
         fcustomer.lft as customer, fitem.lft as item,
@@ -107,12 +108,13 @@ def aggregateDemand(cursor):
     where forecastplan.forecast_id = demand_history.forecast
       and forecastplan.startdate = demand_history.startdate
     ''')
-  transaction.commit(using=db)
+  transaction.commit(using=cursor.db.alias)
+  cursor.execute("drop table demand_history")
   print('Aggregate - update order records in %.2f seconds' % (time() - starttime))
 
   # Initialize all buckets in the past and future
   starttime = time()
-  horizon_future = int(Parameter.getValue('Forecast.Horizon_future', db, 365))
+  horizon_future = int(Parameter.getValue('Forecast.Horizon_future', cursor.db.alias, 365))
   cursor.execute('''
     insert into forecastplan (
         forecast_id, customerlvl, itemlvl, startdate, orderstotal, ordersopen,
@@ -137,13 +139,13 @@ def aggregateDemand(cursor):
   print('Aggregate - init future records in %.2f seconds' % (time() - starttime))
 
 
-def generateBaseline(solver_fcst, cursor, db):
+def generateBaseline(solver_fcst, cursor):
   data = []
   curfcst = None
 
   # Build bucket lists
-  horizon_history = int(Parameter.getValue('Forecast.Horizon_history', db, 10000))
-  horizon_future = int(Parameter.getValue('Forecast.Horizon_future', db, 365))
+  horizon_history = int(Parameter.getValue('Forecast.Horizon_history', cursor.db.alias, 10000))
+  horizon_future = int(Parameter.getValue('Forecast.Horizon_future', cursor.db.alias, 365))
   thebuckets = {}
   cursor.execute('''select calendarbucket.calendar_id, startdate
      from calendarbucket
@@ -221,7 +223,7 @@ def exportForecast(cursor):
        i.owner.name, str(i.startdate)
      ) for i in generator(cursor)
     ])
-  transaction.commit(using=db)
+  transaction.commit(using=cursor.db.alias)
   print('Exported forecast in %.2f seconds' % (time() - starttime))
 
 
@@ -299,7 +301,7 @@ if __name__ == "__main__":
     logProgress(50, db)
 
     print("\nStart generation of baseline forecast at", datetime.now().strftime("%H:%M:%S"))
-    generateBaseline(solver_fcst, cursor, db)
+    generateBaseline(solver_fcst, cursor)
     logProgress(66, db)
 
     print("\nStart forecast netting at", datetime.now().strftime("%H:%M:%S"))

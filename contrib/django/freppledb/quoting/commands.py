@@ -51,8 +51,49 @@ if __name__ == "__main__":
   frepple.printsize()
   from freppledb.execute.load import loadfrepple
   loadfrepple(db)
+  if with_forecasting:
+    from freppledb.forecast.commands import loadForecast, loadForecastdemand
+    loadForecast(cursor)
+    loadForecastdemand(cursor)
   frepple.printsize()
   logProgress(33, db)
+
+  if with_forecasting:
+    from freppledb.forecast.commands import aggregateDemand, generateBaseline
+    from freppledb.input.models import Item, Customer
+    # Initialize the solver
+    kw = {'name': "Netting orders from forecast"}
+    # TODO READ PARAMETERS   TRICKY CAUSE OF THE DIFFERENT TYPES
+    cursor.execute('''
+       select name, value from common_parameter
+       where name like 'forecast.Seasonal_%%'
+         or name like 'forecast.Croston_%%'
+         or name like 'forecast.DoubleExponential_%%'
+         or name like 'forecast.SingleExponential_%%'
+         or name = 'forecast.loglevel'
+       ''')
+    for key, value in cursor.fetchall():
+      kw[key[9:]] = float(value)
+    solver_fcst = frepple.solver_forecast(**kw)
+
+    # Assure the hierarchies are up to date
+    print("\nStart building hierarchies at", datetime.now().strftime("%H:%M:%S"))
+    Item.rebuildHierarchy(database=db)
+    Customer.rebuildHierarchy(database=db)
+    logProgress(33, db)
+
+    print("\nStart aggregating demand at", datetime.now().strftime("%H:%M:%S"))
+    aggregateDemand(cursor)
+    logProgress(50, db)
+
+    print("\nStart generation of baseline forecast at", datetime.now().strftime("%H:%M:%S"))
+    generateBaseline(solver_fcst, cursor)
+    logProgress(66, db)
+
+    print("\nStart forecast netting at", datetime.now().strftime("%H:%M:%S"))
+    solver_fcst.solve()
+    frepple.printsize()
+    logProgress(83, db)
 
   print("\nStart plan generation at", datetime.now().strftime("%H:%M:%S"))
   createPlan(db)
@@ -61,6 +102,9 @@ if __name__ == "__main__":
 
   print("\nStart exporting plan to the database at", datetime.now().strftime("%H:%M:%S"))
   exportPlan(db)
+  if with_forecasting:
+    from freppledb.forecast.commands import exportForecast
+    exportForecast(cursor)
 
   print("\nFinished planning at", datetime.now().strftime("%H:%M:%S"))
   logProgress(100, db)
