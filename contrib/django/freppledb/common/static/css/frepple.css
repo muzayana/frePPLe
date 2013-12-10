@@ -158,12 +158,14 @@ div.breadcrumbs, div.breadcrumbs a {
 /* HEADER */
 
 #user-tools {
-    position: absolute;
-    top: 0;
-    right: 0;
+    float: right;
     padding: 1.2em 10px;
     font-size: 11px;
     text-align: right;
+}
+
+#user-tools a {
+    color: #333333;
 }
 
 /* TABLES */
