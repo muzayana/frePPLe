@@ -198,7 +198,7 @@ class GanttReport(GridReport):
   permissions = (("view_resource_report", "Can view resource report"),)
   editable = False
   multiselect = False
-  heightmargin = 82
+  heightmargin = 87
   frozenColumns = 0   # TODO freeze 2 columns - doesn't work now because row height is not good in the frozen cols
   default_sort = (1,'asc')
   hasTimeBuckets = True

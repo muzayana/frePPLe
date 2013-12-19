@@ -302,7 +302,7 @@ class GridReport(View):
   permissions = ()
 
   # Defines the difference between height of the grid and its boundaries
-  heightmargin = 70
+  heightmargin = 75
 
 
   @classmethod

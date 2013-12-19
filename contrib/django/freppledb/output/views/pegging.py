@@ -30,7 +30,7 @@ class ReportByDemand(GridReport):
   default_sort = None
   hasTimeBuckets = True
   multiselect = False
-  heightmargin = 82
+  heightmargin = 87
   rows = (
     GridFieldText('depth', title=_('depth'), editable=False, sortable=False),
     GridFieldText('operation', title=_('operation'), formatter='operation', editable=False, sortable=False, key=True),
