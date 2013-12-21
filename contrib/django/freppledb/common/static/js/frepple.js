@@ -482,7 +482,7 @@ var grid = {
       if (colModel[i].name != "rn" && colModel[i].name != "cb" && "counter" in colModel[i] && !('alwayshidden' in colModel[i]))
       {
         colArray.push([colModel[i].counter, colModel[i].hidden, colModel[i].width]);
-        if (colModel[i].frozen) maxfrozen = i + 1 - skipped;
+        if (colModel[i].frozen) maxfrozen = parseInt(i) + 1 - skipped;
       }
       else if (colModel[i].name == 'columns')
         pivot = true;
