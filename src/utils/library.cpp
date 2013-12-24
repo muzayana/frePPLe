@@ -309,7 +309,7 @@ DECLARE_EXPORT void Environment::loadModule(string lib, ParameterList& parameter
 
   // Call the initialization routine with the parameter list
   string x = (inithandle)(parameters);
-  if (x.empty()) throw DataException("Invalid module");
+  if (x.empty()) throw DataException("Invalid or unlicensed module");
 
   // Insert the new module in the registry
   moduleRegistry.insert(x);
