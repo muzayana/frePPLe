@@ -152,7 +152,7 @@ void Forecast::setDiscrete(const bool b)
 }
 
 
-void Forecast::setTotalQuantity(const DateRange& d, double f)
+void Forecast::setTotalQuantity(const DateRange& d, double f, bool add)
 {
   // Initialize, if not done yet
   if (!isGroup()) instantiate();
@@ -170,7 +170,8 @@ void Forecast::setTotalQuantity(const DateRange& d, double f)
       if (!d.getDuration())
       {
         // Single date provided. Update that one bucket.
-        x->setTotal(f);
+        if (add) x->incTotal(f);
+        else x->setTotal(f);
         return;
       }
       weights += x->getWeight() * static_cast<long>(x->getDueRange().overlap(d));
@@ -203,7 +204,7 @@ void Forecast::setTotalQuantity(const DateRange& d, double f)
         carryover += f * percent;
         int intdelta = static_cast<int>(ceil(carryover - 0.5));
         carryover -= intdelta;
-        if (o < x->getDueRange().getDuration())
+        if (o < x->getDueRange().getDuration() || add)
           // The bucket is only partially updated
           x->incTotal(static_cast<double>(intdelta));
         else
@@ -213,7 +214,7 @@ void Forecast::setTotalQuantity(const DateRange& d, double f)
       else
       {
         // No rounding
-        if (o < x->getDueRange().getDuration())
+        if (o < x->getDueRange().getDuration() || add)
           // The bucket is only partially updated
           x->incTotal(f * percent);
         else
@@ -225,7 +226,7 @@ void Forecast::setTotalQuantity(const DateRange& d, double f)
 }
 
 
-void Forecast::setTotalQuantity(const Date d, double f)
+void Forecast::setTotalQuantity(const Date d, double f, bool add)
 {
   // Initialize, if not done yet
   if (!isGroup()) instantiate();
@@ -239,7 +240,8 @@ void Forecast::setTotalQuantity(const Date d, double f)
     if (x->getDueRange().within(d))
     {
       // Update the bucket
-      x->setTotal(f);
+      if (add) x->incTotal(f);
+      else x->setTotal(f);
       return;
     }
   }

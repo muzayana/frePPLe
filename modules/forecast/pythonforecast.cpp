@@ -58,15 +58,16 @@ extern "C" PyObject* Forecast::setPythonTotalQuantity(PyObject *self, PyObject *
     double value;
     PyObject* pystart;
     PyObject* pyend = NULL;
-    int ok = PyArg_ParseTuple(args, "dO|O:setQuantity", &value, &pystart, &pyend);
+    PyObject* pyadd = NULL;
+    int ok = PyArg_ParseTuple(args, "dO|OO:setQuantity", &value, &pystart, &pyend, &pyadd);
     if (!ok) return NULL;
 
     // Update the forecast
-    PythonObject start(pystart), end(pyend);
+    PythonObject start(pystart), end(pyend), add(pyadd);
     if (pyend)
-      forecast->setTotalQuantity(DateRange(start.getDate(), end.getDate()), value);
+      forecast->setTotalQuantity(DateRange(start.getDate(), end.getDate()), value, add.getBool());
     else
-      forecast->setTotalQuantity(start.getDate(), value);
+      forecast->setTotalQuantity(start.getDate(), value, add.getBool());
   }
   catch(...)
   {

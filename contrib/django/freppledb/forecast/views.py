@@ -65,7 +65,7 @@ class ForecastDemandList(GridReport):
   frozenColumns = 1
 
   rows = (
-    GridFieldInteger('identifier', title=_('identifier'), key=True),
+    GridFieldInteger('id', title=_('identifier'), key=True),
     GridFieldText('forecast', title=_('forecast'), formatter='forecast'),
     GridFieldDate('startdate', title=_('start date')),
     GridFieldDate('enddate', title=_('end date')),
@@ -242,7 +242,7 @@ class OverviewReport(GridPivot):
                 setattr(i,field, eql)
                 i.save(using=request.database)
             else:
-              raise Exception("can't create appropriate forecastplan entries")
+              raise Exception("Can't create matching forecastplan entries")
 
           # Store results
           for i in fcsts:

@@ -52,29 +52,17 @@ if __name__ == "__main__":
   from freppledb.execute.load import loadfrepple
   loadfrepple(db)
   if with_forecasting:
-    from freppledb.forecast.commands import loadForecast, loadForecastdemand
+    from freppledb.forecast.commands import loadForecast
     loadForecast(cursor)
-    loadForecastdemand(cursor)
   frepple.printsize()
   logProgress(33, db)
 
   if with_forecasting:
-    from freppledb.forecast.commands import aggregateDemand, generateBaseline
+    from freppledb.forecast.commands import aggregateDemand, generateBaseline, processForecastDemand, createSolver, applyForecastAdjustments
     from freppledb.input.models import Item, Customer
+
     # Initialize the solver
-    kw = {'name': "Netting orders from forecast"}
-    # TODO READ PARAMETERS   TRICKY CAUSE OF THE DIFFERENT TYPES
-    cursor.execute('''
-       select name, value from common_parameter
-       where name like 'forecast.Seasonal_%%'
-         or name like 'forecast.Croston_%%'
-         or name like 'forecast.DoubleExponential_%%'
-         or name like 'forecast.SingleExponential_%%'
-         or name = 'forecast.loglevel'
-       ''')
-    for key, value in cursor.fetchall():
-      kw[key[9:]] = float(value)
-    solver_fcst = frepple.solver_forecast(**kw)
+    solver_fcst = createSolver(cursor)
 
     # Assure the hierarchies are up to date
     print("\nStart building hierarchies at", datetime.now().strftime("%H:%M:%S"))
@@ -86,9 +74,17 @@ if __name__ == "__main__":
     aggregateDemand(cursor)
     logProgress(50, db)
 
+    print("\nStart processing forecastdemand records at", datetime.now().strftime("%H:%M:%S"))
+    processForecastDemand(cursor)
+    logProgress(58, db)
+
     print("\nStart generation of baseline forecast at", datetime.now().strftime("%H:%M:%S"))
     generateBaseline(solver_fcst, cursor)
     logProgress(66, db)
+
+    print("\nStart applying forecast adjustments at", datetime.now().strftime("%H:%M:%S"))
+    applyForecastAdjustments(cursor)
+    logProgress(75, db)
 
     print("\nStart forecast netting at", datetime.now().strftime("%H:%M:%S"))
     solver_fcst.solve()

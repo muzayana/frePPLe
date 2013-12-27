@@ -3,7 +3,7 @@
  * Copyright (C) 2012 by Johan De Taeye, frePPLe bvba                      *
  *                                                                         *
  * All information contained herein is, and remains the property of        *
- * frePPLe.                                                                * 
+ * frePPLe.                                                                *
  * You are allowed to use and modify the source code, as long as the       *
  * software is used within your company.                                   *
  * You are not allowed to distribute the software, either in the form of   *
@@ -309,7 +309,7 @@ class Forecast : public Demand
     class MovingAverage : public ForecastMethod
     {
       private:
-        /** Default number of averaged buckets. 
+        /** Default number of averaged buckets.
           * The default is 5.
           */
         static unsigned int defaultorder;
@@ -848,16 +848,18 @@ class Forecast : public Demand
       *  - If only buckets with zero weigth are found in the daterange a
       *    dataexception is thrown. It indicates a situation where forecast
       *    is specified for a date where no values are allowed.
+      * The second argument specifies whether we overwrite the current value
+      * or whether we add to it.
       */
-    virtual void setTotalQuantity(const DateRange& , double);
+    virtual void setTotalQuantity(const DateRange&, double, bool = false);
 
     /** Update the gross quantity in a single forecast bucket. */
-    virtual void setTotalQuantity(const Date , double);
+    virtual void setTotalQuantity(const Date, double, bool = false);
 
     /** Python method to update the total quantity of one or more
       * forecast buckets.
       */
-    static PyObject* setPythonTotalQuantity(PyObject *, PyObject *);
+    static PyObject* setPythonTotalQuantity(PyObject*, PyObject*);
 
     void writeElement(XMLOutput*, const Keyword&, mode=DEFAULT) const;
     void endElement(XMLInput& pIn, const Attribute& pAttr, const DataElement& pElement);
@@ -1104,6 +1106,7 @@ class ForecastBucket : public Demand
       setOwner(f);
       setHidden(true);  // Avoid the subdemands show up in the output
       setItem(&*(f->getItem()));
+      setCustomer(&*(f->getCustomer()));
       setDue(DueAtEndOfBucket ? e : d);
       setPriority(f->getPriority());
       setMaxLateness(f->getMaxLateness());
