@@ -176,6 +176,81 @@ class Command(BaseCommand):
       param.value = datetime.strftime(startdate, "%Y-%m-%d %H:%M:%S")
       param.save(using=database)
 
+      # Parameters
+      Parameter.objects.using(database).create(name='loading_time_units', value='days',
+        description='Time units to be used for the resource report: hours, days, weeks').save(using=database)
+      if has_forecast:
+        Parameter.objects.using(database).create(name='forecast.Croston_initialAlfa', value='0.1',
+          description='Initial parameter for the Croston forecast method.').save(using=database)
+        Parameter.objects.using(database).create(name='forecast.Croston_maxAlfa', value='1',
+          description='Maximum parameter for the Croston forecast method.').save(using=database)
+        Parameter.objects.using(database).create(name='forecast.Croston_minAlfa', value='0.03',
+          description='Minimum parameter for the Croston forecast method.').save(using=database)
+        Parameter.objects.using(database).create(name='forecast.Croston_minIntermittence', value='0.33',
+          description='Minimum intermittence (defined as the percentage of zero demand buckets) before the Croston method is applied.').save(using=database)
+        Parameter.objects.using(database).create(name='forecast.DoubleExponential_dampenTrend', value='0.8',
+          description='Dampening factor applied to the trend in future periods.').save(using=database)
+        Parameter.objects.using(database).create(name='forecast.DoubleExponential_initialAlfa', value='0.2',
+          description='Initial smoothing constant.').save(using=database)
+        Parameter.objects.using(database).create(name='forecast.DoubleExponential_initialGamma', value='0.2',
+          description='Initial trend smoothing constant.').save(using=database)
+        Parameter.objects.using(database).create(name='forecast.DoubleExponential_maxAlfa', value='1',
+          description='Maximum smoothing constant.').save(using=database)
+        Parameter.objects.using(database).create(name='forecast.DoubleExponential_maxGamma', value='1',
+          description='Maximum trend smoothing constant.').save(using=database)
+        Parameter.objects.using(database).create(name='forecast.DoubleExponential_minAlfa', value='0.02',
+          description='Minimum smoothing constant.').save(using=database)
+        Parameter.objects.using(database).create(name='forecast.DoubleExponential_minGamma', value='0.05',
+          description='Minimum trend smoothing constant.').save(using=database)
+        Parameter.objects.using(database).create(name='forecast.DueAtEndOfBucket', value='1',
+          description='By setting this flag to true, the forecast will be due at the end of the forecast bucket.').save(using=database)
+        Parameter.objects.using(database).create(name='forecast.Iterations', value='15',
+          description='Specifies the maximum number of iterations allowed for a forecast method to tune its parameters.').save(using=database)
+        Parameter.objects.using(database).create(name='forecast.loglevel', value='0',
+          description='Verbosity of the forecast solver').save(using=database)
+        Parameter.objects.using(database).create(name='forecast.MovingAverage_order', value='5',
+          description='This parameter controls the number of buckets to be averaged by the moving average forecast method.').save(using=database)
+        Parameter.objects.using(database).create(name='forecast.Net_CustomerThenItemHierarchy', value='1',
+          description='This flag allows us to control whether we first search the customer hierarchy and then the item hierarchy, or the other way around.').save(using=database)
+        Parameter.objects.using(database).create(name='forecast.Net_MatchUsingDeliveryOperation', value='1',
+          description='Specifies whether or not a demand and a forecast require to have the same delivery operation to be a match.').save(using=database)
+        Parameter.objects.using(database).create(name='forecast.Net_NetEarly', value='0',
+          description='Defines how much time before the due date of an order we are allowed to search for a forecast bucket to net from.').save(using=database)
+        Parameter.objects.using(database).create(name='forecast.Net_NetLate', value='0',
+          description='Defines how much time after the due date of an order we are allowed to search for a forecast bucket to net from.').save(using=database)
+        Parameter.objects.using(database).create(name='forecast.Outlier_maxDeviation', value='4',
+          description='Multiple of the standard deviation used to detect outliers').save(using=database)
+        Parameter.objects.using(database).create(name='forecast.Seasonal_dampenTrend', value='0.8',
+          description='Dampening factor applied to the trend in future periods.').save(using=database)
+        Parameter.objects.using(database).create(name='forecast.Seasonal_gamma', value='0.05',
+          description='Value of the seasonal parameter').save(using=database)
+        Parameter.objects.using(database).create(name='forecast.Seasonal_initialAlfa', value='0.2',
+          description='Initial value for the constant parameter').save(using=database)
+        Parameter.objects.using(database).create(name='forecast.Seasonal_initialBeta', value='0.2',
+          description='Initial value for the trend parameter').save(using=database)
+        Parameter.objects.using(database).create(name='forecast.Seasonal_maxAlfa', value='1',
+          description='Maximum value for the constant parameter').save(using=database)
+        Parameter.objects.using(database).create(name='forecast.Seasonal_maxBeta', value='1',
+          description='Maximum value for the trend parameter').save(using=database)
+        Parameter.objects.using(database).create(name='forecast.Seasonal_maxPeriod', value='14',
+          description='Maximum seasonal cycle to be checked.').save(using=database)
+        Parameter.objects.using(database).create(name='forecast.Seasonal_minAlfa', value='0.02',
+          description='Minimum value for the constant parameter').save(using=database)
+        Parameter.objects.using(database).create(name='forecast.Seasonal_minBeta', value='0.2',
+          description='Initial value for the trend parameter').save(using=database)
+        Parameter.objects.using(database).create(name='forecast.Seasonal_minPeriod', value='2',
+          description='Minimum seasonal cycle to be checked.').save(using=database)
+        Parameter.objects.using(database).create(name='forecast.SingleExponential_initialAlfa', value='0.2',
+          description='Initial smoothing constant.').save(using=database)
+        Parameter.objects.using(database).create(name='forecast.SingleExponential_maxAlfa', value='1',
+          description='Maximum smoothing constant.').save(using=database)
+        Parameter.objects.using(database).create(name='forecast.SingleExponential_minAlfa', value='0.03',
+          description='Minimum smoothing constant.').save(using=database)
+        Parameter.objects.using(database).create(name='forecast.Skip', value='0',
+          description="Specifies the number of time series values used to initialize the forecasting method. The forecast error in these bucket isn't counted.").save(using=database)
+        Parameter.objects.using(database).create(name='forecast.SmapeAlfa', value='0.95',
+          description='Specifies how the sMAPE forecast error is weighted for different time buckets.').save(using=database)
+
       # Planning horizon
       # minimum 10 daily buckets, weekly buckets till 40 days after current
       if verbosity>0: print("Updating buckets...")
@@ -277,7 +352,7 @@ class Command(BaseCommand):
             # Forecast
             fcst = Forecast.objects.using(database).create( \
               name='Forecast item %05d' % i,
-              calendar=workingdays,
+              calendar=weeks,
               item=it,
               maxlateness=60*86400, # Forecast can only be planned 2 months late
               priority=3, # Low priority: prefer planning orders over forecast
