@@ -101,10 +101,10 @@ void Forecast::generateFutureValues(
   }
   catch (...)
   {
-    delete weight;
+    delete[] weight;
     throw;
   }
-  delete weight;
+  delete[] weight;
 
   // Apply the most appropriate forecasting method
   if (best_method >= 0)
