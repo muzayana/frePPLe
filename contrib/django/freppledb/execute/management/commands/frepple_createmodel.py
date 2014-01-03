@@ -356,6 +356,7 @@ class Command(BaseCommand):
               name='Forecast item %05d' % i,
               calendar=weeks,
               item=it,
+              customer=random.choice(cust),
               maxlateness=60*86400, # Forecast can only be planned 2 months late
               priority=3, # Low priority: prefer planning orders over forecast
               )
