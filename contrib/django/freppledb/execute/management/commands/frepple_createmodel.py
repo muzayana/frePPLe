@@ -179,6 +179,8 @@ class Command(BaseCommand):
       # Parameters
       Parameter.objects.using(database).create(name='loading_time_units', value='days',
         description='Time units to be used for the resource report: hours, days, weeks').save(using=database)
+      Parameter.objects.using(database).create(name='plan.loglevel', value='0',
+        description='Controls the verbosity of the planning log file. Accepted values are 0(silent - default), 1 and 2 (verbose)').save(using=database)
       if has_forecast:
         Parameter.objects.using(database).create(name='forecast.Croston_initialAlfa', value='0.1',
           description='Initial parameter for the Croston forecast method.').save(using=database)
