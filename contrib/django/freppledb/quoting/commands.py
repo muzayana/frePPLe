@@ -40,12 +40,15 @@ if __name__ == "__main__":
   elif settings.DATABASES[db]['ENGINE'] == 'oracle':
     cursor.execute("ALTER SESSION SET COMMIT_WRITE='BATCH,NOWAIT'")
 
-  # Detect whether the forecast module is available
-  with_forecasting = 'demand_forecast' in [ a[0] for a in inspect.getmembers(frepple) ]
-
   # Initialization
   printWelcome(database=db)
   logProgress(1, db)
+
+  # Detect whether the forecast module is available
+  with_forecasting = 'demand_forecast' in [ a[0] for a in inspect.getmembers(frepple) ]
+  if settings.DATABASES[db]['ENGINE'] != 'django.db.backends.postgresql_psycopg2':
+    print("Warning: forecast module is only supported when using a PostgreSQL database")
+    with_forecasting = False
 
   print("\nStart loading data from the database at", datetime.now().strftime("%H:%M:%S"))
   frepple.printsize()

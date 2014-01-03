@@ -121,7 +121,7 @@ int ForecastSolver::setattro(const Attribute& attr, const PythonObject& field)
     Forecast::setNetLate(field.getTimeperiod());
   // Forecasting
   else if (attr.isA(tag_Iterations))
-    Forecast::setForecastIterations(field.getUnsignedLong());
+    Forecast::setForecastIterations(field.getInt());
   else if (attr.isA(tag_SmapeAlfa))
     Forecast::setForecastSmapeAlfa(field.getDouble());
   else if (attr.isA(tag_Skip))
@@ -130,7 +130,7 @@ int ForecastSolver::setattro(const Attribute& attr, const PythonObject& field)
     Forecast::setForecastMaxDeviation(field.getDouble());
   // Moving average forecast method
   else if (attr.isA(tag_MovingAverage_order))
-    Forecast::MovingAverage::setDefaultOrder(field.getUnsignedLong());
+    Forecast::MovingAverage::setDefaultOrder(field.getInt());
   // Single exponential forecast method
   else if (attr.isA(tag_SingleExponential_initialAlfa))
     Forecast::SingleExponential::setInitialAlfa(field.getDouble());

@@ -196,7 +196,7 @@ def generateBaseline(solver_fcst, cursor):
   if curfcst:
     # Generate the forecast
     solver_fcst.timeseries(curfcst, data, thebuckets[fcst.calendar.name])
-    
+
   print("Exporting baseline forecast...")
   cursor.execute('''
     update forecastplan
@@ -236,17 +236,19 @@ def applyForecastAdjustments(cursor):
 def createSolver(cursor):
   # Initialize the solver
   kw = {'name': "Netting orders from forecast"}
-  # TODO READ PARAMETERS   TRICKY CAUSE OF THE DIFFERENT TYPES
   cursor.execute('''
-     select name, value from common_parameter
-     where name like 'forecast.Seasonal_%%'
-       or name like 'forecast.Croston_%%'
-       or name like 'forecast.DoubleExponential_%%'
-       or name like 'forecast.SingleExponential_%%'
-       or name = 'forecast.loglevel'
+     select name, value
+     from common_parameter
+     where name like 'forecast.%%'
+       and name <> 'forecast.Horizon_future'
      ''')
   for key, value in cursor.fetchall():
-    kw[key[9:]] = float(value)
+    if key in ('forecast.DueAtEndOfBucket', 'forecast.Horizon_future', 'forecast.Iterations', 'forecast.loglevel',
+      'forecast.MovingAverage_order', 'forecast.Net_CustomerThenItemHierarchy', 'forecast.Net_MatchUsingDeliveryOperation',
+      'forecast.Net_NetEarly', 'forecast.Net_NetLate', 'forecast.Skip'):
+      kw[key[9:]] = int(value)
+    else:
+      kw[key[9:]] = float(value)
   return frepple.solver_forecast(**kw)
 
 
@@ -350,6 +352,9 @@ if __name__ == "__main__":
 
   # Detect whether the forecast module is available
   with_forecasting = 'demand_forecast' in [ a[0] for a in inspect.getmembers(frepple) ]
+  if settings.DATABASES[db]['ENGINE'] != 'django.db.backends.postgresql_psycopg2':
+    print("Warning: forecast module is only supported when using a PostgreSQL database")
+    with_forecasting = False
 
   print("\nStart loading data from the database at", datetime.now().strftime("%H:%M:%S"))
   frepple.printsize()
