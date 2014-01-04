@@ -71,28 +71,28 @@ if __name__ == "__main__":
     print("\nStart building hierarchies at", datetime.now().strftime("%H:%M:%S"))
     Item.rebuildHierarchy(database=db)
     Customer.rebuildHierarchy(database=db)
-    logProgress(33, db)
+    logProgress(35, db)
 
     print("\nStart aggregating demand at", datetime.now().strftime("%H:%M:%S"))
     aggregateDemand(cursor)
-    logProgress(50, db)
+    logProgress(43, db)
 
     print("\nStart processing forecastdemand records at", datetime.now().strftime("%H:%M:%S"))
     processForecastDemand(cursor)
-    logProgress(58, db)
+    logProgress(48, db)
 
     print("\nStart generation of baseline forecast at", datetime.now().strftime("%H:%M:%S"))
     generateBaseline(solver_fcst, cursor)
-    logProgress(66, db)
+    logProgress(53, db)
 
     print("\nStart applying forecast adjustments at", datetime.now().strftime("%H:%M:%S"))
     applyForecastAdjustments(cursor)
-    logProgress(75, db)
+    logProgress(58, db)
 
     print("\nStart forecast netting at", datetime.now().strftime("%H:%M:%S"))
     solver_fcst.solve()
     frepple.printsize()
-    logProgress(83, db)
+    logProgress(63, db)
 
   print("\nStart plan generation at", datetime.now().strftime("%H:%M:%S"))
   createPlan(db)
