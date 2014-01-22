@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2010-2013 by Johan De Taeye, frePPLe bvba
+# Copyright (C) 2014 by Johan De Taeye, frePPLe bvba
 #
 # All information contained herein is, and remains the property of frePPLe.
 # You are allowed to use and modify the source code, as long as the software is used
@@ -7,6 +7,7 @@
 # You are not allowed to distribute the software, either in the form of source code
 # or in the form of compiled binaries.
 #
+
 from __future__ import print_function
 from optparse import make_option
 import xmlrpclib

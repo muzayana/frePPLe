@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2010-2013 by Johan De Taeye, frePPLe bvba
+# Copyright (C) 2014 by Johan De Taeye, frePPLe bvba
 #
 # All information contained herein is, and remains the property of frePPLe.
 # You are allowed to use and modify the source code, as long as the software is used
@@ -7,6 +7,12 @@
 # You are not allowed to distribute the software, either in the form of source code
 # or in the form of compiled binaries.
 #
+
+
+# TODO  SALES ORDER DATES modules computes the commitment date in a pretty naive way
+#     and may not be appropriate for frePPLe integration. TODO...
+
+
 from __future__ import print_function
 from optparse import make_option
 import xmlrpclib
@@ -19,11 +25,8 @@ from django.conf import settings
 from django.utils.translation import ugettext as _
 
 from freppledb.common.models import Parameter
-from freppledb.execute.models import log
+from freppledb.execute.models import Task
 
-locations = {}
-warehouses = {}
-shops = {}
 
 class Command(BaseCommand):
 
@@ -32,18 +35,12 @@ class Command(BaseCommand):
   option_list = BaseCommand.option_list + (
       make_option('--user', dest='user', type='string',
         help='User running the command'),
-      make_option('--openerp_user', action='store', dest='openerp_user',
-        help='OpenErp user name to connect'),
-      make_option('--openerp_pwd', action='store', dest='openerp_password',
-        help='OpenErp password to connect'),
-      make_option('--openerp_db', action='store', dest='openerp_db',
-        help='OpenErp database instance to import from'),
-      make_option('--openerp_url', action='store', dest='openerp_url',
-        help='OpenERP XMLRPC connection URL'),
       make_option('--delta', action='store', dest='delta', type="float",
         default='3650', help='Number of days for which we extract changed OpenERP data'),
       make_option('--database', action='store', dest='database',
         default=DEFAULT_DB_ALIAS, help='Nominates the frePPLe database to load'),
+      make_option('--task', dest='task', type='int',
+        help='Task identifier (generated automatically if not provided)'),
   )
 
   requires_model_validation = False
@@ -55,38 +52,20 @@ class Command(BaseCommand):
     else: self.verbosity = 1
     if 'user' in options: user = options['user']
     else: user = ''
-    self.openerp_user = options['openerp_user']
-    if not self.openerp_user:
-      try:
-        self.openerp_user = Parameter.objects.get(name="openerp_user").value
-      except:
-        self.openerp_user = 'admin'
-    self.openerp_password = options['openerp_password']
-    if not self.openerp_password:
-      try:
-        self.openerp_password = Parameter.objects.get(name="openerp_password").value
-      except:
-        self.openerp_password = 'admin'
-    self.openerp_db = options['openerp_db']
-    if not self.openerp_db:
-      try:
-        self.openerp_db = Parameter.objects.get(name="openerp_db").value
-      except Exception as e:
-        self.openerp_db = 'openerp'
-    self.openerp_url = options['openerp_url']
-    if not self.openerp_url:
-      try:
-        self.openerp_url = Parameter.objects.get(name="openerp_url").value
-      except:
-        self.openerp_url = 'http://localhost:8069/'
-    if 'delta' in options: self.delta = float(options['delta'] or '3650')
-    else: self.delta = 3650
-    self.date = datetime.now()
-    self.delta = str(self.date - timedelta(days=self.delta))
     if 'database' in options: self.database = options['database'] or DEFAULT_DB_ALIAS
     else: self.database = DEFAULT_DB_ALIAS
     if not self.database in settings.DATABASES.keys():
       raise CommandError("No database settings known for '%s'" % self.database )
+    if 'delta' in options: self.delta = float(options['delta'] or '3650')
+    else: self.delta = 3650
+    self.date = datetime.now()
+    self.delta = str(self.date - timedelta(days=self.delta))
+
+    # Pick up configuration parameters
+    self.openerp_user = Parameter.getValue("openerp.user", self.database)
+    self.openerp_password = Parameter.getValue("openerp.password", self.database)
+    self.openerp_db = Parameter.getValue("openerp.db", self.database)
+    self.openerp_url = Parameter.getValue("openerp.url", self.database)
 
     # Make sure the debug flag is not set!
     # When it is set, the django database wrapper collects a list of all sql
@@ -95,12 +74,30 @@ class Command(BaseCommand):
     tmp_debug = settings.DEBUG
     settings.DEBUG = False
 
-    transaction.enter_transaction_management(using=self.database)
+    now = datetime.now()
+    ac = transaction.get_autocommit(using=self.database)
+    transaction.set_autocommit(False, using=self.database)
+    task = None
     try:
-      # Logging message
-      log(category='IMPORT', theuser=user,
-        message=_('Start importing from OpenERP')).save(using=self.database)
+      # Initialize the task
+      if 'task' in options and options['task']:
+        try: task = Task.objects.all().using(self.database).get(pk=options['task'])
+        except: raise CommandError("Task identifier not found")
+        if task.started or task.finished or task.status != "Waiting" or task.name != 'OpenERP import':
+          raise CommandError("Invalid task identifier")
+        task.status = '0%'
+        task.started = now
+      else:
+
+        task = Task(name='OpenERP import', submitted=now, started=now, status='0%', user=user,
+          arguments="--delta=%s" % self.delta)
+      task.save(using=self.database)
       transaction.commit(using=self.database)
+
+      # Initialize some global variables
+      self.locations = {}
+      self.warehouses = {}
+      self.shops = {}
 
       # Log in to the openerp server
       sock_common = xmlrpclib.ServerProxy(self.openerp_url + 'xmlrpc/common')
@@ -114,28 +111,59 @@ class Command(BaseCommand):
 
       # Sequentially load all data
       self.import_customers(cursor)
+      task.status = '10%'
+      task.save(using=self.database)
+      transaction.commit(using=self.database)
       self.import_products(cursor)
+      task.status = '20%'
+      task.save(using=self.database)
+      transaction.commit(using=self.database)
       self.import_locations(cursor)
+      task.status = '30%'
+      task.save(using=self.database)
+      transaction.commit(using=self.database)
       self.import_salesorders(cursor)
+      task.status = '40%'
+      task.save(using=self.database)
+      transaction.commit(using=self.database)
       self.import_workcenters(cursor)
+      task.status = '50%'
+      task.save(using=self.database)
+      transaction.commit(using=self.database)
       self.import_onhand(cursor)
+      task.status = '60%'
+      task.save(using=self.database)
+      transaction.commit(using=self.database)
       self.import_purchaseorders(cursor)
+      task.status = '70%'
+      task.save(using=self.database)
       self.import_boms(cursor)
+      transaction.commit(using=self.database)
+      task.status = '80%'
+      task.save(using=self.database)
       self.import_policies(cursor)
-      #self.import_setupmatrices(cursor)
+      transaction.commit(using=self.database)
+      task.status = '90%'
+      task.save(using=self.database)
+      transaction.commit(using=self.database)
 
-      # Logging message
-      log(category='IMPORT', theuser=user,
-        message=_('Finished importing from OpenERP')).save(using=self.database)
+      # Log success
+      task.status = 'Done'
+      task.finished = datetime.now()
 
     except Exception as e:
-      log(category='IMPORT', theuser=user,
-        message=u'%s: %s' % (_('Failed importing from OpenERP'),e)).save(using=self.database)
-      raise CommandError(e)
+      if task:
+        task.status = 'Failed'
+        task.message = '%s' % e
+        task.finished = datetime.now()
+      raise e
+
     finally:
-      transaction.commit(using=self.database)
+      if task: task.save(using=self.database)
+      try: transaction.commit(using=self.database)
+      except: pass
       settings.DEBUG = tmp_debug
-      transaction.leave_transaction_management(using=self.database)
+      transaction.set_autocommit(ac, using=self.database)
 
 
   def openerp_search(self, a, b=[]):
@@ -154,7 +182,7 @@ class Command(BaseCommand):
   #   - mapped fields OpenERP -> frePPLe customer
   #        - %id %name -> name
   #        - %ref     -> description
-  #        - 'OpenERP' -> subcategory
+  #        - 'OpenERP' -> source
   def import_customers(self, cursor):
     transaction.enter_transaction_management(using=self.database)
     try:
@@ -181,7 +209,7 @@ class Command(BaseCommand):
           delete.append( (name,) )
       cursor.executemany(
         "insert into customer \
-          (name,description,subcategory,lastmodified) \
+          (name,description,source,lastmodified) \
           values (%%s,%%s,'OpenERP','%s')" % self.date,
         [(
            u'%d %s' % (i['id'],i['name']),
@@ -190,7 +218,7 @@ class Command(BaseCommand):
         ])
       cursor.executemany(
         "update customer \
-          set description=%%s, subcategory='OpenERP',lastmodified='%s' \
+          set description=%%s, source='OpenERP',lastmodified='%s' \
           where name=%%s" % self.date,
         [(
            i['ref'] or '',
@@ -201,7 +229,7 @@ class Command(BaseCommand):
         try: cursor.execute("delete from customer where name=%s",i)
         except:
           # Delete fails when there are dependent records in the database.
-          cursor.execute("update customer set subcategory=null, lastmodified='%s' where name=%%s" % self.date,i)
+          cursor.execute("update customer set source=null, lastmodified='%s' where name=%%s" % self.date,i)
       transaction.commit(using=self.database)
       if self.verbosity > 0:
         print("Inserted %d new customers" % len(insert))
@@ -224,7 +252,7 @@ class Command(BaseCommand):
   #        - %id %name -> name
   #        - %code     -> description & name
   #        - %variants -> name
-  #        - 'OpenERP' -> subcategory
+  #        - 'OpenERP' -> source
   #   - The modeling in frePPLe is independent of the procurement method in
   #     OpenERP. For both "on order" and "on stock" we bring the order to
   #     frePPLe and propagate upstream.
@@ -269,13 +297,13 @@ class Command(BaseCommand):
           delete.append( (name,) )
       cursor.executemany(
         "insert into item \
-          (name,description,subcategory,lastmodified) \
+          (name,description,source,lastmodified) \
           values (%%s,%%s,'OpenERP','%s')" % self.date,
         insert
         )
       cursor.executemany(
         "update item \
-          set description=%%s, subcategory='OpenERP', lastmodified='%s' \
+          set description=%%s, source='OpenERP', lastmodified='%s' \
           where name=%%s" % self.date,
         update
         )
@@ -283,7 +311,7 @@ class Command(BaseCommand):
         try: cursor.execute("delete from item where name=%s", i)
         except:
           # Delete fails when there are dependent records in the database.
-          cursor.execute("update item set subcategory=null, lastmodified='%s' where name=%%s" % self.date, i)
+          cursor.execute("update item set source=null, lastmodified='%s' where name=%%s" % self.date, i)
       transaction.commit(using=self.database)
       if self.verbosity > 0:
         print("Inserted %d new products" % len(insert))
@@ -308,7 +336,6 @@ class Command(BaseCommand):
   #        - %id %name -> name
   #        - 'OpenERP' -> subcategory
   def import_locations(self, cursor):
-    global locations
     transaction.enter_transaction_management(using=self.database)
     try:
       starttime = time()
@@ -323,7 +350,7 @@ class Command(BaseCommand):
       delete = []
       for i in self.openerp_data('stock.location', ids, fields):
         name = u'%d %s' % (i['id'],i['name'])
-        locations[i['id']] = name
+        self.locations[i['id']] = name
         if i['active'] and i['usage'] == 'internal':
           if name in frepple_keys:
             update.append(i)
@@ -333,7 +360,7 @@ class Command(BaseCommand):
           delete.append( (name,) )
       cursor.executemany(
         "insert into location \
-          (name,subcategory,lastmodified) \
+          (name,source,lastmodified) \
           values (%%s,'OpenERP','%s')" % self.date,
         [(
            u'%d %s' % (i['id'],i['name']),
@@ -341,7 +368,7 @@ class Command(BaseCommand):
         ])
       cursor.executemany(
         "update location \
-          set subcategory='OpenERP', lastmodified='%s' \
+          set source='OpenERP', lastmodified='%s' \
           where name=%%s" % self.date,
         [(
            u'%d %s' % (i['id'],i['name']),
@@ -351,7 +378,7 @@ class Command(BaseCommand):
         try: cursor.execute("delete from location where name=%s",i)
         except:
           # Delete fails when there are dependent records in the database.
-          cursor.execute("update location set subcategory=null, lastmodified='%s' where name=%%s" % self.date, i)
+          cursor.execute("update location set source=null, lastmodified='%s' where name=%%s" % self.date, i)
       transaction.commit(using=self.database)
       if self.verbosity > 0:
         print("Inserted %d new locations" % len(insert))
@@ -390,7 +417,7 @@ class Command(BaseCommand):
   #        - %sol_product_id -> item
   #        - %so_partner_id -> customer
   #        - %so_requested_date or %so_date_order -> due
-  #        - 'OpenERP' -> subcategory
+  #        - 'OpenERP' -> source
   #        - 1 -> priority
   #   - The picking policy 'complete' is supported at the sales order line
   #     level only in frePPLe. FrePPLe doesn't allow yet to coordinate the
@@ -398,10 +425,7 @@ class Command(BaseCommand):
   #     modeling construct).
   #   - The field requested_date is only available when sale_order_dates is
   #     installed.
-  #     However, that module computes the commitment date in a pretty naive way
-  #     and may not be appropriate for frePPLe integration. TODO...
   def import_salesorders(self, cursor):
-    global warehouses, shops
     transaction.enter_transaction_management(using=self.database)
     try:
       starttime = time()
@@ -412,7 +436,7 @@ class Command(BaseCommand):
       ids = self.openerp_search('stock.warehouse')
       fields = ['name', 'lot_stock_id']
       for i in self.openerp_data('stock.warehouse', ids, fields):
-        warehouses[i['id']] = locations[i['lot_stock_id'][0]]
+        self.warehouses[i['id']] = self.locations[i['lot_stock_id'][0]]
 
       # Get the stocking location of each warehouse (where we deliver from)
       if self.verbosity > 0:
@@ -420,7 +444,7 @@ class Command(BaseCommand):
       ids = self.openerp_search('sale.shop')
       fields = ['name', 'warehouse_id']
       for i in self.openerp_data('sale.shop', ids, fields):
-        shops[i['id']] = warehouses[i['warehouse_id'][0]]
+        self.shops[i['id']] = self.warehouses[i['warehouse_id'][0]]
 
       # Now the list of sales orders
       deliveries = set()
@@ -438,9 +462,9 @@ class Command(BaseCommand):
       for i in self.openerp_data('sale.order.line', ids, fields):
         name = u'%d %d %s %d' % (i['order_id'][0], i['id'], i['order_id'][1], i['sequence'])
         if i['state'] == 'confirmed':
-          product = u'%s %s' % (i['product_id'][0], i['product_id'][1])
+          product = u'%s %s' % (i['product_id'][0], i['product_id'][1][i['product_id'][1].find(']')+2:])
           j = self.openerp_data('sale.order', [i['order_id'][0],], fields2)[0]
-          location = shops[j['shop_id'][0]]
+          location = self.shops[j['shop_id'][0]]
           operation = u'delivery %s from %s' % (product, location)
           buffer = u'%s @ %s' % (product, location)
           deliveries.update([(product,location,operation,buffer),])
@@ -472,12 +496,12 @@ class Command(BaseCommand):
       frepple_keys = set([ i[0] for i in cursor.fetchall()])
       cursor.executemany(
         "insert into operation \
-          (name,location_id,subcategory,lastmodified) \
+          (name,location_id,source,lastmodified) \
           values (%%s,%%s,'OpenERP','%s')" % self.date,
         [ (i[2],i[1]) for i in deliveries if i[2] not in frepple_keys ])
       cursor.executemany(
         "update operation \
-          set location_id=%%s, subcategory='OpenERP' ,lastmodified='%s' where name=%%s" % self.date,
+          set location_id=%%s, source='OpenERP' ,lastmodified='%s' where name=%%s" % self.date,
         [ (i[1],i[2]) for i in deliveries if i[2] in frepple_keys ])
 
       # Create or update delivery buffers
@@ -485,12 +509,12 @@ class Command(BaseCommand):
       frepple_keys = set([ i[0] for i in cursor.fetchall()])
       cursor.executemany(
         "insert into buffer \
-          (name,item_id,location_id,subcategory,lastmodified) \
+          (name,item_id,location_id,source,lastmodified) \
           values(%%s,%%s,%%s,'OpenERP','%s')" % self.date,
         [ (i[3],i[0],i[1]) for i in deliveries if i[3] not in frepple_keys ])
       cursor.executemany(
         "update buffer \
-          set item_id=%%s, location_id=%%s, subcategory='OpenERP', lastmodified='%s' where name=%%s" % self.date,
+          set item_id=%%s, location_id=%%s, source='OpenERP', lastmodified='%s' where name=%%s" % self.date,
         [ (i[0],i[1],i[3]) for i in deliveries if i[3] in frepple_keys ])
 
       # Create or update flow on delivery operation
@@ -498,30 +522,30 @@ class Command(BaseCommand):
       frepple_keys = set([ i for i in cursor.fetchall()])
       cursor.executemany(
         "insert into flow \
-          (operation_id,thebuffer_id,quantity,type,lastmodified) \
-          values(%%s,%%s,-1,'start','%s')" % self.date,
+          (operation_id,thebuffer_id,quantity,type,source,lastmodified) \
+          values(%%s,%%s,-1,'start','OpenERP','%s')" % self.date,
         [ (i[2],i[3]) for i in deliveries if (i[2],i[3]) not in frepple_keys ])
       cursor.executemany(
         "update flow \
-          set quantity=-1, type='start', lastmodified='%s' where operation_id=%%s and thebuffer_id=%%s" % self.date,
+          set quantity=-1, type='start', source='OpenERP', lastmodified='%s' where operation_id=%%s and thebuffer_id=%%s" % self.date,
         [ (i[2],i[3]) for i in deliveries if (i[2],i[3]) in frepple_keys ])
 
       # Create or update demands
       cursor.executemany(
         "insert into demand \
-          (name,item_id,customer_id,quantity,minshipment,due,operation_id,priority,subcategory,lastmodified) \
+          (name,item_id,customer_id,quantity,minshipment,due,operation_id,priority,source,lastmodified) \
           values (%%s,%%s,%%s,%%s,%%s,%%s,%%s,1,'OpenERP','%s')" % self.date,
         insert)
       cursor.executemany(
         "update demand \
-          set item_id=%%s, customer_id=%%s, quantity=%%s, minshipment=%%s, due=%%s, operation_id=%%s, priority=1, subcategory='OpenERP', lastmodified='%s' \
+          set item_id=%%s, customer_id=%%s, quantity=%%s, minshipment=%%s, due=%%s, operation_id=%%s, priority=1, source='OpenERP', lastmodified='%s' \
           where name=%%s" % self.date,
         update)
       for i in delete:
         try: cursor.execute("delete from demand where name=%s",i)
         except:
           # Delete fails when there are dependent records in the database.
-          cursor.execute("update demand set quantity=0, subcategory=null, lastmodified='%s' where name=%%s" % self.date,i)
+          cursor.execute("update demand set quantity=0, source=null, lastmodified='%s' where name=%%s" % self.date,i)
 
       if self.verbosity > 0:
         print("Created or updated %d delivery operations" % len(deliveries))
@@ -545,7 +569,7 @@ class Command(BaseCommand):
   #        - %id %name -> name
   #        - %cost_hour -> cost
   #        - capacity_per_cycle -> maximum
-  #        - 'OpenERP' -> subcategory
+  #        - 'OpenERP' -> source
   #   - A bit surprising, but OpenERP doesn't assign a location or company to
   #     a workcenter.
   #     You should assign a location in frePPLe to assure that the user interface
@@ -577,7 +601,7 @@ class Command(BaseCommand):
           delete.append( (name,) )
       cursor.executemany(
         "insert into resource \
-          (name,cost,maximum,subcategory,lastmodified) \
+          (name,cost,maximum,source,lastmodified) \
           values (%%s,%%s,%%s,'OpenERP','%s')" % self.date,
         [(
            u'%d %s' % (i['id'],i['name']),
@@ -587,7 +611,7 @@ class Command(BaseCommand):
         ])
       cursor.executemany(
         "update resource \
-          set cost=%%s, maximum=%%s, subcategory='OpenERP', lastmodified='%s' \
+          set cost=%%s, maximum=%%s, source='OpenERP', lastmodified='%s' \
           where name=%%s" % self.date,
         [(
            i['costs_hour'] or 0,
@@ -599,7 +623,7 @@ class Command(BaseCommand):
         try: cursor.execute("delete from resource where name=%s",i)
         except:
           # Delete fails when there are dependent records in the database.
-          cursor.execute("update resource set subcategory=null, lastmodified='%s' where name=%%s" % self.date,i)
+          cursor.execute("update resource set source=null, lastmodified='%s' where name=%%s" % self.date,i)
       transaction.commit(using=self.database)
       if self.verbosity > 0:
         print("Inserted %d new workcenters" % len(insert))
@@ -626,7 +650,7 @@ class Command(BaseCommand):
   #        - %product_id %product_name -> item_id
   #        - %location_id %location_name -> location_id
   #        - %qty -> onhand
-  #        - 'OpenERP' -> subcategory
+  #        - 'OpenERP' -> source
   def import_onhand(self, cursor):
     transaction.enter_transaction_management(using=self.database)
     try:
@@ -639,7 +663,7 @@ class Command(BaseCommand):
       frepple_locations = set([ i[0] for i in cursor.fetchall()])
       cursor.execute("SELECT name FROM buffer")
       frepple_keys = set([ i[0] for i in cursor.fetchall()])
-      cursor.execute("update buffer set onhand = 0 where subcategory = 'OpenERP'")
+      cursor.execute("update buffer set onhand = 0 where source = 'OpenERP'")
       ids = self.openerp_search('stock.report.prodlots', [('qty','>', 0),])
       fields = ['prodlot_id', 'location_id', 'qty', 'product_id']
       insert = []
@@ -655,7 +679,7 @@ class Command(BaseCommand):
             insert.append(i)
       cursor.executemany(
         "insert into buffer \
-          (name,item_id,location_id,onhand,subcategory,lastmodified) \
+          (name,item_id,location_id,onhand,source,lastmodified) \
           values(%%s,%%s,%%s,%%s,'OpenERP','%s')" % self.date,
         [(
            u'%d %s @ %d %s' % (i['product_id'][0], i['product_id'][1], i['location_id'][0], i['location_id'][1]),
@@ -666,7 +690,7 @@ class Command(BaseCommand):
         ])
       cursor.executemany(
         "update buffer \
-          set onhand=%%s, subcategory='OpenERP', lastmodified='%s' \
+          set onhand=%%s, source='OpenERP', lastmodified='%s' \
           where name=%%s" % self.date,
         [(
            i['qty'],
@@ -694,16 +718,16 @@ class Command(BaseCommand):
   #        - %state = 'approved' or 'draft'
   #   - mapped fields OpenERP -> frePPLe buffer
   #        - %id %name -> name
-  #        - 'OpenERP' -> subcategory
+  #        - 'OpenERP' -> source
   #   - mapped fields OpenERP -> frePPLe operation
   #        - %id %name -> name
-  #        - 'OpenERP' -> subcategory
+  #        - 'OpenERP' -> source
   #   - mapped fields OpenERP -> frePPLe flow
   #        - %id %name -> name
   #        - 'OpenERP' -> subcategory
   #   - mapped fields OpenERP -> frePPLe operationplan
   #        - %id %name -> name
-  #        - 'OpenERP' -> subcategory
+  #        - 'OpenERP' -> source
   #   - Note that the current logic also treats the (draft) purchase quotations in the
   #     very same way as the (confirmed) purchase orders.
   #
@@ -772,31 +796,31 @@ class Command(BaseCommand):
           delete.append( (i['id'],) )
       cursor.executemany(
         "insert into buffer \
-          (name,item_id,location_id,subcategory,lastmodified) \
+          (name,item_id,location_id,source,lastmodified) \
           values(%%s,%%s,%%s,'OpenERP','%s')" % self.date,
         [ i for i in newBuffers(insert) ]
         )
       cursor.executemany(
         "insert into operation \
-          (name,location_id,subcategory,lastmodified) \
+          (name,location_id,source,lastmodified) \
           values(%%s,%%s,'OpenERP','%s')" % self.date,
         [ i for i in newOperations(insert) ]
         )
       cursor.executemany(
         "insert into flow \
-          (operation_id,thebuffer_id,type,quantity,lastmodified) \
-          values(%%s,%%s,'end',1,'%s')" % self.date,
+          (operation_id,thebuffer_id,type,quantity,source,lastmodified) \
+          values(%%s,%%s,'end',1,'OpenERP','%s')" % self.date,
         [ i for i in newFlows(insert) ]
         )
       cursor.executemany(
         "insert into operationplan \
-          (id,operation_id,startdate,enddate,quantity,locked,lastmodified) \
-          values(%%s,%%s,%%s,%%s,%%s,'1','%s')" % self.date,
+          (id,operation_id,startdate,enddate,quantity,locked,source,lastmodified) \
+          values(%%s,%%s,%%s,%%s,%%s,'1','OpenERP',%s')" % self.date,
         [ (i[3], i[0], i[1], i[1], i[2], ) for i in insert ]
         )
       cursor.executemany(
         "update operationplan \
-          set operation_id=%%s, enddate=%%s, startdate=%%s, quantity=%%s, locked='1', lastmodified='%s' \
+          set operation_id=%%s, enddate=%%s, startdate=%%s, quantity=%%s, locked='1', source='OpenERP', lastmodified='%s' \
           where id=%%s" % self.date,
         update)
       cursor.executemany(
@@ -833,13 +857,13 @@ class Command(BaseCommand):
   #        - make %product_id.id %product_id.name @ %routing_id.location_id %routing_id.location_id.name -> name
   #        - %routing_id.location_id %routing_id.location_id.name -> location_id
   #        - %product_rounding -> size_multiple
-  #        - 'OpenERP' -> subcategory
+  #        - 'OpenERP' -> source
   #   - mapped fields OpenERP -> frePPLe buffer
   #        - %product_id.id %product_id.name @ %routing_id.location_id %routing_id.location_id.name -> name
   #        - %product_id.id %product_id.name -> item_id
   #        - %routing_id.location_id %routing_id.location_id.name -> location_id
   #        - %bom_id %bom_name @ %routing_id.location_id %routing_id.location_id.name -> producing_id
-  #        - 'OpenERP' -> subcategory
+  #        - 'OpenERP' -> source
   #   - mapped fields OpenERP -> frePPLe flow
   #        - %product_id.id %product_id.name @ %routing_id.location_id %routing_id.location_id.name -> thebuffer_id
   #        - make %product_id.id %product_id.name @ %routing_id.location_id %routing_id.location_id.name -> operation_id
@@ -920,14 +944,14 @@ class Command(BaseCommand):
           location = None
         if not location:
           if not default_location:
-            default_location = warehouses.itervalues().next()
-            if len(warehouses) > 1:
+            default_location = self.warehouses.itervalues().next()
+            if len(self.warehouses) > 1:
               print("Warning: Only single warehouse configurations are supported. Creating only boms for '%s'" % default_location)
           location = default_location
 
         # Determine operation name and item
         operation = u'%d %s @ %s' % (i['id'], i['name'], location)
-        product = u'%d %s' % (i['product_id'][0], i['product_id'][1])
+        product = u'%d %s' % (i['product_id'][0], i['product_id'][1][i['product_id'][1].find(']')+2:])
         boms[i['id']] = (operation, location)
         buffer = u'%d %s @ %s' % (i['product_id'][0], i['product_id'][1], location)  # TODO if policy is produce, then this should be the producting operation
 
@@ -969,6 +993,7 @@ class Command(BaseCommand):
                   j[1], operation, j[0]
                   ))
               else:
+                frepple_loads.add( (j[0],operation) )
                 load_insert.append((
                   operation, j[0], j[1]
                   ))
@@ -988,8 +1013,8 @@ class Command(BaseCommand):
       for i in self.openerp_data('mrp.bom', ids, fields):
         # Determine operation and buffer
         (operation, location) = boms[i['bom_id'][0]]
-        product = u'%d %s' % (i['product_id'][0], i['product_id'][1])
-        buffer = u'%d %s @ %s' % (i['product_id'][0], i['product_id'][1], location)
+        product = u'%d %s' % (i['product_id'][0], i['product_id'][1][i['product_id'][1].find(']')+2:])
+        buffer = u'%d %s @ %s' % (i['product_id'][0], i['product_id'][1][i['product_id'][1].find(']')+2:], location)
 
         if i['active']:
           # Creation buffer
@@ -1015,55 +1040,55 @@ class Command(BaseCommand):
       # Process in the frePPLe database
       cursor.executemany(
         "insert into operation \
-          (name,location_id,subcategory,sizemultiple,lastmodified) \
+          (name,location_id,source,sizemultiple,lastmodified) \
           values(%%s,%%s,'OpenERP',%%s,'%s')" % self.date,
         operation_insert
         )
       cursor.executemany(
         "update operation \
-          set location_id=%%s, sizemultiple=%%s, subcategory='OpenERP', lastmodified='%s' \
+          set location_id=%%s, sizemultiple=%%s, source='OpenERP', lastmodified='%s' \
           where name=%%s" % self.date,
         operation_update
         )
       cursor.executemany(
         "update operation \
-          set subcategory=null, lastmodified='%s' \
+          set source=null, lastmodified='%s' \
           where name=%%s" % self.date,
         operation_delete
         )
       cursor.executemany(
         "insert into buffer \
-          (name,item_id,location_id,producing_id,subcategory,lastmodified) \
+          (name,item_id,location_id,producing_id,source,lastmodified) \
           values(%%s,%%s,%%s,%%s,'OpenERP','%s')" % self.date,
         buffer_insert
         )
       cursor.executemany(
         "update buffer \
-          set item_id=%%s, location_id=%%s, producing_id=%%s, subcategory='OpenERP', lastmodified='%s' \
+          set item_id=%%s, location_id=%%s, producing_id=%%s, source='OpenERP', lastmodified='%s' \
           where name = %%s" % self.date,
         buffer_update
         )
       cursor.executemany(
         "insert into flow \
-          (operation_id,thebuffer_id,quantity,type,effective_start,effective_end,lastmodified) \
-          values(%%s,%%s,%%s,%%s,%%s,%%s,'%s')" % self.date,
+          (operation_id,thebuffer_id,quantity,type,effective_start,effective_end,source,lastmodified) \
+          values(%%s,%%s,%%s,%%s,%%s,%%s,'OpenERP','%s')" % self.date,
         flow_insert
         )
       cursor.executemany(
         "update flow \
-          set quantity=%%s, type=%%s, effective_start=%%s ,effective_end=%%s, lastmodified='%s' \
+          set quantity=%%s, type=%%s, effective_start=%%s ,effective_end=%%s, source='OpenERP', lastmodified='%s' \
           where operation_id=%%s and thebuffer_id=%%s" % self.date,
         flow_update
         )
       cursor.executemany(
         "insert into resourceload \
-          (operation_id,resource_id,quantity,lastmodified) \
-          values(%%s,%%s,%%s,'%s')" % self.date,
+          (operation_id,resource_id,quantity,source,lastmodified) \
+          values(%%s,%%s,%%s,'OpenERP','%s')" % self.date,
         load_insert
         )
       cursor.executemany(
         "update resourceload \
-          set quantity=%%s, lastmodified='%s' \
+          set quantity=%%s, lastmodified='%s', source='OpenERP' \
           where operation_id=%%s and resource_id=%%s" % self.date,
         load_update
         )
@@ -1097,72 +1122,6 @@ class Command(BaseCommand):
       transaction.leave_transaction_management(using=self.database)
 
 
-  # Importing setup matrices and setup rules
-  #   - extracting ALL frepple.setupmatrix and frepple.setuprule objects.
-  #     This mapping assumes ALL matrices are maintained in OpenERP only.
-  #   - meeting the criterion:
-  #        - %active = True
-  #   - mapped fields OpenERP -> frePPLe setupmatrix
-  #        - %id %name -> name
-  #   - adapter is NOT implemented in delta mode!
-  def import_setupmatrices(self, cursor):
-    transaction.enter_transaction_management(using=self.database)
-    try:
-      starttime = time()
-      if self.verbosity > 0:
-        print("Importing setup matrices...")
-      cursor.execute("delete FROM setuprule")
-      cursor.execute("delete FROM setupmatrix")
-
-      # Get all setup matrices
-      ids = self.openerp_search('frepple.setupmatrix', ['|',('active', '=', 1),('active', '=', 0)])
-      fields = ['name',]
-      datalist = []
-      for i in self.openerp_data('frepple.setupmatrix', ids, fields):
-        datalist.append((u'%d %s' % (i['id'],i['name']),))
-      cursor.executemany(
-        "insert into setupmatrix \
-          (name,lastmodified) \
-          values (%%s,'%s')" % self.date,
-        datalist
-        )
-      if self.verbosity > 0:
-        print("Inserted %d new setup matrices" % len(datalist))
-
-      # Get all setup rules
-      ids = self.openerp_search('frepple.setuprule')
-      fields = ['priority', 'fromsetup', 'tosetup', 'duration', 'cost', 'active', 'setupmatrix_id' ]
-      cnt = 0
-      datalist = []
-      for i in self.openerp_data('frepple.setuprule', ids, fields):
-        datalist.append( (cnt, i['priority'], u'%d %s' % (i['setupmatrix_id'][0],i['setupmatrix_id'][1]), i['fromsetup'], i['tosetup'], i['duration']*3600, i['cost']) )
-        cnt += 1
-      cursor.executemany(
-        "insert into setuprule \
-          (id, priority, setupmatrix_id, fromsetup, tosetup, duration, cost, lastmodified) \
-          values (%%s,%%s,%%s,%%s,%%s,%%s,%%s,'%s')" % self.date,
-        datalist
-        )
-      if self.verbosity > 0:
-        print("Inserted %d new setup rules" % len(datalist))
-
-      transaction.commit(using=self.database)
-    except Exception as e:
-      try:
-        if e.faultString.find("Object frepple.setupmatrix doesn't exist") >= 0:
-          print("Warning importing setup matrices:")
-          print("  The frePPLe module is not installed on your OpenERP server.")
-          print("  No setup matrices will be downloaded.")
-        else:
-          print("Error importing setup matrices: %s" % e)
-      except:
-        print("Error importing setup matrices: %s" % e)
-      transaction.rollback(using=self.database)
-    finally:
-      transaction.commit(using=self.database)
-      transaction.leave_transaction_management(using=self.database)
-
-
   # Importing policies
   #   - extracting recently changed res.partner objects
   #   - meeting the criterion:
@@ -1175,7 +1134,6 @@ class Command(BaseCommand):
   def import_policies(self, cursor):
     transaction.enter_transaction_management(using=self.database)
     try:
-      starttime = time()
       if self.verbosity > 0:
         print("Importing policies...")
 
@@ -1202,12 +1160,12 @@ class Command(BaseCommand):
       cursor.executemany(
         "update buffer \
           set type= 'procure', lastmodified='%s' \
-          where item_id = %%s and subcategory = 'OpenERP'" % self.date,
+          where item_id = %%s and source = 'OpenERP'" % self.date,
         buy)
       cursor.executemany(
         "update buffer \
           set lastmodified='%s' \
-          where item_id = %%s and subcategory = 'OpenERP'" % self.date,
+          where item_id = %%s and source = 'OpenERP'" % self.date,
         produce)
 
       transaction.commit(using=self.database)
