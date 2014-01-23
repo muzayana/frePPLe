@@ -85,7 +85,7 @@ class Flow_inline(MultiDBTabularInline):
 
 class Load_inline(MultiDBTabularInline):
   model = Load
-  raw_id_fields = ('operation', 'resource',)
+  raw_id_fields = ('operation', 'resource','skill')
   fields = ('resource', 'operation', 'quantity', 'effective_start', 'effective_end', 'skill', 'setup')
   sfieldsets = (
           (None, {'fields': ['resource','operation', 'quantity', 'effective_start', 'effective_end', 'skill', 'setup']}),
