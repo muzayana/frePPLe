@@ -216,7 +216,7 @@ def generateBaseline(solver_fcst, cursor):
 
 
 def applyForecastAdjustments(cursor):
-  horizon_future = int(Parameter.getValue('Forecast.Horizon_future', cursor.db.alias, 365))
+  horizon_future = int(Parameter.getValue('forecast.Horizon_future', cursor.db.alias, 365))
   cursor.execute('''select forecast.name, calendarbucket.startdate,
        forecastplan.forecastadjustment
      from forecast
