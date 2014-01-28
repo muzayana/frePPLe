@@ -99,7 +99,7 @@ def aggregateDemand(cursor):
 
   # Initialize all buckets in the past and future
   starttime = time()
-  horizon_future = int(Parameter.getValue('Forecast.Horizon_future', cursor.db.alias, 365))
+  horizon_future = int(Parameter.getValue('forecast.Horizon_future', cursor.db.alias, 365))
   cursor.execute('''
     insert into forecastplan (
         forecast_id, customerlvl, itemlvl, startdate, orderstotal, ordersopen,
@@ -146,8 +146,8 @@ def generateBaseline(solver_fcst, cursor):
   curfcst = None
 
   # Build bucket lists
-  horizon_history = int(Parameter.getValue('Forecast.Horizon_history', cursor.db.alias, 10000))
-  horizon_future = int(Parameter.getValue('Forecast.Horizon_future', cursor.db.alias, 365))
+  horizon_history = int(Parameter.getValue('forecast.Horizon_history', cursor.db.alias, 10000))
+  horizon_future = int(Parameter.getValue('forecast.Horizon_future', cursor.db.alias, 365))
   thebuckets = {}
   cursor.execute('''select calendarbucket.calendar_id, startdate
      from calendarbucket
