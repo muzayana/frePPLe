@@ -87,6 +87,7 @@
 {"pk": "forecast.DoubleExponential_minGamma", "model": "common.parameter", "fields": {"description": "Minimum trend smoothing constant.", "value": "0.05"}},
 {"pk": "forecast.DueAtEndOfBucket", "model": "common.parameter", "fields": {"description": "By setting this flag to true, the forecast will be due at the end of the forecast bucket.", "value": "1"}},
 {"pk": "forecast.Horizon_future", "model": "common.parameter", "fields": {"description": "Specifies the number of days in the future we generate a forecast for.", "value": "365"}},
+{"pk": "forecast.Horizon_history", "model": "common.parameter", "fields": {"description": "Specifies the number of days in the past we use to compute a statistical forecast.", "value": "10000"}},
 {"pk": "forecast.Iterations", "model": "common.parameter", "fields": {"description": "Specifies the maximum number of iterations allowed for a forecast method to tune its parameters.", "value": "15"}},
 {"pk": "forecast.MovingAverage_order", "model": "common.parameter", "fields": {"description": "This parameter controls the number of buckets to be averaged by the moving average forecast method.", "value": "5"}},
 {"pk": "forecast.Net_CustomerThenItemHierarchy", "model": "common.parameter", "fields": {"description": "This flag allows us to control whether we first search the customer hierarchy and then the item hierarchy, or the other way around.", "value": "1"}},
