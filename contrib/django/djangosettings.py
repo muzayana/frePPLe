@@ -157,7 +157,7 @@ INSTALLED_APPS = (
     'freppledb.input',
     'freppledb.output',
     'freppledb.execute',
-    'freppledb.common'
+    'freppledb.common',
     'freppledb.openerp',
     'freppledb.openbravo',
 )
