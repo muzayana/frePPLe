@@ -16,7 +16,10 @@ Instead put all your settings in the file FREPPLE_CONFDIR/djangosettings.py.
 
 '''
 from __future__ import print_function
-import os, sys, locale
+import locale
+import os
+import sys
+import types
 import freppledb
 
 # FREPPLE_APP directory
@@ -205,9 +208,15 @@ COMMENT_MAX_LENGTH = 3000
 # Port number for the CherryPy web server
 PORT = 8000
 
-# Override any of the above settings from a seperate file
+# Override any of the above settings from a separate file
 if os.access(os.path.join(FREPPLE_CONFIGDIR,'djangosettings.py'), os.R_OK):
   exec open(os.path.join(FREPPLE_CONFIGDIR,'djangosettings.py')) in globals()
+  if DEBUG:
+    # Add a dummy module to sys.modules to make the development server
+    # autoreload when the configuration file changes.
+    module = types.ModuleType('djangosettings')
+    module.__file__ = os.path.join(FREPPLE_CONFIGDIR,'djangosettings.py')
+    sys.modules['djangosettings'] = module
 
 # Some Django settings we don't like to be overriden
 TEMPLATE_DEBUG = DEBUG
@@ -223,18 +232,6 @@ for param in DATABASES.values():
     # Extra default settings for SQLITE
     if len(param['OPTIONS']) == 0:
       param['OPTIONS'] = {"timeout": 10, "check_same_thread": False}
-  elif param['ENGINE'] == 'django.db.backends.mysql':
-    # Extra default settings for MYSQL
-    # InnoDB has the proper support for transactions that is required for
-    # frePPLe in a production environment.
-    if len(param['OPTIONS']) == 0:
-      param['OPTIONS'] = {"init_command": "SET storage_engine=INNODB, SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED"}
-    param['TEST_NAME'] = 'test_%s' % param['NAME']
-  elif param['ENGINE'] == 'django.db.backends.oracle':
-    param['TEST_NAME'] = param['NAME']
-    param['TEST_USER'] = 'test_%s' % param['USER']
-    param['TEST_PASSWD'] = param['PASSWORD']
-    param['OPTIONS'] = {'threaded': True,}
   elif param['ENGINE'] == 'django.db.backends.postgresql_psycopg2':
     param['TEST_NAME'] = 'test_%s' % param['NAME']
   else:

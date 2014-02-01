@@ -11,7 +11,7 @@
 from django.conf.urls import patterns
 
 import freppledb.common.views
-import freppledb.common.widgets
+import freppledb.common.dashboard
 
 
 # Automatically add these URLs when the application is installed
@@ -31,7 +31,7 @@ urlpatterns = patterns('',
   (r'^settings/$', freppledb.common.views.settings),
 
   # Dashboard widgets
-  (r'^widget/(.+)/', freppledb.common.widgets.WidgetRegistry.dispatch),
+  (r'^widget/(.+)/', freppledb.common.dashboard.Dashboard.dispatch),
 
   # Model list reports, which override standard admin screens
   (r'^admin/auth/group/$', freppledb.common.views.GroupList.as_view()),

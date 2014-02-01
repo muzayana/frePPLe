@@ -55,16 +55,16 @@ class CrumbsNode(Node):
     try:
       cur = req.session['crumbs']
       try: cur = cur[req.prefix]
-      except: cur = [(unicode(_('Home')), HOME_CRUMB % (req.prefix, _('Home')), '%s/admin/' % req.prefix)]
+      except: cur = [(unicode(_('Cockpit')), HOME_CRUMB % (req.prefix, _('Cockpit')), '%s/admin/' % req.prefix)]
     except:
       req.session['crumbs'] = {}
-      cur = [(unicode(_('Home')), HOME_CRUMB % (req.prefix, _('Home')), '%s/admin/' % req.prefix)]
+      cur = [(unicode(_('Cockpit')), HOME_CRUMB % (req.prefix, _('Cockpit')), '%s/admin/' % req.prefix)]
 
     # Compute the new crumb node
     try: title = variable_title.resolve(context)
     except: title = req.get_full_path()
     # A special case to work around the hardcoded title of the main admin page
-    if title == _('Site administration'): title = _('Home')
+    if title == _('Site administration'): title = _('Cockpit')
     node = (unicode(title),
       '<a href="%s%s%s">%s</a>' % (
         req.prefix, urlquote(req.path),
@@ -324,9 +324,11 @@ class DashboardNode(Node):
       self.varname = varname
 
   def render(self, context):
-    from freppledb.common.widgets import WidgetRegistry
-    reg = WidgetRegistry.buildList()
-    context[self.varname] = [ {'width': i['width'], 'widgets': [ reg[j] for j in i['widgets'] ]} for i in settings.DEFAULT_DASHBOARD ]
+    from freppledb.common.dashboard import Dashboard
+    try: req = context['request']
+    except: return ''  # No request found in the context
+    reg = Dashboard.buildList()
+    context[self.varname] = [ {'width': i['width'], 'widgets': [ reg[j[0]](**j[1]) for j in i['widgets'] if reg[j[0]].has_permission(req.user)]} for i in settings.DEFAULT_DASHBOARD ]
     return ''
 
     def __repr__(self):

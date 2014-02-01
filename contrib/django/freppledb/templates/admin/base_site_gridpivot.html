@@ -19,7 +19,9 @@ var resizing;
 var cross = [
 {{cross_list|safe}}
 ];
-$(function(){
+$(function(){ {% if reportclass.hasTimeBuckets and not bucketnames %}
+  $('#curfilter').html("{% trans 'Error: Missing time buckets or bucket dates' %}");
+{% else %}
   jQuery("#grid").jqGrid({
    	url: (location.href.indexOf("#") != -1 ? location.href.substr(0,location.href.indexOf("#")) : location.href)
       + (location.search.length > 0 ? "&format=json" : "?format=json"),
@@ -72,6 +74,7 @@ $(function(){
      });
   {% endif %}
   });
+{% endif %}});
 
 
 $(window).bind('resize', function() {

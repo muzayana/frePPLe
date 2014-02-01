@@ -11,45 +11,11 @@
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.admin.models import LogEntry
 from django.db import DEFAULT_DB_ALIAS
-from django.http import HttpResponseRedirect, HttpResponse
 from django.utils.translation import ugettext_lazy as _
 from django.utils.text import capfirst
 from django.utils.encoding import force_unicode
 
-from freppledb.common.widgets import WidgetRegistry
-
-
-class Widget:
-  '''
-  Widgets are UI components that can be added to the dashboard.
-  Subclasses need to follow these conventions:
-    - They can only be defined in a file "widget.py" in an application module.
-    - In the file widget.py each widget needs to register itself by calling
-      the method Widget.register().
-    - We don't expect widgets to be instantiated.
-    - Class attribute 'name' defines a unique identifier for the widget.
-      This string is also used for the URL to access the widget, so keep it
-      short and avoid special characters.
-    - Class attribute 'title' defines a translatable title string for the widget.
-    - Class attribute 'async' needs to be set to true for asynchronous widgets.
-      Such widgets are rendered in 2 steps: initially the dashboard displays a
-      loading icon, and next an ajax request is launched to populate the widget
-      content.
-    - Class method render(request) is called to render the widget to the
-      client browser.
-      It returns a string for synchronous widgets.
-      It returns a HTTPResponse object for asynchronous widgets.
-    - Class attribute 'url' optionally defines a url to a report with a more
-      complete content than can be displayed in the dashboard widget.
-  '''
-  name = "Undefined"
-  title = "Undefined"
-  async = False
-  url = None
-
-  @classmethod
-  def render(cls, request=None):
-    return "Not implemented"
+from freppledb.common.dashboard import Dashboard, Widget
 
 
 class WelcomeWidget(Widget):
@@ -57,8 +23,7 @@ class WelcomeWidget(Widget):
   title = _("Welcome")
   async = False
 
-  @classmethod
-  def render(cls, request=None):
+  def render(self, request=None):
     return _('''Welcome to frePPLe, the world's leading open source production planning tool!<br/><br/>
 How to get started?
 <ol><li>Start the <span class="underline"><a href="javascript:void(0);" onclick="tour.start('0,0,0'); return false;">guided tour</a></span></li>
@@ -68,7 +33,7 @@ How to get started?
 </ol>
 ''')
 
-WidgetRegistry.register(WelcomeWidget)
+Dashboard.register(WelcomeWidget)
 
 
 class NewsWidget(Widget):
@@ -76,21 +41,18 @@ class NewsWidget(Widget):
   title = _("News")
   async = False
 
-  @classmethod
-  def render(cls, request=None):
+  def render(self, request=None):
     return '<iframe style="width:100%" frameborder="0" src="http://frepple.com/news-summary/"></iframe>'
 
-WidgetRegistry.register(NewsWidget)
+Dashboard.register(NewsWidget)
 
 
 class RecentActionsWidget(Widget):
   name = "recent_actions"
   title = _("My actions")
   async = False
-  numberOfActions = 10
 
-  @classmethod
-  def render(cls, request=None):
+  def render(self, request=None):
     # This code is a slightly modified version of a standard Django tag.
     # The only change is to look for the logentry records in the right database.
     # See the file django\contrib\admin\templatetags\log.py
@@ -98,9 +60,9 @@ class RecentActionsWidget(Widget):
     try: db = current_request.database or DEFAULT_DB_ALIAS
     except: db = DEFAULT_DB_ALIAS
     if isinstance(current_request.user, AnonymousUser):
-      q = LogEntry.objects.using(db).select_related('content_type', 'user')[:cls.numberOfActions]
+      q = LogEntry.objects.using(db).select_related('content_type', 'user')[:self.limit]
     else:
-      q = LogEntry.objects.using(db).filter(user__id__exact=current_request.user.pk).select_related('content_type', 'user')[:cls.numberOfActions]
+      q = LogEntry.objects.using(db).filter(user__id__exact=current_request.user.pk).select_related('content_type', 'user')[:self.limit]
     result = []
     for entry in q:
       if entry.is_change():
@@ -117,4 +79,4 @@ class RecentActionsWidget(Widget):
         result.append('<span class="mini">%s</span><br/>' % force_unicode(_('Unknown content')))
     return result and '\n'.join(result) or force_unicode(_('None available'))
 
-WidgetRegistry.register(RecentActionsWidget)
+Dashboard.register(RecentActionsWidget)
