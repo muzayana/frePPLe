@@ -258,6 +258,16 @@ DEFAULT_CHARSET = 'utf-8'
 #    Windows - western europe -> 'cp1252'
 CSV_CHARSET = locale.getdefaultlocale()[1]
 
+# A list of available user interface themes.
+# The current selection is nothing but the pack of standard themes of JQuery UI.
+# Check out http://jqueryui.com/themeroller/ to roll your own theme.
+THEMES = [ (i,i) for i in (
+  'black-tie', 'blitzer', 'cupertino', 'dark-hive', 'dot-luv', 'eggplant',
+  'excite-bike', 'flick', 'hot-sneaks', 'humanity', 'le-frog', 'mint-choc',
+  'overcast', 'pepper-grinder', 'redmond', 'smoothness', 'south-street', 'start',
+  'sunny', 'swanky-purse', 'trontastic', 'ui-darkness', 'ui-lightness', 'vader'
+  )]
+
 # The default user interface theme
 DEFAULT_THEME = 'sunny'
 
@@ -268,7 +278,9 @@ DEFAULT_PAGESIZE = 100
 DEFAULT_DASHBOARD = [
   {'width':'50%', 'widgets':[
     ("welcome",{}),
-    ("procurement_queue",{"limit":50}),
+    ("resource_queue",{"limit":20}),
+    ("purchase_queue",{"limit":20}),
+    ("shipping_queue",{"limit":20}),
   ]},
   {'width':'25%', 'widgets':[
     ("recent_actions",{"limit":10}),
@@ -280,6 +292,7 @@ DEFAULT_DASHBOARD = [
   {'width':'25%', 'widgets':[
     ("news",{}),
     ('resource_utilization',{"limit":5}),
+    ("delivery_performance",{"green": 90, "yellow": 80}),
     ("inventory_by_location",{"limit":5}),
     ("inventory_by_item",{"limit":10}),
   ]},

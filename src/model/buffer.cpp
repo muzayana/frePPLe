@@ -17,10 +17,10 @@
 
 // This is the name used for the dummy operation used to represent the
 // inventory.
-#define INVENTORY_OPERATION "Inventory of buffer '" + string(getName()) + "'"
+#define INVENTORY_OPERATION "Inventory " + string(getName())
 
 // This is the name used for the dummy operation used to represent procurements
-#define PROCURE_OPERATION "Procure for buffer '" + string(getName()) + "'"
+#define PURCHASE_OPERATION "Purchase " + string(getName())
 
 namespace frepple
 {
@@ -822,20 +822,24 @@ DECLARE_EXPORT Operation* BufferProcure::getOperation() const
 {
   if (!oper)
   {
-    Operation *o = Operation::find(PROCURE_OPERATION);
+    Operation *o = Operation::find(PURCHASE_OPERATION);
     if (!o)
     {
-      // Create the operation if it didn't exist yet
-      o = new OperationFixedTime(PROCURE_OPERATION);
+      // Create a new purchase operation
+      o = new OperationFixedTime(PURCHASE_OPERATION);
       static_cast<OperationFixedTime*>(o)->setDuration(leadtime);
-      o->setFence(getFence());
-      o->setSizeMaximum(getSizeMaximum());
-      o->setSizeMinimum(getSizeMinimum());
-      o->setSizeMultiple(getSizeMultiple());
       Operation::add(o);  // No need to check again for existence
       new FlowEnd(o, const_cast<BufferProcure*>(this), 1);
     }
+    // Copy procurement parameters to the existing operation
+    if (o->getType() == *OperationFixedTime::metadata)
+      static_cast<OperationFixedTime*>(o)->setDuration(leadtime);
     const_cast<BufferProcure*>(this)->oper = o;
+    o->setFence(getFence());
+    o->setSizeMaximum(getSizeMaximum());
+    o->setSizeMinimum(getSizeMinimum());
+    o->setSizeMultiple(getSizeMultiple());
+    if (!o->getLocation()) o->setLocation(getLocation());
   }
   return oper;
 }

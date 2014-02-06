@@ -25,7 +25,7 @@ from django.utils.text import capfirst
 
 from freppledb.common.middleware import current_request
 from freppledb.common.dashboard import Dashboard, Widget
-from freppledb.output.models import Problem, OperationPlan
+from freppledb.output.models import LoadPlan, Problem, OperationPlan, Demand
 
 
 class LateOrdersWidget(Widget):
@@ -95,9 +95,9 @@ class ShortOrdersWidget(Widget):
 Dashboard.register(ShortOrdersWidget)
 
 
-class ProcurementQueueWidget(Widget):
-  name = "procurement_queue"
-  title = _("Procurement queue")
+class PurchaseQueueWidget(Widget):
+  name = "purchase_queue"
+  title = _("Purchase queue")
   permissions = (("view_operation_report", "Can view operation report"),)
   async = True
   url = '/operationplan/?locked=0&sidx=startdate&sord=asc&operation__startswith=Purchase'
@@ -118,14 +118,82 @@ class ProcurementQueueWidget(Widget):
         capfirst(force_unicode(_("enddate"))), capfirst(force_unicode(_("quantity")))
         )
       ]
-    for opplan in OperationPlan.objects.using(db).filter(operation__startswith='Procure ', locked=False).order_by('startdate')[:limit]:
+    for opplan in OperationPlan.objects.using(db).filter(operation__startswith='Purchase ', locked=False).order_by('startdate')[:limit]:
       result.append('<tr><td>%s</td><td class="aligncenter">%s</td><td class="aligncenter">%s</td><td class="aligncenter">%s</td></tr>' % (
           opplan.operation, opplan.startdate.date(), opplan.enddate.date(), int(opplan.quantity)
           ))
     result.append('</table>')
     return HttpResponse('\n'.join(result))
 
-Dashboard.register(ProcurementQueueWidget)
+Dashboard.register(PurchaseQueueWidget)
+
+
+class ShippingQueueWidget(Widget):
+  name = "shipping_queue"
+  title = _("Shipping queue")
+  permissions = (("view_operation_report", "Can view operation report"),)
+  async = True
+  url = '/demandplan/?sidx=plandate&sord=asc'
+  exporturl = True
+
+  def args(self):
+    return "?%s" % urlencode({'limit': self.limit})
+
+  @classmethod
+  def render(cls, request=None):
+    limit = request.GET.get('limit',20)
+    try: db = current_request.database or DEFAULT_DB_ALIAS
+    except: db = DEFAULT_DB_ALIAS
+    result = [
+      '<table style="width:100%">',
+      '<tr><th class="alignleft">%s</th><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr>' % (
+        capfirst(force_unicode(_("demand"))), capfirst(force_unicode(_("customer"))),
+        capfirst(force_unicode(_("item"))), capfirst(force_unicode(_("quantity"))),
+        capfirst(force_unicode(_("plan date")))
+        )
+      ]
+    for dmdplan in Demand.objects.using(db).filter(planquantity__gt=0).order_by('plandate')[:limit]:
+      result.append('<tr><td class="underline"><a href="%s/demandpegging/%s/">%s</a></td><td>%s</td><td>%s</td><td class="aligncenter">%s</td><td class="aligncenter">%s</td></tr>' % (
+          request.prefix, quote(dmdplan.demand), dmdplan.demand, dmdplan.customer, dmdplan.item, int(dmdplan.planquantity), dmdplan.plandate.date()
+          ))
+    result.append('</table>')
+    return HttpResponse('\n'.join(result))
+
+Dashboard.register(ShippingQueueWidget)
+
+
+class ResourceQueueWidget(Widget):
+  name = "resource_queue"
+  title = _("Resource queue")
+  permissions = (("view_resource_report", "Can view resource report"),)
+  async = True
+  url = '/loadplan/?sidx=startdate&sord=asc'
+  exporturl = True
+
+  def args(self):
+    return "?%s" % urlencode({'limit': self.limit})
+
+  @classmethod
+  def render(cls, request=None):
+    limit = request.GET.get('limit',20)
+    try: db = current_request.database or DEFAULT_DB_ALIAS
+    except: db = DEFAULT_DB_ALIAS
+    result = [
+      '<table style="width:100%">',
+      '<tr><th class="alignleft">%s</th><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr>' % (
+        capfirst(force_unicode(_("resource"))), capfirst(force_unicode(_("operation"))),
+        capfirst(force_unicode(_("startdate"))), capfirst(force_unicode(_("enddate"))),
+        capfirst(force_unicode(_("quantity")))
+        )
+      ]
+    for ldplan in LoadPlan.objects.using(db).select_related().order_by('startdate')[:limit]:
+      result.append('<tr><td class="underline"><a href="%s/loadplan/?%s&sidx=startdate&sord=asc">%s</a></td><td>%s</td><td class="aligncenter">%s</td><td class="aligncenter">%s</td><td class="aligncenter">%s</td></tr>' % (
+          request.prefix, urlencode({'theresource': ldplan.theresource}  or ''), ldplan.theresource, ldplan.operationplan.operation, ldplan.startdate, ldplan.enddate, int(ldplan.operationplan.quantity)
+          ))
+    result.append('</table>')
+    return HttpResponse('\n'.join(result))
+
+Dashboard.register(ResourceQueueWidget)
 
 
 class AlertsWidget(Widget):
@@ -134,7 +202,6 @@ class AlertsWidget(Widget):
   permissions = (("view_problem_report", "Can view problem report"),)
   async = True
   url = '/problem/'
-  exporturl = True
 
   @classmethod
   def render(cls, request=None):
@@ -178,7 +245,6 @@ class ResourceLoadWidget(Widget):
     var data = [];
     var cnt = 100;
     $("#resLoad").next().find("td.name").each(function() {res.push([cnt,$(this).html()]); cnt-=1;});
-    console.log(res);
     cnt = 100;
     $("#resLoad").next().find("td.util").each(function() {data.push([$(this).html(),cnt]); cnt-=1;});
     Flotr.draw($("#resLoad").get(0), [ data ], {
@@ -194,7 +260,7 @@ class ResourceLoadWidget(Widget):
           ticks: res
           },
         mouse: {
-          track: true, relative: true
+          track: true, relative: true, lineColor: '#D31A00'
         },
         xaxis: {
           min: 0, autoscaleMargin: 1, title: '%'
@@ -264,7 +330,7 @@ class InventoryByLocationWidget(Widget):
           ticks: locs, labelsAngle: 45
           },
         mouse: {
-          track: true, relative: true
+          track: true, relative: true, lineColor: '#828915'
         },
         yaxis: {
           min: 0, autoscaleMargin: 1
@@ -328,12 +394,12 @@ class InventoryByItemWidget(Widget):
           ticks: locs, labelsAngle: -45
           },
         mouse : {
-          track: true, relative: true
+          track: true, relative: true, lineColor: '#D31A00'
         },
         yaxis : {
           min: 0, autoscaleMargin: 1
         },
-        colors: ['#d31a00']
+        colors: ['#D31A00']
     });
     '''
 
@@ -362,3 +428,50 @@ class InventoryByItemWidget(Widget):
     return HttpResponse('\n'.join(result))
 
 Dashboard.register(InventoryByItemWidget)
+
+
+class DeliveryPerformanceWidget(Widget):
+  name = "delivery_performance"
+  title = _("Delivery performance")
+  async = True
+
+  def args(self):
+    return "?%s" % urlencode({'green': self.green, 'yellow': self.yellow})
+
+  javascript = '''
+    var val = parseFloat($('#otd_value').html());
+    var green = parseInt($('#otd_green').html());
+    var yellow = parseInt($('#otd_yellow').html());
+    new Gauge("otd", {
+      size: 120, label: $('#otd_label').html(), min: 0, max: 100, minorTicks: 5,
+      greenZones: [{from: green, to: 100}], yellowZones: [{from: yellow, to: green}],
+      value: val
+      }).render();
+    '''
+
+  @classmethod
+  def render(cls, request=None):
+    green = int(request.GET.get('green',90))
+    yellow = int(request.GET.get('yellow',80))
+    cursor = connections[request.database].cursor()
+    query = '''
+      select sum(late) * 100.0 /count(*)
+      from (
+        select
+          demand, max(case when plandate > due then 1 else 0 end) late
+        from out_demand
+        group by demand
+      ) demands
+      '''
+    cursor.execute(query)
+    val = cursor.fetchone()[0]
+    result = [
+      '<div style="text-align: center"><span id="otd"></span></div>',
+      '<span id="otd_label" style="display:none">%s</span>' % force_unicode(_("On time delivery")),
+      '<span id="otd_value" style="display:none">%s</span>' % val,
+      '<span id="otd_green" style="display:none">%s</span>' % green,
+      '<span id="otd_yellow" style="display:none">%s</span>' % yellow
+      ]
+    return HttpResponse('\n'.join(result))
+
+Dashboard.register(DeliveryPerformanceWidget)
