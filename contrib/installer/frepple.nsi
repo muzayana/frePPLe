@@ -1,7 +1,7 @@
 ;
 ; Nullsoft script for creating a windows installer for frePPLe
 ;
-; Copyright (C) 2007-2013 by Johan De Taeye, frePPLe bvba
+; Copyright (C) 2007-2014 by Johan De Taeye, frePPLe bvba
 ;
 ; All information contained herein is, and remains the property of frePPLe.
 ; You are allowed to use and modify the source code, as long as the
@@ -26,7 +26,7 @@
 !define PRODUCT_NAME "frePPLe"
 !define PRODUCT_VERSION "2.2.beta"
 !define PRODUCT_PUBLISHER "frePPLe"
-!define PRODUCT_WEB_SITE "http://www.frepple.com"
+!define PRODUCT_WEB_SITE "http://frepple.com"
 !define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\frepple.exe"
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME} ${PRODUCT_VERSION}"
 
@@ -96,7 +96,7 @@ FunctionEnd
 !define MUI_ABORTWARNING
 !define MUI_WELCOMEFINISHPAGE_BITMAP "frepple.bmp"
 !define MUI_UNWELCOMEFINISHPAGE_BITMAP "frepple.bmp"
-!define MUI_WELCOMEPAGE_TEXT "This wizard will guide you through the installation of frePPLe.$\r$\n$\r$\nIt is recommended to uninstall a previous version before this installing a new one.$\r$\n$\r$\nClick Next to continue"
+!define MUI_WELCOMEPAGE_TEXT "This wizard will guide you through the installation of frePPLe.$\r$\n$\r$\nIt is recommended to uninstall a previous version before this installing a new one."
 !define MUI_HEADERIMAGE_BITMAP "..\..\doc\frepple.bmp"
 !define MUI_ICON "..\..\src\frepple.ico"
 !define MUI_UNICON "..\..\src\frepple.ico"
@@ -144,6 +144,8 @@ ShowInstDetails show
 ShowUnInstDetails show
 Var InstalledDocumentation
 Var LicenseFile
+Var DatabaseEngine
+Var StartedNow
 
 ReserveFile "licensefile.ini"
 ReserveFile "parameters.ini"
@@ -225,8 +227,9 @@ Section "Application" SecAppl
 
   ; Create menu
   CreateDirectory "$SMPROGRAMS\${PRODUCT_NAME} ${PRODUCT_VERSION}"
-  CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME} ${PRODUCT_VERSION}\Run server.lnk" "$INSTDIR\bin\frepplectl.exe" "frepple_runserver"
+  CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME} ${PRODUCT_VERSION}\Start frePPLe server.lnk" "$INSTDIR\bin\freppleserver.exe"
   CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME} ${PRODUCT_VERSION}\Open customization folder.lnk" "$INSTDIR\bin\custom"
+  CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME} ${PRODUCT_VERSION}\Open log folder.lnk" "$APPDATA\${PRODUCT_NAME}\${PRODUCT_VERSION}"
 
   ; Pick up the installation parameters
   ReadINIStr $6 "$PLUGINSDIR\parameters.ini" "Field 8" "State"  # Language
@@ -262,6 +265,7 @@ Section "Application" SecAppl
     Goto ok
   MessageBox MB_ICONEXCLAMATION|MB_OK "Invalid database type $0!"
   ok:
+  strcpy $DatabaseEngine $0
   ReadINIStr $1 "$PLUGINSDIR\parameters.ini" "Field 10" "State"  # DB name
   ReadINIStr $2 "$PLUGINSDIR\parameters.ini" "Field 11" "State"  # DB user
   ReadINIStr $3 "$PLUGINSDIR\parameters.ini" "Field 12" "State"  # DB password
@@ -413,9 +417,11 @@ FunctionEnd
 
 Function FinishLeave
   ; Check how we left the screen: toggle "install service", toggle "run in console", or "next" button
+  strcpy $StartedNow "no"
   ReadINIStr $0 "$PLUGINSDIR\finish.ini" "Settings" "State"
   ${If} $0 == 1
-     ; Toggling the "run in console" checkbox
+     strcpy $StartedNow "yes"
+     ; Toggling the "run in system tray" checkbox
      ReadINIStr $0 "$PLUGINSDIR\finish.ini" "Field 1" "State"
      ${If} $0 == 1
        ; Deactivate the "install service" checkbox
@@ -425,10 +431,11 @@ Function FinishLeave
      ${EndIf}
      Abort  ; Return to the page
   ${ElseIf} $0 == 3
+     strcpy $StartedNow "yes"
      ; Toggling the "install service" checkbox
      ReadINIStr $0 "$PLUGINSDIR\finish.ini" "Field 3" "State"
      ${If} $0 == 1
-       ; Deactivate the "run in console" checkbox
+       ; Deactivate the "run in system tray" checkbox
        WriteIniStr "$PLUGINSDIR\finish.ini" "Field 1" "State" "0"
        readinistr $2 "$PLUGINSDIR\finish.ini" "Field 1" "HWND"
        SendMessage $2 ${BM_SETCHECK} 0 0
@@ -436,20 +443,21 @@ Function FinishLeave
      Abort  ; Return to the page
   ${EndIf}
 
-  ; Start the server in console window
+  ; Start the server in system tray
   ReadINIStr $0 "$PLUGINSDIR\finish.ini" "Field 1" "State"
   ${If} $0 == 1
-    Exec '"$INSTDIR\bin\frepplectl.exe" "frepple_runserver"'
+    Exec '"$INSTDIR\bin\freppleserver.exe"'
   ${EndIf}
 
   ; View the documentation
   ReadINIStr $0 "$PLUGINSDIR\finish.ini" "Field 2" "State"
   ${If} $0 == 1
     ${If} $InstalledDocumentation == "yes"
-      ExecShell open "$INSTDIR\doc\index.html"
+      Push '"$INSTDIR\doc\output\index.html"'
     ${Else}
-      ExecShell open "http://www.frepple.com/documentation/"
+      Push '"http://frepple.com/documentation/"'
     ${EndIf}
+    Call openLinkNewWindow
   ${EndIf}
 
   ; Install the service
@@ -461,6 +469,12 @@ Function FinishLeave
     CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME} ${PRODUCT_VERSION}\Start service.lnk" "$INSTDIR\bin\freppleservice.exe" "start"
     CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME} ${PRODUCT_VERSION}\Stop service.lnk" "$INSTDIR\bin\freppleservice.exe" "stop"
   ${EndIf}
+
+  ; Open the application page
+  ${If} $StartedNow == "yes"
+    Push "http://localhost:8000/"
+    Call openLinkNewWindow
+  ${EndIf}
 FunctionEnd
 
 
@@ -468,7 +482,7 @@ Section "Documentation" SecDoc
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
   CreateDirectory "$SMPROGRAMS\${PRODUCT_NAME} ${PRODUCT_VERSION}"
-  CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME} ${PRODUCT_VERSION}\Documentation.lnk" "$INSTDIR\doc\index.html"
+  CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME} ${PRODUCT_VERSION}\Documentation.lnk" "$INSTDIR\doc\output\index.html"
   File /r "doc"
   StrCpy $InstalledDocumentation "yes"
 SectionEnd
@@ -509,9 +523,24 @@ Section -Post
   !cd ".."
   !system "sh -c 'rm -rf frepple-${PRODUCT_VERSION}'"
 
-  ; Open the post-installation page
-  Push "http://www.frepple.com/post-install/?version=${PRODUCT_VERSION}"
-  Call openLinkNewWindow
+  ; Create the database schema
+  ${If} $DatabaseEngine != "sqlite3"
+    DetailPrint "Creating database schema"
+    nsExec::ExecToLog /OEM /TIMEOUT=90000 '"$INSTDIR\bin\frepplectl.exe" syncdb --noinput --no-initial-data'
+    Pop $0
+    ${If} $0 == "0"
+      DetailPrint "Loading demo data"
+      nsExec::ExecToLog /OEM /TIMEOUT=90000 '"$INSTDIR\bin\frepplectl.exe" loaddata initial_data'
+      DetailPrint "Generating initial plan"
+      nsExec::ExecToLog /OEM /TIMEOUT=90000 '"$INSTDIR\bin\frepplectl.exe" frepple_run'
+    ${else}
+      DetailPrint "x $0 x"
+      DetailPrint "ERROR CREATING DATABASE SCHEMA!!!"
+      DetailPrint " "
+      DetailPrint "Review the file 'bin\\custom\\djangosettings.py' and run 'frepplectl syncdb'"
+      DetailPrint " "
+    ${EndIf}
+  ${EndIf}
 
   ; Create uninstaller
   WriteUninstaller "$INSTDIR\uninst.exe"
@@ -528,6 +557,10 @@ Section -Post
   ${GetSize} "$INSTDIR" "/S=0K" $0 $1 $2
   IntFmt $0 "0x%08X" $0
   WriteRegDWORD SHCTX "${PRODUCT_UNINST_KEY}" "EstimatedSize" "$0"
+
+  ; Open the post-installation page
+  Push "http://www.frepple.com/post-install/?version=${PRODUCT_VERSION}"
+  Call openLinkNewWindow
 SectionEnd
 
 
@@ -564,11 +597,12 @@ Section Uninstall
   ; Remove the entries from the start menu
   Delete "$SMPROGRAMS\${PRODUCT_NAME} ${PRODUCT_VERSION}\Uninstall.lnk"
   Delete "$SMPROGRAMS\${PRODUCT_NAME} ${PRODUCT_VERSION}\Documentation.lnk"
-  Delete "$SMPROGRAMS\${PRODUCT_NAME} ${PRODUCT_VERSION}\Run server.lnk"
+  Delete "$SMPROGRAMS\${PRODUCT_NAME} ${PRODUCT_VERSION}\Start frePPLe server.lnk"
   Delete "$SMPROGRAMS\${PRODUCT_NAME} ${PRODUCT_VERSION}\frePPLe web site.lnk"
   Delete "$SMPROGRAMS\${PRODUCT_NAME} ${PRODUCT_VERSION}\Start service.lnk"
   Delete "$SMPROGRAMS\${PRODUCT_NAME} ${PRODUCT_VERSION}\Stop service.lnk"
   Delete "$SMPROGRAMS\${PRODUCT_NAME} ${PRODUCT_VERSION}\Open customization folder.lnk"
+  Delete "$SMPROGRAMS\${PRODUCT_NAME} ${PRODUCT_VERSION}\Open log folder.lnk"
 
   ; Remove the folder in start menu
   RMDir "$SMPROGRAMS\${PRODUCT_NAME} ${PRODUCT_VERSION}"
@@ -593,8 +627,7 @@ Section Uninstall
   ; Do not automatically close the window
   SetAutoClose false
 
-  ; Open the post-installation page
+  ; Open the post-uninstallation page
   Push "http://www.frepple.com/post-uninstall/?version=${PRODUCT_VERSION}"
   Call un.openLinkNewWindow
-
 SectionEnd
