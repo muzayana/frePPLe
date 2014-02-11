@@ -2,12 +2,18 @@
 {% load i18n %}
 
 {% block title %}frePPLe{% endblock %}
-{% block content_title %}<h1>{% trans "Cockpit" %}</h1>{% endblock %}
-
+{% block content_title %}<div class="tools"><a id="filter" href="javascript:dashboard.customize();" class="icon"><span class="ui-icon ui-icon-wrench"></span>{% trans 'Customize' %}</a></div>
+<h1>{% trans "Cockpit" %}</h1>{% endblock %}
 {% block extrahead %}{{block.super}}
 <script type="text/javascript" src="/static/js/flotr2.min.js"></script>
 <script type="text/javascript" src="/static/js/d3.min.js"></script>
 <style>
+  .customlayout {
+    height:50px;
+    border:1px solid;
+    display: inline-block;
+    position:relative;
+  }
   .column {
     float: left;
     padding-bottom: 200px;
@@ -15,6 +21,9 @@
   .portlet {
     margin: 0 1em 1em 0;
     padding: 0.3em;
+  }
+  .portlet-config {
+    display: none;
   }
   .portlet-header {
     padding: 0.2em 0.3em;
@@ -54,7 +63,8 @@
       connectWith: ".column",
       handle: ".portlet-header",
       cancel: ".portlet-toggle",
-      placeholder: "portlet-placeholder ui-corner-all"
+      placeholder: "portlet-placeholder ui-corner-all",
+      stop: dashboard.save
     });
 
     $(".portlet-toggle").click(function() {
@@ -65,6 +75,7 @@
 
     $(".portlet-close").click(function() {
       $(this).closest(".portlet").remove();
+      dashboard.save();
     });
     $(".button").button();
   });
@@ -77,6 +88,7 @@
 <div class="column" style="width:{{col.width}}">
 {% for widget in col.widgets %}
   <div class="ui-widget ui-widget-content ui-helper-clearfix ui-corner-all portlet">
+    <div class="portlet-config" data-name="{{widget.name}}" data-value="{{widget}}"></div>
     <div class="portlet-header ui-widget-header ui-corner-all">{% if widget.exporturl %}<a href="{{request.prefix}}{{widget.url}}&format=spreadsheet"><span class='ui-icon ui-icon-arrowreturn-1-n portlet-export'></span></a>{% endif %}<span class='ui-icon ui-icon-close portlet-close'></span><span class='ui-icon ui-icon-minus portlet-toggle'></span>{% if widget.url %}<a href="{{request.prefix}}{{widget.url}}">{{widget.title}}</a>{% else %}{{widget.title}}{% endif %}</div>
     <div class="portlet-content">{% if widget.async %}<div id="widget_{{widget.name}}" style="text-align:center"><img src="{{STATIC_URL}}img/loading.gif" height="32" alt="loading"></div>{% else %}{{widget.render|safe}}{% endif %}</div>
   </div>

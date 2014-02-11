@@ -567,7 +567,7 @@ var grid = {
             height: 'auto'
           });
         }
-    });
+      });
   },
 
   //This function is called when a cell is just being selected in an editable
@@ -888,8 +888,146 @@ var grid = {
 }
 
 
+//----------------------------------------------------------------------------
+// Code for sending dashboard configuration to the server.
+//----------------------------------------------------------------------------
 
+var dashboard = {
+  save : function()
+  {
+    // Loop over all columns
+    var columns = [];
+    var width = 0;
+    $(".column").each(function() {
+       var widgets = [];
+       // Loop over all widgets
+       $(this).find(".portlet-config").each(function() {
+         widgets.push( [$(this).attr("data-name"), {}] );
+       });
+       var x = $(this).css('width');
+       x = parseInt(x.substring(0, x.length - 2));
+       width += x;
+       columns.push({'width': x, 'widgets': widgets});
+    });
+    // Convert column width to a percentage
+    for (var i = 0; i < columns.length; i++)
+      columns[i]['width'] = Math.round(columns[i]['width'] * 100.0 / width) + "%";
+    console.log("Zombie " + JSON.stringify(columns) + width);
+    // Send the results to the server
+    $.ajax({
+      url: '/settings/',
+      type: 'POST',
+      contentType: 'application/json; charset=utf-8',
+      data: JSON.stringify({"freppledb.common.cockpit": columns}),
+      error: function (result, stat, errorThrown) {
+        $('#popup').html(result.responseText)
+          .dialog({
+            title: gettext("Error saving report settings"),
+            autoOpen: true,
+            resizable: false,
+            width: 'auto',
+            height: 'auto'
+          });
+        }
+      });
+  },
 
+  customize: function()
+  {
+    $('#popup').html(
+      '<table style="text-align:center">' +
+      '<tr><td><label for="layout1"><div class="customlayout" style="width:50px"></div></label><br/>' +
+      '<input id="layout1" type="radio" name="layout" value="100"></td>' +
+      '<td><label for="layout2"><div class="customlayout" style="width:25px"></div><div class="customlayout" style="width:25px"></div></label><br/>' +
+      '<input id="layout2" type="radio" name="layout" value="50,50"></td>' +
+      '<td><label for="layout3"><div class="customlayout" style="width:33px"></div><div class="customlayout" style="width:17px"></div></label><br/>' +
+      '<input id="layout3" type="radio" name="layout" value="66,33"></td></tr>' +
+      '<tr><td><label for="layout4"><div class="customlayout" style="width:17px"></div><div class="customlayout" style="width:16px"></div><div class="customlayout" style="width:17px"></div></label><br/>' +
+      '<input id="layout4" type="radio" name="layout" value="34,33,33"></td>' +
+      '<td><label for="layout5"><div class="customlayout" style="width:20px"></div><div class="customlayout" style="width:15px"></div><div class="customlayout" style="width:15px"></div></label><br/>' +
+      '<input id="layout5" type="radio" name="layout" value="40,30,30"></td>' +
+      '<td><label for="layout6"><div class="customlayout" style="width:25px"></div><div class="customlayout" style="width:12px"></div><div class="customlayout" style="width:13px"></div></label><br/>' +
+      '<input id="layout6" type="radio" name="layout" value="50,25,25"></td></tr>' +
+      '</table>'
+      ).dialog({
+        title: gettext("Customize"),
+        width: 'auto',
+        height: 'auto',
+        autoOpen: true,
+        resizable: false,
+        buttons: [
+            {
+              text: gettext("OK"),
+              click: function() {
+                var sel = $('#popup input[name=layout]:checked').val().split(",");
+                var lastcol;
+                var count = -1;
+                $(".column").each(function(idx) {
+                  if (idx >= sel.length)
+                  {
+                    // Remove column
+                    $(this).find(".portlet").each(function() {$(lastcol).append($(this));});
+                    $(this).remove();
+                  }
+                  else
+                  {
+                    // Resize column
+                    $(this).css('width',sel[idx] + '%');
+                    lastcol = this;
+                  }
+                  count = idx;
+                  });
+                while (count < sel.length-1)
+                {
+                  // Add column
+                  count += 1;
+                  $(lastcol).after('<div class="column ui-sortable" style="width:' + sel[count] + '%"></div>');
+                  $(".column").sortable({
+                    connectWith: ".column",
+                    handle: ".portlet-header",
+                    cancel: ".portlet-toggle",
+                    placeholder: "portlet-placeholder ui-corner-all",
+                    stop: dashboard.save
+                  });
+                }
+                $(this).dialog("close");
+                dashboard.save();
+              }
+            },
+            {
+              text: gettext("Reset"),
+              click: function() {
+                $.ajax({
+                  url: '/settings/',
+                  type: 'POST',
+                  contentType: 'application/json; charset=utf-8',
+                  data: JSON.stringify({"freppledb.common.cockpit": ""}),
+                  success: function() {
+                    // Reload page
+                    window.location.href = window.location.href;
+                     },
+                  error: function (result, stat, errorThrown) {
+                    $('#popup').html(result.responseText)
+                      .dialog({
+                        title: gettext("Error saving report settings"),
+                        autoOpen: true,
+                        resizable: false,
+                        width: 'auto',
+                        height: 'auto'
+                      });
+                    }
+                  });
+                $(this).dialog("close");
+                }
+            },
+            {
+              text: gettext("Cancel"),
+              click: function() { $(this).dialog("close"); }
+            }
+            ]
+        });
+  }
+}
 
 //----------------------------------------------------------------------------
 // Code for customized autocomplete widget.
