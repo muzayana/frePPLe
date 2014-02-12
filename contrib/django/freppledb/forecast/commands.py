@@ -240,10 +240,11 @@ def createSolver(cursor):
      select name, value
      from common_parameter
      where name like 'forecast.%%'
-       and name <> 'forecast.Horizon_future'
      ''')
   for key, value in cursor.fetchall():
-    if key in ('forecast.DueAtEndOfBucket', 'forecast.Horizon_future', 'forecast.Iterations', 'forecast.loglevel',
+    if key in ('forecast.Horizon_future', 'forecast.Horizon_history'):
+      continue
+    elif key in ('forecast.DueAtEndOfBucket', 'forecast.Iterations', 'forecast.loglevel',
       'forecast.MovingAverage_order', 'forecast.Net_CustomerThenItemHierarchy', 'forecast.Net_MatchUsingDeliveryOperation',
       'forecast.Net_NetEarly', 'forecast.Net_NetLate', 'forecast.Skip'):
       kw[key[9:]] = int(value)
