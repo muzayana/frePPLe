@@ -1575,8 +1575,6 @@ class Operation : public HasName<Operation>,
   *    if this hasn't been done yet.<br>
   *  - Operationplans can be organized in hierarchical structure, matching
   *    the operation hierarchies they belong to.
-  *
-  * @todo reading suboperationplans can be improved
   */
 class OperationPlan
   : public Object, public HasProblems, public NonCopyable
@@ -1795,6 +1793,21 @@ class OperationPlan
       */
     bool getLocked() const {return flags & IS_LOCKED;}
 
+    /** Returns true is this operationplan is allowed to consume material.
+      * This field only has an impact for locked operationplans.
+      */
+    bool getConsumeMaterial() const {return !(flags & CONSUME_MATERIAL);}
+
+    /** Returns true is this operationplan is allowed to produce material.
+      * This field only has an impact for locked operationplans.
+      */
+    bool getProduceMaterial() const {return !(flags & PRODUCE_MATERIAL);}
+
+    /** Returns true is this operationplan is allowed to consume capacity.
+      * This field only has an impact for locked operationplans.
+      */
+    bool getConsumeCapacity() const {return !(flags & CONSUME_CAPACITY);}
+
     /** Deletes all operationplans of a certain operation. A boolean flag
       * allows to specify whether locked operationplans are to be deleted too.
       */
@@ -1804,6 +1817,27 @@ class OperationPlan
       * changed.
       */
     virtual DECLARE_EXPORT void setLocked(bool b = true);
+
+    /** Update flag which allow/disallows material consumption. */
+    void setConsumeMaterial(bool b)
+    {
+      if (b) flags &= ~CONSUME_MATERIAL;
+      else flags |= CONSUME_MATERIAL;
+    }
+
+    /** Update flag which allow/disallows material production. */
+    void setProduceMaterial(bool b)
+    {
+      if (b) flags &= ~PRODUCE_MATERIAL;
+      else flags |= PRODUCE_MATERIAL;
+    }
+
+    /** Update flag which allow/disallows capacity consumption. */
+    void setConsumeCapacity(bool b)
+    {
+      if (b) flags &= ~CONSUME_CAPACITY;
+      else flags |= CONSUME_CAPACITY;
+    }
 
     /** Returns a pointer to the operation being instantiated. */
     Operation* getOperation() const {return oper;}
@@ -1879,7 +1913,14 @@ class OperationPlan
       * highest identifier read in from the input and is then incremented
       * for every operationplan that is registered.
       */
-    unsigned long getIdentifier() const {return id;}
+    DECLARE_EXPORT unsigned long getIdentifier()
+    {
+      if (id==1) assignIdentifier(); // Lazy generation
+      return id;
+    }
+
+    /** Return the identifier. This method can return the lazy identifier 1. */
+    unsigned long getRawIdentifier() const {return id;}
 
     /** Updates the end date of the operationplan and compute the start
       * date.<br>
@@ -1934,7 +1975,7 @@ class OperationPlan
       * If the operationplan is invalid, it will be DELETED and the return value
       * is 'false'.
       */
-    DECLARE_EXPORT bool activate(bool useMinCounter = true);
+    DECLARE_EXPORT bool activate();
 
     /** Remove an operationplan from the list of officially registered ones.<br>
       * The operationplan will keep its loadplans and flowplans after unregistration.
@@ -2046,6 +2087,9 @@ class OperationPlan
       */
     virtual DECLARE_EXPORT void update();
 
+    /** Generates a unique identifier for the operationplan. */
+    DECLARE_EXPORT bool assignIdentifier();
+
     /** Update the loadplans and flowplans of the operationplan based on the
       * latest information of quantity, date and locked flag.<br>
       * This method will NOT update parent or child operationplans.
@@ -2068,9 +2112,12 @@ class OperationPlan
     {initType(metadata);}
 
   private:
-    static const short IS_LOCKED = 1;
-    static const short IS_SETUP = 2;
-    static const short HAS_SETUP = 4;
+    static const short IS_LOCKED = 1;    // 0: no, 1: yes
+    static const short IS_SETUP = 2;     // 0: no, 1: yes
+    static const short HAS_SETUP = 4;    // 0: no, 1: yes
+    static const short CONSUME_MATERIAL = 8;  // 0: yes, 1: no
+    static const short PRODUCE_MATERIAL = 16; // 0: yes, 1: no
+    static const short CONSUME_CAPACITY = 32; // 0: yes, 1: no
 
     /** Pointer to a higher level OperationPlan. */
     OperationPlan *owner;
@@ -2087,19 +2134,9 @@ class OperationPlan
       * The value of the counter is the first available identifier value that
       * can be used for a new operationplan.<br>
       * The first value is 1, and each operationplan increases it by 1.
-      * @see counterMax
-      * @see getIdentifier()
+      * @see assignIdentifier()
       */
     static DECLARE_EXPORT unsigned long counterMin;
-
-    /** Counter of OperationPlans, which is used to automatically assign a
-      * unique identifier for each operationplan.<br>
-      * The first value is a very high number, and each operationplan
-      * decreases it by 1.
-      * @see counterMin
-      * @see getIdentifier()
-      */
-    static DECLARE_EXPORT unsigned long counterMax;
 
     /** Pointer to the demand.<br>
       * Only delivery operationplans have this field set. The field is NULL
@@ -2109,6 +2146,10 @@ class OperationPlan
 
     /** Unique identifier.<br>
       * The field is 0 while the operationplan is not fully registered yet.
+      * The field is 1 when the operationplan is fully registered but only a
+      * temporary id is generated.
+      * A unique value for each operationplan is created lazily when the
+      * method getIdentifier() is called.
       */
     unsigned long id;
 
