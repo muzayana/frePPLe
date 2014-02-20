@@ -320,8 +320,9 @@ class DashboardNode(Node):
   r'''
   A tag to return HTML code for the dashboard.
   '''
-  def __init__(self, varname):
+  def __init__(self, varname, hiddenvarname):
       self.varname = varname
+      self.hiddenvarname = hiddenvarname
 
   def render(self, context):
     from freppledb.common.dashboard import Dashboard
@@ -330,7 +331,15 @@ class DashboardNode(Node):
     reg = Dashboard.buildList()
     mydashboard = req.user.getPreference("freppledb.common.cockpit")
     if not mydashboard: mydashboard = settings.DEFAULT_DASHBOARD
-    context[self.varname] = [ {'width': i['width'], 'widgets': [ reg[j[0]](**j[1]) for j in i['widgets'] if reg[j[0]].has_permission(req.user)]} for i in mydashboard ]
+    context[self.hiddenvarname] = { i:j for i,j in reg.iteritems() }
+    context[self.varname] = []
+    for i in mydashboard:
+      w = []
+      for j in i['widgets']:
+        if reg[j[0]].has_permission(req.user):
+          w.append(reg[j[0]](**j[1]))
+          del context[self.hiddenvarname][j[0]]
+      context[self.varname].append( {'width': i['width'], 'widgets': w}  )
     return ''
 
     def __repr__(self):
@@ -339,11 +348,11 @@ class DashboardNode(Node):
 
 def getDashboard(parser, token):
   tokens = token.contents.split()
-  if len(tokens) < 3:
-      raise TemplateSyntaxError("'%s' tag requires 3 arguments" % tokens[0])
+  if len(tokens) < 4:
+      raise TemplateSyntaxError("'%s' tag requires 4 arguments" % tokens[0])
   if tokens[1] != 'as':
       raise TemplateSyntaxError("First argument to '%s' tag must be 'as'" % tokens[0])
-  return DashboardNode(tokens[2])
+  return DashboardNode(tokens[2], tokens[3])
 
 register.tag('getDashboard', getDashboard)
 

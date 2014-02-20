@@ -893,7 +893,7 @@ var grid = {
 //----------------------------------------------------------------------------
 
 var dashboard = {
-  save : function()
+  save : function(extra)
   {
     // Loop over all columns
     var columns = [];
@@ -912,13 +912,24 @@ var dashboard = {
     // Convert column width to a percentage
     for (var i = 0; i < columns.length; i++)
       columns[i]['width'] = Math.round(columns[i]['width'] * 100.0 / width) + "%";
-    console.log("Zombie " + JSON.stringify(columns) + width);
+    // Adding an extra widget
+    if ($.type(extra) === "string")
+    {
+      console.log(extra);
+      columns[columns.length-1]['widgets'].push( [extra,{}] );
+      console.log(columns);
+    }
     // Send the results to the server
     $.ajax({
       url: '/settings/',
       type: 'POST',
       contentType: 'application/json; charset=utf-8',
       data: JSON.stringify({"freppledb.common.cockpit": columns}),
+      success: function() {
+        // Reload page if a widget was added
+        if ($.type(extra) === "string")
+          window.location.href = window.location.href;
+        },
       error: function (result, stat, errorThrown) {
         $('#popup').html(result.responseText)
           .dialog({
@@ -934,8 +945,7 @@ var dashboard = {
 
   customize: function()
   {
-    $('#popup').html(
-      '<table style="text-align:center">' +
+    var txt = '<table style="text-align:center">' +
       '<tr><td><label for="layout1"><div class="customlayout" style="width:50px"></div></label><br/>' +
       '<input id="layout1" type="radio" name="layout" value="100"></td>' +
       '<td><label for="layout2"><div class="customlayout" style="width:25px"></div><div class="customlayout" style="width:25px"></div></label><br/>' +
@@ -948,8 +958,14 @@ var dashboard = {
       '<input id="layout5" type="radio" name="layout" value="40,30,30"></td>' +
       '<td><label for="layout6"><div class="customlayout" style="width:25px"></div><div class="customlayout" style="width:12px"></div><div class="customlayout" style="width:13px"></div></label><br/>' +
       '<input id="layout6" type="radio" name="layout" value="50,25,25"></td></tr>' +
-      '</table>'
-      ).dialog({
+      '</table><br/>' +
+      gettext('Add') + '&nbsp;&nbsp;<select name="add"><option value=""></option>';
+    for (i in hiddenwidgets)
+      txt += '<option value="' + hiddenwidgets[i][0] + '">' + hiddenwidgets[i][1] + "</option>";
+    txt += '</select>';
+    $('#popup')
+      .html(txt)
+      .dialog({
         title: gettext("Customize"),
         width: 'auto',
         height: 'auto',
@@ -959,39 +975,48 @@ var dashboard = {
             {
               text: gettext("OK"),
               click: function() {
-                var sel = $('#popup input[name=layout]:checked').val().split(",");
-                var lastcol;
-                var count = -1;
-                $(".column").each(function(idx) {
-                  if (idx >= sel.length)
-                  {
-                    // Remove column
-                    $(this).find(".portlet").each(function() {$(lastcol).append($(this));});
-                    $(this).remove();
-                  }
-                  else
-                  {
-                    // Resize column
-                    $(this).css('width',sel[idx] + '%');
-                    lastcol = this;
-                  }
-                  count = idx;
-                  });
-                while (count < sel.length-1)
+                var sel = $('#popup input[name=layout]:checked').val();
+                if (sel !== undefined)
                 {
-                  // Add column
-                  count += 1;
-                  $(lastcol).after('<div class="column ui-sortable" style="width:' + sel[count] + '%"></div>');
-                  $(".column").sortable({
-                    connectWith: ".column",
-                    handle: ".portlet-header",
-                    cancel: ".portlet-toggle",
-                    placeholder: "portlet-placeholder ui-corner-all",
-                    stop: dashboard.save
-                  });
+                  // A layout was selected
+                  sel = sel.split(",");
+                  var lastcol;
+                  var count = -1;
+                  $(".column").each(function(idx) {
+                    if (idx >= sel.length)
+                    {
+                      // Remove column
+                      $(this).find(".portlet").each(function() {$(lastcol).append($(this));});
+                      $(this).remove();
+                    }
+                    else
+                    {
+                      // Resize column
+                      $(this).css('width',sel[idx] + '%');
+                      lastcol = this;
+                    }
+                    count = idx;
+                    });
+                  while (count < sel.length-1)
+                  {
+                    // Add column
+                    count += 1;
+                    $(lastcol).after('<div class="column ui-sortable" style="width:' + sel[count] + '%"></div>');
+                    $(".column").sortable({
+                      connectWith: ".column",
+                      handle: ".portlet-header",
+                      cancel: ".portlet-toggle",
+                      placeholder: "portlet-placeholder ui-corner-all",
+                      stop: dashboard.save
+                    });
+                  }
                 }
+                var sel = $('#popup option:selected').val();
+                if (sel != '')
+                  dashboard.save(sel);
+                else
+                  dashboard.save();
                 $(this).dialog("close");
-                dashboard.save();
               }
             },
             {
@@ -1687,7 +1712,6 @@ var tour = {
     var stepData = tourdata[tour.chapter]['steps'][tour.step];
     // Switch url if required
     var prefix = $('#database').attr('name');
-    console.log(prefix);
     if (prefix && prefix != "default")
     {
       if (location.pathname != "/" + prefix + stepData['url'])

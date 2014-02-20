@@ -83,7 +83,7 @@
 {% endblock %}
 
 {% block content %}
-{% getDashboard as dashboard %}
+{% getDashboard as dashboard hiddenwidgets %}
 {% for col in dashboard %}
 <div class="column" style="width:{{col.width}}">
 {% for widget in col.widgets %}
@@ -110,4 +110,10 @@
     });
 {% else %}{{widget.javascript|safe}}
 {% endif %}{% endfor %}{% if forloop.last %}</script>{% endif %}{% endfor %}
+<script>
+var hiddenwidgets = [
+{% for key, value in hiddenwidgets.items%}{% if not forloop.first %},
+{% endif %}  ["{{key|escapejs}}","{{value.title|escapejs}}"]{% endfor %}
+];
+</script>
 {% endblock %}
