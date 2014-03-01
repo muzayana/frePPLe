@@ -302,7 +302,6 @@ DECLARE_EXPORT void SolverMRP::solve(const BufferProcure* b, void* v)
             && data->state->q_date < latestlocked
             && data->state->a_date > latestlocked)
           data->state->a_date = latestlocked;
-        logger << "   " << b->getName() << "  " << latestlocked << "  " << data->state->a_date << endl;
       }
     }
     else
