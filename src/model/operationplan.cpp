@@ -80,8 +80,12 @@ DECLARE_EXPORT Object* OperationPlan::createOperationPlan
   OperationPlan* opplan = NULL;
   if (id)
   {
-    if (id == 1)
-      throw DataException("Operationplan id must be greater than 1");
+    if (id == ULONG_MAX)
+    {
+      ostringstream ch;
+      ch << "Operationplan id can't be equal to " << ULONG_MAX;
+      throw DataException(ch.str());
+    }
     opplan = OperationPlan::findId(id);
     if (opplan && !opname.empty()
         && opplan->getOperation()->getName()!=opname)
@@ -187,7 +191,7 @@ DECLARE_EXPORT bool OperationPlan::assignIdentifier()
 {
   static Mutex onlyOne;
   ScopeMutexLock l(onlyOne);  // Need to assure that ids are unique!
-  if (id > 1)
+  if (id && id!=ULONG_MAX)
   {
     // An identifier was read in from input
     if (id < counterMin)
@@ -240,7 +244,7 @@ DECLARE_EXPORT bool OperationPlan::activate()
     x->activate();
 
   // Mark as activated by assigning a unique identifier.
-  if (id > 1)
+  if (id && id!=ULONG_MAX)
   {
     // Validate the user provided id.
     if (!assignIdentifier())
@@ -256,7 +260,7 @@ DECLARE_EXPORT bool OperationPlan::activate()
     // created lazily when the getIdentifier method is called.
     // In this way, 1) we avoid clashes between auto-generated and
     // user-provided in the input and 2) we keep performance high.
-    id = 1;
+    id = ULONG_MAX;
 
   // Insert into the doubly linked list of operationplans.
   insertInOperationplanList();
@@ -354,47 +358,6 @@ DECLARE_EXPORT void OperationPlan::removeFromOperationplanList()
   else if (oper->last_opplan == this)
     // Last opplan in the list of this operation
     oper->last_opplan = prev;
-}
-
-
-DECLARE_EXPORT void OperationPlan::addSubOperationPlan(OperationPlan* o)
-{
-  // Check
-  if (!o) throw LogicException("Adding null suboperationplan");
-
-  // Adding a suboperationplan that was already added
-  if (o->owner == this)  return;
-
-  // Clear the previous owner, if there is one
-  if (o->owner) o->owner->eraseSubOperationPlan(o);
-
-  // Link in the list, keeping the right ordering
-  if (!firstsubopplan)
-  {
-    // First element
-    firstsubopplan = o;
-    lastsubopplan = o;
-  }
-  else if (firstsubopplan->getOperation() != OperationSetup::setupoperation)
-  {
-    // New head
-    o->nextsubopplan = firstsubopplan;
-    firstsubopplan->prevsubopplan = o;
-    firstsubopplan = o;
-  }
-  else
-  {
-    // Insert right after the setup operationplan
-    OperationPlan *s = firstsubopplan->nextsubopplan;
-    o->nextsubopplan = s;
-    if (s) s->nextsubopplan = o;
-    else lastsubopplan = o;
-  }
-
-  o->owner = this;
-
-  // Update the flow and loadplans
-  update();
 }
 
 
@@ -551,7 +514,7 @@ void DECLARE_EXPORT OperationPlan::setOwner(OperationPlan* o)
   // Erase the previous owner if there is one
   if (owner) owner->eraseSubOperationPlan(this);
   // Register with the new owner
-  if (o) o->addSubOperationPlan(this);
+  if (o) o->getOperation()->addSubOperationPlan(o, this);
 }
 
 

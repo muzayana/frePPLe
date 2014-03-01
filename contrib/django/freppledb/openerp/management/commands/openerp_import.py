@@ -1141,7 +1141,7 @@ class Command(BaseCommand):
         )
       cursor.executemany(
         "delete from flow \
-          where operation_id=%%s and thebuffer_id=%%s",
+          where operation_id=%s and thebuffer_id=%s",
         flow_delete
         )
 
