@@ -371,9 +371,6 @@ DECLARE_EXPORT void OperationPlan::eraseSubOperationPlan(OperationPlan* o)
   if (o->owner != this)
     throw LogicException("Suboperationplan has a different owner");
 
-  // Clear owner field
-  o->owner = NULL;
-
   // Remove from the list
   if (o->prevsubopplan)
     o->prevsubopplan->nextsubopplan = o->nextsubopplan;
@@ -383,6 +380,11 @@ DECLARE_EXPORT void OperationPlan::eraseSubOperationPlan(OperationPlan* o)
     o->nextsubopplan->prevsubopplan = o->prevsubopplan;
   else
     lastsubopplan = o->prevsubopplan;
+
+  // Clear fields
+  o->owner = NULL;
+  prevsubopplan = NULL;
+  nextsubopplan = NULL;
 };
 
 
@@ -508,14 +510,16 @@ void DECLARE_EXPORT OperationPlan::pushConsumingBuffers(vector<Buffer*>* buffers
 }
 
 
-void DECLARE_EXPORT OperationPlan::setOwner(OperationPlan* o)
+void DECLARE_EXPORT OperationPlan::setOwner(OperationPlan* o, bool fast)
 {
   // Special case: the same owner is set twice
   if (owner == o) return;
-  // Erase the previous owner if there is one
-  if (owner) owner->eraseSubOperationPlan(this);
-  // Register with the new owner
-  if (o) o->getOperation()->addSubOperationPlan(o, this);
+  if (o)
+    // Register with the new owner
+    o->getOperation()->addSubOperationPlan(o, this, fast);
+  else if (owner)
+    // Setting the owner field to NULL
+    owner->eraseSubOperationPlan(this);
 }
 
 
@@ -579,86 +583,6 @@ void DECLARE_EXPORT OperationPlan::setEnd(Date d)
 }
 
 
-DECLARE_EXPORT double OperationPlan::setQuantity (double f, bool roundDown, bool upd, bool execute)
-{
-  // No impact on locked operationplans
-  if (getLocked()) return quantity;
-
-  // Invalid operationplan: the quantity must be >= 0.
-  if (f < 0)
-    throw DataException("Operationplans can't have negative quantities");
-
-  // Setting a quantity is only allowed on a top operationplan.
-  // One exception: on alternate operations the sizing on the sub-operations is
-  // respected.
-  if (owner && owner->getOperation()->getType() != *OperationAlternate::metadata)
-    return owner->setQuantity(f,roundDown,upd,execute);
-
-  // Compute the correct size for the operationplan
-  if (f!=0.0 && getOperation()->getSizeMinimum()>0.0
-      && f < getOperation()->getSizeMinimum())
-  {
-    if (roundDown)
-    {
-      // Smaller than the minimum quantity, rounding down means... nothing
-      if (!execute) return 0.0;
-      quantity = 0.0;
-      // Update the flow and loadplans, and mark for problem detection
-      if (upd) update();
-      // Update the parent of an alternate operationplan
-      if (owner && owner->getOperation()->getType() == *OperationAlternate::metadata)
-      {
-        owner->quantity = 0.0;
-        if (upd) owner->resizeFlowLoadPlans();
-      }
-      return 0.0;
-    }
-    f = getOperation()->getSizeMinimum();
-  }
-  if (f != 0.0 && f >= getOperation()->getSizeMaximum())
-  {
-    roundDown = true; // force rounddown to stay below the limit
-    f = getOperation()->getSizeMaximum();
-  }
-  if (f!=0.0 && getOperation()->getSizeMultiple()>0.0)
-  {
-    int mult = static_cast<int> (f / getOperation()->getSizeMultiple()
-        + (roundDown ? 0.0 : 0.99999999));
-    double q = mult * getOperation()->getSizeMultiple();
-    if (mult && (q < getOperation()->getSizeMinimum() || q > getOperation()->getSizeMaximum()))
-      throw DataException("Invalid sizing parameters for operation " + getOperation()->getName());
-    if (!execute) return q;
-    quantity = q;
-  }
-  else
-  {
-    if (!execute) return f;
-    quantity = f;
-  }
-
-  // Update the parent of an alternate operationplan
-  if (execute && owner
-      && owner->getOperation()->getType() == *OperationAlternate::metadata)
-  {
-    owner->quantity = quantity;
-    if (upd) owner->resizeFlowLoadPlans();
-  }
-
-  // Apply the same size also to its children
-  if (execute && firstsubopplan)
-    for (OperationPlan *i = firstsubopplan; i; i = i->nextsubopplan)
-      if (i->getOperation() != OperationSetup::setupoperation)
-      {
-        i->quantity = quantity;
-        if (upd) i->resizeFlowLoadPlans();
-      }
-
-  // Update the flow and loadplans, and mark for problem detection
-  if (upd) update();
-  return quantity;
-}
-
-
 DECLARE_EXPORT void OperationPlan::resizeFlowLoadPlans()
 {
   // Update all flowplans
@@ -682,14 +606,6 @@ DECLARE_EXPORT void OperationPlan::resizeFlowLoadPlans()
   // sense if the operationplan was created to satisfy a demand.
   // It is not valid though when the purpose of the operationplan was to push
   // some material downstream.
-
-  // Resize children
-  for (OperationPlan *j = firstsubopplan; j; j = j->nextsubopplan)
-    if (j->getOperation() != OperationSetup::setupoperation)
-    {
-      j->quantity = quantity;
-      j->resizeFlowLoadPlans();
-    }
 
   // Notify the demand of the changed delivery
   if (dmd) dmd->setChanged();
@@ -758,7 +674,7 @@ DECLARE_EXPORT OperationPlan::OperationPlan(const OperationPlan& src,
   motive = NULL;
   initType(metadata);
 
-  // Set owner of a
+  // Set owner
   setOwner(newOwner);
 
   // Clone the suboperationplans
@@ -975,7 +891,7 @@ DECLARE_EXPORT void OperationPlan::endElement (XMLInput& pIn, const Attribute& p
   else if (pAttr.isA(Tags::tag_owner) && !pIn.isObjectEnd())
   {
     OperationPlan* o = dynamic_cast<OperationPlan*>(pIn.getPreviousObject());
-    if (o) setOwner(o);
+    if (o) setOwner(o, false); // Extra argument is used to trigger validation of the new owner
   }
   else if (pIn.isObjectEnd())
   {
@@ -1177,7 +1093,7 @@ DECLARE_EXPORT int OperationPlan::setattro(const Attribute& attr, const PythonOb
       return -1;
     }
     OperationPlan* y = static_cast<OperationPlan*>(static_cast<PyObject*>(field));
-    setOwner(y);
+    setOwner(y, false); // Extra argument is used to trigger validation of the new owner
   }
   else if (attr.isA(Tags::tag_motive))
   {
