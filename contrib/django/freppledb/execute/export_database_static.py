@@ -19,7 +19,7 @@ database records with the information. The Django database wrappers are used
 to keep the code portable between different databases.
 '''
 from __future__ import print_function
-from datetime import datetime
+import datetime
 from time import time
 from threading import Thread
 import inspect, os
@@ -34,7 +34,17 @@ if 'FREPPLE_DATABASE' in os.environ:
 else:
   database = DEFAULT_DB_ALIAS
 
-timestamp = str(datetime.now())
+timestamp = str(datetime.datetime.now())
+
+def int_to_time(i):
+  hour = i // 3600
+  i -= (hour * 3600)
+  minute = i // 60
+  i -= (minute * 60)
+  second = i
+  if hour >= 24:
+    hour -= 24
+  return datetime.time(hour, minute, second)
 
 
 def exportLocations(cursor):
@@ -115,7 +125,7 @@ def exportCalendarBuckets(cursor):
        round(i.value,settings.DECIMAL_PLACES),
        (i.days & 1) and True or False, (i.days & 2) and True or False, (i.days & 4) and True or False,
        (i.days & 8) and True or False, (i.days & 16) and True or False, (i.days & 32) and True or False,
-       (i.days & 64) and True or False, i.starttime, i.endtime, timestamp
+       (i.days & 64) and True or False, int_to_time(i.starttime), int_to_time(i.endtime), timestamp
       ) for i in buckets() if (i.calendar.name, i.id) not in primary_keys
     ])
   cursor.executemany(
@@ -129,7 +139,7 @@ def exportCalendarBuckets(cursor):
        round(i.value,settings.DECIMAL_PLACES), timestamp,
        (i.days & 1) and True or False, (i.days & 2) and True or False, (i.days & 4) and True or False,
        (i.days & 8) and True or False, (i.days & 16) and True or False, (i.days & 32) and True or False,
-       (i.days & 64) and True or False, i.starttime, i.endtime,
+       (i.days & 64) and True or False, int_to_time(i.starttime), int_to_time(i.endtime),
        i.calendar.name, i.id
      ) for i in buckets() if (i.calendar.name, i.id) in primary_keys
     ])
@@ -182,7 +192,6 @@ def exportOperations(cursor):
 
 
 def exportSubOperations(cursor):
-  return # TODO
   print("Exporting suboperations...")
   starttime = time()
   cursor.execute("SELECT operation_id, suboperation_id FROM suboperation")
@@ -192,17 +201,19 @@ def exportSubOperations(cursor):
     for i in frepple.operations():
       if isinstance(i,frepple.operation_alternate):
         for j in i.alternates:
-          yield i, j
+          yield i, j[0], j[1], j[2], j[3]
       if isinstance(i, frepple.operation_routing):
+        cnt = 1
         for j in i.steps:
-          yield i, j
+          yield i, j, cnt, None, None
+          cnt += 1
 
   cursor.executemany(
     "insert into suboperation \
     (operation_id,suboperation_id,priority,effective_start,effective_end,lastmodified) \
     values(%s,%s,%s,%s,%s,%s)",
     [(
-       i[0].name, i[1].name, i[1].priority, i[1].effective_start, i[1].effective_end, timestamp
+       i[0].name, i[1].name, i[2], i[3], i[4], timestamp
      ) for i in subops() if i not in primary_keys
     ])
   cursor.executemany(
@@ -210,7 +221,7 @@ def exportSubOperations(cursor):
      set priority=%s, effective_start=%s, effective_end=%s, lastmodified=%s \
      where operation_id=%s and suboperation_id=%s",
     [(
-       i[1].priority, i[1].effective_start, i[1].effective_end, timestamp, i[0].name, i[1].name
+       i[2], i[3], i[4], timestamp, i[0].name, i[1].name
      ) for i in subops() if i in primary_keys
     ])
   transaction.commit(using=database)
@@ -765,7 +776,7 @@ def exportfrepple():
   # and cpu time.
   settings.DEBUG = False
   global timestamp
-  timestamp = str(datetime.now())
+  timestamp = str(datetime.datetime.now())
 
   # Create a database connection
   cursor = connections[database].cursor()

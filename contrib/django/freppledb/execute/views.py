@@ -143,6 +143,8 @@ def LaunchTask(request, action):
     # C
     elif action == 'empty database':
       task = Task(name='empty database', submitted=now, status='Waiting', user=request.user)
+      if not request.POST.get('all'):
+        task.arguments = "--models=%s" % ','.join(request.POST.getlist('entities'))
       task.save(using=request.database)
     # D
     elif action == 'load dataset':
@@ -227,13 +229,13 @@ def LaunchTask(request, action):
           "frepple_runworker",
           "--database=%s" % worker_database
           ])
-      elif sys.executable.find('frepplectl.exe') >= 0:
+      elif sys.executable.find('freppleserver.exe') >= 0:
         # Py2exe executable
         Popen([
-          sys.executable, # Python executable
+          sys.executable.replace('freppleserver.exe','frepplectl.exe'), # frepplectl executable
           "frepple_runworker",
           "--database=%s" % worker_database
-          ])
+          ], creationflags=0x08000000) # Do not create a console window
       else:
         # Linux standard installation
         Popen([

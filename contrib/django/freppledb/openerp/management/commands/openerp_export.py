@@ -17,6 +17,7 @@ from time import time
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction, connections, DEFAULT_DB_ALIAS
 from django.conf import settings
+from django.utils import six
 
 from freppledb.common.models import Parameter
 from freppledb.execute.models import Task
@@ -62,6 +63,14 @@ class Command(BaseCommand):
     self.openerp_password = Parameter.getValue("openerp.password", self.database)
     self.openerp_db = Parameter.getValue("openerp.db", self.database)
     self.openerp_url = Parameter.getValue("openerp.url", self.database)
+    if not self.openerp_user:
+      raise CommandError("Missing or invalid parameter openerp_user")
+    if not self.openerp_password:
+      raise CommandError("Missing or invalid parameter openerp_password")
+    if not self.openerp_db:
+      raise CommandError("Missing or invalid parameter openerp_db")
+    if not self.openerp_url:
+      raise CommandError("Missing or invalid parameter openerp_url")
 
     # Make sure the debug flag is not set!
     # When it is set, the django database wrapper collects a list of all SQL
@@ -147,8 +156,11 @@ class Command(BaseCommand):
          ''')
       cnt = 0
       for i, j in self.cursor.fetchall():
+        if isinstance(j, six.string_types):
+          # SQLite exports the date as a string
+          j = datetime.strptime(j, "%Y-%m-%d %H:%M:%S")
         self.sock.execute(self.openerp_db, self.uid, self.openerp_password, 'sale.order', 'write',
-          [int(i)], {'requested_date': j and j.strftime('%Y-%m-%d') or 0,})
+          [int(i)], {'requested_date': j and j.strftime('%Y-%m-%d') or '1971-01-01',})
         cnt += 1
       if self.verbosity > 0:
         print("Updated %d sales orders in %.2f seconds" % (cnt, (time() - starttime)))
@@ -242,15 +254,17 @@ class Command(BaseCommand):
       starttime = time()
       if self.verbosity > 0:
         print("Confirming %d procurement orders into purchasing quotations" % (len(ids_buy)))
-      self.sock.execute(self.openerp_db, self.uid, self.openerp_password, 'procurement.order', 'action_confirm', ids_buy)
-      self.sock.execute(self.openerp_db, self.uid, self.openerp_password, 'procurement.order', 'action_po_assign', ids_buy)
+      if ids_buy:
+        self.sock.execute(self.openerp_db, self.uid, self.openerp_password, 'procurement.order', 'action_confirm', ids_buy)
+        self.sock.execute(self.openerp_db, self.uid, self.openerp_password, 'procurement.order', 'action_po_assign', ids_buy)
       if self.verbosity > 0:
         print("Confirmed %d procurement orders in %.2f seconds" % (len(ids_buy), (time() - starttime)))
       starttime = time()
       if self.verbosity > 0:
         print("Confirming %d procurement orders into production orders" % (len(ids_produce)))
-      self.sock.execute(self.openerp_db, self.uid, self.openerp_password, 'procurement.order', 'action_produce_assign_product', ids_produce)
-      self.sock.execute(self.openerp_db, self.uid, self.openerp_password, 'procurement.order', 'action_confirm', ids_produce)
+      if ids_produce:
+        self.sock.execute(self.openerp_db, self.uid, self.openerp_password, 'procurement.order', 'action_produce_assign_product', ids_produce)
+        self.sock.execute(self.openerp_db, self.uid, self.openerp_password, 'procurement.order', 'action_confirm', ids_produce)
       if self.verbosity > 0:
         print("Confirmed %d procurement orders in %.2f seconds" % (len(ids_produce), (time() - starttime)))
     except Exception as e:
