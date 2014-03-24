@@ -914,11 +914,7 @@ var dashboard = {
       columns[i]['width'] = Math.round(columns[i]['width'] * 100.0 / width) + "%";
     // Adding an extra widget
     if ($.type(extra) === "string")
-    {
-      console.log(extra);
       columns[columns.length-1]['widgets'].push( [extra,{}] );
-      console.log(columns);
-    }
     // Send the results to the server
     $.ajax({
       url: '/settings/',
