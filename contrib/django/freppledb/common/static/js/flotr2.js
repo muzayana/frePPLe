@@ -6,6 +6,9 @@
   * dean edwards: http://dean.edwards.name/
   * dperini: https://github.com/dperini/nwevents
   * the entire mootools team: github.com/mootools/mootools-core
+  *
+  * FrePPLe modifications are marked with comments:
+  *   - performance optimization in _setEl
   */
 /*global module:true, define:true*/
 !function (name, context, definition) {
@@ -3075,7 +3078,9 @@ Graph.prototype = {
   _setEl: function(el) {
     if (!el) throw 'The target container doesn\'t exist';
     else if (el.graph instanceof Graph) el.graph.destroy();
-    else if (!el.clientWidth) throw 'The target container must be visible';
+    // frePPLe: performance optimization. The call to clientWidth takes considerable
+    // time and is redundant if your code is written well. Commenting out the next line...
+    //else if (!el.clientWidth) throw 'The target container must be visible';
 
     el.graph = this;
     this.el = el;
