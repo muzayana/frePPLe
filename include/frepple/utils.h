@@ -1503,6 +1503,19 @@ class TimePeriod
       */
     DECLARE_EXPORT void parse(const char*);
 
+    /** Function to parse a string to a double, representing the
+      * number of seconds.<br>
+      * Compared to the parse() method it also processes the
+      * decimal part of the duration.
+      * @see parse(const char*)
+      */
+    static DECLARE_EXPORT double parse2double(const char*);
+
+    /** Write out a double as a time period string.
+      * @see toCharBuffer()
+      */
+    static DECLARE_EXPORT void double2CharBuffer(double, char*);
+
     /** The maximum value for a timeperiod. */
     DECLARE_EXPORT static const TimePeriod MAX;
 

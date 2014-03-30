@@ -20,7 +20,7 @@ DECLARE_EXPORT const MetaClass* SolverMRP::metadata;
 const Keyword tag_iterationthreshold("iterationthreshold");
 const Keyword tag_iterationaccuracy("iterationaccuracy");
 const Keyword tag_lazydelay("lazydelay");
-
+const Keyword tag_allowsplits("allowsplits");
 
 void LibrarySolver::initialize()
 {
@@ -315,6 +315,8 @@ DECLARE_EXPORT int SolverMRP::setattro(const Attribute& attr, const PythonObject
     setIterationAccuracy(field.getDouble());
   else if (attr.isA(tag_lazydelay))
     setLazyDelay(field.getTimeperiod());
+  else if (attr.isA(tag_allowsplits))
+    setAllowSplits(field.getBool());
   // Default parameters
   else
     return Solver::setattro(attr, field);
