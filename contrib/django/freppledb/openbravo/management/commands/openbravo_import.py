@@ -8,9 +8,6 @@
 # or in the form of compiled binaries.
 #
 
-# TODO rename, which is rename of location, item, etc in openbravo will fail: The child objects are not renamed.
-
-
 from __future__ import print_function
 from optparse import make_option
 import base64
@@ -151,9 +148,12 @@ class Command(BaseCommand):
       self.import_purchaseorders(cursor)
       task.status = '80%'
       task.save(using=self.database)
-      self.import_processplan(cursor)
       transaction.commit(using=self.database)
+      self.import_productbom(cursor)
       task.status = '90%'
+      task.save(using=self.database)
+      self.import_processplan(cursor)
+      task.status = '95%'
       task.save(using=self.database)
       self.import_workInProgress(cursor)
 
@@ -311,6 +311,9 @@ class Command(BaseCommand):
 
       # Delete records
       delete = [ (i,) for i,j in unused_keys.iteritems() if j ]
+      cursor.executemany('update customer set owner_id=null where owner_id=%s',
+        delete
+        )
       cursor.executemany('update demand set customer_id=null where customer_id=%s',
         delete
         )
@@ -370,6 +373,11 @@ class Command(BaseCommand):
         if not organization: continue
         searchkey = elem.find("searchKey").text
         name = elem.find("name").text
+        # A product name which consists of the searchkey and the name fields
+        # is the default.
+        # If you want a shorter item name, use the following lines instead:
+        # unique_name = searchkey
+        # description = name
         unique_name = u'%s %s' % (searchkey, name)
         description = elem.find("description").text
         objectid = elem.get('id')
@@ -405,12 +413,13 @@ class Command(BaseCommand):
 
       # Delete inactive items
       delete = [ (i,) for i,j in unused_keys.iteritems() if j ]
-      cursor.executemany("delete from demand where item_id=%%s", delete)
+      cursor.executemany("delete from demand where item_id=%s", delete)
       cursor.executemany("delete from flow \
-         where thebuffer_id in (select name from buffer where item_id=%%s)",
+         where thebuffer_id in (select name from buffer where item_id=%s)",
          delete
          )
-      cursor.executemany("delete from item where name=%%s", delete)
+      cursor.executemany("delete from buffer where item_id=%s", delete)
+      cursor.executemany("delete from item where name=%s", delete)
 
       transaction.commit(using=self.database)
       if self.verbosity > 0:
@@ -428,6 +437,13 @@ class Command(BaseCommand):
 
   # Importing locations
   #   - extracting warehouse objects
+  #   - We're also trying to create a mapping between an organization and its main
+  #     warehouse location. This mapping is used to map manufacturing work requirements
+  #     to a location where it'll happen.
+  #     Manufacturing work requirements are linked with an organization in Openbravo,
+  #     not with a warehouse.
+  #     The mapping organization - warehouse we're making here is not a strict and
+  #     foolproof way.
   #   - meeting the criterion:
   #        - %active = True
   #   - mapped fields Openbravo -> frePPLe location
@@ -462,15 +478,19 @@ class Command(BaseCommand):
         if not organization: continue
         searchkey = elem.find("searchKey").text
         name = elem.find("name").text
-        unique_name = u'%s %s' % (searchkey, name)
-        description = elem.find("description").text
+        # A product name which consists of the searchkey field is the default.
+        # If you want a longer more descriptive item name, use the following lines instead
+        # unique_name = u'%s %s' % (searchkey, name)
+        # description = elem.find("description").text
+        unique_name = searchkey
+        description = name
         objectid = elem.get('id')
         self.locations[objectid] = unique_name
         locations.append( (description,objectid,unique_name) )
         self.locations[objectid] = unique_name
         unused_keys.pop(unique_name, None)
         if organization in self.organization_location:
-          print ("Warning: Organization '%s' is already associated with '%s'. Ignoring assocation with '%s'"
+          print ("Warning: Organization '%s' is already associated with '%s'. Ignoring association with '%s'"
             % (organization, self.organization_location[organization], unique_name)
             )
         else:
@@ -498,7 +518,7 @@ class Command(BaseCommand):
         )
       cursor.executemany("update location \
         set owner_id=null \
-        where owner=%s",
+        where owner_id=%s",
         delete
         )
 
@@ -580,7 +600,7 @@ class Command(BaseCommand):
       insert = []
       update = []
       deliveries = set()
-      query = urllib.quote("(updated>'%s' or salesOrder.updated>'%s') and salesOrder.salesTransaction=true" % (self.delta,self.delta))
+      query = urllib.quote("(updated>'%s' or salesOrder.updated>'%s') and salesOrder.salesTransaction=true and (salesOrder.documentStatus='CO' or salesOrder.documentStatus='CL')" % (self.delta,self.delta))
       conn, root = self.get_data("/openbravo/ws/dal/OrderLine?where=%s&orderBy=salesOrder.creationDate&includeChildren=false" % query)
       count = 0
       for event, elem in conn:
@@ -592,6 +612,7 @@ class Command(BaseCommand):
         if not warehouse or not product or not businessPartner or not organization:
           # Product, customer, location or organization are not known in frePPLe.
           # We assume that in that case you don't need to the demand either.
+          root.clear()
           continue
         objectid = elem.get('id')
         documentno = elem.find("salesOrder").get('identifier').split()[0]
@@ -711,12 +732,10 @@ class Command(BaseCommand):
       for i in cursor.fetchall():
         if i[1] == 'openbravo': self.resources[i[2]] = i[0]
         frepple_keys.add(i[0])
+      unused_keys = frepple_keys.copy()
       insert = []
       update = []
-      rename = []
-      delete = []
-      query = urllib.quote("updated>'%s'" % self.delta)
-      conn, root = self.get_data("/openbravo/ws/dal/ManufacturingMachine?where=%s&orderBy=name&includeChildren=false" % query)
+      conn, root = self.get_data("/openbravo/ws/dal/ManufacturingMachine?orderBy=name&includeChildren=false")
       count = 0
       for event, elem in conn:
         if event != 'end' or elem.tag != 'ManufacturingMachine': continue
@@ -724,21 +743,12 @@ class Command(BaseCommand):
         if not organization: continue
         unique_name = elem.get('identifier')
         objectid = elem.get('id')
-        active = elem.find("active").text
-        if active:
-          if unique_name in frepple_keys:
-            # Already exists in frepple
-            update.append( (objectid,unique_name) )
-          elif objectid in self.customers:
-            # Object previously exported from openbravo already, now renamed
-            rename.append( (unique_name,objectid) )
-          else:
-            # Brand new object
-            insert.append( (unique_name,objectid) )
-          self.resources[objectid] = unique_name
-        elif unique_name in frepple_keys:
-          # Oject no longer active in openbravo
-          delete.append( (unique_name,) )
+        if unique_name in frepple_keys:
+          update.append( (objectid,unique_name) )
+        else:
+          insert.append( (unique_name,objectid) )
+        unused_keys.discard(unique_name)
+        self.resources[objectid] = unique_name
         # Clean the XML hierarchy
         root.clear()
         count -= 1
@@ -759,22 +769,20 @@ class Command(BaseCommand):
           where name=%%s" % self.date,
         update
         )
-      cursor.executemany(
-        "update resource \
-          set name=%%s,lastmodified='%s' \
-          where source=%%s and subcategory='openbravo'" % self.date,
-        rename
+      delete = [ (i,) for i in unused_keys ]
+      cursor.executemany('delete from resourceload where resource_id=%s',
+        delete
         )
-      for i in delete:
-        try: cursor.execute("delete from resource where name=%s",i)
-        except:
-          # Delete fails when there are dependent records in the database.
-          cursor.execute("update resource set source=null, subcategory=null, lastmodified='%s' where name=%%s" % self.date,i)
+      cursor.executemany('update resource set owner_id where owner_id=%s',
+        delete
+        )
+      cursor.executemany('delete from resource where name=%s',
+        delete
+        )
       transaction.commit(using=self.database)
       if self.verbosity > 0:
         print("Inserted %d new machines" % len(insert))
         print("Updated %d existing machines" % len(update))
-        print("Renamed %d existing machines" % len(rename))
         print("Deleted %d machines" % len(delete))
         print("Imported machines in %.2f seconds" % (time() - starttime))
     except Exception as e:
@@ -831,6 +839,7 @@ class Command(BaseCommand):
         item = self.items.get(product,None)
         location = self.locations.get(self.locators[locator], None)
         if not item or not location:
+          root.clear()
           continue
         buffer_name = "%s @ %s" % (item, location)
         if buffer_name in frepple_buffers:
@@ -936,13 +945,14 @@ class Command(BaseCommand):
         objectid = elem.get('id')
         product = self.items.get(elem.find('product').get('id'), None)
         if not product:
+          root.clear()
           continue
         if product == prevproduct:
           # TODO there could be multiple supplier for an item
           print("Warning: Multiple approved vendors for a part are not supported. Skipping record")
           continue
         prevproduct = product
-        businessPartner = elem.find('businessPartner').get('identifier')
+        businessPartner = elem.find('businessPartner').get('identifier')[:settings.CATEGORYSIZE]
         purchasingLeadTime = elem.find("purchasingLeadTime").text
         minimumOrderQty = elem.find("minimumOrderQty").text
         quantityPerPackage = elem.find("quantityPerPackage").text
@@ -1082,7 +1092,7 @@ class Command(BaseCommand):
       update = []
       delete = []
       deliveries = set()
-      query = urllib.quote("updated>'%s' and salesOrder.salesTransaction=false" % self.delta)
+      query = urllib.quote("updated>'%s' and salesOrder.salesTransaction=false and salesOrder.documentType.name<>'RTV Order'" % self.delta)
       conn, root = self.get_data("/openbravo/ws/dal/OrderLine?where=%s&orderBy=salesOrder.creationDate&includeChildren=false" % query)
       count = 0
       for event, elem in conn:
@@ -1090,15 +1100,18 @@ class Command(BaseCommand):
         product = self.items.get(elem.find("product").get('id'), None)
         warehouse = self.locations.get(elem.find("warehouse").get('id'), None)
         organization = self.organizations.get(elem.find("organization").get("id"), None)
-        if not warehouse or not product or not organization:
+        scheduledDeliveryDate = elem.find("scheduledDeliveryDate").text
+        if not warehouse or not product or not organization or not scheduledDeliveryDate:
           # Product, location or organization are not known in frePPLe.
+          # Or there is no scheduled delivery date.
           # We assume that in that case you don't need to the purchase order either.
+          root.clear()
           continue
         objectid = elem.get('id')
-        scheduledDeliveryDate = datetime.strptime(elem.find("scheduledDeliveryDate").text, '%Y-%m-%dT%H:%M:%S.%fZ')
+        scheduledDeliveryDate = datetime.strptime(scheduledDeliveryDate, '%Y-%m-%dT%H:%M:%S.%fZ')
         creationDate = datetime.strptime(elem.find("creationDate").text, '%Y-%m-%dT%H:%M:%S.%fZ')
-        orderedQuantity = float(elem.find("orderedQuantity").text)
-        deliveredQuantity = float(elem.find("deliveredQuantity").text)
+        orderedQuantity = float(elem.find("orderedQuantity").text or 0)
+        deliveredQuantity = float(elem.find("deliveredQuantity").text or 0)
         operation = u'Purchase %s @ %s' % (product, warehouse)
         deliveries.update([(product,warehouse,operation,u'%s @ %s' % (product, warehouse)),])
         if objectid in frepple_keys:
@@ -1285,11 +1298,118 @@ class Command(BaseCommand):
       transaction.leave_transaction_management(using=self.database)
 
 
-  # Importing boms
+  # Importing productboms
+  #   - extracting productBOM object for all Products with
+  #
+  def import_productbom(self, cursor):
+    transaction.enter_transaction_management(using=self.database)
+    try:
+      starttime = time()
+      if self.verbosity > 0:
+        print("Importing product boms...")
+
+      # Reset the current operations
+      cursor.execute("DELETE FROM operationplan where operation_id like 'Product BOM %'")  # TODO allow incremental load!
+      cursor.execute("DELETE FROM suboperation where operation_id like 'Product BOM %'")
+      cursor.execute("DELETE FROM resourceload where operation_id like 'Product BOM %'")
+      cursor.execute("DELETE FROM flow where operation_id like 'Product BOM %'")
+      cursor.execute("UPDATE buffer SET producing_id=NULL where subcategory='openbravo' and producing_id like 'Product BOM %'")
+      cursor.execute("DELETE FROM operation where name like 'Product BOM %'")
+
+      # Get the list of all frePPLe buffers
+      cursor.execute("SELECT name, item_id, location_id FROM buffer")
+      frepple_buffers = {}
+      frepple_keys = set()
+      for i in cursor.fetchall():
+        if i[1] in frepple_buffers:
+          frepple_buffers[i[1]].append( (i[0],i[2]) )
+        else:
+          frepple_buffers[i[1]] = [ (i[0],i[2]) ]
+        frepple_keys.add(i[0])
+
+      # Loop over all productboms
+      query = urllib.quote("product.billOfMaterials=true")
+      conn, root = self.get_data("/openbravo/ws/dal/ProductBOM?where=%s&includeChildren=false" % query)
+      count = 0
+      operations = set()
+      buffers = set()
+      flows = {}
+      for event, elem in conn:
+        if event != 'end' or elem.tag != 'ProductBOM': continue
+        bomquantity = float(elem.find("bOMQuantity").text)
+        organization = self.organizations.get(elem.find("organization").get("id"), None)
+        product = self.items.get(elem.find("product").get("id"), None)
+        bomproduct = self.items.get(elem.find("bOMProduct").get("id"), None)
+        if not product or not organization or not bomproduct or not product in frepple_buffers:
+          # Rejecting uninteresting records
+          root.clear()
+          continue
+        for name, loc in frepple_buffers[product]:
+          operation = "Product BOM %s @ %s" % (product, loc)
+          buf = "%s @ %s" % (bomproduct, loc)
+          operations.add( (operation, loc, name) )
+          if not buf in frepple_keys:
+            buffers.add( (buf, bomproduct, loc) )
+          flows[ (operation, name, 'end') ] = 1
+          t = (operation, buf, 'start')
+          if t in flows:
+            flows[t] -= bomquantity
+          else:
+            flows[t] = -bomquantity
+        # Clean the XML hierarchy
+        root.clear()
+        count -= 1
+        if self.verbosity > 0 and count < 0:
+          count = 500
+          print('.', end="")
+      if self.verbosity > 0: print ('')
+
+      # Execute now on the database
+      cursor.executemany(
+        "insert into operation \
+          (name,location_id,subcategory,type,duration,lastmodified) \
+          values(%%s,%%s,'openbravo','fixed_time',0,'%s')" % self.date,
+        [ (i[0],i[1]) for i in operations ]
+        )
+      cursor.executemany(
+        "update buffer set producing_id=%%s, lastmodified='%s' where name=%%s" % self.date,
+        [ (i[0],i[2]) for i in operations ]
+        )
+      cursor.executemany(
+        "insert into buffer \
+          (name,item_id,location_id,subcategory,lastmodified) \
+          values(%%s,%%s,%%s,'openbravo','%s')" % self.date,
+        buffers
+        )
+      cursor.executemany(
+        "insert into flow \
+          (operation_id,thebuffer_id,type,quantity,source,lastmodified) \
+          values(%%s,%%s,%%s,%%s,'openbravo','%s')" % self.date,
+        [ (i[0], i[1], i[2], j) for i, j in flows.iteritems() ]
+        )
+
+      transaction.commit(using=self.database)
+      if self.verbosity > 0:
+        print("Inserted %d operations" % len(operations))
+        print("Created %d buffers" % len(buffers))
+        print("Inserted %d flows" % len(flows))
+        print("Imported product boms in %.2f seconds" % (time() - starttime))
+    except Exception as e:
+      transaction.rollback(using=self.database)
+      import sys, traceback
+      traceback.print_exc(file=sys.stdout)
+      raise CommandError("Error importing product boms: %s" % e)
+    finally:
+      transaction.commit(using=self.database)
+      transaction.leave_transaction_management(using=self.database)
+
+
+  # Importing processplans
   #   - extracting ManufacturingProcessPlan objects for all
   #     Products with production=true and processplan <> null
   #   - Not supported yet:
-  #        - date effectivity
+  #        - date effectivity with start date in the future
+  #        - multiple processplans simultaneously effective
   #        - phantom boms
   #        - subproducts
   #        - routings
@@ -1299,7 +1419,7 @@ class Command(BaseCommand):
     try:
       starttime = time()
       if self.verbosity > 0:
-        print("Importing bills of material...")
+        print("Importing processplans...")
 
       # Reset the current operations
       cursor.execute("DELETE FROM operationplan where operation_id like 'Processplan %'")  # TODO allow incremental load!
@@ -1322,6 +1442,13 @@ class Command(BaseCommand):
         else:
           frepple_buffers[i[1]] = [ (i[0],i[2]) ]
 
+      # Get a dictionary with all process plans
+      processplans = {}
+      conn, root = self.get_data("/openbravo/ws/dal/ManufacturingProcessPlan?includeChildren=true")
+      for event, elem in conn:
+        if event != 'end' or elem.tag != 'ManufacturingProcessPlan': continue
+        processplans[elem.get('id')] = elem
+
       # Loop over all produced products
       query = urllib.quote("production=true and processPlan is not null")
       conn, root = self.get_data("/openbravo/ws/dal/Product?where=%s&orderBy=name&includeChildren=false" % query)
@@ -1330,27 +1457,28 @@ class Command(BaseCommand):
       suboperations = []
       buffers_create = []
       buffers_update = []
-      flows = []
+      flows = {}
       loads = []
       for event, elem in conn:
         if event != 'end' or elem.tag != 'Product': continue
         product = self.items.get(elem.get('id'), None)
-        if not product:
+        if not product or not product in frepple_buffers:
+          # TODO A produced item which appears in a BOM but has no sales orders, purchase orders or onhand will not show up.
+          # If WIP exists on a routing, it could thus happen that the operation was not created.
+          # A buffer in the middle of a BOM may thus be missing.
+          root.clear()
           continue   # Not interested if item isn't mapped to frePPLe
 
         # Pick up the processplan of the product
         processplan = elem.find("processPlan").get('id')
-        root2 = self.get_data("/openbravo/ws/dal/ManufacturingProcessPlan/%s?includeChildren=true" % processplan)[1]
+        root2 = processplans[processplan]
 
         # Create routing operation for all frePPLe buffers of this product
         # We create a routing operation in the right location
-        if not product in frepple_buffers:
-          # TODO A produced item which appears in a BOM but has no sales orders, purchase orders or onhand will not show up.
-          # If WIP exists on a routing, it could thus happen that the operation was not created.
-          # A buffer in the middle of a BOM may thus be missing.
-          continue
         for name, loc in frepple_buffers[product]:
-          for pp_version in root2.find('ManufacturingProcessPlan').find('manufacturingVersionList').findall('ManufacturingVersion'):
+          tmp0 = root2.find('manufacturingVersionList')
+          if not tmp0: continue
+          for pp_version in tmp0.findall('ManufacturingVersion'):
             endingDate = datetime.strptime(pp_version.find("endingDate").text, '%Y-%m-%dT%H:%M:%S.%fZ')
             if endingDate < self.current:
               continue # We have passed the validity date of this version
@@ -1360,20 +1488,28 @@ class Command(BaseCommand):
               continue  # We apparantly already added it
             frepple_operations.add(routing_name)
             operations.append( (routing_name, loc, 'routing', None, processplan) )
-            flows.append( (routing_name, name, 1, 'end') )
+            #flows[ (routing_name, name, 'end') ] = 1
             buffers_update.append( (routing_name,name) )
-            tmp = pp_version.find('manufacturingOperationList')
-            if tmp:
-              for pp_operation in tmp.findall('ManufacturingOperation'):
-                sequenceNumber = int(pp_operation.find('sequenceNumber').text)
+            tmp1 = pp_version.find('manufacturingOperationList')
+            if tmp1:
+              steps = set()
+              for pp_operation in tmp1.findall('ManufacturingOperation'):
                 objectid = pp_operation.get('id')
+                sequenceNumber = int(pp_operation.find('sequenceNumber').text)
+                if sequenceNumber in steps:
+                  print ("Warning: duplicate sequence number %s in processplan %s" % (sequenceNumber, routing_name))
+                  while sequenceNumber in steps:
+                    sequenceNumber += 1
+                steps.add(sequenceNumber)
                 costCenterUseTime = float(pp_operation.find('costCenterUseTime').text) * 3600
                 step_name = "%s - %s" % (routing_name, sequenceNumber)
                 operations.append( (step_name, loc, 'fixed_time', costCenterUseTime, objectid) )
                 suboperations.append( (routing_name, step_name, sequenceNumber) )
-                tmp = pp_operation.find('manufacturingOperationProductList')
-                if tmp:
-                  for ff_operationproduct in tmp.findall('ManufacturingOperationProduct'):
+                tmp2 = pp_operation.find('manufacturingOperationProductList')
+                if tmp2:
+                  for ff_operationproduct in tmp2.findall('ManufacturingOperationProduct'):
+                    quantity = float(ff_operationproduct.find('quantity').text)
+                    productionType = ff_operationproduct.find('productionType').text
                     opproduct = self.items.get(ff_operationproduct.find('product').get('id'), None)
                     if not opproduct:
                       continue # Unknown product
@@ -1387,20 +1523,31 @@ class Command(BaseCommand):
                     if not opbuffer:
                       opbuffer = "%s @ %s" % (opproduct,loc)
                       buffers_create.append( (opbuffer, opproduct, loc) )
-                    quantity = float(ff_operationproduct.find('quantity').text)
-                    productionType = ff_operationproduct.find('productionType').text
+                      if not opproduct in frepple_buffers:
+                        frepple_buffers[opproduct] = [ (opbuffer,loc) ]
+                      else:
+                        frepple_buffers[opproduct].append( (opbuffer,loc) )
                     if productionType == '-':
-                      flows.append( (step_name, opbuffer, -quantity, 'start') )
+                      flow_key = (step_name, opbuffer, 'start')
+                      if flow_key in flows:
+                        flows[flow_key] -= quantity
+                      else:
+                        flows[flow_key] = -quantity
                     else:
-                      flows.append( (step_name, opbuffer, quantity, 'end') )
-                tmp = pp_operation.find('manufacturingOperationMachineList')
-                if tmp:
-                  for ff_operationmachine in tmp.findall('ManufacturingOperationMachine'):
+                      flow_key = (step_name, opbuffer, 'end')
+                      if flow_key in flows:
+                        flows[flow_key] += quantity
+                      else:
+                        flows[flow_key] = quantity
+                tmp4 = pp_operation.find('manufacturingOperationMachineList')
+                if tmp4:
+                  for ff_operationmachine in tmp4.findall('ManufacturingOperationMachine'):
                     machine = self.resources.get(ff_operationmachine.find('machine').get('id'), None)
                     if not machine:
                       continue # Unknown machine
-                    usageCoefficient = float(ff_operationmachine.find('usageCoefficient').text)
-                    loads.append( (step_name, machine, usageCoefficient) )
+                    loads.append( (step_name, machine, 1) )
+        # Clean the XML hierarchy
+        root.clear()
         count -= 1
         if self.verbosity > 0 and count < 0:
           count = 500
@@ -1435,9 +1582,9 @@ class Command(BaseCommand):
         )
       cursor.executemany(
         "insert into flow \
-          (operation_id,thebuffer_id,quantity,type,source,lastmodified) \
+          (operation_id,thebuffer_id,type,quantity,source,lastmodified) \
           values(%%s,%%s,%%s,%%s,'openbravo','%s')" % self.date,
-        flows
+        [ (i[0], i[1], i[2], j) for i, j in flows.iteritems() ]
         )
       cursor.executemany(
         "insert into resourceload \
@@ -1454,12 +1601,12 @@ class Command(BaseCommand):
         print("Created %d buffers" % len(buffers_create))
         print("Inserted %d flows" % len(flows))
         print("Inserted %d loads" % len(loads))
-        print("Imported bills of material in %.2f seconds" % (time() - starttime))
+        print("Imported processplans in %.2f seconds" % (time() - starttime))
     except Exception as e:
       transaction.rollback(using=self.database)
       import sys, traceback
       traceback.print_exc(file=sys.stdout)
-      raise CommandError("Error importing bills of material: %s" % e)
+      raise CommandError("Error importing processplans: %s" % e)
     finally:
       transaction.commit(using=self.database)
       transaction.leave_transaction_management(using=self.database)

@@ -28,6 +28,7 @@ import codecs, json
 from StringIO import StringIO
 from openpyxl import load_workbook, Workbook
 
+from django.contrib.auth.models import Group
 from django.conf import settings
 from django.views.decorators.csrf import csrf_protect
 from django.contrib import messages
@@ -57,10 +58,16 @@ from django.views.generic.base import View
 from django.db.models.loading import get_model
 
 
-from freppledb.common.models import Parameter, BucketDetail, Bucket, Comment, HierarchyModel
+from freppledb.common.models import User, Comment, Parameter, BucketDetail, Bucket, HierarchyModel
+
 
 import logging
 logger = logging.getLogger(__name__)
+
+
+# A list of models with some special, administrative purpose.
+# They should be excluded from bulk import, export and erasing actions.
+EXCLUDE_FROM_BULK_OPERATIONS = (Group, User, Comment)
 
 
 class GridField(object):
@@ -461,7 +468,8 @@ class GridReport(View):
   def _generate_spreadsheet_data(reportclass, request, *args, **kwargs):
     # Create a workbook
     wb = Workbook(optimized_write = True)
-    ws = wb.create_sheet(title=force_unicode(reportclass.model._meta.verbose_name))
+    title = force_unicode(reportclass.model and reportclass.model._meta.verbose_name or reportclass.title)
+    ws = wb.create_sheet(title=title)
 
     # Write a header row
     ws.append([ force_unicode(f.title).title() for f in reportclass.rows if f.title and not f.hidden ])
@@ -485,7 +493,7 @@ class GridReport(View):
        mimetype = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
        content = output.getvalue()
        )
-    response['Content-Disposition'] = 'attachment; filename=%s.xlsx' % reportclass.model._meta.model_name
+    response['Content-Disposition'] = 'attachment; filename=%s.xlsx' % title
     return response
 
 
@@ -797,7 +805,8 @@ class GridReport(View):
               )
             form = UploadForm(rec, instance=obj)
             if form.has_changed():
-              obj = form.save()
+              obj = form.save(commit=False)
+              obj.save(using=request.database)
               LogEntry(
                   user_id         = request.user.pk,
                   content_type_id = content_type_id,
@@ -984,7 +993,8 @@ class GridReport(View):
               # Step 3: Validate the data and save to the database
               if form.has_changed():
                 try:
-                  obj = form.save()
+                  obj = form.save(commit=False)
+                  obj.save(using=request.database)
                   LogEntry(
                       user_id         = request.user.pk,
                       content_type_id = content_type_id,
@@ -1080,7 +1090,7 @@ class GridReport(View):
       transaction.enter_transaction_management(using=request.database)
       try:
         # Loop through the data records
-        wb = load_workbook(filename = request.FILES['csv_file'], use_iterators = True)
+        wb = load_workbook(filename = request.FILES['csv_file'], use_iterators = True, data_only=True)
         ws = wb.worksheets[0]
         has_pk_field = False
         for row in ws.iter_rows():
@@ -1134,7 +1144,8 @@ class GridReport(View):
                 if isinstance(headers[colnum],Field):
                   data = col.internal_value
                   if isinstance(headers[colnum],CharField):
-                    if data: data = data.strip()
+                    if data and isinstance(data, six.string_types):
+                      data = data.strip()
                   elif isinstance(headers[colnum], (IntegerField, AutoField)):
                     if isinstance(data, numericTypes): data = int(data)
                   d[headers[colnum].name] = data
@@ -1159,7 +1170,8 @@ class GridReport(View):
               # Step 3: Validate the data and save to the database
               if form.has_changed():
                 try:
-                  obj = form.save()
+                  obj = form.save(commit=False)
+                  obj.save(using=request.database)
                   LogEntry(
                       user_id         = request.user.pk,
                       content_type_id = content_type_id,
@@ -1709,6 +1721,9 @@ def exportWorkbook(request):
       # Verify access rights
       if not request.user.has_perm("%s.%s" % (app_label, get_permission_codename('change',model._meta))):
         continue
+      # Never export some special administrative models
+      if model in EXCLUDE_FROM_BULK_OPERATIONS:
+        continue
       # Build a list of fields
       fields = []
       header = []
@@ -1776,7 +1791,7 @@ def importWorkbook(request):
   all_models = [ (ct.model_class(),ct.pk) for ct in ContentType.objects.all() if ct.model_class() ]
   with transaction.atomic(using=request.database):
     # Find all models in the workbook
-    wb = load_workbook(filename = request.FILES['spreadsheet'], use_iterators = True)
+    wb = load_workbook(filename = request.FILES['spreadsheet'], use_iterators = True, data_only=True)
     models = []
     for ws_name in wb.get_sheet_names():
       # Find the model
@@ -1787,7 +1802,7 @@ def importWorkbook(request):
           model = m
           contenttype_id = ct
           break
-      if not model:
+      if not model or model in EXCLUDE_FROM_BULK_OPERATIONS:
         errors.append(force_unicode(_("Ignoring data in worksheet: %s") % ws_name))
       elif not request.user.has_perm('%s.%s' % (model._meta.app_label, get_permission_codename('add',model._meta))):
         # Check permissions
@@ -1876,7 +1891,8 @@ def importWorkbook(request):
               if isinstance(headers[colnum],Field):
                 data = cell.internal_value
                 if isinstance(headers[colnum],CharField):
-                  if data: data = data.strip()
+                  if data and isinstance(data, six.string_types):
+                    data = data.strip()
                 elif isinstance(headers[colnum], (IntegerField, AutoField)):
                   if isinstance(data, numericTypes): data = int(data)
                 d[headers[colnum].name] = data
@@ -1901,7 +1917,8 @@ def importWorkbook(request):
             if form.has_changed():
               try:
                 with transaction.atomic(using=request.database):
-                  obj = form.save()
+                  obj = form.save(commit=False)
+                  obj.save(using=request.database)
                   LogEntry(
                       user_id         = request.user.pk,
                       content_type_id = contenttype_id,
