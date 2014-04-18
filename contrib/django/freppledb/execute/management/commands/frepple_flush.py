@@ -113,6 +113,8 @@ class Command(BaseCommand):
         cursor.execute('update common_user set horizonbuckets = null')
       if "setupmatrix" in tables:
         tables.add("setuprule")
+      if "forecast" in tables:
+        tables.add('forecastplan')
       tables.discard('auth_group_permissions')
       tables.discard('auth_permission')
       tables.discard('auth_group')
