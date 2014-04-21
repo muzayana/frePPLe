@@ -36,11 +36,13 @@ function getQuote(event)
   data = '<plan xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n<demands>\n'
     + '<demand name="' + $("#id_name").val() + '">\n'
     + '<description>' + $("#id_description").val() + '</description>\n'
-    + '<customer name="' + $("#id_customer").val() + '"/>\n'
     + '<quantity>' + $("#id_quantity").val() + '</quantity>\n'
     + '<item name="' + $("#id_item").val() + '"/>\n'
     + '<due>' + $("#id_due_0").val() + 'T' + $("#id_due_1").val() + '</due>\n'
     + '<priority>1000000</priority>\n';
+  var v = $("#id_customer").val();
+  if (v!=null && v!='')
+    data += '<customer name="' + v + '"/>\n';
   v = $("#id_minshipment").val();
   if (v!=null && v!='' && !isNaN(v))
     data += '<minshipment>' + v + '</minshipment>\n';
@@ -100,11 +102,13 @@ function inquireQuote(event)
   data = '<plan xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n<demands>\n'
     + '<demand name="' + $("#id_name").val() + '">\n'
     + '<description>' + $("#id_description").val() + '</description>\n'
-    + '<customer name="' + $("#id_customer").val() + '"/>\n'
     + '<quantity>' + $("#id_quantity").val() + '</quantity>\n'
     + '<item name="' + $("#id_item").val() + '"/>\n'
     + '<due>' + $("#id_due_0").val() + 'T' + $("#id_due_1").val() + '</due>\n'
     + '<priority>1000000</priority>\n';
+  var v = $("#id_customer").val();
+  if (v!=null && v!='')
+    data += '<customer name="' + v + '"/>\n';
   v = $("#id_minshipment").val();
   if (v!=null && v!='' && !isNaN(v))
     data += '<minshipment>' + v + '</minshipment>\n';
