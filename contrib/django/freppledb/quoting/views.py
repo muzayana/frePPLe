@@ -116,10 +116,10 @@ def InfoView(request, action):
         ''
         ])
       headers = {
-        "Content-type": 'multipart/form-data; boundary=%s' % BOUNDARY,
+        "Content-type": 'multipart/form-data; boundary=%s; charset=utf-8' % BOUNDARY,
         "content-length": len(data)
         }
-      conn.request("POST", "/%s" % action, data, headers)
+      conn.request("POST", "/%s" % action.encode('ascii'), data, headers)
     else:
       raise Exception('Invalid action')
     response = conn.getresponse()
