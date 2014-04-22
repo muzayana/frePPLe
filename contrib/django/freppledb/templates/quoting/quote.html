@@ -33,6 +33,7 @@ function extraPreference() {
 
 function getQuote(event)
 {
+  // TODO The XML document is not built correctly in case there are characters which need escaping: < > & " '
   data = '<plan xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n<demands>\n'
     + '<demand name="' + $("#id_name").val() + '">\n'
     + '<description>' + $("#id_description").val() + '</description>\n'
@@ -99,6 +100,7 @@ function getQuote(event)
 
 function inquireQuote(event)
 {
+  // TODO The XML document is not built correctly in case there are characters which need escaping: < > & " '
   data = '<plan xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n<demands>\n'
     + '<demand name="' + $("#id_name").val() + '">\n'
     + '<description>' + $("#id_description").val() + '</description>\n'
