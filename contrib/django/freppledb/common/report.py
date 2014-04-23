@@ -1324,19 +1324,16 @@ class GridReport(View):
   def filter_items(reportclass, request, items, plus_django_style=True):
 
     filters = None
-    print 'zzzz'
     # Jqgrid-style filtering
     if request.GET.get('_search') == 'true':
       # Validate complex search JSON data
       _filters = request.GET.get('filters')
-      print 'zzaaaz', _filters
       try:
         filters = _filters and json.loads(_filters)
       except ValueError:
         filters = None
 
       # Single field searching, which is currently not used
-      print 'A', filters
       if filters is None:
         field = request.GET.get('searchField')
         op = request.GET.get('searchOper')
@@ -1346,15 +1343,11 @@ class GridReport(View):
               'groupOp': 'AND',
               'rules': [{ 'op': op, 'field': field, 'data': data }]
           }
-    print 'B', filters
     if filters:
-
       z = reportclass._get_q_filter(filters)
       if z:
-        print 'G', z
         return items.filter(z)
       else:
-        print 'H', z
         return items
 
     # Django-style filtering, using URL parameters
