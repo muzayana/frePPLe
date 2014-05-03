@@ -33,31 +33,32 @@ function extraPreference() {
 
 function getQuote(event)
 {
-  // TODO The XML document is not built correctly in case there are characters which need escaping: < > & " '
-  data = '<plan xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n<demands>\n'
-    + '<demand name="' + $("#id_name").val() + '">\n'
-    + '<description>' + $("#id_description").val() + '</description>\n'
-    + '<quantity>' + $("#id_quantity").val() + '</quantity>\n'
-    + '<item name="' + $("#id_item").val() + '"/>\n'
-    + '<due>' + $("#id_due_0").val() + 'T' + $("#id_due_1").val() + '</due>\n'
-    + '<priority>1000000</priority>\n';
+  var $demand = $('<demand/>');
+  $demand.attr("name",$("#id_name").val())
+    .append( $('<description/>').text($("#id_description").val()) )
+    .append( $('<quantity/>').text($("#id_quantity").val()) )
+    .append( $('<item/>').attr("name", $("#id_item").val()) )
+    .append( $('<due/>').text($("#id_due_0").val() + 'T' + $("#id_due_1").val()) )
+    .append( $('<priority>1000000</priority>') );
   var v = $("#id_customer").val();
   if (v!=null && v!='')
-    data += '<customer name="' + v + '"/>\n';
+    $demand.append( $('<customer/>').attr("name", v) );
   v = $("#id_minshipment").val();
   if (v!=null && v!='' && !isNaN(v))
-    data += '<minshipment>' + v + '</minshipment>\n';
+    $demand.append( $('<minshipment/>').text(v) );
+  else
+    $demand.append( $('<minshipment/>').text(0) );
   v = $("#id_maxlateness").val();
   if (v!=null && v!='')
-    data += '<maxlateness>' + v + '</maxlateness>\n';
-  data += '</demand>\n'
-    + '</demands>\n'
-    + '</plan>\n';
+    $demand.append( $('<maxlateness/>').text(v) );
+  var $demands = $('<demands/>').append($demand);
+  var $plan = $('<plan/>').attr("xmlns:xsi","http://www.w3.org/2001/XMLSchema-instance").append($demands);
+  var $root = $('<XMLDocument />').append($plan);
   $.ajax({
     type: 'POST',
     url: '{{request.prefix}}/quote/quote/',
     contentType: 'application/xml; charset=utf-8',
-    data: data,
+    data: $root.html(),
     dataType: 'xml',
     success: function (xmldata, status, jqXHR) {
       $("#id_name").val($(xmldata).find('demands > demand').attr('name'));
@@ -100,31 +101,32 @@ function getQuote(event)
 
 function inquireQuote(event)
 {
-  // TODO The XML document is not built correctly in case there are characters which need escaping: < > & " '
-  data = '<plan xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n<demands>\n'
-    + '<demand name="' + $("#id_name").val() + '">\n'
-    + '<description>' + $("#id_description").val() + '</description>\n'
-    + '<quantity>' + $("#id_quantity").val() + '</quantity>\n'
-    + '<item name="' + $("#id_item").val() + '"/>\n'
-    + '<due>' + $("#id_due_0").val() + 'T' + $("#id_due_1").val() + '</due>\n'
-    + '<priority>1000000</priority>\n';
+  var $demand = $('<demand/>');
+  $demand.attr("name",$("#id_name").val())
+    .append( $('<description/>').text($("#id_description").val()) )
+    .append( $('<quantity/>').text($("#id_quantity").val()) )
+    .append( $('<item/>').attr("name", $("#id_item").val()) )
+    .append( $('<due/>').text($("#id_due_0").val() + 'T' + $("#id_due_1").val()) )
+    .append( $('<priority>1000000</priority>') );
   var v = $("#id_customer").val();
   if (v!=null && v!='')
-    data += '<customer name="' + v + '"/>\n';
+    $demand.append( $('<customer/>').attr("name", v) );
   v = $("#id_minshipment").val();
   if (v!=null && v!='' && !isNaN(v))
-    data += '<minshipment>' + v + '</minshipment>\n';
+    $demand.append( $('<minshipment/>').text(v) );
+  else
+    $demand.append( $('<minshipment/>').text(0) );
   v = $("#id_maxlateness").val();
   if (v!=null && v!='')
-    data += '<maxlateness>' + v + '</maxlateness>\n';
-  data += '</demand>\n'
-    + '</demands>\n'
-    + '</plan>\n';
+    $demand.append( $('<maxlateness/>').text(v) );
+  var $demands = $('<demands/>').append($demand);
+  var $plan = $('<plan/>').attr("xmlns:xsi","http://www.w3.org/2001/XMLSchema-instance").append($demands);
+  var $root = $('<XMLDocument />').append($plan);
   $.ajax({
     type: 'POST',
     url: '{{request.prefix}}/quote/inquiry/',
     contentType: 'application/xml; charset=utf-8',
-    data: data,
+    data: $root.html(),
     dataType: 'xml',
     success: function (xmldata, status, jqXHR) {
       $("#id_name").val($(xmldata).find('demands > demand').attr('name'));
@@ -307,8 +309,8 @@ $(function() {
 {% endblock %}
 {% block after_table %}
 <br/>
-<div style="overflow:auto">
-<div id="fields" style="float:left; width:{% if "height" in preferences %}{{preferences.width}}{% else %}600{% endif %}px">
+<div style="padding: 5px; float:left; width:100%; white-space: nowrap; overflow:hidden">
+<div id="fields" style="display: inline-block; width:{% if "heigth" in preferences %}{{preferences.width}}{% else %}600{% endif %}px">
 <h1>{% trans "Quote" %}</h1>
 <form class="form" id="quoteform" class="form">{% csrf_token %}
 <table><tbody>{% for field in form %}<tr>
@@ -323,7 +325,7 @@ $(function() {
 <div class="quotebutton"><button style="width:100%" id="form_confirm">{% trans 'Confirm' %}</button></div>
 </form>
 </div>
-<div id="status" style="float:left"><h1>{% trans "Deliveries" %}</h1><br/>
+<div id="status" style="display: inline-block; overflow-x: auto; vertical-align:top"><h1>{% trans "Deliveries" %}</h1><br/>
 <h1>{% trans "problems"|capfirst %}</h1><br/>
 <h1>{% trans "Why short or late?" %}</h1></div>
 {% endblock %}

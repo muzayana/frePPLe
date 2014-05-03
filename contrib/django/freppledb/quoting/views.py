@@ -14,6 +14,7 @@ from django.views.decorators.csrf import csrf_protect
 from django.contrib.auth.decorators import login_required
 from django.utils.translation import ugettext_lazy as _
 from django import forms
+from django.utils.http import urlquote
 from django.utils.encoding import iri_to_uri
 from django.http import Http404, HttpResponseServerError, HttpResponse
 from django.contrib.admin.widgets import ForeignKeyRawIdWidget, AdminSplitDateTime
@@ -99,13 +100,13 @@ def InfoView(request, action):
     conn = httplib.HTTPConnection(url)
     if action == 'info':
       data = json.loads(request.body)
-      conn.request("GET", '/demand/' + iri_to_uri(data[0]) + '/?plan=P')
+      conn.request("GET", '/demand/' + iri_to_uri(urlquote(data[0],'')) + '/?plan=P')
     elif action == 'cancel':
       data = request.GET['name']
-      conn.request("POST", '/demand/' + iri_to_uri(data) + '/?action=R&persist=1', "", {"content-length": 0})
+      conn.request("POST", '/demand/' + iri_to_uri(urlquote(data,'')) + '/?action=R&persist=1', "", {"content-length": 0})
     elif action == 'confirm':
       data = request.GET['name']
-      conn.request("POST", '/demand/' + iri_to_uri(data) + '/?status=open&persist=1', "", {"content-length": 0})
+      conn.request("POST", '/demand/' + iri_to_uri(urlquote(data,'')) + '/?status=open&persist=1', "", {"content-length": 0})
     elif action == 'inquiry' or action == 'quote':
       data = '\r\n'.join([
         '--' + BOUNDARY,
