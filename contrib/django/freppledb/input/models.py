@@ -351,6 +351,7 @@ class Resource(AuditModel,HierarchyModel):
   # Types of resources
   types = (
     ('default',_('Default')),
+    ('buckets',_('Buckets')),
     ('infinite',_('Infinite')),
   )
 

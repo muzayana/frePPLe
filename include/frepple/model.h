@@ -32,10 +32,13 @@ namespace frepple
 
 class Flow;
 class FlowEnd;
+class FlowFixedStart;
+class FlowFixedEnd;
 class FlowPlan;
 class LoadPlan;
 class Resource;
 class ResourceInfinite;
+class ResourceBuckets;
 class Problem;
 class Demand;
 class OperationPlan;
@@ -470,6 +473,11 @@ class CalendarDouble : public Calendar
           writeHeader(o, tag);
           if (getPriority()) o->writeElement(Tags::tag_priority, getPriority());
           if (val) o->writeElement(Tags::tag_value, val);
+          if (getDays() != 127) o->writeElement(Tags::tag_days, getDays());
+          if (getStartTime())
+            o->writeElement(Tags::tag_starttime, getStartTime());
+          if (getEndTime() != TimePeriod(86400L))
+            o->writeElement(Tags::tag_endtime, getEndTime());
           o->EndObject(tag);
         }
 
@@ -858,6 +866,8 @@ class Solver : public HasName<Solver>
     {throw LogicException("Called undefined solve(Resource*) method");}
     virtual void solve(const ResourceInfinite* r, void* v = NULL)
     {solve(reinterpret_cast<const Resource*>(r),v);}
+    virtual void solve(const ResourceBuckets* r, void* v = NULL)
+    {solve(reinterpret_cast<const Resource*>(r),v);}
     virtual void solve(const Buffer*,void* = NULL)
     {throw LogicException("Called undefined solve(Buffer*) method");}
     virtual void solve(const BufferInfinite* b, void* v = NULL)
@@ -869,6 +879,10 @@ class Solver : public HasName<Solver>
     virtual void solve(const Flow* b, void* v = NULL)
     {throw LogicException("Called undefined solve(Flow*) method");}
     virtual void solve(const FlowEnd* b, void* v = NULL)
+    {solve(reinterpret_cast<const Flow*>(b),v);}
+    virtual void solve(const FlowFixedStart* b, void* v = NULL)
+    {solve(reinterpret_cast<const Flow*>(b),v);}
+    virtual void solve(const FlowFixedEnd* b, void* v = NULL)
     {solve(reinterpret_cast<const Flow*>(b),v);}
     virtual void solve(const Solvable*,void* = NULL)
     {throw LogicException("Called undefined solve(Solvable*) method");}
@@ -3976,7 +3990,7 @@ class Resource : public HasHierarchy<Resource>,
     virtual DECLARE_EXPORT ~Resource();
 
     /** Updates the size of a resource, when it is time-dependent. */
-    DECLARE_EXPORT void setMaximumCalendar(CalendarDouble*);
+    virtual DECLARE_EXPORT void setMaximumCalendar(CalendarDouble*);
 
     /** Updates the size of a resource. */
     DECLARE_EXPORT void setMaximum(double);
@@ -4086,17 +4100,18 @@ class Resource : public HasHierarchy<Resource>,
     /** Update the current setup. */
     void setSetup(const string s) {setup = s;}
 
-  private:
+  protected:
     /** This calendar is used to updates to the resource size. */
     CalendarDouble* size_max_cal;
 
+    /** Stores the collection of all loadplans of this resource. */
+    loadplanlist loadplans;
+
+  private:
     /** The maximum resource size.<br>
       * If a calendar is specified, this field is ignored.
       */
     double size_max;
-
-    /** Stores the collection of all loadplans of this resource. */
-    loadplanlist loadplans;
 
     /** This is a list of all load models that are linking this resource with
       * operations. */
@@ -4211,6 +4226,29 @@ class ResourceInfinite : public Resource
     virtual size_t getSize() const
     {return sizeof(ResourceInfinite) + Resource::extrasize();}
     static int initialize();
+};
+
+
+/** @brief This class represents a resource whose capacity is defined per
+    time bucket. */
+class ResourceBuckets : public Resource
+{
+  public:
+    virtual void solve(Solver &s, void* v = NULL) const {s.solve(this,v);}
+    virtual DECLARE_EXPORT void writeElement(XMLOutput*, const Keyword&, mode=DEFAULT) const;
+    virtual const MetaClass& getType() const {return *metadata;}
+    explicit ResourceBuckets(const string& c) : Resource(c)
+    {initType(metadata);}
+    static DECLARE_EXPORT const MetaClass* metadata;
+    virtual size_t getSize() const
+    {return sizeof(ResourceBuckets) + Resource::extrasize();}
+    static int initialize();
+
+    virtual DECLARE_EXPORT void updateProblems();
+
+    /** Updates the time buckets and the quantity per time bucket. */
+    virtual DECLARE_EXPORT void setMaximumCalendar(CalendarDouble*);
+
 };
 
 
@@ -4896,7 +4934,12 @@ inline double Load::getLoadplanQuantity(const LoadPlan* lp) const
     // The extra check is required to make sure that zero duration operationplans
     // operationplans don't get resized to 0
     return 0.0;
-  return lp->isStart() ? getQuantity() : -getQuantity();
+  if (getResource()->getType() == *ResourceBuckets::metadata)
+    // Bucketized resource
+    return - getQuantity() * lp->getOperationPlan()->getQuantity();
+  else
+    // Continuous resource
+    return lp->isStart() ? getQuantity() : -getQuantity();
 }
 
 

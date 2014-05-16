@@ -624,6 +624,9 @@ class Command(BaseCommand):
   #        - %id %name -> name
   #        - %cost_hour -> cost
   #        - capacity_per_cycle -> maximum
+  #          This field is only transfered when inserting a new workcenter.
+  #          Later runs of the connector will not update the value any more,
+  #          since this field is typically maintained in frePPLe.
   #        - 'OpenERP' -> source
   #   - In OpenERP a work center links to a resource, and a resource has
   #     a calendar with working hours.
@@ -653,10 +656,10 @@ class Command(BaseCommand):
       for i in self.openerp_data('mrp.workcenter', ids, fields):
         if i['active']:
           if i['name'] in frepple_keys:
-            update.append( (i['id'],i['costs_hour'],i['capacity_per_cycle'] / (i['time_cycle'] or 1),i['name']) )
+            update.append( (i['id'],i['costs_hour'],i['name']) )
           elif i['id'] in self.resources:
             # Object previously exported from OpenERP already, now renamed
-            rename.append( (i['name'],i['costs_hour'],i['capacity_per_cycle'] / (i['time_cycle'] or 1),str(i['id'])) )
+            rename.append( (i['name'],i['costs_hour'],str(i['id'])) )
           else:
             insert.append( (i['id'],i['name'],i['costs_hour'],i['capacity_per_cycle'] / (i['time_cycle'] or 1)) )
           self.resources[i['id']] = i['name']
@@ -669,12 +672,12 @@ class Command(BaseCommand):
         insert)
       cursor.executemany(
         "update resource \
-          set source=%%s, cost=%%s, maximum=%%s, subcategory='OpenERP', lastmodified='%s' \
+          set source=%%s, cost=%%s, subcategory='OpenERP', lastmodified='%s' \
           where name=%%s" % self.date,
         update)
       cursor.executemany(
         "update resource \
-          set name=%%s, cost=%%s, maximum=%%s, subcategory='OpenERP', lastmodified='%s' \
+          set name=%%s, cost=%%s, subcategory='OpenERP', lastmodified='%s' \
           where source=%%s" % self.date,
         rename)
       for i in delete:
@@ -1043,6 +1046,7 @@ class Command(BaseCommand):
             flow_insert.append( (
               operation, buffer, i['product_qty']*i['product_efficiency'], 'end', i['date_start'] or None, i['date_stop'] or None
               ) )
+            frepple_flows.add( (buffer,operation) )
           # Create workcentre loads
           if i['routing_id']:
             for j in routing_workcenters.get(i['routing_id'][0],[]):
@@ -1091,6 +1095,7 @@ class Command(BaseCommand):
             flow_insert.append( (
               operation, buffer, -i['product_qty']*i['product_efficiency'], 'start', i['date_start'] or None, i['date_stop'] or None
               ) )
+            frepple_flows.add( (buffer,operation) )
         else:
           # Not active any more
           if (buffer,operation) in frepple_flows:
@@ -1203,19 +1208,20 @@ class Command(BaseCommand):
         print("Importing policies and reorderpoints...")
 
       # Get the list of item ids and the template info
-      cursor.execute("SELECT source FROM item where subcategory='OpenERP'")
-      ids = []
+      cursor.execute("SELECT name, source FROM item where subcategory='OpenERP'")
+      items = {}
       for i in cursor.fetchall():
-        try: ids.append(int(i[0]))
+        try: items[int(i[1])] = i[0]
         except: pass
       fields = ['product_tmpl_id']
       fields2 = ['purchase_ok','procure_method','supply_method','produce_delay']
       buy = []
       produce = []
-      prod = [ i for i in self.openerp_data('product.product', ids, fields) ]
-      templates = { j['id']: j for j in self.openerp_data('product.template', [i['id'] for i in prod], fields2) }
+      prod = [ i for i in self.openerp_data('product.product', items.keys(), fields) ]
+      templates = { j['id']: j for j in self.openerp_data('product.template', [i['product_tmpl_id'][0] for i in prod], fields2) }
       for i in prod:
-        item = self.items[i['id']]
+        item = items.get(i['id'],None)
+        if not item: continue
         tmpl = templates.get(i['product_tmpl_id'][0],None)
         if tmpl and tmpl['purchase_ok'] and tmpl['supply_method'] == 'buy':
           buy.append( (tmpl['produce_delay'] * 86400, item) )
