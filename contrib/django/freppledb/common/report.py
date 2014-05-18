@@ -471,20 +471,30 @@ class GridReport(View):
     title = force_unicode(reportclass.model and reportclass.model._meta.verbose_name or reportclass.title)
     ws = wb.create_sheet(title=title)
 
+    # Choose fields to export and write the title row
+    prefs = request.user.getPreference(reportclass.getKey())
+    if prefs:
+      # Customized settings
+      prefs = prefs['rows']
+      fields = [ reportclass.rows[f[0]] for f in prefs if not f[1] and not isinstance(reportclass.rows[f[0]],GridFieldGraph) and not reportclass.rows[f[0]].hidden ]
+    else:
+      # Default settings
+      fields = [ i for i in reportclass.rows if i.field_name and not isinstance(i,GridFieldGraph) and not i.hidden ]
+    field_names = [ f.field_name for f in fields]
+
     # Write a header row
-    ws.append([ force_unicode(f.title).title() for f in reportclass.rows if f.title and not f.hidden ])
+    ws.append([ force_unicode(f.title).title() for f in fields ])
 
     # Loop over all records
-    fields = [ i.field_name for i in reportclass.rows if i.field_name and not i.hidden ]
     if callable(reportclass.basequeryset):
       query = reportclass._apply_sort(request, reportclass.filter_items(request, reportclass.basequeryset(request, args, kwargs), False).using(request.database))
     else:
       query = reportclass._apply_sort(request, reportclass.filter_items(request, reportclass.basequeryset).using(request.database))
-    for row in hasattr(reportclass,'query') and reportclass.query(request,query) or query.values(*fields):
+    for row in hasattr(reportclass,'query') and reportclass.query(request,query) or query.values(*field_names):
       if hasattr(row, "__getitem__"):
-        ws.append([ _getCellValue(row[f]) for f in fields ])
+        ws.append([ _getCellValue(row[f]) for f in field_names ])
       else:
-        ws.append([ _getCellValue(getattr(row,f)) for f in fields ])
+        ws.append([ _getCellValue(getattr(row,f)) for f in field_names ])
 
     # Write the spreadsheet from memory to a string and then to a HTTP response
     output = StringIO()
@@ -1619,11 +1629,22 @@ class GridPivot(GridReport):
     else:
       query = reportclass.query(request, reportclass.filter_items(request, reportclass.basequeryset).using(request.database), sortsql=reportclass._apply_sort(request))
 
+    # Pick up the preferences
+    prefs = request.user.getPreference(reportclass.getKey())
+    if prefs and 'rows' in prefs:
+      myrows = [ reportclass.rows[f[0]] for f in prefs['rows'] if not f[1] and not isinstance(reportclass.rows[f[0]],GridFieldGraph) and not reportclass.rows[f[0]].hidden ]
+    else:
+      myrows = [ f for f in reportclass.rows if f.name and not isinstance(f,GridFieldGraph) and not f.hidden ]
+    if prefs and 'crosses' in prefs:
+      mycrosses = [ reportclass.crosses[f] for f in prefs['crosses'] ]
+    else:
+      mycrosses = [ f for f in reportclass.crosses if f[1].get('visible',True) ]
+
     # Write a header row
-    fields = [ force_unicode(f.title).title() for f in reportclass.rows if f.name and not isinstance(f,GridFieldGraph) and not f.hidden ]
+    fields = [ force_unicode(f.title).title() for f in myrows ]
     if listformat:
       fields.extend([ capfirst(force_unicode(_('bucket'))) ])
-      fields.extend([ capfirst(_(f[1].get('title',_(f[0])))) for f in reportclass.crosses ])
+      fields.extend([ capfirst(_(f[1].get('title',_(f[0])))) for f in mycrosses ])
     else:
       fields.extend( [capfirst(_('data field'))])
       fields.extend([ unicode(b['name']) for b in request.report_bucketlist])
@@ -1634,13 +1655,13 @@ class GridPivot(GridReport):
       for row in query:
         # Append a row
         if hasattr(row, "__getitem__"):
-          fields = [ _getCellValue(row[f.name]) for f in reportclass.rows if f.name and not isinstance(f,GridFieldGraph) and not f.hidden ]
+          fields = [ _getCellValue(row[f.name]) for f in myrows ]
           fields.extend([ _getCellValue(row['bucket']) ])
-          fields.extend([ _getCellValue(row[f[0]]) for f in reportclass.crosses ])
+          fields.extend([ _getCellValue(row[f[0]]) for f in mycrosses ])
         else:
-          fields = [ _getCellValue(getattr(row,f.name)) for f in reportclass.rows if f.name and not isinstance(f,GridFieldGraph) and not f.hidden ]
+          fields = [ _getCellValue(getattr(row,f.name)) for f in myrows ]
           fields.extend([ _getCellValue(getattr(row,'bucket')) ])
-          fields.extend([ _getCellValue(getattr(row,f[0])) for f in reportclass.crosses ])
+          fields.extend([ _getCellValue(getattr(row,f[0])) for f in mycrosses ])
         ws.append(fields)
     else:
       currentkey = None
@@ -1653,18 +1674,18 @@ class GridPivot(GridReport):
           row_of_buckets.append(row)
         else:
           # Write a row
-          for cross in reportclass.crosses:
+          for cross in mycrosses:
             if 'visible' in cross[1] and not cross[1]['visible']: continue
-            fields = [ _getCellValue(row_of_buckets[0][s.name]) for s in reportclass.rows if s.name and not isinstance(s,GridFieldGraph) and not s.hidden ]
+            fields = [ _getCellValue(row_of_buckets[0][s.name]) for s in myrows ]
             fields.extend([ _getCellValue(('title' in cross[1] and capfirst(_(cross[1]['title'])) or capfirst(_(cross[0])))) ])
             fields.extend([ _getCellValue(bucket[cross[0]]) for bucket in row_of_buckets ])
             ws.append(fields)
           currentkey = row[reportclass.rows[0].name]
           row_of_buckets = [row]
       # Write the last row
-      for cross in reportclass.crosses:
+      for cross in mycrosses:
         if 'visible' in cross[1] and not cross[1]['visible']: continue
-        fields = [ _getCellValue(row_of_buckets[0][s.name]) for s in reportclass.rows if s.name and not isinstance(s,GridFieldGraph) and not s.hidden ]
+        fields = [ _getCellValue(row_of_buckets[0][s.name]) for s in myrows ]
         fields.extend([ _getCellValue(('title' in cross[1] and capfirst(_(cross[1]['title'])) or capfirst(_(cross[0])))) ])
         fields.extend([ _getCellValue(bucket[cross[0]]) for bucket in row_of_buckets ])
         ws.append(fields)
