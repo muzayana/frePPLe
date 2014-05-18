@@ -504,6 +504,7 @@ class GridReport(View):
        content = output.getvalue()
        )
     response['Content-Disposition'] = 'attachment; filename=%s.xlsx' % title
+    response['Cache-Control'] = "no-cache, no-store"
     return response
 
 
@@ -712,10 +713,12 @@ class GridReport(View):
       return render(request, reportclass.template, context)
     elif fmt == 'json':
       # Return JSON data to fill the grid.
-      return StreamingHttpResponse(
+      response = StreamingHttpResponse(
          content_type = 'application/json; charset=%s' % settings.DEFAULT_CHARSET,
          streaming_content = reportclass._generate_json_data(request, *args, **kwargs)
          )
+      response['Cache-Control'] = "no-cache, no-store"
+      return response
     elif fmt in ('spreadsheetlist','spreadsheettable','spreadsheet'):
       # Return an excel spreadsheet
       return reportclass._generate_spreadsheet_data(request, *args, **kwargs)
@@ -726,6 +729,7 @@ class GridReport(View):
          streaming_content = reportclass._generate_csv_data(request, *args, **kwargs)
          )
       response['Content-Disposition'] = 'attachment; filename=%s.csv' % iri_to_uri(reportclass.title.lower())
+      response['Cache-Control'] = "no-cache, no-store"
       return response
     else:
       raise Http404('Unknown format type')
@@ -1698,6 +1702,7 @@ class GridPivot(GridReport):
        content = output.getvalue()
        )
     response['Content-Disposition'] = 'attachment; filename=%s.xlsx' % reportclass.model._meta.model_name
+    response['Cache-Control'] = "no-cache, no-store"
     return response
 
 
@@ -1796,6 +1801,7 @@ def exportWorkbook(request):
      content = output.getvalue()
      )
   response['Content-Disposition'] = 'attachment; filename=frepple.xlsx'
+  response['Cache-Control'] = "no-cache, no-store"
   return response
 
 
