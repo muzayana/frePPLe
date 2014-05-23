@@ -1003,7 +1003,9 @@ class Plannable : public HasProblems, public Solvable
   * that are linked together using loads and/or flows. Each cluster can be seen
   * as a completely independent part of the model and the planning problem.
   * There is no interaction possible between clusters.
-  * Clusters are helpful is multi-threading the planning problem, partial
+  * Cluster 0 is a special case: it contains all entities not connected to any other
+  * entity at all.
+  * Clusters are helpful in multi-threading the planning problem, partial
   * replanning of the model, etc...
   */
 class HasLevel
@@ -1024,8 +1026,8 @@ class HasLevel
     /** Stores the total number of clusters in the model. */
     static DECLARE_EXPORT unsigned short numberOfClusters;
 
-    /** Stores the total number of hanging clusters in the model. */
-    static DECLARE_EXPORT unsigned short numberOfHangingClusters;
+    /** Stores the maximum level number in the model. */
+    static DECLARE_EXPORT unsigned short numberOfLevels;
 
     /** Stores the level of this entity. Higher numbers indicate more
       * upstream entities.
@@ -1074,6 +1076,15 @@ class HasLevel
     static DECLARE_EXPORT void computeLevels();
 
   public:
+    /** Returns the total number of levels.<br>
+      * If not up to date the recomputation will be triggered.
+      */
+    static unsigned short getNumberOfLevels()
+    {
+      if (recomputeLevels || computationBusy) computeLevels();
+      return numberOfLevels;
+    }
+
     /** Returns the total number of clusters.<br>
       * If not up to date the recomputation will be triggered.
       */
@@ -1081,17 +1092,6 @@ class HasLevel
     {
       if (recomputeLevels || computationBusy) computeLevels();
       return numberOfClusters;
-    }
-
-    /** Returns the total number of hanging clusters. A hanging cluster
-      * is a cluster that consists of a single entity that isn't connected
-      * to any other entity.<br>
-      * If not up to date the recomputation will be triggered.
-      */
-    static unsigned short getNumberOfHangingClusters()
-    {
-      if (recomputeLevels || computationBusy) computeLevels();
-      return numberOfHangingClusters;
     }
 
     /** Return the level (and recompute first if required). */
@@ -4961,7 +4961,7 @@ class ProblemBeforeCurrent : public Problem
     }
     bool isFeasible() const {return false;}
     double getWeight() const
-    {return oper ? state.quantity : dynamic_cast<OperationPlan*>(getOwner())->getQuantity();}
+    {return oper ? state.quantity : static_cast<OperationPlan*>(getOwner())->getQuantity();}
     explicit ProblemBeforeCurrent(OperationPlan* o, bool add = true) : Problem(o), oper(NULL)
     {if (add) addProblem();}
     explicit ProblemBeforeCurrent(Operation* o, Date st, Date nd, double q)
@@ -4969,11 +4969,11 @@ class ProblemBeforeCurrent : public Problem
     ~ProblemBeforeCurrent() {removeProblem();}
     string getEntity() const {return "operation";}
     Object* getOwner() const
-    {return oper ? static_cast<Object*>(oper) : dynamic_cast<OperationPlan*>(owner);}
+    {return oper ? static_cast<Object*>(oper) : static_cast<OperationPlan*>(owner);}
     const DateRange getDates() const
     {
       if (oper) return DateRange(state.start, state.end);
-      OperationPlan *o = dynamic_cast<OperationPlan*>(getOwner());
+      OperationPlan *o = static_cast<OperationPlan*>(getOwner());
       if (o->getDates().getEnd() > Plan::instance().getCurrent())
         return DateRange(o->getDates().getStart(),
             Plan::instance().getCurrent());
@@ -5022,11 +5022,11 @@ class ProblemBeforeFence : public Problem
     ~ProblemBeforeFence() {removeProblem();}
     string getEntity() const {return "operation";}
     Object* getOwner() const
-    {return oper ? static_cast<Object*>(oper) : dynamic_cast<OperationPlan*>(owner);}
+    {return oper ? static_cast<Object*>(oper) : static_cast<OperationPlan*>(owner);}
     const DateRange getDates() const
     {
       if (oper) return DateRange(state.start, state.end);
-      OperationPlan *o = dynamic_cast<OperationPlan*>(owner);
+      OperationPlan *o = static_cast<OperationPlan*>(owner);
       if (o->getDates().getEnd() > Plan::instance().getCurrent()
           + o->getOperation()->getFence())
         return DateRange(o->getDates().getStart(),
@@ -5076,7 +5076,7 @@ class ProblemPrecedence : public Problem
     {if (add) addProblem();}
     ~ProblemPrecedence() {removeProblem();}
     string getEntity() const {return "operation";}
-    Object* getOwner() const {return dynamic_cast<OperationPlan*>(owner);}
+    Object* getOwner() const {return static_cast<OperationPlan*>(owner);}
     const DateRange getDates() const
     {
       OperationPlan *o = static_cast<OperationPlan*>(getOwner());
@@ -5112,8 +5112,8 @@ class ProblemDemandNotPlanned : public Problem
     string getEntity() const {return "demand";}
     const DateRange getDates() const
     {return DateRange(getDemand()->getDue(),getDemand()->getDue());}
-    Object* getOwner() const {return dynamic_cast<Demand*>(owner);}
-    Demand* getDemand() const {return dynamic_cast<Demand*>(owner);}
+    Object* getOwner() const {return static_cast<Demand*>(owner);}
+    Demand* getDemand() const {return static_cast<Demand*>(owner);}
     size_t getSize() const {return sizeof(ProblemDemandNotPlanned);}
 
     /** Return a reference to the metadata structure. */
@@ -5158,10 +5158,10 @@ class ProblemLate : public Problem
       return DateRange(getDemand()->getDue(),
           getDemand()->getLatestDelivery()->getDates().getEnd());
     }
-    Demand* getDemand() const {return dynamic_cast<Demand*>(getOwner());}
+    Demand* getDemand() const {return static_cast<Demand*>(getOwner());}
     size_t getSize() const {return sizeof(ProblemLate);}
     string getEntity() const {return "demand";}
-    Object* getOwner() const {return dynamic_cast<Demand*>(owner);}
+    Object* getOwner() const {return static_cast<Demand*>(owner);}
 
     /** Return a reference to the metadata structure. */
     const MetaClass& getType() const {return *metadata;}
@@ -5191,14 +5191,14 @@ class ProblemEarly : public Problem
     {if (add) addProblem();}
     ~ProblemEarly() {removeProblem();}
     string getEntity() const {return "demand";}
-    Object* getOwner() const {return dynamic_cast<Demand*>(owner);}
+    Object* getOwner() const {return static_cast<Demand*>(owner);}
     const DateRange getDates() const
     {
       assert(getDemand() && !getDemand()->getDelivery().empty());
       return DateRange(getDemand()->getDue(),
           getDemand()->getEarliestDelivery()->getDates().getEnd());
     }
-    Demand* getDemand() const {return dynamic_cast<Demand*>(getOwner());}
+    Demand* getDemand() const {return static_cast<Demand*>(getOwner());}
     size_t getSize() const {return sizeof(ProblemEarly);}
 
     /** Return a reference to the metadata structure. */
@@ -5227,10 +5227,10 @@ class ProblemInvalidData : public Problem
     const DateRange getDates() const {return dates;}
     Object* getOwner() const
     {
-      if (entity == "demand") return dynamic_cast<Demand*>(owner);
-      if (entity == "buffer") return dynamic_cast<Buffer*>(owner);
-      if (entity == "resource") return dynamic_cast<Resource*>(owner);
-      if (entity == "operation") return dynamic_cast<Operation*>(owner);
+      if (entity == "demand") return static_cast<Demand*>(owner);
+      if (entity == "buffer") return static_cast<Buffer*>(owner);
+      if (entity == "resource") return static_cast<Resource*>(owner);
+      if (entity == "operation") return static_cast<Operation*>(owner);
       throw LogicException("Unknown problem entity type");
     }
     size_t getSize() const
@@ -5274,8 +5274,8 @@ class ProblemShort : public Problem
     string getEntity() const {return "demand";}
     const DateRange getDates() const
     {return DateRange(getDemand()->getDue(), getDemand()->getDue());}
-    Object* getOwner() const {return dynamic_cast<Demand*>(owner);}
-    Demand* getDemand() const {return dynamic_cast<Demand*>(owner);}
+    Object* getOwner() const {return static_cast<Demand*>(owner);}
+    Demand* getDemand() const {return static_cast<Demand*>(owner);}
     size_t getSize() const {return sizeof(ProblemShort);}
 
     /** Return a reference to the metadata structure. */
@@ -5306,11 +5306,11 @@ class ProblemExcess : public Problem
     explicit ProblemExcess(Demand* d, bool add = true) : Problem(d)
     {if (add) addProblem();}
     string getEntity() const {return "demand";}
-    Object* getOwner() const {return dynamic_cast<Demand*>(owner);}
+    Object* getOwner() const {return static_cast<Demand*>(owner);}
     ~ProblemExcess() {removeProblem();}
     const DateRange getDates() const
     {return DateRange(getDemand()->getDue(), getDemand()->getDue());}
-    Demand* getDemand() const {return dynamic_cast<Demand*>(getOwner());}
+    Demand* getDemand() const {return static_cast<Demand*>(getOwner());}
     size_t getSize() const {return sizeof(ProblemExcess);}
 
     /** Return a reference to the metadata structure. */
@@ -5334,9 +5334,9 @@ class ProblemCapacityOverload : public Problem
       : Problem(r), qty(q), dr(st,nd) {if (add) addProblem();}
     ~ProblemCapacityOverload() {removeProblem();}
     string getEntity() const {return "capacity";}
-    Object* getOwner() const {return dynamic_cast<Resource*>(owner);}
+    Object* getOwner() const {return static_cast<Resource*>(owner);}
     const DateRange getDates() const {return dr;}
-    Resource* getResource() const {return dynamic_cast<Resource*>(getOwner());}
+    Resource* getResource() const {return static_cast<Resource*>(getOwner());}
     size_t getSize() const {return sizeof(ProblemCapacityOverload);}
 
     /** Return a reference to the metadata structure. */
@@ -5367,9 +5367,9 @@ class ProblemCapacityUnderload : public Problem
       : Problem(r), qty(q), dr(d) {if (add) addProblem();}
     ~ProblemCapacityUnderload() {removeProblem();}
     string getEntity() const {return "capacity";}
-    Object* getOwner() const {return dynamic_cast<Resource*>(owner);}
+    Object* getOwner() const {return static_cast<Resource*>(owner);}
     const DateRange getDates() const {return dr;}
-    Resource* getResource() const {return dynamic_cast<Resource*>(getOwner());}
+    Resource* getResource() const {return static_cast<Resource*>(getOwner());}
     size_t getSize() const {return sizeof(ProblemCapacityUnderload);}
 
     /** Return a reference to the metadata structure. */
@@ -5399,10 +5399,10 @@ class ProblemMaterialShortage : public Problem
     ProblemMaterialShortage(Buffer* b, Date st, Date nd, double q, bool add = true)
       : Problem(b), qty(q), dr(st,nd) {if (add) addProblem();}
     string getEntity() const {return "material";}
-    Object* getOwner() const {return dynamic_cast<Buffer*>(owner);}
+    Object* getOwner() const {return static_cast<Buffer*>(owner);}
     ~ProblemMaterialShortage() {removeProblem();}
     const DateRange getDates() const {return dr;}
-    Buffer* getBuffer() const {return dynamic_cast<Buffer*>(getOwner());}
+    Buffer* getBuffer() const {return static_cast<Buffer*>(getOwner());}
     size_t getSize() const {return sizeof(ProblemMaterialShortage);}
 
     /** Return a reference to the metadata structure. */
@@ -5434,8 +5434,8 @@ class ProblemMaterialExcess : public Problem
     string getEntity() const {return "material";}
     ~ProblemMaterialExcess() {removeProblem();}
     const DateRange getDates() const {return dr;}
-    Object* getOwner() const {return dynamic_cast<Buffer*>(owner);}
-    Buffer* getBuffer() const {return dynamic_cast<Buffer*>(owner);}
+    Object* getOwner() const {return static_cast<Buffer*>(owner);}
+    Buffer* getBuffer() const {return static_cast<Buffer*>(owner);}
     size_t getSize() const {return sizeof(ProblemMaterialExcess);}
 
     /** Return a reference to the metadata structure. */
@@ -5949,10 +5949,10 @@ class PeggingIterator : public Object
 
       /** Constructor. */
       state(unsigned int l, double d, double f,
-          const FlowPlan* fc, const FlowPlan* fp, 
+          const FlowPlan* fc, const FlowPlan* fp,
           const OperationPlan* op, bool p = true)
         : qty(d), factor(f), level(l),
-          cons_flowplan(fc), prod_flowplan(fp), pegged(p), 
+          cons_flowplan(fc), prod_flowplan(fp), pegged(p),
           opplan(op) {};
 
       /** Inequality operator. */

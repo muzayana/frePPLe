@@ -70,7 +70,6 @@ DECLARE_EXPORT void SolverMRP::solve(const Resource* res, void* v)
   bool HasOverload;
   bool HasSetupOverload;
   bool noRestore = data->state->forceLate;
-  bool forced_late = data->state->forceLate;
 
   // Initialize the default reply
   data->state->a_date = data->state->q_date;
@@ -429,7 +428,7 @@ DECLARE_EXPORT void SolverMRP::solve(const Resource* res, void* v)
   }
 
   // Maintain the constraint list
-  if (data->state->a_qty == 0.0 && data->logConstraints)
+  if (data->state->a_qty == 0.0 && data->logConstraints && data->planningDemand)
     data->planningDemand->getConstraints().push(
       ProblemCapacityOverload::metadata,
       res, currentOpplan.start, currentOpplan.end, orig_q_qty);
@@ -496,7 +495,6 @@ DECLARE_EXPORT void SolverMRP::solve(const ResourceBuckets* res, void* v)
   Resource::loadplanlist::const_iterator cur = res->getLoadPlans().end();
   Date curdate;
   bool noRestore = data->state->forceLate;
-  bool forced_late = data->state->forceLate;
   double overloadQty = 0.0;
 
   // Initialize the default reply
@@ -657,7 +655,6 @@ DECLARE_EXPORT void SolverMRP::solve(const ResourceBuckets* res, void* v)
         DateRange newStart = data->state->q_operationplan->getOperation()->calculateOperationTime(
           prevStart, TimePeriod(1L), true, &tmp
           );
-        logger << "zzzz" << prevStart << "  " << newStart.getStart() << "  " <<  cur->getDate() << endl;
         if (newStart.getStart() < cur->getDate())
         {
           // If the new start date is within this bucket we just left, then
@@ -720,7 +717,7 @@ DECLARE_EXPORT void SolverMRP::solve(const ResourceBuckets* res, void* v)
   }
 
   // Maintain the constraint list
-  if (data->state->a_qty == 0.0 && data->logConstraints)
+  if (data->state->a_qty == 0.0 && data->logConstraints && data->planningDemand)
     data->planningDemand->getConstraints().push(
       ProblemCapacityOverload::metadata,
       res, currentOpplan.start, currentOpplan.end, orig_q_qty);
