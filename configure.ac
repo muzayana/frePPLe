@@ -3,7 +3,7 @@
 #
 
 #
-# Copyright (C) 2007-2013 by Johan De Taeye, frePPLe bvba
+# Copyright (C) 2007-2014 by Johan De Taeye, frePPLe bvba
 #
 # All information contained herein is, and remains the property of frePPLe.  
 # You are allowed to use and modify the source code, as long as the software is used
@@ -165,15 +165,7 @@ AC_FUNC_MALLOC
 AC_FUNC_MKTIME
 AC_FUNC_STAT
 AC_FUNC_STRFTIME
-AC_CHECK_FUNCS([dup2 memset strncasecmp strnicmp strptime putenv _putenv setlocale])
-AC_CHECK_FUNCS([localtime_r], [],
-  if test x$multithread = xtrue
-   then
-   AC_MSG_ERROR([
-    Multi-threading requires a re-entrant version of the localtime function.
-    ])
-   fi
-)
+AC_CHECK_FUNCS([dup2 memset strncasecmp strnicmp strptime putenv _putenv setlocale localtime_r])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_CHECK_HEADERS([ext/slist slist vector map set stack])
@@ -325,25 +317,15 @@ else
   CXXFLAGS="-O3 -s $CXXFLAGS"
   AC_DEFINE([NDEBUG], [], [Disables assertions])
 fi ; fi ; fi
-if test x$multithread = xtrue
-then
-  AC_DEFINE([MT], [], [My flag to mark multi-threaded builds])
-fi
 case $host_os in
   cygwin*)
-    if test x$multithread = xtrue
-    then
-      LIBS="-lpthread $LIBS"
-    fi
+    LIBS="-lpthread $LIBS"
     # Linker option to avoid some ugly warnings...
     LDFLAGS="$LDFLAGS -Wl,--enable-auto-import"
     ;;
   *)
     LIBS="-ldl $LIBS"
-    if test x$multithread = xtrue
-    then
-      CXXFLAGS="-pthread $CXXFLAGS"
-    fi
+    CXXFLAGS="-pthread $CXXFLAGS"
     ;;
 esac
 AM_CONDITIONAL(CYGWIN, test x$host_os = xcygwin)
