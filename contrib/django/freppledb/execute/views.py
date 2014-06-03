@@ -98,7 +98,7 @@ class TaskReport(GridReport):
             'scenarios': Scenario.objects.all(),
             'fixtures': fixtures,
             'openbravo': 'freppledb.openbravo' in settings.INSTALLED_APPS,
-            'openerp': 'freppledb.openerp' in settings.INSTALLED_APPS,
+            'odoo': 'freppledb.odoo' in settings.INSTALLED_APPS,
             }
 
 
@@ -207,13 +207,13 @@ def LaunchTask(request, action):
       task = Task(name='Openbravo export', submitted=now, status='Waiting', user=request.user)
       task.save(using=request.database)
     # L
-    elif action == 'openerp_import' and 'freppledb.openerp' in settings.INSTALLED_APPS:
-      task = Task(name='OpenERP import', submitted=now, status='Waiting', user=request.user)
+    elif action == 'odoo_import' and 'freppledb.odoo' in settings.INSTALLED_APPS:
+      task = Task(name='Odoo import', submitted=now, status='Waiting', user=request.user)
       task.arguments = "--delta=%s" % request.POST['delta']
       task.save(using=request.database)
     # M
-    elif action == 'openerp_export' and 'freppledb.openerp' in settings.INSTALLED_APPS:
-      task = Task(name='OpenERP export', submitted=now, status='Waiting', user=request.user)
+    elif action == 'odoo_export' and 'freppledb.odoo' in settings.INSTALLED_APPS:
+      task = Task(name='Odoo export', submitted=now, status='Waiting', user=request.user)
       task.save(using=request.database)
     else:
       # Task not recognized
@@ -238,7 +238,7 @@ def LaunchTask(request, action):
             "frepple_runworker",
             "--database=%s" % worker_database
             ], creationflags=0x08000000)
-      elif sys.executable.find('frepplectl.exe') >= 0:
+      elif sys.executable.find('freppleserver.exe') >= 0:
         # Py2exe executable
         Popen([
           sys.executable.replace('freppleserver.exe','frepplectl.exe'), # frepplectl executable
