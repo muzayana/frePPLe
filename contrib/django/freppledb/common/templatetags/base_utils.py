@@ -388,7 +388,7 @@ class DashboardNode(Node):
       for j in i['widgets']:
         if reg[j[0]].has_permission(req.user):
           w.append(reg[j[0]](**j[1]))
-          del context[self.hiddenvarname][j[0]]
+          context[self.hiddenvarname].pop(j[0],None)
       context[self.varname].append( {'width': i['width'], 'widgets': w}  )
     return ''
 
