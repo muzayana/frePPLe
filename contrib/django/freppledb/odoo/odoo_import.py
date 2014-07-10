@@ -660,7 +660,8 @@ class Connector(object):
           buffer = u'%s @ %s' % (product, location)
           deliveries.update([(product,location,operation,buffer),])
           due = datetime.strptime(j['requested_date'] or j['date_order'], '%Y-%m-%d')
-          qty = self.convert_qty_uom(i['product_uom_qty'], i['product_uom'][0], i['product_id'][0])
+          priority = 1
+          qty = self.convert_qty_uom(i['product_uom_qty'], i['product_uom'][0], i['product_id'][0]
           if name in frepple_keys:
             update.append( (
               product,
@@ -668,6 +669,7 @@ class Connector(object):
               qty,
               j['picking_policy'] == 'one' and i['product_uom_qty'] or 1.0,
               due,
+              priority,
               operation,
               source,
               name,
@@ -679,6 +681,7 @@ class Connector(object):
               qty,
               j['picking_policy'] == 'one' and i['product_uom_qty'] or 1.0,
               due,
+              priority,
               operation,
               source,
               name,
@@ -729,12 +732,13 @@ class Connector(object):
       # Create or update demands
       cursor.executemany(
         "insert into demand \
-          (item_id,customer_id,quantity,minshipment,due,operation_id,priority,subcategory,lastmodified,source,name) \
-          values (%%s,%%s,%%s,%%s,%%s,%%s,1,'odoo','%s',%%s,%%s)" % self.date,
+          (item_id,customer_id,quantity,minshipment,due,priority,operation_id,subcategory,lastmodified,source,name) \
+          values (%%s,%%s,%%s,%%s,%%s,%%s,%%s,'odoo','%s',%%s,%%s)" % self.date,
         insert)
       cursor.executemany(
         "update demand \
-          set item_id=%%s, customer_id=%%s, quantity=%%s, minshipment=%%s, due=%%s, operation_id=%%s, source=%%s, priority=1, subcategory='odoo', lastmodified='%s' \
+          set item_id=%%s, customer_id=%%s, quantity=%%s, minshipment=%%s, due=%%s, priority=%%s, \
+            operation_id=%%s, source=%%s, subcategory='odoo', lastmodified='%s' \
           where name=%%s" % self.date,
         update)
       for i in delete:

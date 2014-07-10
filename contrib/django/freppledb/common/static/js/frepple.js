@@ -3,6 +3,21 @@
 window.__admin_media_prefix__ = "/static/admin/";
 
 
+// Adjust the breadcrumbs such that it fits on a single line.
+// This function is called when the window is resized.
+function breadcrumbs_reflow()
+{
+  var crumbs = $("#breadcrumbs");
+  var height_one_line = $("#cockpitcrumb").height();
+  // Show all elements previously hidden
+  crumbs.children("span:hidden").show();
+  // Hide the first crumbs till it all fits on a single line.
+  crumbs.children("span").each(function() {
+    if (crumbs.height() > height_one_line) $(this).hide();
+  });
+}
+
+
 //----------------------------------------------------------------------------
 // A class to handle changes to a grid.
 //----------------------------------------------------------------------------
@@ -40,9 +55,9 @@ var upload = {
     // Pick up all changed cells. If a function "getData" is defined on the
     // page we use that, otherwise we use the standard functionality of jqgrid.
     if (typeof getDirtyData == 'function')
-      rows = getDirtyData();
+      var rows = getDirtyData();
     else
-      rows = $("#grid").getChangedCells('dirty');
+      var rows = $("#grid").getChangedCells('dirty');
     if (rows != null && rows.length > 0)
       // Send the update to the server
       $.ajax({
@@ -617,7 +632,7 @@ var grid = {
         '<option value="csvlist">' + gettext("CSV list") +'</option></select>'
         );
     $('#popup').dialog({
-        title: gettext("Export data"),
+        title: gettext("Export CSV or Excel file"),
         autoOpen: true, resizable: false, width: 390, height: 'auto',
         buttons: [
           {
@@ -1217,7 +1232,7 @@ $(document).mousedown(function (event) {
 function getToken()
 {
   var allcookies = document.cookie.split(';');
-  for ( i = allcookies.length; i >= 0; i-- )
+  for (var i = allcookies.length; i >= 0; i-- )
     if (jQuery.trim(allcookies[i]).indexOf("csrftoken=") == 0)
       return jQuery.trim(jQuery.trim(allcookies[i]).substr(10));
   return 'none';
@@ -1254,12 +1269,12 @@ function import_show(url)
     '<form id="uploadform" enctype="multipart/form-data" method="post" action="'
     + (typeof(url) != 'undefined' ? url : '') + '">' +
     '<input type="hidden" name="csrfmiddlewaretoken" value="' + getToken() + '"/>' +
-    gettext('Load a CSV-formatted text file.') + '<br/>' +
+    gettext('Load an Excel file or a CSV-formatted text file.') + '<br/>' +
     gettext('The first row should contain the field names.') + '<br/><br/>' +
     '<input type="checkbox" name="erase" value="yes"/>&nbsp;&nbsp;' + gettext('First delete all existing records AND ALL RELATED TABLES') + '<br/><br/>' +
     gettext('Data file') + ':<input type="file" id="csv_file" name="csv_file"/></form>'
     ).dialog({
-      title: gettext("Import data"),
+      title: gettext("Import CSV or Excel file"),
       autoOpen: true, resizable: false, width: 390, height: 'auto',
       buttons: [
         {
@@ -1365,19 +1380,19 @@ var gantt = {
       var bucketstart = new Date(viewstart.getFullYear(), viewstart.getMonth(), 1);
       while (bucketstart < viewend)
       {
-        x1 = (bucketstart.getTime() - viewstart.getTime()) / 86400000 * scaling;
-        bucketend = new Date(bucketstart.getFullYear(), bucketstart.getMonth()+1, 1);
-        x2 = (bucketend.getTime() - viewstart.getTime()) / 86400000 * scaling;
+        var x1 = (bucketstart.getTime() - viewstart.getTime()) / 86400000 * scaling;
+        var bucketend = new Date(bucketstart.getFullYear(), bucketstart.getMonth()+1, 1);
+        var x2 = (bucketend.getTime() - viewstart.getTime()) / 86400000 * scaling;
         result.push('<text class="svgheadertext" x="' + Math.floor((x1+x2)/2) + '" y="31">' + $.datepicker.formatDate("M", bucketstart) + '</text>');
-            if (bucketstart.getMonth() % 3 == 0)
-            {
-            quarterend = new Date(bucketstart.getFullYear(), bucketstart.getMonth()+3, 1);
-            x2 = (quarterend.getTime() - viewstart.getTime()) / 86400000 * scaling;
-            quarter = Math.floor((bucketstart.getMonth()+3)/3);
+        if (bucketstart.getMonth() % 3 == 0)
+        {
+          var quarterend = new Date(bucketstart.getFullYear(), bucketstart.getMonth()+3, 1);
+          x2 = (quarterend.getTime() - viewstart.getTime()) / 86400000 * scaling;
+          var quarter = Math.floor((bucketstart.getMonth()+3)/3);
           result.push('<line class="time" x1="' + Math.floor(x1) + '" y1="0" x2="' + Math.floor(x1) + '" y2="34"/>');
           result.push('<text class="svgheadertext" x="' + Math.floor((x1+x2)/2) + '" y="13">' + bucketstart.getFullYear() + " Q" + quarter + '</text>');
-            }
-            else
+        }
+        else
           result.push('<line class="time" x1="' + Math.floor(x1) + '" y1="17" x2="' + Math.floor(x1) + '" y2="34"/>');
         bucketstart = bucketend;
       }
@@ -1531,8 +1546,8 @@ var gantt = {
   reset: function()
   {
     var scale = $("#jqgh_grid_operationplans").width() / 10000;
-    viewstart = new Date(horizonstart.getTime());
-    viewend = new Date(horizonend.getTime());
+    var viewstart = new Date(horizonstart.getTime());
+    var viewend = new Date(horizonend.getTime());
     $('.transformer').each(function() {
       var layers = $(this).attr("title");
       $(this).attr("transform", "scale(" + scale + ",1) translate(0," + ((layers-1)*gantt.rowsize+3) + ")");
