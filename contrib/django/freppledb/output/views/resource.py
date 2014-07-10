@@ -257,7 +257,7 @@ class GanttReport(GridReport):
                 select
                   theresource,
                   ( coalesce(sum(out_resourceplan.load),0) + coalesce(sum(out_resourceplan.setup),0) )
-                    / coalesce(%s,1) * 100 as avg_util
+                    * 100.0 / coalesce(%s,1.0)  as avg_util
                 from out_resourceplan
                 where out_resourceplan.startdate >= '%s'
                 and out_resourceplan.startdate < '%s'
