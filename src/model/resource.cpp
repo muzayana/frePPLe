@@ -207,6 +207,9 @@ DECLARE_EXPORT void Resource::writeElement(XMLOutput *o, const Keyword& tag, mod
     o->writeElement(Tags::tag_setupmatrix, getSetupMatrix());
   Plannable::writeElement(o, tag);
 
+  // Write the custom fields
+  PythonDictionary::write(o, getDict());
+
   // Write extra plan information
   loadplanlist::const_iterator i = loadplans.begin();
   if (o->getContentType() == XMLOutput::PLAN  && i!=loadplans.end())
@@ -273,7 +276,10 @@ DECLARE_EXPORT void Resource::beginElement(XMLInput& pIn, const Attribute& pAttr
       && pIn.getParentElement().first.isA(Tags::tag_skills))
     pIn.readto( Skill::reader(Skill::metadata,pIn.getAttributes()) );
   else
+  {
+    PythonDictionary::read(pIn, pAttr, getDict());
     HasHierarchy<Resource>::beginElement(pIn, pAttr);
+  }
 }
 
 
@@ -441,6 +447,8 @@ DECLARE_EXPORT PyObject* Resource::getattro(const Attribute& attr)
     return PythonObject(getCategory());
   if (attr.isA(Tags::tag_subcategory))
     return PythonObject(getSubCategory());
+  if (attr.isA(Tags::tag_source))
+    return PythonObject(getSource());
   if (attr.isA(Tags::tag_owner))
     return PythonObject(getOwner());
   if (attr.isA(Tags::tag_location))
@@ -485,6 +493,8 @@ DECLARE_EXPORT int Resource::setattro(const Attribute& attr, const PythonObject&
     setCategory(field.getString());
   else if (attr.isA(Tags::tag_subcategory))
     setSubCategory(field.getString());
+  else if (attr.isA(Tags::tag_source))
+    setSource(field.getString());
   else if (attr.isA(Tags::tag_owner))
   {
     if (!field.check(Resource::metadata))

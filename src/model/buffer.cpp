@@ -237,6 +237,9 @@ DECLARE_EXPORT void Buffer::writeElement(XMLOutput *o, const Keyword &tag, mode 
   if (getCarryingCost()!= 0.0)
     o->writeElement(Tags::tag_carrying_cost, getCarryingCost());
 
+  // Write the custom fields
+  PythonDictionary::write(o, getDict());
+
   // Write extra plan information
   i = flowplans.begin();
   if ((o->getContentType() == XMLOutput::PLAN
@@ -273,7 +276,7 @@ DECLARE_EXPORT void Buffer::beginElement(XMLInput& pIn, const Attribute& pAttr)
     Flow *f =
       dynamic_cast<Flow*>(MetaCategory::ControllerDefault(Flow::metadata,pIn.getAttributes()));
     if (f) f->setBuffer(this);
-    pIn.readto (f);
+    pIn.readto(f);
   }
   else if (pAttr.isA(Tags::tag_producing))
     pIn.readto( Operation::reader(Operation::metadata,pIn.getAttributes()) );
@@ -287,7 +290,10 @@ DECLARE_EXPORT void Buffer::beginElement(XMLInput& pIn, const Attribute& pAttr)
   else if (pAttr.isA(Tags::tag_flowplans))
     pIn.IgnoreElement();
   else
+  {
+    PythonDictionary::read(pIn, pAttr, getDict());
     HasHierarchy<Buffer>::beginElement(pIn, pAttr);
+  }
 }
 
 
@@ -855,6 +861,8 @@ DECLARE_EXPORT PyObject* Buffer::getattro(const Attribute& attr)
     return PythonObject(getCategory());
   if (attr.isA(Tags::tag_subcategory))
     return PythonObject(getSubCategory());
+  if (attr.isA(Tags::tag_source))
+    return PythonObject(getSource());
   if (attr.isA(Tags::tag_owner))
     return PythonObject(getOwner());
   if (attr.isA(Tags::tag_location))
@@ -901,6 +909,8 @@ DECLARE_EXPORT int Buffer::setattro(const Attribute& attr, const PythonObject& f
     setCategory(field.getString());
   else if (attr.isA(Tags::tag_subcategory))
     setSubCategory(field.getString());
+  else if (attr.isA(Tags::tag_source))
+    setSource(field.getString());
   else if (attr.isA(Tags::tag_owner))
   {
     if (!field.check(Buffer::metadata))

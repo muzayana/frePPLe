@@ -313,6 +313,9 @@ DECLARE_EXPORT void Demand::writeElement(XMLOutput *o, const Keyword& tag, mode 
     }
   }
 
+  // Write the custom fields
+  PythonDictionary::write(o, getDict());
+
   // Write the tail
   if (m != NOHEADTAIL && m != NOTAIL) o->EndObject(tag);
 }
@@ -329,7 +332,10 @@ DECLARE_EXPORT void Demand::beginElement(XMLInput& pIn, const Attribute& pAttr)
   else if (pAttr.isA(Tags::tag_operationplan))
     pIn.readto(OperationPlan::createOperationPlan(OperationPlan::metadata,pIn.getAttributes()));
   else
+  {
+    PythonDictionary::read(pIn, pAttr, getDict());
     HasHierarchy<Demand>::beginElement(pIn, pAttr);
+  }
 }
 
 
@@ -403,6 +409,8 @@ DECLARE_EXPORT PyObject* Demand::getattro(const Attribute& attr)
     return PythonObject(getCategory());
   if (attr.isA(Tags::tag_subcategory))
     return PythonObject(getSubCategory());
+  if (attr.isA(Tags::tag_source))
+    return PythonObject(getSource());
   if (attr.isA(Tags::tag_minshipment))
     return PythonObject(getMinShipment());
   if (attr.isA(Tags::tag_maxlateness))
@@ -457,6 +465,8 @@ DECLARE_EXPORT int Demand::setattro(const Attribute& attr, const PythonObject& f
     setCategory(field.getString());
   else if (attr.isA(Tags::tag_subcategory))
     setSubCategory(field.getString());
+  else if (attr.isA(Tags::tag_source))
+    setSource(field.getString());
   else if (attr.isA(Tags::tag_minshipment))
     setMinShipment(field.getDouble());
   else if (attr.isA(Tags::tag_maxlateness))

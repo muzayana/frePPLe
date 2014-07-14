@@ -62,6 +62,9 @@ DECLARE_EXPORT void Customer::writeElement(XMLOutput* o, const Keyword& tag, mod
   HasDescription::writeElement(o, tag);
   HasHierarchy<Customer>::writeElement(o, tag);
 
+  // Write the custom fields
+  PythonDictionary::write(o, getDict());
+
   // Write the tail
   if (m != NOTAIL && m != NOHEADTAIL) o->EndObject(tag);
 }
@@ -69,6 +72,7 @@ DECLARE_EXPORT void Customer::writeElement(XMLOutput* o, const Keyword& tag, mod
 
 DECLARE_EXPORT void Customer::beginElement(XMLInput& pIn, const Attribute& pAttr)
 {
+  PythonDictionary::read(pIn, pAttr, getDict());
   HasHierarchy<Customer>::beginElement(pIn, pAttr);
 }
 
@@ -98,6 +102,8 @@ DECLARE_EXPORT PyObject* Customer::getattro(const Attribute& attr)
     return PythonObject(getCategory());
   if (attr.isA(Tags::tag_subcategory))
     return PythonObject(getSubCategory());
+  if (attr.isA(Tags::tag_source))
+    return PythonObject(getSource());
   if (attr.isA(Tags::tag_owner))
     return PythonObject(getOwner());
   if (attr.isA(Tags::tag_hidden))
@@ -118,6 +124,8 @@ DECLARE_EXPORT int Customer::setattro(const Attribute& attr, const PythonObject&
     setCategory(field.getString());
   else if (attr.isA(Tags::tag_subcategory))
     setSubCategory(field.getString());
+  else if (attr.isA(Tags::tag_source))
+    setSource(field.getString());
   else if (attr.isA(Tags::tag_owner))
   {
     if (!field.check(Customer::metadata))

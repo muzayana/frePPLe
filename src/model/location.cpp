@@ -61,6 +61,9 @@ DECLARE_EXPORT void Location::writeElement(XMLOutput* o, const Keyword& tag, mod
   HasHierarchy<Location>::writeElement(o, tag);
   o->writeElement(Tags::tag_available, available);
 
+  // Write the custom fields
+  PythonDictionary::write(o, getDict());
+
   // Write the tail
   if (m != NOHEADTAIL && m != NOTAIL) o->EndObject(tag);
 }
@@ -71,7 +74,10 @@ DECLARE_EXPORT void Location::beginElement(XMLInput& pIn, const Attribute& pAttr
   if (pAttr.isA(Tags::tag_available) || pAttr.isA(Tags::tag_maximum))
     pIn.readto( Calendar::reader(Calendar::metadata,pIn.getAttributes()) );
   else
+  {
+    PythonDictionary::read(pIn, pAttr, getDict());
     HasHierarchy<Location>::beginElement(pIn, pAttr);
+  }
 }
 
 
@@ -128,6 +134,8 @@ DECLARE_EXPORT PyObject* Location::getattro(const Attribute& attr)
     return PythonObject(getCategory());
   if (attr.isA(Tags::tag_subcategory))
     return PythonObject(getSubCategory());
+  if (attr.isA(Tags::tag_source))
+    return PythonObject(getSource());
   if (attr.isA(Tags::tag_owner))
     return PythonObject(getOwner());
   if (attr.isA(Tags::tag_available))
@@ -150,6 +158,8 @@ DECLARE_EXPORT int Location::setattro(const Attribute& attr, const PythonObject&
     setCategory(field.getString());
   else if (attr.isA(Tags::tag_subcategory))
     setSubCategory(field.getString());
+  else if (attr.isA(Tags::tag_source))
+    setSource(field.getString());
   else if (attr.isA(Tags::tag_owner))
   {
     if (!field.check(Location::metadata))

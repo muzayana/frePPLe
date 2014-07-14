@@ -59,6 +59,12 @@ DECLARE_EXPORT void Skill::writeElement(XMLOutput *o, const Keyword& tag, mode m
   if (m != NOHEAD && m != NOHEADTAIL)
     o->BeginObject(tag, Tags::tag_name, XMLEscape(getName()));
 
+  // Write source field
+  o->writeElement(Tags::tag_source, getSource());
+
+  // Write the custom fields
+  PythonDictionary::write(o, getDict());
+
   // Write the tail
   if (m != NOHEADTAIL && m != NOTAIL) o->EndObject(tag);
 }
@@ -74,12 +80,15 @@ DECLARE_EXPORT void Skill::beginElement(XMLInput& pIn, const Attribute& pAttr)
     if (s) s->setSkill(this);
     pIn.readto(s);
   }
+  else
+    PythonDictionary::read(pIn, pAttr, getDict());
 }
 
 
 DECLARE_EXPORT void Skill::endElement (XMLInput& pIn, const Attribute& pAttr, const DataElement& pElement)
 {
-  // No specific fields to retrieve
+  if (pAttr.isA(Tags::tag_source))
+    setSource(pElement.getString());
 }
 
 
@@ -103,6 +112,8 @@ DECLARE_EXPORT PyObject* Skill::getattro(const Attribute& attr)
     return PythonObject(getName());
   if (attr.isA(Tags::tag_resourceskills))
     return new ResourceSkillIterator(this);
+  if (attr.isA(Tags::tag_source))
+    return PythonObject(getSource());
   return NULL;
 }
 
@@ -111,6 +122,8 @@ DECLARE_EXPORT int Skill::setattro(const Attribute& attr, const PythonObject& fi
 {
   if (attr.isA(Tags::tag_name))
     setName(field.getString());
+  else if (attr.isA(Tags::tag_source))
+    setSource(field.getString());
   else
     return -1;  // Error
   return 0;  // OK

@@ -557,6 +557,7 @@ void HasDescription::writeElement(XMLOutput *o, const Keyword &t, mode m) const
   o->writeElement(Tags::tag_category, cat);
   o->writeElement(Tags::tag_subcategory, subcat);
   o->writeElement(Tags::tag_description, descr);
+  o->writeElement(Tags::tag_source, getSource());
 }
 
 
@@ -568,6 +569,8 @@ void HasDescription::endElement (XMLInput& pIn, const Attribute& pAttr, const Da
     setSubCategory(pElement.getString());
   else if (pAttr.isA(Tags::tag_description))
     setDescription(pElement.getString());
+  else if (pAttr.isA(Tags::tag_source))
+    setSource(pElement.getString());
 }
 
 

@@ -502,6 +502,9 @@ DECLARE_EXPORT void Operation::writeElement(XMLOutput *o, const Keyword& tag, mo
   if (loc)
     o->writeElement(Tags::tag_location, loc);
 
+  // Write the custom fields
+  PythonDictionary::write(o, getDict());
+
   // Write extra plan information
   if ((o->getContentType() == XMLOutput::PLAN
       || o->getContentType() == XMLOutput::PLANDETAIL) && first_opplan)
@@ -535,6 +538,8 @@ DECLARE_EXPORT void Operation::beginElement(XMLInput& pIn, const Attribute& pAtt
     pIn.readto(OperationPlan::createOperationPlan(OperationPlan::metadata, pIn.getAttributes()));
   else if (pAttr.isA (Tags::tag_location))
     pIn.readto( Location::reader(Location::metadata,pIn.getAttributes()) );
+  else
+    PythonDictionary::read(pIn, pAttr, getDict());
 }
 
 
@@ -1413,6 +1418,8 @@ DECLARE_EXPORT PyObject* Operation::getattro(const Attribute& attr)
     return PythonObject(getCategory());
   if (attr.isA(Tags::tag_subcategory))
     return PythonObject(getSubCategory());
+  if (attr.isA(Tags::tag_source))
+    return PythonObject(getSource());
   if (attr.isA(Tags::tag_location))
     return PythonObject(getLocation());
   if (attr.isA(Tags::tag_fence))
@@ -1455,6 +1462,8 @@ DECLARE_EXPORT int Operation::setattro(const Attribute& attr, const PythonObject
     setCategory(field.getString());
   else if (attr.isA(Tags::tag_subcategory))
     setSubCategory(field.getString());
+  else if (attr.isA(Tags::tag_source))
+    setSource(field.getString());
   else if (attr.isA(Tags::tag_location))
   {
     if (!field.check(Location::metadata))

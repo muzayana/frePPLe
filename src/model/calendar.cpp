@@ -61,6 +61,13 @@ int Calendar::Bucket::initialize()
 }
 
 
+void Calendar::endElement(XMLInput& pIn, const Attribute& pAttr, const DataElement& pElement)
+{
+  if (pAttr.isA(Tags::tag_source))
+    setSource(pElement.getString());
+}
+
+
 int CalendarDouble::initialize()
 {
   // Initialize the metadata
@@ -138,6 +145,9 @@ void CalendarDouble::writeElement(XMLOutput *o, const Keyword& tag, mode m) cons
     // of the depth in the XML tree.
     o->writeElement(Tags::tag_bucket, *i, FULL);
   o->EndObject(Tags::tag_buckets);
+
+  // Write the custom fields
+  PythonDictionary::write(o, getDict());
 
   // Write the tail
   if (m != NOHEADTAIL && m != NOTAIL) o->EndObject(tag);
@@ -385,6 +395,9 @@ DECLARE_EXPORT void Calendar::writeElement(XMLOutput *o, const Keyword& tag, mod
   if (m != NOHEAD && m != NOHEADTAIL) o->BeginObject
     (tag, Tags::tag_name, XMLEscape(getName()), Tags::tag_type, getType().type);
 
+  // Write source field
+  o->writeElement(Tags::tag_source, getSource());
+
   // Write all buckets
   o->BeginObject (Tags::tag_buckets);
   for (BucketIterator i = beginBuckets(); i != endBuckets(); ++i)
@@ -392,6 +405,9 @@ DECLARE_EXPORT void Calendar::writeElement(XMLOutput *o, const Keyword& tag, mod
     // of the depth in the XML tree.
     o->writeElement(Tags::tag_bucket, *i, FULL);
   o->EndObject(Tags::tag_buckets);
+
+  // Write the custom fields
+  PythonDictionary::write(o, getDict());
 
   // Write the tail
   if (m != NOHEADTAIL && m != NOTAIL) o->EndObject(tag);
@@ -465,6 +481,8 @@ DECLARE_EXPORT void Calendar::beginElement(XMLInput& pIn, const Attribute& pAttr
       && pIn.getParentElement().first.isA(Tags::tag_buckets))
     // A new bucket
     pIn.readto(createBucket(pIn.getAttributes()));
+  else
+    PythonDictionary::read(pIn, pAttr, getDict());
 }
 
 
@@ -499,6 +517,7 @@ DECLARE_EXPORT void Calendar::Bucket::writeElement
     o->writeElement(Tags::tag_starttime, starttime);
   if (endtime != TimePeriod(86400L))
     o->writeElement(Tags::tag_endtime, endtime);
+  PythonDictionary::write(o, getDict());
   o->EndObject(tag);
 }
 
@@ -818,6 +837,8 @@ DECLARE_EXPORT PyObject* Calendar::getattro(const Attribute& attr)
     return PythonObject(getName());
   if (attr.isA(Tags::tag_buckets))
     return new CalendarBucketIterator(this);
+  if (attr.isA(Tags::tag_source))
+    return PythonObject(getSource());
   return NULL;
 }
 
@@ -826,6 +847,8 @@ DECLARE_EXPORT int Calendar::setattro(const Attribute& attr, const PythonObject&
 {
   if (attr.isA(Tags::tag_name))
     setName(field.getString());
+  else if (attr.isA(Tags::tag_source))
+    setSource(field.getString());
   else
     return -1;  // Error
   return 0;  // OK

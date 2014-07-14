@@ -92,6 +92,12 @@ DECLARE_EXPORT void SetupMatrix::writeElement(XMLOutput *o, const Keyword& tag, 
   if (m != NOHEAD && m != NOHEADTAIL) o->BeginObject
     (tag, Tags::tag_name, XMLEscape(getName()), Tags::tag_type, getType().type);
 
+  // Write source field
+  o->writeElement(Tags::tag_source, getSource());
+
+  // Write the custom fields
+  PythonDictionary::write(o, getDict());
+
   // Write all rules
   o->BeginObject (Tags::tag_rules);
   for (RuleIterator i = beginRules(); i != endRules(); ++i)
@@ -111,6 +117,8 @@ DECLARE_EXPORT void SetupMatrix::beginElement(XMLInput& pIn, const Attribute& pA
       && pIn.getParentElement().first.isA(Tags::tag_rules))
     // A new rule
     pIn.readto(createRule(pIn.getAttributes()));
+  else
+    PythonDictionary::read(pIn, pAttr, getDict());
 }
 
 
@@ -178,7 +186,8 @@ DECLARE_EXPORT SetupMatrix::Rule* SetupMatrix::createRule(const AttributeList& a
 
 DECLARE_EXPORT void SetupMatrix::endElement(XMLInput& pIn, const Attribute& pAttr, const DataElement& pElement)
 {
-  HasName<SetupMatrix>::endElement(pIn, pAttr, pElement);
+  if (pAttr.isA(Tags::tag_source))
+    setSource(pElement.getString());
 }
 
 
@@ -188,6 +197,8 @@ DECLARE_EXPORT PyObject* SetupMatrix::getattro(const Attribute& attr)
     return PythonObject(getName());
   if (attr.isA(Tags::tag_rules))
     return new SetupMatrixRuleIterator(this);
+  if (attr.isA(Tags::tag_source))
+    return PythonObject(getSource());
   return NULL;
 }
 
@@ -196,6 +207,8 @@ DECLARE_EXPORT int SetupMatrix::setattro(const Attribute& attr, const PythonObje
 {
   if (attr.isA(Tags::tag_name))
     setName(field.getString());
+  else if (attr.isA(Tags::tag_source))
+    setSource(field.getString());
   else
     return -1;  // Error
   return 0;
