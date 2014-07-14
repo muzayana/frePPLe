@@ -4274,7 +4274,8 @@ class ResourceBuckets : public Resource
 
 
 /** @brief This class associates a resource with its skills. */
-class ResourceSkill : public Object, public Association<Resource,Skill,ResourceSkill>::Node
+class ResourceSkill : public Object,
+  public Association<Resource,Skill,ResourceSkill>::Node, public HasSource
 {
   public:
     /** Default constructor. */

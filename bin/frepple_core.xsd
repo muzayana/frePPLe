@@ -334,6 +334,10 @@
     </xsd:annotation>
     <xsd:choice minOccurs="0" maxOccurs="unbounded">
       <xsd:element name="source" type="xsd:normalizedString" />
+      <xsd:element name="booleanproperty" type="booleanproperty" />
+      <xsd:element name="stringproperty" type="stringproperty" />
+      <xsd:element name="doubleproperty" type="doubleproperty" />
+      <xsd:element name="dateproperty" type="dateproperty" />
       <xsd:element name="rules">
         <xsd:complexType>
           <xsd:sequence minOccurs="0" maxOccurs="unbounded">
@@ -376,6 +380,10 @@
     <xsd:choice minOccurs="0" maxOccurs="unbounded">
       <xsd:element name="resourceskills" type="resourceskilllist" />
       <xsd:element name="source" type="xsd:normalizedString" />
+      <xsd:element name="booleanproperty" type="booleanproperty" />
+      <xsd:element name="stringproperty" type="stringproperty" />
+      <xsd:element name="doubleproperty" type="doubleproperty" />
+      <xsd:element name="dateproperty" type="dateproperty" />
     </xsd:choice>
     <xsd:attribute name="name" type="non-empty-string" use="required" />
     <xsd:attribute name="source" type="xsd:normalizedString" />
@@ -457,6 +465,10 @@
       <xsd:element name="priority" type="xsd:integer" />
       <xsd:element name="effective_start" type="xsd:dateTime" />
       <xsd:element name="effective_end" type="xsd:dateTime" />
+      <xsd:element name="booleanproperty" type="booleanproperty" />
+      <xsd:element name="stringproperty" type="stringproperty" />
+      <xsd:element name="doubleproperty" type="doubleproperty" />
+      <xsd:element name="dateproperty" type="dateproperty" />
     </xsd:choice>
     <xsd:attribute name="priority" type="xsd:integer" />
     <xsd:attribute name="effective_start" type="xsd:dateTime" />
@@ -567,6 +579,11 @@
       <xsd:element name="name" type="non-empty-string" />
       <xsd:element name="alternate" type="non-empty-string" />
       <xsd:element name="search" type="search" />
+      <xsd:element name="booleanproperty" type="booleanproperty" />
+      <xsd:element name="stringproperty" type="stringproperty" />
+      <xsd:element name="doubleproperty" type="doubleproperty" />
+      <xsd:element name="dateproperty" type="dateproperty" />
+      <xsd:element name="source" type="xsd:normalizedString" />
     </xsd:choice>
     <xsd:attribute name="quantity" type="xsd:double" />
     <xsd:attribute name="priority" type="xsd:integer" />
@@ -576,6 +593,7 @@
     <xsd:attribute name="alternate" type="non-empty-string" />
     <xsd:attribute name="search" type="search" />
     <xsd:attribute name="action" type="action" />
+    <xsd:attribute name="source" type="xsd:normalizedString" />
   </xsd:complexType>
 
   <xsd:complexType name="flowlist">
@@ -644,6 +662,11 @@
       <xsd:element name="search" type="search" />
       <xsd:element name="setup" type="non-empty-string" />
       <xsd:element name="skill" type="skill" />
+      <xsd:element name="booleanproperty" type="booleanproperty" />
+      <xsd:element name="stringproperty" type="stringproperty" />
+      <xsd:element name="doubleproperty" type="doubleproperty" />
+      <xsd:element name="dateproperty" type="dateproperty" />
+      <xsd:element name="source" type="xsd:normalizedString" />
     </xsd:choice>
     <xsd:attribute name="quantity" type="xsd:double" />
     <xsd:attribute name="priority" type="xsd:integer" />
@@ -654,6 +677,7 @@
     <xsd:attribute name="search" type="search" />
     <xsd:attribute name="setup" type="non-empty-string" />
     <xsd:attribute name="action" type="action" />
+    <xsd:attribute name="source" type="xsd:normalizedString" />
   </xsd:complexType>
 
   <xsd:complexType name="loadlist">
@@ -741,6 +765,10 @@
     <xsd:choice minOccurs="0" maxOccurs="unbounded">
       <xsd:element name="default" type="xsd:double" />
       <xsd:element name="source" type="xsd:normalizedString" />
+      <xsd:element name="booleanproperty" type="booleanproperty" />
+      <xsd:element name="stringproperty" type="stringproperty" />
+      <xsd:element name="doubleproperty" type="doubleproperty" />
+      <xsd:element name="dateproperty" type="dateproperty" />
       <xsd:element name="buckets">
         <xsd:complexType>
           <xsd:sequence>
@@ -752,6 +780,10 @@
                   <xsd:element name="days" type="bucketdays" minOccurs="0" />
                   <xsd:element name="starttime" type="xsd:duration" minOccurs="0" />
                   <xsd:element name="endtime" type="xsd:duration" minOccurs="0" />
+                  <xsd:element name="booleanproperty" type="booleanproperty" minOccurs="0" />
+                  <xsd:element name="stringproperty" type="stringproperty" minOccurs="0" />
+                  <xsd:element name="doubleproperty" type="doubleproperty" minOccurs="0" />
+                  <xsd:element name="dateproperty" type="dateproperty" minOccurs="0" />
                 </xsd:all>
                 <xsd:attribute name="id" type="xsd:integer" /> <!-- autogenerated key -->
                 <xsd:attribute name="start" type="xsd:dateTime" />
@@ -788,18 +820,22 @@
         operation planned at a certain quantity and time.
       </xsd:documentation>
     </xsd:annotation>
-    <xsd:sequence>
-      <xsd:element name="demand" type="demand" minOccurs="0" />
-      <xsd:element name="start" type="xsd:dateTime" minOccurs="0" />
-      <xsd:element name="end" type="xsd:dateTime" minOccurs="0" />
-      <xsd:element name="quantity" type="positiveDouble" minOccurs="0" />
-      <xsd:element name="locked" type="xsd:boolean" minOccurs="0" />
-      <xsd:element name="owner" type="operationplan" minOccurs="0" />
-      <xsd:element name="consume_material" type="xsd:boolean" minOccurs="0" />
-      <xsd:element name="consume_capacity" type="xsd:boolean" minOccurs="0" />
-      <xsd:element name="produce_material" type="xsd:boolean" minOccurs="0" />
-      <xsd:element name="source" type="xsd:normalizedString" minOccurs="0" />
-    </xsd:sequence>
+    <xsd:choice minOccurs="0" maxOccurs="unbounded">
+      <xsd:element name="demand" type="demand" />
+      <xsd:element name="start" type="xsd:dateTime" />
+      <xsd:element name="end" type="xsd:dateTime" />
+      <xsd:element name="quantity" type="positiveDouble" />
+      <xsd:element name="locked" type="xsd:boolean" />
+      <xsd:element name="owner" type="operationplan" />
+      <xsd:element name="consume_material" type="xsd:boolean" />
+      <xsd:element name="consume_capacity" type="xsd:boolean" />
+      <xsd:element name="produce_material" type="xsd:boolean" />
+      <xsd:element name="source" type="xsd:normalizedString" />
+      <xsd:element name="booleanproperty" type="booleanproperty" />
+      <xsd:element name="stringproperty" type="stringproperty" />
+      <xsd:element name="doubleproperty" type="doubleproperty" />
+      <xsd:element name="dateproperty" type="dateproperty" />
+    </xsd:choice>
     <xsd:attribute name="id" type="xsd:unsignedLong" />
     <xsd:attribute name="operation" type="non-empty-string" />
     <xsd:attribute name="start" type="xsd:dateTime" />
@@ -887,7 +923,11 @@
           <xsd:element name="userexit_resource" type="non-empty-string" />
           <xsd:element name="userexit_operation" type="non-empty-string" />
           <xsd:element name="plantype" type="xsd:unsignedShort" />
-        </xsd:choice>
+          <xsd:element name="booleanproperty" type="booleanproperty" />
+          <xsd:element name="stringproperty" type="stringproperty" />
+          <xsd:element name="doubleproperty" type="doubleproperty" />
+          <xsd:element name="dateproperty" type="dateproperty" />
+       </xsd:choice>
         <xsd:attribute name="constraints" type="xsd:unsignedShort" />
         <xsd:attribute name="maxparallel" type="xsd:positiveInteger" />
         <xsd:attribute name="iterationaccuracy" type="percentage" />
