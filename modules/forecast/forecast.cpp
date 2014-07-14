@@ -266,6 +266,18 @@ void Forecast::writeElement(XMLOutput *o, const Keyword &tag, mode m) const
   o->writeElement(Tags::tag_operation, &*getOperation());
   if (getPriority()) o->writeElement(Tags::tag_priority, getPriority());
   o->writeElement(Tags::tag_calendar, calptr);
+  if (getMaxLateness() != TimePeriod::MAX)
+    o->writeElement(Tags::tag_maxlateness, getMaxLateness());
+  if (getMinShipment() != 1.0)
+    o->writeElement(Tags::tag_minshipment, getMinShipment());
+
+  // Write source field
+  o->writeElement(Tags::tag_source, getSource());
+
+  // Write the custom fields
+  PythonDictionary::write(o, getDict());
+
+  // Write fields specific to the forecast model
   if (!getDiscrete()) o->writeElement(Tags::tag_discrete, getDiscrete());
 
   // Write all entries
