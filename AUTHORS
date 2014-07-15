@@ -63,3 +63,9 @@ FrePPLe redistributes parts of the following third party software components:
     Copyright Michael Bostock
     Licensed under BSD license
     See http://d3js.org/
+
+* This product includes software developed by the OpenSSL Project
+  for use in the OpenSSL Toolkit.
+    Copyright The OpenSSL Project and Eric Young
+    License http://www.openssl.org/source/license.html
+    See http://www.openssl.org/
