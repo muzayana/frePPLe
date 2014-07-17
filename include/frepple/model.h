@@ -618,7 +618,7 @@ class Problem : public NonCopyable, public Object
     /** Destructor.
       * @see removeProblem
       */
-    virtual ~Problem() {}
+    virtual DECLARE_EXPORT ~Problem() {}
 
     /** Returns the duration of this problem. */
     virtual const DateRange getDates() const = 0;
@@ -845,7 +845,7 @@ class Solver : public HasName<Solver>
       HasName<Solver>(n), loglevel(0) {}
 
     /** Destructor. */
-    virtual ~Solver() {}
+    virtual DECLARE_EXPORT ~Solver() {}
 
     virtual DECLARE_EXPORT void writeElement(XMLOutput*, const Keyword&, mode=DEFAULT) const;
     virtual DECLARE_EXPORT void endElement(XMLInput&, const Attribute&, const DataElement&);
