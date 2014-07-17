@@ -1240,7 +1240,7 @@ class ForecastSolver : public Solver
     friend class Forecast;
   public:
     /** Constructor. */
-    ForecastSolver(const string& n) : Solver(n) {initType(metadata);}
+    explicit ForecastSolver(const string& n) : Solver(n) {initType(metadata);}
 
     /** This method handles the search for a matching forecast, followed
       * by decreasing the net forecast.
