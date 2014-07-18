@@ -462,16 +462,43 @@ class Connector(object):
               1
               ] )
 
-        # Sort by start date.
-        # Required to assure that records with a later start date get a
-        # lower priority in frePPLe.
-        buckets.sort(key=itemgetter(3))
+        if len(buckets) > 0:
+          # Sort by start date.
+          # Required to assure that records with a later start date get a
+          # lower priority in frePPLe.
+          buckets.sort(key=itemgetter(3))
 
-        # Assign priorities
-        priority = 1000
-        for i in buckets:
-          i[0] = priority
-          priority -= 1
+          # Assign priorities
+          priority = 1000
+          for i in buckets:
+            i[0] = priority
+            priority -= 1
+
+          # Create frePPLe records
+          cursor.executemany(
+            "insert into calendarbucket \
+             (priority, calendar_id, startdate, enddate, monday, tuesday, wednesday, thursday, friday, \
+              saturday, sunday, starttime, endtime, value, source, lastmodified) \
+             values(%%s,%%s,%%s,%%s,%%s,%%s,%%s,%%s,%%s,%%s,%%s,%%s,%%s,%%s,'odoo','%s')" % self.date,
+             buckets
+            )
+        else:
+          cursor.execute(
+            "update calendar set defaultvalue=1 where name=%s",
+            [self.calendar,]
+            )
+
+        # Create calendar buckets for the public holidays
+        buckets = []
+        ids = self.odoo_search('hr.holidays.public.line', [])
+        fields = ['date']
+        for i in self.odoo_data('hr.holidays.public.line', ids, fields):
+          strt = datetime.strptime(i['date'], '%Y-%m-%d')
+          nd = strt + timedelta(days=1)
+          buckets.append( [
+            1, self.calendar, strt, nd, '1', '1', '1', '1', '1', '1', '1',
+            '00:00:00', '23:59:59', 0
+            ] )
 
         # Create frePPLe records
         cursor.executemany(
