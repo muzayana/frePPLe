@@ -1204,7 +1204,6 @@ class Connector(object):
       load_update = []
 
       # Loop over all "producing" bom records
-      boms = {}
       ids = self.odoo_search('mrp.bom', [
         ('bom_id','=',False), #'|',('create_date','>', self.delta),('write_date','>', self.delta),
         '|',('active', '=', 1),('active', '=', 0)])
@@ -1230,7 +1229,6 @@ class Connector(object):
         uom_factor = self.convert_qty_uom(1.0, i['product_uom'][0], i['product_id'][0])
 
         if i['active']:
-          boms[i['id']] = (operation, location)
           # Creation or update operations
           if operation in frepple_operations:
             operation_update.append( (

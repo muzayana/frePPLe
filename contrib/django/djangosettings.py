@@ -154,12 +154,12 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'freppledb.quoting',
     'freppledb.forecast',
+    'freppledb.odoo',
+    'freppledb.openbravo',
     'freppledb.input',
     'freppledb.output',
     'freppledb.execute',
     'freppledb.common',
-    'freppledb.odoo',
-    'freppledb.openbravo',
 )
 
 LOCALE_PATHS = (
