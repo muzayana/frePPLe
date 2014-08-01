@@ -25,6 +25,7 @@ from django.contrib import messages
 from django.utils.encoding import force_unicode
 
 from freppledb.execute.models import Task, Scenario
+from freppledb.common.auth import basicauthentication
 from freppledb.common.report import exportWorkbook, importWorkbook
 from freppledb.common.report import GridReport, GridFieldDateTime, GridFieldText, GridFieldInteger
 from freppledb.execute.management.commands.frepple_runworker import checkActive
@@ -259,6 +260,11 @@ def LaunchTask(request, action):
     messages.add_message(request, messages.ERROR,
         force_unicode(_('Failure launching action: %(msg)s') % {'msg':e}))
     return HttpResponseRedirect('%s/execute/' % request.prefix)
+
+
+@basicauthentication(allow_logged_in=True, perm=None)
+def APITask(request, action):
+  return HttpResponse("OK")
 
 
 @staff_member_required
