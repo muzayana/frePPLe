@@ -8,7 +8,9 @@
 # or in the form of compiled binaries.
 #
 
-import os.path, sys
+import json
+import os.path
+import sys
 from datetime import datetime
 from subprocess import Popen
 
@@ -103,168 +105,202 @@ class TaskReport(GridReport):
             }
 
 
+@basicauthentication(allow_logged_in=True)
+def APITask(request, action):
+  try:
+    if action == 'status':
+      response = {}
+      for i in request.POST.getlist('task'):
+        try:
+          task = Task.objects.all().using(request.database).get(pk=i)
+          response[i] = {
+            'name': task.name, 'submitted': str(task.submitted),
+            'started': str(task.started), 'finished': str(task.finished),
+            'arguments': task.arguments, 'status': task.status,
+            'message': task.message, 'user': task.user.username
+            }
+        except:
+          response[i] = {'message': "Task not found"}
+    else:
+      task = wrapTask(request, action)
+      response = {'taskid': task.id, 'message': 'Successfully launched task'}
+  except Exception as e:
+    response = {'message': 'Exception launching task: %s' % e}
+  return HttpResponse(json.dumps(response), content_type="application/json")
+
+
 @staff_member_required
 @never_cache
 @csrf_protect
 def LaunchTask(request, action):
-  # Allow only post
-  if request.method != 'POST':
-    raise Http404('Only post requests allowed')
-
-  # Parse the posted parameters as arguments for an asynchronous task to add to the queue.    TODO MAKE MODULAR WITH SEPERATE TASK CLASS
-  worker_database = request.database
   try:
-    now = datetime.now()
-    # A
-    if action == 'generate plan':
-      constraint = 0
-      for value in request.POST.getlist('constraint'):
-        try: constraint += int(value)
-        except: pass
-      task = Task(name='generate plan', submitted=now, status='Waiting', user=request.user)
-      if request.POST.get('webservice','0') == u'1':
-        task.arguments = "--constraint=%s --plantype=%s --env=webservice" % (constraint, request.POST.get('plantype'))
-      else:
-        task.arguments = "--constraint=%s --plantype=%s" % (constraint, request.POST.get('plantype'))
-      task.save(using=request.database)
-      # Update the session object   TODO REPLACE WITH PREFERENCE INFO
-      request.session['plantype'] = request.POST.get('plantype')
-      request.session['constraint'] = constraint
-      request.session['webservice'] = request.POST.get('webservice','0')
-    # B
-    elif action == 'generate model':
-      task = Task(name='generate model', submitted=now, status='Waiting', user=request.user)
-      task.arguments = "--cluster=%s --demand=%s --forecast_per_item=%s --level=%s --resource=%s " \
-        "--resource_size=%s --components=%s --components_per=%s --deliver_lt=%s --procure_lt=%s" % (
-        request.POST['clusters'], request.POST['demands'], request.POST['fcst'], request.POST['levels'],
-        request.POST['rsrc_number'], request.POST['rsrc_size'], request.POST['components'],
-        request.POST['components_per'], request.POST['deliver_lt'], request.POST['procure_lt']
-        )
-      task.save(using=request.database)
-    # C
-    elif action == 'empty database':
-      task = Task(name='empty database', submitted=now, status='Waiting', user=request.user)
-      if not request.POST.get('all'):
-        task.arguments = "--models=%s" % ','.join(request.POST.getlist('entities'))
-      task.save(using=request.database)
-    # D
-    elif action == 'load dataset':
-      task = Task(name='load dataset', submitted=now, status='Waiting', user=request.user, arguments=request.POST['datafile'])
-      task.save(using=request.database)
-    # E
-    elif action == 'manage scenarios':
-      worker_database = DEFAULT_DB_ALIAS
-      if 'copy' in request.POST:
-        source = request.POST.get('source', DEFAULT_DB_ALIAS)
-        for sc in Scenario.objects.all():
-          if request.POST.get(sc.name,'off') == 'on' and sc.status == u'Free':
-            task = Task(name='copy scenario', submitted=now, status='Waiting', user=request.user, arguments="%s %s" % (source, sc.name))
-            task.save()
-      elif 'release' in request.POST:
-        # Note: release is immediate and synchronous.
-        for sc in Scenario.objects.all():
-          if request.POST.get(sc.name,'off') == u'on' and sc.status != u'Free':
-            sc.status = u'Free'
-            sc.lastrefresh = now
-            sc.save()
-            if request.database == sc.name:
-              # Erasing the database that is currently selected.
-              request.prefix = ''
-      elif 'update' in request.POST:
-        # Note: update is immediate and synchronous.
-        for sc in Scenario.objects.all():
-          if request.POST.get(sc.name, 'off') == 'on':
-            sc.description = request.POST.get('description',None)
-            sc.save()
-      else:
-        raise Http404('Invalid scenario task')
-    # F
-    elif action == 'backup database':
-      task = Task(name='backup database', submitted=now, status='Waiting', user=request.user)
-      task.save(using=request.database)
-    # G
-    elif action == 'generate buckets':
-      task = Task(name='generate buckets', submitted=now, status='Waiting', user=request.user)
-      task.arguments = "--start=%s --end=%s --weekstart=%s" % (
-        request.POST['start'], request.POST['end'], request.POST['weekstart']
-        )
-      task.save(using=request.database)
-    # H
-    elif action == 'exportworkbook':
+    if action == 'exportworkbook':
       return exportWorkbook(request)
-    # I
     elif action == 'importworkbook':
       return importWorkbook(request)
-    # J
-    elif action == 'stop web service':
-      from django.core import management
-      management.call_command('frepple_stop_web_service', force=True, database=request.database)
-    elif action == 'openbravo_import' and 'freppledb.openbravo' in settings.INSTALLED_APPS:
-      task = Task(name='Openbravo import', submitted=now, status='Waiting', user=request.user)
-      task.arguments = "--delta=%s" % request.POST['delta']
-      task.save(using=request.database)
-    # K
-    elif action == 'openbravo_export' and 'freppledb.openbravo' in settings.INSTALLED_APPS:
-      task = Task(name='Openbravo export', submitted=now, status='Waiting', user=request.user)
-      task.save(using=request.database)
-    # L
-    elif action == 'odoo_import' and 'freppledb.odoo' in settings.INSTALLED_APPS:
-      task = Task(name='Odoo import', submitted=now, status='Waiting', user=request.user)
-      task.arguments = "--delta=%s" % request.POST['delta']
-      task.save(using=request.database)
-    # M
-    elif action == 'odoo_export' and 'freppledb.odoo' in settings.INSTALLED_APPS:
-      task = Task(name='Odoo export', submitted=now, status='Waiting', user=request.user)
-      task.save(using=request.database)
     else:
-      # Task not recognized
-      raise Http404('Invalid launching task')
-
-    # Launch a worker process
-    if not checkActive(worker_database):
-      if os.path.isfile(os.path.join(settings.FREPPLE_APP,"frepplectl.py")):
-        if "python" in sys.executable:
-          # Development layout
-          Popen([
-            sys.executable, # Python executable
-            os.path.join(settings.FREPPLE_APP,"frepplectl.py"),
-            "frepple_runworker",
-            "--database=%s" % worker_database
-            ])
-        else:
-          # Deployment on Apache web server
-          Popen([
-            "python",
-            os.path.join(settings.FREPPLE_APP,"frepplectl.py"),
-            "frepple_runworker",
-            "--database=%s" % worker_database
-            ], creationflags=0x08000000)
-      elif sys.executable.find('freppleserver.exe') >= 0:
-        # Py2exe executable
-        Popen([
-          sys.executable.replace('freppleserver.exe','frepplectl.exe'), # frepplectl executable
-          "frepple_runworker",
-          "--database=%s" % worker_database
-          ], creationflags=0x08000000) # Do not create a console window
-      else:
-        # Linux standard installation
-        Popen([
-          "frepplectl",
-          "frepple_runworker",
-          "--database=%s" % worker_database
-          ])
-
-    # Task created successfully
-    return HttpResponseRedirect('%s/execute/' % request.prefix)
+      wrapTask(request, action)
+      return HttpResponseRedirect('%s/execute/' % request.prefix)
   except Exception as e:
     messages.add_message(request, messages.ERROR,
         force_unicode(_('Failure launching action: %(msg)s') % {'msg':e}))
     return HttpResponseRedirect('%s/execute/' % request.prefix)
 
 
-@basicauthentication(allow_logged_in=True, perm=None)
-def APITask(request, action):
-  return HttpResponse("OK")
+def wrapTask(request, action):
+  # Allow only post
+  if request.method != 'POST':
+    raise Exception('Only post requests allowed')
+
+  # Check user permissions
+  if not request.user.has_perm('execute'):
+    raise Exception('Missing execution privileges')
+
+  # Parse the posted parameters as arguments for an asynchronous task to add to the queue.    TODO MAKE MODULAR WITH SEPERATE TASK CLASS
+  worker_database = request.database
+
+  now = datetime.now()
+  task = None
+  # A
+  if action == 'frepple_run':
+    if not request.user.has_perm('execute.generate_plan'):
+      raise Exception('Missing execution privileges')
+    constraint = 0
+    for value in request.POST.getlist('constraint'):
+      try: constraint += int(value)
+      except: pass
+    task = Task(name='generate plan', submitted=now, status='Waiting', user=request.user)
+    if request.POST.get('webservice','0') == u'1':
+      task.arguments = "--constraint=%s --plantype=%s --env=webservice" % (constraint, request.POST.get('plantype'))
+    else:
+      task.arguments = "--constraint=%s --plantype=%s" % (constraint, request.POST.get('plantype'))
+    task.save(using=request.database)
+    # Update the session object   TODO REPLACE WITH PREFERENCE INFO
+    request.session['plantype'] = request.POST.get('plantype')
+    request.session['constraint'] = constraint
+    request.session['webservice'] = request.POST.get('webservice','0')
+  # B
+  elif action == 'frepple_createmodel':
+    task = Task(name='generate model', submitted=now, status='Waiting', user=request.user)
+    task.arguments = "--cluster=%s --demand=%s --forecast_per_item=%s --level=%s --resource=%s " \
+      "--resource_size=%s --components=%s --components_per=%s --deliver_lt=%s --procure_lt=%s" % (
+      request.POST['clusters'], request.POST['demands'], request.POST['fcst'], request.POST['levels'],
+      request.POST['rsrc_number'], request.POST['rsrc_size'], request.POST['components'],
+      request.POST['components_per'], request.POST['deliver_lt'], request.POST['procure_lt']
+      )
+    task.save(using=request.database)
+  # C
+  elif action == 'frepple_flush':
+    task = Task(name='empty database', submitted=now, status='Waiting', user=request.user)
+    if not request.POST.get('all'):
+      task.arguments = "--models=%s" % ','.join(request.POST.getlist('entities'))
+    task.save(using=request.database)
+  # D
+  elif action == 'loaddata':
+    task = Task(name='load dataset', submitted=now, status='Waiting', user=request.user, arguments=request.POST['datafile'])
+    task.save(using=request.database)
+  # E
+  elif action == 'frepple_copy':
+    worker_database = DEFAULT_DB_ALIAS
+    if 'copy' in request.POST:
+      if not request.user.has_perm('execute.copy_scenario'):
+        raise Exception('Missing execution privileges')
+      source = request.POST.get('source', DEFAULT_DB_ALIAS)
+      for sc in Scenario.objects.all():
+        if request.POST.get(sc.name,'off') == 'on' and sc.status == u'Free':
+          task = Task(name='copy scenario', submitted=now, status='Waiting', user=request.user, arguments="%s %s" % (source, sc.name))
+          task.save()
+    elif 'release' in request.POST:
+      # Note: release is immediate and synchronous.
+      if not request.user.has_perm('execute.release_scenario'):
+        raise Exception('Missing execution privileges')
+      for sc in Scenario.objects.all():
+        if request.POST.get(sc.name,'off') == u'on' and sc.status != u'Free':
+          sc.status = u'Free'
+          sc.lastrefresh = now
+          sc.save()
+          if request.database == sc.name:
+            # Erasing the database that is currently selected.
+            request.prefix = ''
+    elif 'update' in request.POST:
+      # Note: update is immediate and synchronous.
+      for sc in Scenario.objects.all():
+        if request.POST.get(sc.name, 'off') == 'on':
+          sc.description = request.POST.get('description',None)
+          sc.save()
+    else:
+      raise Exception('Invalid scenario task')
+  # F
+  elif action == 'frepple_backup':
+    task = Task(name='backup database', submitted=now, status='Waiting', user=request.user)
+    task.save(using=request.database)
+  # G
+  elif action == 'frepple_createbuckets':
+    task = Task(name='generate buckets', submitted=now, status='Waiting', user=request.user)
+    task.arguments = "--start=%s --end=%s --weekstart=%s" % (
+      request.POST['start'], request.POST['end'], request.POST['weekstart']
+      )
+    task.save(using=request.database)
+  # J
+  elif action == 'frepple_stop_web_service':
+    from django.core import management
+    management.call_command('frepple_stop_web_service', force=True, database=request.database)
+  # K
+  elif action == 'openbravo_import' and 'freppledb.openbravo' in settings.INSTALLED_APPS:
+    task = Task(name='Openbravo import', submitted=now, status='Waiting', user=request.user)
+    task.arguments = "--delta=%s" % request.POST['delta']
+    task.save(using=request.database)
+  # L
+  elif action == 'openbravo_export' and 'freppledb.openbravo' in settings.INSTALLED_APPS:
+    task = Task(name='Openbravo export', submitted=now, status='Waiting', user=request.user)
+    task.save(using=request.database)
+  # M
+  elif action == 'odoo_import' and 'freppledb.odoo' in settings.INSTALLED_APPS:
+    task = Task(name='Odoo import', submitted=now, status='Waiting', user=request.user)
+    task.arguments = "--delta=%s" % request.POST['delta']
+    task.save(using=request.database)
+  # N
+  elif action == 'odoo_export' and 'freppledb.odoo' in settings.INSTALLED_APPS:
+    task = Task(name='Odoo export', submitted=now, status='Waiting', user=request.user)
+    task.save(using=request.database)
+  else:
+    # Task not recognized
+    raise Exception('Invalid launching task')
+
+  # Launch a worker process
+  if task and not checkActive(worker_database):
+    if os.path.isfile(os.path.join(settings.FREPPLE_APP,"frepplectl.py")):
+      if "python" in sys.executable:
+        # Development layout
+        Popen([
+          sys.executable, # Python executable
+          os.path.join(settings.FREPPLE_APP,"frepplectl.py"),
+          "frepple_runworker",
+          "--database=%s" % worker_database
+          ])
+      else:
+        # Deployment on Apache web server
+        Popen([
+          "python",
+          os.path.join(settings.FREPPLE_APP,"frepplectl.py"),
+          "frepple_runworker",
+          "--database=%s" % worker_database
+          ], creationflags=0x08000000)
+    elif sys.executable.find('freppleserver.exe') >= 0:
+      # Py2exe executable
+      Popen([
+        sys.executable.replace('freppleserver.exe','frepplectl.exe'), # frepplectl executable
+        "frepple_runworker",
+        "--database=%s" % worker_database
+        ], creationflags=0x08000000) # Do not create a console window
+    else:
+      # Linux standard installation
+      Popen([
+        "frepplectl",
+        "frepple_runworker",
+        "--database=%s" % worker_database
+        ])
+  return task
 
 
 @staff_member_required
