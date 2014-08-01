@@ -52,7 +52,7 @@ class EmailBackend(ModelBackend):
         return None
 
 
-def basicauthentication(allow_logged_in=True, perm=None, realm="frepple"):
+def basicauthentication(allow_logged_in=True, realm="frepple"):
   '''
   A decorator that requires a user to be logged in. If they are not
   logged in the request is examined for a 'authorization' header.
@@ -63,7 +63,7 @@ def basicauthentication(allow_logged_in=True, perm=None, realm="frepple"):
   If the header is not present a http 401 is sent back to the
   requestor to provide credentials.
 
-  This code is inspired on and shamelessly copied from:
+  This code is inspired on and copied from this snippet:
     https://djangosnippets.org/snippets/243/
   '''
   def view_decorator(view):
@@ -72,7 +72,7 @@ def basicauthentication(allow_logged_in=True, perm=None, realm="frepple"):
       try:
         if allow_logged_in:
           u = getattr(request, 'user', None)
-          if u and u.is_authenticated() and (not perm or u.has_perm(perm)):
+          if u and u.is_authenticated():
             ok = True
         auth_header = request.META.get('HTTP_AUTHORIZATION', None)
         if auth_header:
@@ -84,7 +84,7 @@ def basicauthentication(allow_logged_in=True, perm=None, realm="frepple"):
             user, password = auth.split(':', 1)
             user = authenticate(username=user, password=password)
             if user and user.is_active:
-              # Active
+              # Active user
               login(request, user)
               request.user = user
               ok = True
