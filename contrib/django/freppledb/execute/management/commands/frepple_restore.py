@@ -71,8 +71,10 @@ class Command(BaseCommand):
     if not database in settings.DATABASES:
       raise CommandError("No database settings known for '%s'" % database )
     if 'user' in options and options['user']:
-      try: user = User.objects.all().using(database).get(username=options['user'])
-      except: raise CommandError("User '%s' not found" % options['user'] )
+      try:
+        user = User.objects.all().using(database).get(username=options['user'])
+      except:
+        raise CommandError("User '%s' not found" % options['user'] )
     else:
       user = None
 
@@ -82,8 +84,10 @@ class Command(BaseCommand):
     try:
       # Initialize the task
       if 'task' in options and options['task']:
-        try: task = Task.objects.all().using(database).get(pk=options['task'])
-        except: raise CommandError("Task identifier not found")
+        try:
+          task = Task.objects.all().using(database).get(pk=options['task'])
+        except:
+          raise CommandError("Task identifier not found")
         if task.started or task.finished or task.status != "Waiting" or task.name != 'restore database':
           raise CommandError("Invalid task identifier")
         task.status = '0%'
@@ -117,7 +121,8 @@ class Command(BaseCommand):
         cmd.append(settings.DATABASES[database]['NAME'])
         cmd.append('<%s' % os.path.abspath(os.path.join(settings.FREPPLE_LOGDIR,args[0])))
         ret = subprocess.call(cmd, shell=True)  # Shell needs to be True in order to interpret the < character
-        if ret: raise Exception("Run of mysql failed")
+        if ret:
+          raise Exception("Run of mysql failed")
       elif settings.DATABASES[database]['ENGINE'] == 'django.db.backends.oracle':
         # ORACLE
         if settings.DATABASES[database]['HOST'] and settings.DATABASES[database]['PORT']:
@@ -144,7 +149,8 @@ class Command(BaseCommand):
           "dumpfile=%s" % args[0]
           ]
         ret = subprocess.call(cmd)
-        if ret: raise Exception("Run of impdp failed")
+        if ret:
+          raise Exception("Run of impdp failed")
       elif settings.DATABASES[database]['ENGINE'] == 'django.db.backends.postgresql_psycopg2':
         # POSTGRESQL
         # Commenting the next line is a little more secure, but requires you to create a .pgpass file.
@@ -157,7 +163,8 @@ class Command(BaseCommand):
         cmd.append(settings.DATABASES[database]['NAME'])
         cmd.append('<%s' % os.path.abspath(os.path.join(settings.FREPPLE_LOGDIR,args[0])))
         ret = subprocess.call(cmd, shell=True)  # Shell needs to be True in order to interpret the < character
-        if ret: raise Exception("Run of run psql failed")
+        if ret:
+          raise Exception("Run of run psql failed")
       else:
         raise Exception('Database backup command not supported for engine %s' % settings.DATABASES[database]['ENGINE'])
 
@@ -175,7 +182,10 @@ class Command(BaseCommand):
 
     finally:
       # Commit it all, even in case of exceptions
-      if task: task.save(using=database)
-      try: transaction.commit(using=database)
-      except: pass
+      if task:
+        task.save(using=database)
+      try:
+        transaction.commit(using=database)
+      except:
+        pass
       transaction.leave_transaction_management(using=database)

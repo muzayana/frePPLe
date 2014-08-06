@@ -72,7 +72,8 @@ class OverviewReport(GridPivot):
       ''' % (basesql, request.report_startdate, request.report_startdate)
     cursor.execute(query, baseparams)
     for row in cursor.fetchall():
-      if row[0]: startbacklogdict[row[0]] = float(row[1])
+      if row[0]:
+        startbacklogdict[row[0]] = float(row[1])
 
     # Execute the query    TODO THIS QUERY ASSUMES FORECAST MODULE IS INSTALLED!
     query = '''
@@ -146,8 +147,7 @@ class OverviewReport(GridPivot):
     previtem = None
     for row in cursor.fetchall():
       if row[0] != previtem:
-        try: backlog = startbacklogdict[row[0]]
-        except: backlog = 0
+        backlog = startbacklogdict.get(row[0])
         previtem = row[0]
       backlog += float(row[4]) + float(row[5]) - float(row[6])
       yield {

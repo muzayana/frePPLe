@@ -67,12 +67,16 @@ class Command(BaseCommand):
 
   def handle(self, *args, **options):
     # Pick up the options
-    if 'database' in options: database = options['database'] or DEFAULT_DB_ALIAS
-    else: database = DEFAULT_DB_ALIAS
+    if 'database' in options:
+      database = options['database'] or DEFAULT_DB_ALIAS
+    else:
+      database = DEFAULT_DB_ALIAS
     if not database in settings.DATABASES:
       raise CommandError("No database settings known for '%s'" % database )
-    if 'continuous' in options: continuous = options['continuous']
-    else: continuous = False
+    if 'continuous' in options:
+      continuous = options['continuous']
+    else:
+      continuous = False
 
     # Check if a worker already exists
     if checkActive(database):
@@ -85,7 +89,8 @@ class Command(BaseCommand):
     # Process the queue
     logger.info("Worker starting to process jobs in the queue")
     while True:
-      try: task = Task.objects.all().using(database).filter(status='Waiting').order_by('id')[0]
+      try:
+        task = Task.objects.all().using(database).filter(status='Waiting').order_by('id')[0]
       except:
         # No more tasks found
         if continuous:
@@ -159,9 +164,12 @@ class Command(BaseCommand):
         task = Task.objects.all().using(database).get(pk=task.id)
         if task.status not in ('Done','Failed') or not task.finished or not task.started:
           now = datetime.now()
-          if not task.started: task.started = now
-          if not task.finished: task.finished = now
-          if task.status not in ('Done','Failed'): task.status = 'Done'
+          if not task.started:
+            task.started = now
+          if not task.finished:
+            task.finished = now
+          if task.status not in ('Done','Failed'):
+            task.status = 'Done'
           task.save(using=database)
         logger.info("finished task %d at %s: success" % (task.id, datetime.now()))
       except Exception as e:
@@ -171,7 +179,9 @@ class Command(BaseCommand):
         task.save(using=database)
         logger.info("finished task %d at %s: failed" % (task.id, datetime.now()))
     # Remove the parameter again
-    try: Parameter.objects.all().using(self.database).get(pk='Worker alive').delete()
-    except: pass
+    try:
+      Parameter.objects.all().using(self.database).get(pk='Worker alive').delete()
+    except:
+      pass
     # Exit
     logger.info("Worker finished all jobs in the queue and exits")

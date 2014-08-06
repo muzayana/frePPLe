@@ -41,7 +41,8 @@ class Calendar(AuditModel):
     help_text=_('Value to be used when no entry is effective')
     )
 
-  def __unicode__(self): return self.name
+  def __unicode__(self):
+    return self.name
 
   class Meta(AuditModel.Meta):
     db_table = 'calendar'
@@ -88,7 +89,8 @@ class Location(AuditModel, HierarchyModel):
     null=True, blank=True,
     help_text=_('Calendar defining the working hours and holidays of this location'))
 
-  def __unicode__(self): return self.name
+  def __unicode__(self):
+    return self.name
 
   class Meta(AuditModel.Meta):
     db_table = 'location'
@@ -103,7 +105,8 @@ class Customer(AuditModel,HierarchyModel):
   category = models.CharField(_('category'), max_length=settings.CATEGORYSIZE, null=True, blank=True, db_index=True)
   subcategory = models.CharField(_('subcategory'), max_length=settings.CATEGORYSIZE, null=True, blank=True, db_index=True)
 
-  def __unicode__(self): return self.name
+  def __unicode__(self):
+    return self.name
 
   class Meta(AuditModel.Meta):
     db_table = 'customer'
@@ -122,7 +125,8 @@ class Item(AuditModel,HierarchyModel):
   price = models.DecimalField(_('price'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True, blank=True,
     help_text=_("Selling price of the item"))
 
-  def __unicode__(self): return self.name
+  def __unicode__(self):
+    return self.name
 
   class Meta(AuditModel.Meta):
     db_table = 'item'
@@ -172,7 +176,8 @@ class Operation(AuditModel):
     help_text=_('Method to select preferred alternate')
     )
 
-  def __unicode__(self): return self.name
+  def __unicode__(self):
+    return self.name
 
   def save(self, *args, **kwargs):
     if self.type is None or self.type == '' or self.type == 'fixed_time':
@@ -280,7 +285,8 @@ class Buffer(AuditModel,HierarchyModel):
   size_maximum = models.DecimalField(_('size_maximum'),max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True, blank=True,
     help_text=_('Maximum size of replenishments of a procure buffer'))
 
-  def __unicode__(self): return self.name
+  def __unicode__(self):
+    return self.name
 
   def save(self, *args, **kwargs):
     if self.type == 'infinite' or self.type == 'procure':
@@ -311,7 +317,8 @@ class SetupMatrix(AuditModel):
   name = models.CharField(_('name'), max_length=settings.NAMESIZE, primary_key=True)
 
   # Methods
-  def __unicode__(self): return self.name
+  def __unicode__(self):
+    return self.name
 
   class Meta(AuditModel.Meta):
     db_table = 'setupmatrix'
@@ -379,7 +386,8 @@ class Resource(AuditModel,HierarchyModel):
     help_text=_('Setup of the resource at the start of the plan'))
 
   # Methods
-  def __unicode__(self): return self.name
+  def __unicode__(self):
+    return self.name
 
   def save(self, *args, **kwargs):
     if self.type == 'infinite':
@@ -403,7 +411,8 @@ class Skill(AuditModel):
      help_text=_('Unique identifier'))
 
   # Methods
-  def __unicode__(self): return self.name
+  def __unicode__(self):
+    return self.name
 
   class Meta(AuditModel.Meta):
     db_table = 'skill'
@@ -536,7 +545,8 @@ class OperationPlan(AuditModel):
   owner = models.ForeignKey('self', verbose_name=_('owner'), null=True, blank=True,
     related_name='xchildren', help_text=_('Hierarchical parent'))
 
-  def __unicode__(self): return str(self.id)
+  def __unicode__(self):
+    return str(self.id)
 
   class Meta(AuditModel.Meta):
     db_table = 'operationplan'
@@ -584,7 +594,8 @@ class Demand(AuditModel,HierarchyModel):
     help_text=_("Maximum lateness allowed when planning this demand"))
 
   # Convenience methods
-  def __unicode__(self): return self.name
+  def __unicode__(self):
+    return self.name
 
   class Meta(AuditModel.Meta):
     db_table = 'demand'

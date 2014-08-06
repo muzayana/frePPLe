@@ -80,7 +80,8 @@ class OverviewReport(GridPivot):
       group by buffers.name
       ''' % (basesql, request.report_startdate)
     cursor.execute(query, baseparams)
-    for row in cursor.fetchall(): startohdict[row[0]] = float(row[1])
+    for row in cursor.fetchall():
+      startohdict[row[0]] = float(row[1])
 
     # Execute the actual query
     query = '''
@@ -120,8 +121,7 @@ class OverviewReport(GridPivot):
     for row in cursor.fetchall():
       if row[0] != prevbuf:
         prevbuf = row[0]
-        try: startoh = startohdict[prevbuf]
-        except: startoh = 0
+        startoh = startohdict.get(prevbuf, 0)
         endoh = startoh + float(row[6] - row[7])
       else:
         startoh = endoh

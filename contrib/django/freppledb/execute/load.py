@@ -70,9 +70,12 @@ class loadData(object):
       cnt += 1
       try:
         x = frepple.location(name=i, description=j, category=m, subcategory=n, source=o)
-        if k: x.owner = frepple.location(name=k)
-        if l: x.available = frepple.calendar(name=l)
-      except Exception as e: print("Error:", e)
+        if k:
+          x.owner = frepple.location(name=k)
+        if l:
+          x.available = frepple.calendar(name=l)
+      except Exception as e:
+        print("Error:", e)
     print('Loaded %d locations in %.2f seconds' % (cnt, time() - starttime))
 
 
@@ -87,8 +90,10 @@ class loadData(object):
       ''' % self.filter_where)
     for i,j,k in self.cursor.fetchall():
       cnt += 1
-      try: frepple.calendar(name=i, default=j, source=k)
-      except Exception as e: print("Error:", e)
+      try:
+        frepple.calendar(name=i, default=j, source=k)
+      except Exception as e:
+        print("Error:", e)
     print('Loaded %d calendars in %.2f seconds' % (cnt, time() - starttime))
 
 
@@ -108,22 +113,35 @@ class loadData(object):
       cnt += 1
       try:
         days = 0
-        if o1: days += 1
-        if o2: days += 2
-        if o3: days += 4
-        if o4: days += 8
-        if o5: days += 16
-        if o6: days += 32
-        if o7: days += 64
+        if o1:
+          days += 1
+        if o2:
+          days += 2
+        if o3:
+          days += 4
+        if o4:
+          days += 8
+        if o5:
+          days += 16
+        if o6:
+          days += 32
+        if o7:
+          days += 64
         b = frepple.calendar(name=i).addBucket(l)
         b.value = n
         b.days = days
-        if t1: b.starttime = t1.hour * 3600 + t1.minute * 60 + t1.second
-        if t2: b.endtime = t2.hour * 3600 + t2.minute * 60 + t2.second + 1
-        if m: b.priority = m
-        if j: b.start = j
-        if k: b.end = k
-      except Exception as e: print("Error:", e)
+        if t1:
+          b.starttime = t1.hour * 3600 + t1.minute * 60 + t1.second
+        if t2:
+          b.endtime = t2.hour * 3600 + t2.minute * 60 + t2.second + 1
+        if m:
+          b.priority = m
+        if j:
+          b.start = j
+        if k:
+          b.end = k
+      except Exception as e:
+        print("Error:", e)
     print('Loaded %d calendar buckets in %.2f seconds' % (cnt, time() - starttime))
 
 
@@ -140,8 +158,10 @@ class loadData(object):
       cnt += 1
       try:
         x = frepple.customer(name=i, description=j, category=l, subcategory=m, source=n)
-        if k: x.owner = frepple.customer(name=k)
-      except Exception as e: print("Error:", e)
+        if k:
+          x.owner = frepple.customer(name=k)
+      except Exception as e:
+        print("Error:", e)
     print('Loaded %d customers in %.2f seconds' % (cnt, time() - starttime))
 
 
@@ -161,27 +181,40 @@ class loadData(object):
       try:
         if not p or p == "fixed_time":
           x = frepple.operation_fixed_time(name=i, description=v, category=w, subcategory=x, source=y)
-          if q: x.duration = q
+          if q:
+            x.duration = q
         elif p == "time_per":
           x = frepple.operation_time_per(name=i, description=v, category=w, subcategory=x, source=y)
-          if q: x.duration = q
-          if r: x.duration_per = r
+          if q:
+            x.duration = q
+          if r:
+            x.duration_per = r
         elif p == "alternate":
           x = frepple.operation_alternate(name=i, description=v, category=w, subcategory=x, source=y)
         elif p == "routing":
           x = frepple.operation_routing(name=i, description=v, category=w, subcategory=x, source=y)
         else:
           raise ValueError("Operation type '%s' not recognized" % p)
-        if j: x.fence = j
-        if k: x.pretime = k
-        if l: x.posttime = l
-        if m: x.size_minimum = m
-        if n: x.size_multiple = n
-        if o: x.size_maximum = o
-        if s: x.location = frepple.location(name=s)
-        if t: x.cost = t
-        if u: x.search = u
-      except Exception as e: print("Error:", e)
+        if j:
+          x.fence = j
+        if k:
+          x.pretime = k
+        if l:
+          x.posttime = l
+        if m:
+          x.size_minimum = m
+        if n:
+          x.size_multiple = n
+        if o:
+          x.size_maximum = o
+        if s:
+          x.location = frepple.location(name=s)
+        if t:
+          x.cost = t
+        if u:
+          x.search = u
+      except Exception as e:
+        print("Error:", e)
     print('Loaded %d operations in %.2f seconds' % (cnt, time() - starttime))
     #  SELECT operation_id, suboperation_id, priority, effective_start, effective_end, operation.type
     #  FROM suboperation, operation
@@ -225,7 +258,8 @@ class loadData(object):
               curoper.addAlternate(operation=frepple.operation(name=j),priority=k,effective_end=m)
           else:
             curoper.addAlternate(operation=frepple.operation(name=j),priority=k)
-      except Exception as e: print("Error:", e)
+      except Exception as e:
+        print("Error:", e)
     print('Loaded %d suboperations in %.2f seconds' % (cnt, time() - starttime))
 
 
@@ -243,10 +277,14 @@ class loadData(object):
       cnt += 1
       try:
         x = frepple.item(name=i, description=j, category=n, subcategory=o, source=p)
-        if k: x.operation = frepple.operation(name=k)
-        if l: x.owner = frepple.item(name=l)
-        if m: x.price = m
-      except Exception as e: print("Error:", e)
+        if k:
+          x.operation = frepple.operation(name=k)
+        if l:
+          x.owner = frepple.item(name=l)
+        if m:
+          x.price = m
+      except Exception as e:
+        print("Error:", e)
     print('Loaded %d items in %.2f seconds' % (cnt, time() - starttime))
 
 
@@ -269,15 +307,24 @@ class loadData(object):
           name=i, description=j, item=frepple.item(name=l), onhand=m,
           category=r, subcategory=s, source=t
           )
-        if f1: b.leadtime = f1
-        if f2: b.mininventory = f2
-        if f3: b.maxinventory = f3
-        if f4: b.mininterval = f4
-        if f5: b.maxinterval = f5
-        if f6: b.size_minimum = f6
-        if f7: b.size_multiple = f7
-        if f8: b.size_maximum = f8
-        if f9: b.fence = f9
+        if f1:
+          b.leadtime = f1
+        if f2:
+          b.mininventory = f2
+        if f3:
+          b.maxinventory = f3
+        if f4:
+          b.mininterval = f4
+        if f5:
+          b.maxinterval = f5
+        if f6:
+          b.size_minimum = f6
+        if f7:
+          b.size_multiple = f7
+        if f8:
+          b.size_maximum = f8
+        if f9:
+          b.fence = f9
       elif q == "infinite":
         b = frepple.buffer_infinite(
           name=i, description=j, item=frepple.item(name=l), onhand=m,
@@ -290,11 +337,16 @@ class loadData(object):
           )
       else:
         raise ValueError("Buffer type '%s' not recognized" % q)
-      if k: b.location = frepple.location(name=k)
-      if t: b.minimum = t
-      if n: b.minimum_calendar = frepple.calendar(name=n)
-      if o: b.producing = frepple.operation(name=o)
-      if p: b.carrying_cost = p
+      if k:
+        b.location = frepple.location(name=k)
+      if t:
+        b.minimum = t
+      if n:
+        b.minimum_calendar = frepple.calendar(name=n)
+      if o:
+        b.producing = frepple.operation(name=o)
+      if p:
+        b.carrying_cost = p
     print('Loaded %d buffers in %.2f seconds' % (cnt, time() - starttime))
 
 
@@ -312,11 +364,16 @@ class loadData(object):
       cnt += 1
       try:
         r = frepple.setupmatrix(name=i,source=p).addRule(priority=j)
-        if k: r.fromsetup = k
-        if l: r.tosetup = l
-        if m: r.duration = m
-        if n: r.cost = n
-      except Exception as e: print("Error:", e)
+        if k:
+          r.fromsetup = k
+        if l:
+          r.tosetup = l
+        if m:
+          r.duration = m
+        if n:
+          r.cost = n
+      except Exception as e:
+        print("Error:", e)
     print('Loaded %d setup matrix rules in %.2f seconds' % (cnt, time() - starttime))
 
 
@@ -339,21 +396,32 @@ class loadData(object):
           x = frepple.resource_infinite(name=i,description=j,category=r,subcategory=s, source=v)
         elif m == "buckets":
           x = frepple.resource_buckets(name=i,description=j,category=r,subcategory=s, source=v)
-          if k: x.maximum_calendar = frepple.calendar(name=k)
-          if o: x.maxearly = o
+          if k:
+            x.maximum_calendar = frepple.calendar(name=k)
+          if o:
+            x.maxearly = o
         elif not m or m == "default":
           x = frepple.resource_default(name=i,description=j,category=r,subcategory=s, source=v)
-          if k: x.maximum_calendar = frepple.calendar(name=k)
-          if o: x.maxearly = o
-          if t: x.maximum = t
+          if k:
+            x.maximum_calendar = frepple.calendar(name=k)
+          if o:
+            x.maxearly = o
+          if t:
+            x.maximum = t
         else:
           raise ValueError("Resource type '%s' not recognized" % m)
-        if l: x.location = frepple.location(name=l)
-        if n: x.cost = n
-        if p: x.setup = p
-        if q: x.setupmatrix = frepple.setupmatrix(name=q)
-        if u: x.owner = frepple.resource(name=u)
-      except Exception as e: print("Error:", e)
+        if l:
+          x.location = frepple.location(name=l)
+        if n:
+          x.cost = n
+        if p:
+          x.setup = p
+        if q:
+          x.setupmatrix = frepple.setupmatrix(name=q)
+        if u:
+          x.owner = frepple.resource(name=u)
+      except Exception as e:
+        print("Error:", e)
     print('Loaded %d resources in %.2f seconds' % (cnt, time() - starttime))
 
 
@@ -371,9 +439,12 @@ class loadData(object):
       cnt += 1
       try:
         cur = frepple.resourceskill(resource=frepple.resource(name=i), skill=frepple.skill(name=j), priority=m or 1, source=n)
-        if k: cur.effective_start = k
-        if l: cur.effective_end = l
-      except Exception as e: print("Error:", e)
+        if k:
+          cur.effective_start = k
+        if l:
+          cur.effective_end = l
+      except Exception as e:
+        print("Error:", e)
     print('Loaded %d resource skills in %.2f seconds' % (cnt, time() - starttime))
 
 
@@ -399,12 +470,18 @@ class loadData(object):
           curbufname = j
           curbuf = frepple.buffer(name=curbufname)
         curflow = frepple.flow(operation=frepple.operation(name=i), type="flow_%s" % l, buffer=curbuf, quantity=k, source=r)
-        if m: curflow.effective_start = m
-        if n: curflow.effective_end = n
-        if o: curflow.name = o
-        if p: curflow.priority = p
-        if q: curflow.search = q
-      except Exception as e: print("Error:", e)
+        if m:
+          curflow.effective_start = m
+        if n:
+          curflow.effective_end = n
+        if o:
+          curflow.name = o
+        if p:
+          curflow.priority = p
+        if q:
+          curflow.search = q
+      except Exception as e:
+        print("Error:", e)
     self.cursor.execute('''
       SELECT
         operation_id, thebuffer_id, quantity, type, effective_start,
@@ -421,13 +498,20 @@ class loadData(object):
           curbufname = j
           curbuf = frepple.buffer(name=curbufname)
         curflow = frepple.flow(operation=frepple.operation(name=i), type=l, buffer=curbuf, quantity=k, source=s)
-        if m: curflow.effective_start = m
-        if n: curflow.effective_end = n
-        if o: curflow.name = o
-        if p: curflow.alternate = p
-        if q: curflow.priority = q
-        if r: curflow.search = r
-      except Exception as e: print("Error:", e)
+        if m:
+          curflow.effective_start = m
+        if n:
+          curflow.effective_end = n
+        if o:
+          curflow.name = o
+        if p:
+          curflow.alternate = p
+        if q:
+          curflow.priority = q
+        if r:
+          curflow.search = r
+      except Exception as e:
+        print("Error:", e)
     print('Loaded %d flows in %.2f seconds' % (cnt, time() - starttime))
 
 
@@ -453,14 +537,22 @@ class loadData(object):
           curresname = j
           curres = frepple.resource(name=curresname)
         curload = frepple.load(operation=frepple.operation(name=i), resource=curres, quantity=k, source=s)
-        if l: curload.effective_start = l
-        if m: curload.effective_end = m
-        if n: curload.name = n
-        if o: curload.priority = o
-        if p: curload.setup = p
-        if q: curload.search = q
-        if r: curload.skill = frepple.skill(name=r)
-      except Exception as e: print("Error:", e)
+        if l:
+          curload.effective_start = l
+        if m:
+          curload.effective_end = m
+        if n:
+          curload.name = n
+        if o:
+          curload.priority = o
+        if p:
+          curload.setup = p
+        if q:
+          curload.search = q
+        if r:
+          curload.skill = frepple.skill(name=r)
+      except Exception as e:
+        print("Error:", e)
     self.cursor.execute('''
       SELECT
         operation_id, resource_id, quantity, effective_start, effective_end,
@@ -477,15 +569,24 @@ class loadData(object):
           curresname = j
           curres = frepple.resource(name=curresname)
         curload = frepple.load(operation=frepple.operation(name=i), resource=curres, quantity=k, source=t)
-        if l: curload.effective_start = l
-        if m: curload.effective_end = m
-        if n: curload.name = n
-        if o: curload.alternate = o
-        if p: curload.priority = p
-        if q: curload.setup = q
-        if r: curload.search = r
-        if s: curload.skill = frepple.skill(name=s)
-      except Exception as e: print("Error:", e)
+        if l:
+          curload.effective_start = l
+        if m:
+          curload.effective_end = m
+        if n:
+          curload.name = n
+        if o:
+          curload.alternate = o
+        if p:
+          curload.priority = p
+        if q:
+          curload.setup = q
+        if r:
+          curload.search = r
+        if s:
+          curload.skill = frepple.skill(name=s)
+      except Exception as e:
+        print("Error:", e)
     print('Loaded %d loads in %.2f seconds' % (cnt, time() - starttime))
 
 
@@ -535,12 +636,18 @@ class loadData(object):
       try:
         x = frepple.demand( name=i, due=j, quantity=k, priority=l,
               item=frepple.item(name=m), category=s, subcategory=t, source=u)
-        if n: x.operation = frepple.operation(name=n)
-        if o: x.customer = frepple.customer(name=o)
-        if p: x.owner = frepple.demand(name=p)
-        if q: x.minshipment = q
-        if r is not None: x.maxlateness = r
-      except Exception as e: print("Error:", e)
+        if n:
+          x.operation = frepple.operation(name=n)
+        if o:
+          x.customer = frepple.customer(name=o)
+        if p:
+          x.owner = frepple.demand(name=p)
+        if q:
+          x.minshipment = q
+        if r is not None:
+          x.maxlateness = r
+      except Exception as e:
+        print("Error:", e)
     print('Loaded %d demands in %.2f seconds' % (cnt, time() - starttime))
 
 
