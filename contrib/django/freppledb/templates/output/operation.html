@@ -164,7 +164,7 @@ function drawGraphs(jsondata)
         {
           top = y(d['locked_start']);
           bucket.append("rect")
-            .attr("width", x_width)
+            .attr("width", x_width/2)
             .attr("x", x_width/2)
             .attr("y", top)
             .attr("height", top)
@@ -185,7 +185,7 @@ function drawGraphs(jsondata)
         {
           top = y(d['locked_end']);
           bucket.append("rect")
-            .attr("width", x_width)
+            .attr("width", x_width/2)
             .attr("y", top)
             .attr("height", top)
             .style("fill","#7B5E08");
@@ -248,7 +248,7 @@ function drawGraphs(jsondata)
 }
 {% endif %}
 {% if args.0 or mode == "table" %}
-function crosses (cellvalue, options, rowdata) 
+function crosses (cellvalue, options, rowdata)
 {
   var result = '';
   for (var i in cross_idx)
