@@ -8,7 +8,8 @@
 # or in the form of compiled binaries.
 #
 
-import logging, time
+import logging
+import time
 from datetime import datetime, timedelta
 from threading import Thread
 from optparse import make_option
@@ -174,4 +175,3 @@ class Command(BaseCommand):
     except: pass
     # Exit
     logger.info("Worker finished all jobs in the queue and exits")
-

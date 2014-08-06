@@ -1,18 +1,12 @@
 #
-# Copyright (C) 2007-2013 by Johan De Taeye, frePPLe bvba
+# Copyright (C) 2014 by Johan De Taeye, frePPLe bvba
 #
-# This library is free software; you can redistribute it and/or modify it
-# under the terms of the GNU Affero General Public License as published
-# by the Free Software Foundation; either version 3 of the License, or
-# (at your option) any later version.
-#
-# This library is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
-# General Public License for more details.
-#
-# You should have received a copy of the GNU Affero General Public
-# License along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# All information contained herein is, and remains the property of frePPLe.
+# You are allowed to use and modify the source code, as long as the software is used
+# within your company.
+# You are not allowed to distribute the software, either in the form of source code
+# or in the form of compiled binaries.
+
 #
 
 import types
@@ -41,6 +35,7 @@ from django.utils.encoding import smart_text
 from freppledb.common.models import Comment
 
 csrf_protect_m = method_decorator(csrf_protect)
+
 
 class MultiDBModelAdmin(admin.ModelAdmin):
   r'''
@@ -94,11 +89,11 @@ class MultiDBModelAdmin(admin.ModelAdmin):
     """
     from django.contrib.admin.models import ADDITION
     LogEntry(
-        user_id         = request.user.pk,
+        user_id = request.user.pk,
         content_type_id = ContentType.objects.get_for_model(obj).pk,
-        object_id       = smart_text(obj.pk),
-        object_repr     = force_text(obj)[:200],
-        action_flag     = ADDITION
+        object_id = smart_text(obj.pk),
+        object_repr = force_text(obj)[:200],
+        action_flag = ADDITION
     ).save(using=request.database)
 
   def log_change(self, request, obj, message):
@@ -127,12 +122,12 @@ class MultiDBModelAdmin(admin.ModelAdmin):
       # e) Delete the old record
       self.queryset(request).get(pk=old_pk).delete()
     LogEntry(
-        user_id         = request.user.pk,
+        user_id = request.user.pk,
         content_type_id = ContentType.objects.get_for_model(obj).pk,
-        object_id       = smart_text(obj.pk),
-        object_repr     = force_text(obj)[:200],
-        action_flag     = CHANGE,
-        change_message  = message
+        object_id = smart_text(obj.pk),
+        object_repr = force_text(obj)[:200],
+        action_flag = CHANGE,
+        change_message = message
     ).save(using=request.database)
 
   def log_deletion(self, request, obj, object_repr):
@@ -142,11 +137,11 @@ class MultiDBModelAdmin(admin.ModelAdmin):
     """
     from django.contrib.admin.models import DELETION
     LogEntry(
-        user_id         = request.user.id,
+        user_id = request.user.id,
         content_type_id = ContentType.objects.get_for_model(self.model).pk,
-        object_id       = smart_text(obj.pk),
-        object_repr     = force_text(object_repr)[:200],
-        action_flag     = DELETION
+        object_id = smart_text(obj.pk),
+        object_repr = force_text(object_repr)[:200],
+        action_flag = DELETION
     ).save(using=request.database)
 
   def history_view(self, request, object_id, extra_context=None):
@@ -177,10 +172,10 @@ class MultiDBModelAdmin(admin.ModelAdmin):
     }
     context.update(extra_context or {})
     return TemplateResponse(request, self.object_history_template or [
-            "admin/%s/%s/object_history.html" % (app_label, opts.model_name),
-            "admin/%s/object_history.html" % app_label,
-            "admin/object_history.html"
-        ], context, current_app=self.admin_site.name)
+      "admin/%s/%s/object_history.html" % (app_label, opts.model_name),
+      "admin/%s/object_history.html" % app_label,
+      "admin/object_history.html"
+      ], context, current_app=self.admin_site.name)
 
   def response_add(self, request, obj, post_url_continue=None):
     """
@@ -203,10 +198,11 @@ class MultiDBModelAdmin(admin.ModelAdmin):
       msg = _('The %(name)s "%(obj)s" was added successfully. You may edit it again below.') % msg_dict
       self.message_user(request, msg, messages.SUCCESS)
       if post_url_continue is None:
-        post_url_continue = request.prefix + reverse('admin:%s_%s_change' %
-            (opts.app_label, opts.model_name),
-            args=(pk_value,),
-            current_app=self.admin_site.name)
+        post_url_continue = request.prefix + reverse(
+          'admin:%s_%s_change' % (opts.app_label, opts.model_name),
+          args=(pk_value,),
+          current_app=self.admin_site.name
+          )
       post_url_continue = add_preserved_filters({'preserved_filters': preserved_filters, 'opts': opts}, post_url_continue)
       return HttpResponseRedirect(post_url_continue)
 
@@ -243,19 +239,21 @@ class MultiDBModelAdmin(admin.ModelAdmin):
     elif "_saveasnew" in request.POST:
       msg = _('The %(name)s "%(obj)s" was added successfully. You may edit it again below.') % msg_dict
       self.message_user(request, msg, messages.SUCCESS)
-      redirect_url = request.prefix + reverse('admin:%s_%s_change' %
-                             (opts.app_label, opts.model_name),
-                             args=(pk_value,),
-                             current_app=self.admin_site.name)
+      redirect_url = request.prefix + reverse(
+        'admin:%s_%s_change' % (opts.app_label, opts.model_name),
+        args=(pk_value,),
+        current_app=self.admin_site.name
+        )
       redirect_url = add_preserved_filters({'preserved_filters': preserved_filters, 'opts': opts}, redirect_url)
       return HttpResponseRedirect(redirect_url)
 
     elif "_addanother" in request.POST:
       msg = _('The %(name)s "%(obj)s" was changed successfully. You may add another %(name)s below.') % msg_dict
       self.message_user(request, msg, messages.SUCCESS)
-      redirect_url = request.prefix + reverse('admin:%s_%s_add' %
-                             (opts.app_label, opts.model_name),
-                             current_app=self.admin_site.name)
+      redirect_url = request.prefix + reverse(
+        'admin:%s_%s_add' % (opts.app_label, opts.model_name),
+        current_app=self.admin_site.name
+        )
       redirect_url = add_preserved_filters({'preserved_filters': preserved_filters, 'opts': opts}, redirect_url)
       return HttpResponseRedirect(redirect_url)
 
@@ -307,7 +305,7 @@ class MultiDBModelAdmin(admin.ModelAdmin):
       deleted_objects = [ replace_url(i) for i in deleted_objects ]
       protected = [ replace_url(i) for i in protected ]
 
-    if request.POST: # The user has already confirmed the deletion.
+    if request.POST:  # The user has already confirmed the deletion.
       if perms_needed:
         raise PermissionDenied
       obj_display = force_text(obj)
@@ -334,10 +332,10 @@ class MultiDBModelAdmin(admin.ModelAdmin):
     context.update(extra_context or {})
 
     return TemplateResponse(request, self.delete_confirmation_template or [
-            "admin/%s/%s/delete_confirmation.html" % (app_label, opts.model_name),
-            "admin/%s/delete_confirmation.html" % app_label,
-            "admin/delete_confirmation.html"
-        ], context, current_app=self.admin_site.name)
+      "admin/%s/%s/delete_confirmation.html" % (app_label, opts.model_name),
+      "admin/%s/delete_confirmation.html" % app_label,
+      "admin/delete_confirmation.html"
+      ], context, current_app=self.admin_site.name)
 
   # TODO: allow permissions per schema
   # def has_add_permission(self, request):
@@ -358,4 +356,3 @@ class MultiDBTabularInline(admin.TabularInline):
 
   def formfield_for_manytomany(self, db_field, request=None, **kwargs):
     return super(MultiDBTabularInline, self).formfield_for_manytomany(db_field, request=request, using=request.database, **kwargs)
-

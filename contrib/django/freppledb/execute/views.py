@@ -89,7 +89,7 @@ class TaskReport(GridReport):
             if i.endswith('.json'):
               fixtures.add(i.split('.')[0])
       except:
-        pass # Silently ignore failures
+        pass  # Silently ignore failures
     fixtures = sorted(fixtures)
 
     # Send to template
@@ -138,6 +138,10 @@ def LaunchTask(request, action):
       return exportWorkbook(request)
     elif action == 'importworkbook':
       return importWorkbook(request)
+    elif action == 'frepple_stop_web_service':
+      from django.core import management
+      management.call_command('frepple_stop_web_service', force=True, database=request.database)
+      return HttpResponseRedirect('%s/execute/' % request.prefix)
     else:
       wrapTask(request, action)
       return HttpResponseRedirect('%s/execute/' % request.prefix)
@@ -170,10 +174,16 @@ def wrapTask(request, action):
       try: constraint += int(value)
       except: pass
     task = Task(name='generate plan', submitted=now, status='Waiting', user=request.user)
+    task.arguments = "--constraint=%s --plantype=%s" % (constraint, request.POST.get('plantype'))
+    env = []
     if request.POST.get('webservice','0') == u'1':
-      task.arguments = "--constraint=%s --plantype=%s --env=webservice" % (constraint, request.POST.get('plantype'))
-    else:
-      task.arguments = "--constraint=%s --plantype=%s" % (constraint, request.POST.get('plantype'))
+      env.append("webservice")
+    if request.POST.get('odoo_read',None) == u'1':
+      env.append("odoo_read")
+    if request.POST.get('odoo_write',None) == u'1':
+      env.append("odoo_write")
+    if env:
+      task.arguments = "%s --env=%s" % (task.arguments, ','.join(env))
     task.save(using=request.database)
     # Update the session object   TODO REPLACE WITH PREFERENCE INFO
     request.session['plantype'] = request.POST.get('plantype')
@@ -241,11 +251,7 @@ def wrapTask(request, action):
       request.POST['start'], request.POST['end'], request.POST['weekstart']
       )
     task.save(using=request.database)
-  # J
-  elif action == 'frepple_stop_web_service':
-    from django.core import management
-    management.call_command('frepple_stop_web_service', force=True, database=request.database)
-  # K
+  # H
   elif action == 'openbravo_import' and 'freppledb.openbravo' in settings.INSTALLED_APPS:
     task = Task(name='Openbravo import', submitted=now, status='Waiting', user=request.user)
     task.arguments = "--delta=%s" % request.POST['delta']
@@ -273,7 +279,7 @@ def wrapTask(request, action):
       if "python" in sys.executable:
         # Development layout
         Popen([
-          sys.executable, # Python executable
+          sys.executable,  # Python executable
           os.path.join(settings.FREPPLE_APP,"frepplectl.py"),
           "frepple_runworker",
           "--database=%s" % worker_database
@@ -289,10 +295,10 @@ def wrapTask(request, action):
     elif sys.executable.find('freppleserver.exe') >= 0:
       # Py2exe executable
       Popen([
-        sys.executable.replace('freppleserver.exe','frepplectl.exe'), # frepplectl executable
+        sys.executable.replace('freppleserver.exe','frepplectl.exe'),  # frepplectl executable
         "frepple_runworker",
         "--database=%s" % worker_database
-        ], creationflags=0x08000000) # Do not create a console window
+        ], creationflags=0x08000000)  # Do not create a console window
     else:
       # Linux standard installation
       Popen([
@@ -314,7 +320,7 @@ def CancelTask(request, taskid):
     task = Task.objects.all().using(request.database).get(pk=taskid)
     if task.status != 'Waiting':
       raise Exception('Task is not in waiting status')
-    task.status = 'Canceled';
+    task.status = 'Canceled'
     task.save(using=request.database)
     return HttpResponse(content="OK")
   except Exception as e:

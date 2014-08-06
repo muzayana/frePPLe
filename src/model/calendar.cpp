@@ -135,6 +135,9 @@ void CalendarDouble::writeElement(XMLOutput *o, const Keyword& tag, mode m) cons
   if (m != NOHEAD && m != NOHEADTAIL)
     o->BeginObject(tag, Tags::tag_name, XMLEscape(getName()));
 
+  // Write the source field
+  o->writeElement(Tags::tag_source, getSource());
+
   // Write the default value
   if (getDefault()) o->writeElement(Tags::tag_default, getDefault());
 
@@ -559,7 +562,7 @@ DECLARE_EXPORT void Calendar::Bucket::setId(int ident)
       for (BucketIterator i = cal->beginBuckets(); i != cal->endBuckets(); ++i)
         if (i->id == ident && &(*i) != this)
         {
-          // Update the indentifier to avoid violating the uniqueness
+          // Update the identifier to avoid violating the uniqueness
           unique = false;
           ++ident;
           break;

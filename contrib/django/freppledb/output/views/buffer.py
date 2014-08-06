@@ -16,7 +16,7 @@ from django.utils.encoding import force_unicode
 from freppledb.input.models import Buffer
 from freppledb.output.models import FlowPlan
 from freppledb.common.db import sql_max, sql_min, python_date
-from freppledb.common.report import GridReport, GridPivot, GridFieldText, GridFieldNumber, GridFieldDateTime, GridFieldBool, GridFieldInteger, GridFieldGraph
+from freppledb.common.report import GridReport, GridPivot, GridFieldText, GridFieldNumber, GridFieldDateTime, GridFieldBool, GridFieldInteger
 
 
 class OverviewReport(GridPivot):
@@ -32,7 +32,6 @@ class OverviewReport(GridPivot):
     GridFieldText('buffer', title=_('buffer'), key=True, field_name='name', formatter='buffer', editable=False),
     GridFieldText('item', title=_('item'), field_name='item__name', formatter='item', editable=False),
     GridFieldText('location', title=_('location'), field_name='location__name', formatter='location', editable=False),
-    GridFieldGraph('graph', title=_('graph'), width="(5*numbuckets<200 ? 5*numbuckets : 200)"),
     )
   crosses = (
     ('startoh', {'title': _('start inventory'),}),
@@ -109,9 +108,11 @@ class OverviewReport(GridPivot):
         -- Grouping and sorting
         group by buf.name, buf.item_id, buf.location_id, buf.onhand, d.bucket, d.startdate, d.enddate
         order by %s, d.startdate
-      ''' % (sql_max('out_flowplan.quantity','0.0'), sql_min('out_flowplan.quantity','0.0'),
+      ''' % (
+        sql_max('out_flowplan.quantity', '0.0'), sql_min('out_flowplan.quantity', '0.0'),
         basesql, request.report_bucket, request.report_startdate, request.report_enddate,
-        request.report_startdate, request.report_enddate, sortsql)
+        request.report_startdate, request.report_enddate, sortsql
+        )
     cursor.execute(query, baseparams)
 
     # Build the python result
@@ -168,7 +169,7 @@ class DetailReport(GridReport):
     GridFieldNumber('quantity', title=_('quantity'), editable=False),
     GridFieldDateTime('flowdate', title=_('date'), editable=False),
     GridFieldNumber('onhand', title=_('onhand'), editable=False),
+    GridFieldNumber('operationplan__criticality', title=_('criticality'), editable=False),
     GridFieldBool('operationplan__locked', title=_('locked'), editable=False),
     GridFieldInteger('operationplan', title=_('operationplan'), editable=False),
     )
-

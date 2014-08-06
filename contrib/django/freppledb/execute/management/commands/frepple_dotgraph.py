@@ -51,7 +51,7 @@ class Command(BaseCommand):
       print('  node[shape=triangle,color=red];')
       cursor.execute('select name from buffer')
       for row in cursor.fetchall():
-        print('  "B%s" [label="%s",tooltip="%s"];' % (row[0], row[0], row[0]));
+        print('  "B%s" [label="%s",tooltip="%s"];' % (row[0], row[0], row[0]))
       print('}')
 
       # Resources
@@ -59,7 +59,7 @@ class Command(BaseCommand):
       print('	 node[shape=circle,color=blue];')
       cursor.execute('select name from resource')
       for row in cursor.fetchall():
-        print('  "R%s" [label="%s",tooltip="%s"];' % (row[0], row[0], row[0]));
+        print('  "R%s" [label="%s",tooltip="%s"];' % (row[0], row[0], row[0]))
       print('}')
 
       # Operations
@@ -80,8 +80,8 @@ class Command(BaseCommand):
         if o != previous and needs_closure > 0:
           needs_closure -= 1
           print('  }')
-        if s == None:
-          print('  "O%s" [label="%s",tooltip="%s"];' % (o, o, o));
+        if s is None:
+          print('  "O%s" [label="%s",tooltip="%s"];' % (o, o, o))
         else:
           if o != previous:
             print('  subgraph "cluster_O%s" {' % o)

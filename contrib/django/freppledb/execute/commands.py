@@ -1,5 +1,6 @@
 from __future__ import print_function
-import os, sys
+import os
+import sys
 from datetime import datetime
 
 from django.db import transaction, DEFAULT_DB_ALIAS
@@ -129,10 +130,10 @@ if __name__ == "__main__":
 
   printWelcome(database=db)
   logProgress(1, db)
-  print("\nStart loading data from the database at", datetime.now().strftime("%H:%M:%S"))
   frepple.printsize()
-  from freppledb.execute.load import loadfrepple
-  loadfrepple(db)
+  print("\nStart loading data from the database at", datetime.now().strftime("%H:%M:%S"))
+  from freppledb.execute.load import loadData
+  loadData(database=db, filter=None).run()
   frepple.printsize()
   logProgress(33, db)
   print("\nStart plan generation at", datetime.now().strftime("%H:%M:%S"))
@@ -141,8 +142,8 @@ if __name__ == "__main__":
   logProgress(66, db)
 
   #print("\nStart exporting static model to the database at", datetime.now().strftime("%H:%M:%S"))
-  #from freppledb.execute.export_database_static import exportfrepple as export_static_to_database
-  #export_static_to_database()
+  #from freppledb.execute.export_database_static import exportStaticModel
+  #exportStaticModel(database=db, source=None).run()
 
   print("\nStart exporting plan to the database at", datetime.now().strftime("%H:%M:%S"))
   exportPlan(db)

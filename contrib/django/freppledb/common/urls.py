@@ -17,16 +17,16 @@ import freppledb.common.dashboard
 # Automatically add these URLs when the application is installed
 autodiscover = True
 
-urlpatterns = patterns('',
+urlpatterns = patterns(
+  # Prefix
+  '',
+
   # User preferences
   (r'^preferences/$', freppledb.common.views.preferences),
 
   # Horizon updates
   (r'^horizon/$', freppledb.common.views.horizon),
   
-  # Report settings
-  (r'^settings/$', freppledb.common.views.settings),
-
   # Report settings
   (r'^settings/$', freppledb.common.views.settings),
 

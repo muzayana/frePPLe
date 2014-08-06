@@ -167,7 +167,7 @@ class PathReport(GridReport):
 
     # Recurse over all operations
     counter = 1
-    operations = set()
+    #operations = set()
     while len(root) > 0:
       # Pop the current node from the stack
       level, parent, curoperation, curqty, issuboperation, parentoper, realdepth, pushsuper = root.pop()
@@ -200,10 +200,10 @@ class PathReport(GridReport):
           curflows = x.thebuffer.flows.filter(quantity__lt=0).select_related(depth=1).using(request.database)
           for y in curflows:
             hasChildren = True
-            root.append( (level-1, curnode, y.operation, - curqty * y.quantity, subcount, None, realdepth-1, pushsuper) )
+            root.append( (level - 1, curnode, y.operation, - curqty * y.quantity, subcount, None, realdepth - 1, pushsuper) )
         for x in curoperation.suboperations.using(request.database).order_by("-priority"):
           subcount += curoperation.type == "routing" and 1 or -1
-          root.append( (level-1, curnode, x.suboperation, curqty, subcount, curoperation, realdepth, False) )
+          root.append( (level - 1, curnode, x.suboperation, curqty, subcount, curoperation, realdepth, False) )
           hasChildren = True
       else:
         # Upstream recursion
@@ -214,10 +214,14 @@ class PathReport(GridReport):
         for y in curflows:
           if y.thebuffer.producing:
             hasChildren = True
-            root.append( (level+1, curnode, y.thebuffer.producing, curprodflow and (-curqty * y.quantity)/curprodflow.quantity or (-curqty * y.quantity), subcount, None, realdepth+1, True) )
+            root.append( (
+              level + 1, curnode, y.thebuffer.producing,
+              curprodflow and (-curqty * y.quantity) / curprodflow.quantity or (-curqty * y.quantity),
+              subcount, None, realdepth + 1, True
+              ) )
         for x in curoperation.suboperations.using(request.database).order_by("-priority"):
           subcount += curoperation.type == "routing" and 1 or -1
-          root.append( (level+1, curnode, x.suboperation, curqty, subcount, curoperation, realdepth, False) )
+          root.append( (level + 1, curnode, x.suboperation, curqty, subcount, curoperation, realdepth, False) )
           hasChildren = True
 
       # Process the current node
@@ -290,7 +294,7 @@ def location_calendar(request, location):
     cal = loc.available
   if cal:
     # Go to the calendar
-    return HttpResponseRedirect('%s/admin/input/calendar/%s/' % (request.prefix, iri_to_uri(cal.name)) )
+    return HttpResponseRedirect('%s/data/input/calendar/%s/' % (request.prefix, iri_to_uri(cal.name)) )
   # Generate a message
   try:
     url = request.META.get('HTTP_REFERER')
@@ -611,7 +615,7 @@ class CalendarBucketList(GridReport):
     GridFieldBool('sunday', title=_('Sunday')),
     GridFieldTime('starttime', title=_('start time')),
     GridFieldTime('endtime', title=_('end time')),
-    GridFieldText('source', title=_('source')),
+    GridFieldText('source', title=_('source')),  # Not really right, since the engine doesn't read or store it
     GridFieldLastModified('lastmodified'),
     )
 

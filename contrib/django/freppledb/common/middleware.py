@@ -8,7 +8,8 @@
 # or in the form of compiled binaries.
 #
 
-import re, threading
+import re
+import threading
 
 from django.contrib.auth.models import AnonymousUser
 from django.middleware.locale import LocaleMiddleware as DjangoLocaleMiddleware

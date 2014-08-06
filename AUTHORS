@@ -44,12 +44,6 @@ FrePPLe redistributes parts of the following third party software components:
     Dual licensed under the MIT and GPL licenses
     See http://www.trirand.com/blog/
 
-* contrib\django\freppledb\common\static\js\flotr2*.js
-    Redistributed from flotr2
-    Copyright (c) 2012 Carl Sutherland
-    Licensed as public domain software
-    See https://github.com/HumbleSoftware/Flotr2/
-
 * contrib\django\freppledb\common\static\js\jquery.uix.multiselect.*js
   contrib\django\freppledb\common\static\css\uix.multiselect.css
    Redistributed from jquery.uix.multiselect
@@ -63,6 +57,13 @@ FrePPLe redistributes parts of the following third party software components:
     Copyright Michael Bostock
     Licensed under BSD license
     See http://d3js.org/
+
+* contrib\django\freppledb\common\static\fonts\FontAwesome*
+  contrib\django\freppledb\common\static\css\font-awesome*
+    Redistributed Font Awesome
+    Copyright Dave Gandy
+    Licensed under SIL Open Font License 1.1 (http://scripts.sil.org/OFL) and MIT License
+    See http://fontawesome.io
 
 * This product includes software developed by the OpenSSL Project
   for use in the OpenSSL Toolkit.

@@ -317,7 +317,8 @@ def exportForecast(cursor):
   transaction.commit(using=cursor.db.alias)
   print('Updated planned quantity fields in %.2f seconds' % (time() - starttime))
 
-if __name__ == "__main__":
+
+def generate_plan():
   # Select database
   try: db = os.environ['FREPPLE_DATABASE'] or DEFAULT_DB_ALIAS
   except: db = DEFAULT_DB_ALIAS
@@ -332,15 +333,34 @@ if __name__ == "__main__":
     if 'TEST_USER' in os.environ:
       settings.DATABASES[db]['USER'] = settings.DATABASES[db]['TEST_USER']
 
-  # Welcome message
-  printWelcome(database=db)
-  logProgress(1, db)
-
   # Make sure the debug flag is not set!
   # When it is set, the Django database wrapper collects a list of all sql
   # statements executed and their timings. This consumes plenty of memory
   # and cpu time.
   settings.DEBUG = False
+
+  # Welcome message
+  printWelcome(database=db)
+  logProgress(1, db)
+
+  from freppledb.execute.load import loadData
+  frepple.printsize()
+  if 'odoo_read' in os.environ:
+    # Use input data from the frePPLe database and Odoo
+    print("\nStart loading data from the database with filter \"source <> 'odoo'\" at", datetime.now().strftime("%H:%M:%S"))
+    loadData(database=db, filter="source is null or source<>'odoo'").run()
+    frepple.printsize()
+    logProgress(10, db)
+    print("\nStart loading data from odoo at", datetime.now().strftime("%H:%M:%S"))
+    from freppledb.odoo.commands import odoo_read
+    odoo_read(db)
+    frepple.printsize()
+  else:
+    # Use input data from the frePPLe database
+    print("\nStart loading data from the database at", datetime.now().strftime("%H:%M:%S"))
+    loadData(database=db, filter=None).run()
+    frepple.printsize()
+  logProgress(33, db)
 
   # Create a database connection
   cursor = connections[db].cursor()
@@ -357,16 +377,11 @@ if __name__ == "__main__":
     print("Warning: forecast module is only supported when using a PostgreSQL database")
     with_forecasting = False
 
-  print("\nStart loading data from the database at", datetime.now().strftime("%H:%M:%S"))
-  frepple.printsize()
-  from freppledb.execute.load import loadfrepple
-  loadfrepple(db)
   if with_forecasting:
+    # Load forecast data
+    print("\nStart loading forecast data from the database at", datetime.now().strftime("%H:%M:%S"))
     loadForecast(cursor)
-  frepple.printsize()
-  logProgress(16, db)
 
-  if with_forecasting:
     # Intialize the solver
     solver_fcst = createSolver(cursor)
 
@@ -401,9 +416,19 @@ if __name__ == "__main__":
   createPlan(db)
   logProgress(94, db)
 
+  if 'odoo_read' in os.environ:
+    print("\nStart exporting static model to the database with filter \"source = 'odoo'\" at", datetime.now().strftime("%H:%M:%S"))
+    from freppledb.execute.export_database_static import exportStaticModel
+    exportStaticModel(database=db, source='odoo').run()
+
   print("\nStart exporting plan to the database at", datetime.now().strftime("%H:%M:%S"))
   exportPlan(db)
   exportForecast(cursor)
+
+  if 'odoo_write' in os.environ:
+    from freppledb.odoo.commands import odoo_write
+    print("\nStart exporting plan to odoo at", datetime.now().strftime("%H:%M:%S"))
+    odoo_write(db)
 
   #if settings.DATABASES[db]['ENGINE'] == 'django.db.backends.postgresql_psycopg2':
   #  from freppledb.execute.export_database_plan_postgresql import exportfrepple as export_plan_to_database
@@ -426,3 +451,7 @@ if __name__ == "__main__":
 
   print("\nFinished planning at", datetime.now().strftime("%H:%M:%S"))
   logProgress(100, db)
+
+
+if __name__ == "__main__":
+  generate_plan()

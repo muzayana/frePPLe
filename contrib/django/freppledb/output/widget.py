@@ -118,14 +118,15 @@ class PurchaseQueueWidget(Widget):
     except: db = DEFAULT_DB_ALIAS
     result = [
       '<table style="width:100%">',
-      '<tr><th class="alignleft">%s</th><th>%s</th><th>%s</th><th>%s</th></tr>' % (
+      '<tr><th class="alignleft">%s</th><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr>' % (
         capfirst(force_unicode(_("operation"))), capfirst(force_unicode(_("startdate"))),
-        capfirst(force_unicode(_("enddate"))), capfirst(force_unicode(_("quantity")))
+        capfirst(force_unicode(_("enddate"))), capfirst(force_unicode(_("quantity"))),
+        capfirst(force_unicode(_("criticality")))
         )
       ]
     for opplan in OperationPlan.objects.using(db).filter(operation__startswith='Purchase ', locked=False).order_by('startdate')[:limit]:
-      result.append('<tr><td>%s</td><td class="aligncenter">%s</td><td class="aligncenter">%s</td><td class="aligncenter">%s</td></tr>' % (
-          opplan.operation, opplan.startdate.date(), opplan.enddate.date(), int(opplan.quantity)
+      result.append('<tr><td>%s</td><td class="aligncenter">%s</td><td class="aligncenter">%s</td><td class="aligncenter">%s</td><td class="aligncenter">%s</td></tr>' % (
+          opplan.operation, opplan.startdate.date(), opplan.enddate.date(), int(opplan.quantity), int(opplan.criticality)
           ))
     result.append('</table>')
     return HttpResponse('\n'.join(result))
@@ -187,20 +188,49 @@ class ResourceQueueWidget(Widget):
     except: db = DEFAULT_DB_ALIAS
     result = [
       '<table style="width:100%">',
-      '<tr><th class="alignleft">%s</th><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr>' % (
+      '<tr><th class="alignleft">%s</th><th>%s</th><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr>' % (
         capfirst(force_unicode(_("resource"))), capfirst(force_unicode(_("operation"))),
         capfirst(force_unicode(_("startdate"))), capfirst(force_unicode(_("enddate"))),
-        capfirst(force_unicode(_("quantity")))
+        capfirst(force_unicode(_("quantity"))), capfirst(force_unicode(_("criticality")))
         )
       ]
     for ldplan in LoadPlan.objects.using(db).select_related().order_by('startdate')[:limit]:
-      result.append('<tr><td class="underline"><a href="%s/loadplan/?theresource=%s&sidx=startdate&sord=asc">%s</a></td><td>%s</td><td class="aligncenter">%s</td><td class="aligncenter">%s</td><td class="aligncenter">%s</td></tr>' % (
-          request.prefix, urlquote(ldplan.theresource), ldplan.theresource, ldplan.operationplan.operation, ldplan.startdate, ldplan.enddate, int(ldplan.operationplan.quantity)
+      result.append('<tr><td class="underline"><a href="%s/loadplan/?theresource=%s&sidx=startdate&sord=asc">%s</a></td><td>%s</td><td class="aligncenter">%s</td><td class="aligncenter">%s</td><td class="aligncenter">%s</td><td class="aligncenter">%s</td></tr>' % (
+          request.prefix, urlquote(ldplan.theresource), ldplan.theresource, ldplan.operationplan.operation, ldplan.startdate, ldplan.enddate, int(ldplan.operationplan.quantity), int(ldplan.operationplan.criticality)
           ))
     result.append('</table>')
     return HttpResponse('\n'.join(result))
 
 Dashboard.register(ResourceQueueWidget)
+
+
+class PurchaseAnalysisWidget(Widget):
+  name = "purchase_order_analysis"
+  title = _("Purchase order analysis")
+  async = True
+  url = '/operationplan/?locked=1&operation__startswith=Purchase&sidx=criticality&sord=asc'
+  limit = 20
+
+  @classmethod
+  def render(cls, request=None):
+    limit = int(request.GET.get('limit', cls.limit))
+    try: db = _thread_locals.request.database or DEFAULT_DB_ALIAS
+    except: db = DEFAULT_DB_ALIAS
+    result = [
+      '<table style="width:100%">',
+      '<tr><th class="alignleft">%s</th><th>%s</th><th>%s</th><th>%s</th></tr>' % (
+        capfirst(force_unicode(_("operation"))), capfirst(force_unicode(_("end date"))),
+        capfirst(force_unicode(_("quantity"))), capfirst(force_unicode(_("criticality")))
+        )
+      ]
+    for opplan in OperationPlan.objects.using(db).filter(operation__startswith='Purchase ', locked=True).order_by('criticality')[:limit]:
+      result.append('<tr><td>%s</td><td class="aligncenter">%s</td><td class="aligncenter">%s</td><td class="aligncenter">%s</td></tr>' % (
+          opplan.operation, opplan.enddate.date(), int(opplan.quantity), int(opplan.criticality)
+          ))
+    result.append('</table>')
+    return HttpResponse('\n'.join(result))
+
+Dashboard.register(PurchaseAnalysisWidget)
 
 
 class AlertsWidget(Widget):
@@ -244,44 +274,71 @@ class ResourceLoadWidget(Widget):
   url = '/resource/'
   exporturl = True
   limit = 5
+  high = 90
+  medium = 80
 
   def args(self):
-    return "?%s" % urlencode({'limit': self.limit})
+    return "?%s" % urlencode({'limit': self.limit, 'medium': self.medium, 'high': self.high})
 
   javascript = '''
-    var res = [];
+    // Collect the data
     var data = [];
-    var cnt = 100;
-    $("#resLoad").next().find("td.name").each(function() {res.push([cnt,$(this).html()]); cnt-=1;});
-    cnt = 100;
-    $("#resLoad").next().find("td.util").each(function() {data.push([$(this).html(),cnt]); cnt-=1;});
-    Flotr.draw($("#resLoad").get(0), [ data ], {
-        HtmlText: true,
-        bars: {
-          show: true, horizontal: true, barWidth: 0.9,
-          lineWidth: 0, shadowSize: 0, fillOpacity: 1
-        },
-        grid: {
-          verticalLines: false, horizontalLines: false
-          },
-        yaxis: {
-          ticks: res
-          },
-        mouse: {
-          track: true, relative: true, lineColor: '#D31A00'
-        },
-        xaxis: {
-          min: 0, autoscaleMargin: 1, title: '%'
-        },
-        colors: ['#D31A00',]
-    });
+    $("#resLoad").next().find("tr").each(function() {
+      var l = $(this).find("a");
+      data.push( [
+         l.attr("href"),
+         l.text(),
+         parseFloat($(this).find("td.util").html())
+         ] );
+      });
+    var barHeight = $("#resLoad").height() / data.length;
+    var x = d3.scale.linear().domain([0, 100]).range([0, $("#resLoad").width()]);
+    var resload_high = parseFloat($("#resload_high").html());
+    var resload_medium = parseFloat($("#resload_medium").html());
+
+    // Draw the chart
+    var bar = d3.select("#resLoad")
+     .selectAll("g")
+     .data(data)
+     .enter()
+     .append("g")
+     .attr("transform", function(d, i) { return "translate(0," + i * barHeight + ")"; })
+     .append("svg:a")
+     .attr("xlink:href", function(d) {return d[0];});
+
+    bar.append("rect")
+      .attr("width", function(d) {return x(d[2]);})
+      .attr("rx","3")
+      .attr("height", barHeight - 2)
+      .style("fill", function(d) {
+        if (d[2] > resload_high) return "#DC3912";
+        if (d[2] > resload_medium) return "#FF9900";
+        return "#109618";
+        });
+
+    bar.append("text")
+      .attr("x", "2")
+      .attr("y", barHeight / 2)
+      .attr("dy", ".35em")
+      .text(function(d,i) { return d[1]; })
+      .style('text-decoration', 'underline');
+
+    bar.append("text")
+      .attr("y", barHeight / 2)
+      .attr("dy", ".35em")
+      .attr("x", function(d) {return x(d[2]) - 3;})
+      .style("text-anchor", "end")
+      .attr("class","bold")
+      .text(function(d,i) { return d[2] + "%"; });
     '''
 
   @classmethod
   def render(cls, request=None):
     limit = int(request.GET.get('limit', cls.limit))
+    medium = int(request.GET.get('medium', cls.medium))
+    high = int(request.GET.get('high', cls.high))
     result = [
-      '<div id="resLoad" style="width:100%%; height: %spx;"></div>' % (limit*25+30),
+      '<svg class="chart" id="resLoad" style="width:100%%; height: %spx;"></svg>' % (limit * 25 + 30),
       '<table style="display:none">'
       ]
     cursor = connections[request.database].cursor()
@@ -302,10 +359,12 @@ class ResourceLoadWidget(Widget):
     for res in cursor.fetchall():
       limit -= 1
       if limit < 0: break
-      result.append('<tr><td class="name"><span class="underline"><a href="%s/resource/%s/">%s</a></span></td><td class="util">%.2f</td></tr>' % (
+      result.append('<tr><td><a href="%s/resource/%s/">%s</a></td><td class="util">%.2f</td></tr>' % (
         request.prefix, urlquote(res[0]), res[0], res[1]
         ))
     result.append('</table>')
+    result.append('<span id="resload_medium" style="display:none">%s</span>' % medium)
+    result.append('<span id="resload_high" style="display:none">%s</span>' % high)
     return HttpResponse('\n'.join(result))
 
 Dashboard.register(ResourceLoadWidget)
@@ -315,45 +374,67 @@ class InventoryByLocationWidget(Widget):
   name = "inventory_by_location"
   title = _("Inventory by location")
   async = True
-  limit = 20
+  limit = 5
 
   def args(self):
     return "?%s" % urlencode({'limit': self.limit})
 
   javascript = '''
-    var locs = [];
+    var margin = 50;  // Space allocated for the Y-axis
+
+    // Collect the data
+    var invmax = 0;
     var data = [];
-    var cnt = 0;
-    $("#invByLoc").next().find("td.name").each(function() {locs.push([cnt,$(this).html()]); cnt+=1;});
-    cnt = 0;
-    $("#invByLoc").next().find("td.data").each(function() {data.push([cnt,$(this).html()]); cnt+=1;});
-    Flotr.draw($("#invByLoc").get(0), [ data ], {
-        HtmlText: false,
-        bars: {
-          show: true, horizontal: false, barWidth: 0.9,
-          lineWidth: 0, shadowSize: 0, fillOpacity: 1
-        },
-        grid: {
-          verticalLines: false, horizontalLines: false,
-          },
-        xaxis: {
-          ticks: locs, labelsAngle: 45
-          },
-        mouse: {
-          track: true, relative: true, lineColor: '#828915'
-        },
-        yaxis: {
-          min: 0, autoscaleMargin: 1
-        },
-        colors: ['#828915']
-    });
+    $("#invByLoc").next().find("tr").each(function() {
+      var l = parseFloat($(this).find("td:eq(1)").html());
+      data.push( [
+         $(this).find("td").html(),
+         l
+         ] );
+      if (l > invmax) invmax = l;
+      });
+    var x_width = ($("#invByLoc").width()-margin) / data.length;
+    var y = d3.scale.linear().domain([0, invmax]).range([$("#invByLoc").height() - 5, 0]);
+    var y_zero = y(0);
+
+    // Draw the chart
+    var bar = d3.select("#invByLoc")
+     .selectAll("g")
+     .data(data)
+     .enter()
+     .append("g")
+     .attr("transform", function(d, i) { return "translate(" + (i * x_width + margin) + ",0)"; });
+
+    bar.append("rect")
+      .attr("y", function(d) {return y(d[1]);})
+      .attr("height", function(d) {return y_zero - y(d[1]);})
+      .attr("rx","3")
+      .attr("width", x_width - 2)
+      .style("fill", "#828915");
+
+    bar.append("text")
+      .attr("y", y_zero - 3)
+      .text(function(d,i) { return d[0]; })
+      .style("text-anchor", "end")
+      .attr("transform","rotate(90 " + (x_width/2 - 5) + "," + y_zero + ")");
+
+    // Draw the Y-axis
+    var yAxis = d3.svg.axis()
+      .scale(y)
+      .ticks(4)
+      .orient("left");
+    d3.select("#invByLoc")
+      .append("g")
+      .attr("transform", "translate(" + margin + ",0)")
+      .attr("class", "y axis")
+      .call(yAxis);
     '''
 
   @classmethod
   def render(cls, request=None):
     limit = int(request.GET.get('limit', cls.limit))
     result = [
-      '<div id="invByLoc" style="width:100%; height: 250px;"></div>',
+      '<svg class="chart" id="invByLoc" style="width:100%; height: 250px;"></svg>',
       '<table style="display:none">'
       ]
     cursor = connections[request.database].cursor()
@@ -367,7 +448,7 @@ class InventoryByLocationWidget(Widget):
     for res in cursor.fetchall():
       limit -= 1
       if limit < 0: break
-      result.append('<tr><td class="name">%s</td><td class="data">%.2f</td></tr>' % (
+      result.append('<tr><td>%s</td><td>%.2f</td></tr>' % (
         res[0], res[1]
         ))
     result.append('</table>')
@@ -386,39 +467,61 @@ class InventoryByItemWidget(Widget):
     return "?%s" % urlencode({'limit': self.limit})
 
   javascript = '''
-    var locs = [];
+    var margin = 50;  // Space allocated for the Y-axis
+
+    // Collect the data
+    var invmax = 0;
     var data = [];
-    var cnt = 0;
-    $("#invByItem").next().find("td.name").each(function() {locs.push([cnt,$(this).html()]); cnt+=1;});
-    cnt = 0;
-    $("#invByItem").next().find("td.data").each(function() {data.push([cnt,$(this).html()]); cnt+=1;});
-    Flotr.draw($("#invByItem").get(0), [ data ], {
-        HtmlText: false,
-        bars: {
-          show: true, horizontal: false, barWidth: 0.9,
-          lineWidth: 0, shadowSize: 0, fillOpacity: 1
-        },
-        grid : {
-          verticalLines: false, horizontalLines: false,
-          },
-        xaxis: {
-          ticks: locs, labelsAngle: -45
-          },
-        mouse : {
-          track: true, relative: true, lineColor: '#D31A00'
-        },
-        yaxis : {
-          min: 0, autoscaleMargin: 1
-        },
-        colors: ['#D31A00']
-    });
+    $("#invByItem").next().find("tr").each(function() {
+      var l = parseFloat($(this).find("td:eq(1)").html());
+      data.push( [
+         $(this).find("td").html(),
+         l
+         ] );
+      if (l > invmax) invmax = l;
+      });
+    var x_width = ($("#invByItem").width()-margin) / data.length;
+    var y = d3.scale.linear().domain([0, invmax]).range([$("#invByItem").height() - 5, 0]);
+    var y_zero = y(0);
+
+    // Draw the chart
+    var bar = d3.select("#invByItem")
+     .selectAll("g")
+     .data(data)
+     .enter()
+     .append("g")
+     .attr("transform", function(d, i) { return "translate(" + (i * x_width + margin) + ",0)"; });
+
+    bar.append("rect")
+      .attr("y", function(d) {return y(d[1]);})
+      .attr("height", function(d) {return y_zero - y(d[1]);})
+      .attr("rx","3")
+      .attr("width", x_width - 2)
+      .style("fill", "#D31A00");
+
+    bar.append("text")
+      .attr("y", y_zero - 3)
+      .text(function(d,i) { return d[0]; })
+      .style("text-anchor", "end")
+      .attr("transform","rotate(90 " + (x_width/2 - 5) + "," + y_zero + ")");
+
+    // Draw the Y-axis
+    var yAxis = d3.svg.axis()
+      .scale(y)
+      .ticks(4)
+      .orient("left");
+    d3.select("#invByItem")
+      .append("g")
+      .attr("transform", "translate(" + margin + ",0)")
+      .attr("class", "y axis")
+      .call(yAxis);
     '''
 
   @classmethod
   def render(cls, request=None):
     limit = int(request.GET.get('limit', cls.limit))
     result = [
-      '<div id="invByItem" style="width:100%; height: 250px;"></div>',
+      '<svg class="chart" id="invByItem" style="width:100%; height: 250px;"></svg>',
       '<table style="display:none">'
       ]
     cursor = connections[request.database].cursor()
@@ -432,7 +535,7 @@ class InventoryByItemWidget(Widget):
     for res in cursor.fetchall():
       limit -= 1
       if limit < 0: break
-      result.append('<tr><td class="name">%s</td><td class="data">%.2f</td></tr>' % (
+      result.append('<tr><td>%s</td><td>%.2f</td></tr>' % (
         res[0], res[1]
         ))
     result.append('</table>')

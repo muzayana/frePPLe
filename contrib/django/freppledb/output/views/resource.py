@@ -18,7 +18,7 @@ from freppledb.output.models import LoadPlan
 from freppledb.common.models import Parameter
 from freppledb.common.db import python_date, sql_max
 from freppledb.common.report import GridReport, GridPivot
-from freppledb.common.report import GridFieldText, GridFieldNumber, GridFieldDateTime, GridFieldBool, GridFieldInteger, GridFieldGraph
+from freppledb.common.report import GridFieldText, GridFieldNumber, GridFieldDateTime, GridFieldBool, GridFieldInteger
 
 
 class OverviewReport(GridPivot):
@@ -35,7 +35,6 @@ class OverviewReport(GridPivot):
     GridFieldText('resource', title=_('resource'), key=True, field_name='name', formatter='resource', editable=False),
     GridFieldText('location', title=_('location'), field_name='location__name', formatter='location', editable=False),
     GridFieldText('avgutil', title=_('utilization %'), field_name='util', formatter='percentage', editable=False, width=100, align='center', search=False),
-    GridFieldGraph('graph', title=_('graph'), width="(5*numbuckets<200 ? 5*numbuckets : 200)"),
     )
   crosses = (
     ('available',{'title': _('available'), 'editable': lambda req: req.user.has_perm('input.change_resource'),}),
@@ -181,10 +180,11 @@ class DetailReport(GridReport):
     GridFieldDateTime('enddate', title=_('end date'), editable=False),
     GridFieldNumber('operationplan__quantity', title=_('operationplan quantity'), editable=False),
     GridFieldNumber('quantity', title=_('load quantity'), editable=False),
-    GridFieldText('setup', title=_('setup'), editable=False),
+    GridFieldNumber('operationplan__criticality', title=_('criticality'), editable=False),
     GridFieldBool('operationplan__locked', title=_('locked'), editable=False),
     GridFieldNumber('operationplan__unavailable', title=_('unavailable'), editable=False),
     GridFieldInteger('operationplan', title=_('operationplan'), editable=False),
+    GridFieldText('setup', title=_('setup'), editable=False),
     )
 
 

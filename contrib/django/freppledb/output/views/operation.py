@@ -16,7 +16,7 @@ from django.utils.encoding import force_unicode
 from freppledb.input.models import Operation
 from freppledb.output.models import OperationPlan
 from freppledb.common.db import sql_true, python_date
-from freppledb.common.report import GridReport, GridPivot, GridFieldText, GridFieldNumber, GridFieldDateTime, GridFieldBool, GridFieldInteger, GridFieldGraph
+from freppledb.common.report import GridReport, GridPivot, GridFieldText, GridFieldNumber, GridFieldDateTime, GridFieldBool, GridFieldInteger
 
 
 class OverviewReport(GridPivot):
@@ -31,7 +31,6 @@ class OverviewReport(GridPivot):
   rows = (
     GridFieldText('operation', title=_('operation'), key=True, field_name='name', formatter='operation', editable=False),
     GridFieldText('location', title=_('location'), field_name='location__name', formatter='location', editable=False),
-    GridFieldGraph('graph', title=_('graph'), width="(5*numbuckets<200 ? 5*numbuckets : 200)"),
     )
   crosses = (
     ('locked_start', {'title': _('locked starts'),}),
@@ -136,8 +135,8 @@ class DetailReport(GridReport):
     GridFieldNumber('quantity', title=_('quantity'), editable=False),
     GridFieldDateTime('startdate', title=_('start date'), editable=False),
     GridFieldDateTime('enddate', title=_('end date'), editable=False),
+    GridFieldNumber('criticality', title=_('criticality'), editable=False),
     GridFieldBool('locked', title=_('locked'), editable=False),
     GridFieldNumber('unavailable', title=_('unavailable'), editable=False),
     GridFieldInteger('owner', title=_('owner'), editable=False),
     )
-

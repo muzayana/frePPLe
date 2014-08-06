@@ -33,6 +33,7 @@ else:
 
 encoding = 'UTF8'
 
+
 def truncate(process):
   print("Emptying database plan tables...")
   starttime = time()
@@ -51,7 +52,7 @@ def exportProblems(process):
     process.stdin.write("%s\t%s\t%s\t%s\t%s\t%s\t%s\n" % (
        i.entity.encode(encoding), i.name.encode(encoding),
        isinstance(i.owner,frepple.operationplan) and i.owner.operation.name.encode(encoding) or i.owner.name.encode(encoding),
-       i.description.encode(encoding)[0:settings.NAMESIZE+20], str(i.start), str(i.end),
+       i.description.encode(encoding)[0 : settings.NAMESIZE + 20], str(i.start), str(i.end),
        round(i.weight,settings.DECIMAL_PLACES)
     ))
   process.stdin.write('\\.\n')
@@ -67,7 +68,7 @@ def exportConstraints(process):
       process.stdin.write("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" % (
          d.name.encode(encoding), i.entity.encode(encoding), i.name.encode(encoding),
          isinstance(i.owner,frepple.operationplan) and i.owner.operation.name.encode(encoding) or i.owner.name.encode(encoding),
-         i.description.encode(encoding)[0:settings.NAMESIZE+20], str(i.start), str(i.end),
+         i.description.encode(encoding)[0 : settings.NAMESIZE + 20], str(i.start), str(i.end),
          round(i.weight,settings.DECIMAL_PLACES)
        ))
   process.stdin.write('\\.\n')
@@ -77,13 +78,14 @@ def exportConstraints(process):
 def exportOperationplans(process):
   print("Exporting operationplans...")
   starttime = time()
-  process.stdin.write('COPY out_operationplan (id,operation,quantity,startdate,enddate,locked,unavailable,owner) FROM STDIN;\n')
+  process.stdin.write('COPY out_operationplan (id,operation,quantity,startdate,enddate,criticality,locked,unavailable,owner) FROM STDIN;\n')
   for i in frepple.operations():
     for j in i.operationplans:
-      process.stdin.write("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" % (
+      process.stdin.write("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" % (
         j.id, i.name[0:settings.NAMESIZE].encode(encoding),
         round(j.quantity,settings.DECIMAL_PLACES), str(j.start), str(j.end),
-        j.locked, j.unavailable, j.owner and j.owner.id or "\\N"
+        round(j.criticality,settings.DECIMAL_PLACES), j.locked, j.unavailable,
+        j.owner and j.owner.id or "\\N"
         ))
   process.stdin.write('\\.\n')
   print('Exported operationplans in %.2f seconds' % (time() - starttime))
@@ -276,4 +278,3 @@ def exportfrepple():
     ''')
   for table, recs in cursor.fetchall():
     print("Table %s: %d records" % (table, recs))
-

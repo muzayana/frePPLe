@@ -625,11 +625,11 @@ class Command(BaseCommand):
         operation = u'Ship %s @ %s' % (product, warehouse)
         deliveries.update([(product,warehouse,operation,u'%s @ %s' % (product, warehouse)),])
         if unique_name in frepple_keys:
-          update.append( (objectid, closed and orderedQuantity or orderedQuantity-deliveredQuantity,
+          update.append( (objectid, closed and orderedQuantity or orderedQuantity - deliveredQuantity,
               product, closed and 'closed' or 'open', scheduledDeliveryDate,
               businessPartner, operation, unique_name) )
         else:
-          insert.append( (objectid, closed and orderedQuantity or orderedQuantity-deliveredQuantity,
+          insert.append( (objectid, closed and orderedQuantity or orderedQuantity - deliveredQuantity,
               product, closed and 'closed' or 'open', scheduledDeliveryDate,
               businessPartner, operation, unique_name) )
           frepple_keys.add(unique_name)
@@ -845,7 +845,7 @@ class Command(BaseCommand):
             # Existing buffer marked as a non-openbravo buffer
             update.append( (onhand, buffer_name) )
             frepple_buffers[buffer_name] = 'openbravo'
-        elif item != None and location != None:
+        elif item and location:
           # New buffer
           insert.append( (buffer_name, self.items[product], self.locations[self.locators[locator]], onhand) )
           frepple_buffers[buffer_name] = 'openbravo'
@@ -1113,11 +1113,11 @@ class Command(BaseCommand):
           if deliveredQuantity >= orderedQuantity:   # TODO Not the right criterion
             delete.append( (objectid,) )
           else:
-            update.append( (operation, orderedQuantity-deliveredQuantity,
+            update.append( (operation, orderedQuantity - deliveredQuantity,
               creationDate, scheduledDeliveryDate, objectid) )
         else:
           idcounter += 1
-          insert.append( (idcounter, operation, orderedQuantity-deliveredQuantity,
+          insert.append( (idcounter, operation, orderedQuantity - deliveredQuantity,
             creationDate, scheduledDeliveryDate, objectid) )
           frepple_keys.add(objectid)
         # Clean the XML hierarchy
@@ -1228,13 +1228,13 @@ class Command(BaseCommand):
         FROM operation \
         WHERE subcategory='openbravo' \
           and source is not null")
-      frepple_operations = { (i[1],i[2]) : i[0] for i in cursor.fetchall() }
+      frepple_operations = { (i[1],i[2]): i[0] for i in cursor.fetchall() }
 
       # Get the list of all open work requirements
       insert = []
       update = []
       query = urllib.quote("closed=false")
-      conn, root = self.get_data("/openbravo/ws/dal/ManufacturingWorkRequirement?where=%s" % query) #&orderBy=salesOrder.creationDate&includeChildren=false" % query)
+      conn, root = self.get_data("/openbravo/ws/dal/ManufacturingWorkRequirement?where=%s" % query)
       count = 0
       for event, elem in conn:
         if event != 'end' or elem.tag != 'ManufacturingWorkRequirement': continue
@@ -1391,7 +1391,8 @@ class Command(BaseCommand):
         print("Imported product boms in %.2f seconds" % (time() - starttime))
     except Exception as e:
       transaction.rollback(using=self.database)
-      import sys, traceback
+      import sys
+      import traceback
       traceback.print_exc(file=sys.stdout)
       raise CommandError("Error importing product boms: %s" % e)
     finally:
@@ -1476,7 +1477,7 @@ class Command(BaseCommand):
           for pp_version in tmp0.findall('ManufacturingVersion'):
             endingDate = datetime.strptime(pp_version.find("endingDate").text, '%Y-%m-%dT%H:%M:%S.%fZ')
             if endingDate < self.current:
-              continue # We have passed the validity date of this version
+              continue  # We have passed the validity date of this version
             documentNo = pp_version.find('documentNo').text
             routing_name = "Processplan %s - %s - %s" % (name, documentNo, loc)
             if routing_name in frepple_operations:
@@ -1507,7 +1508,7 @@ class Command(BaseCommand):
                     productionType = ff_operationproduct.find('productionType').text
                     opproduct = self.items.get(ff_operationproduct.find('product').get('id'), None)
                     if not opproduct:
-                      continue # Unknown product
+                      continue  # Unknown product
                     # Find the buffer
                     opbuffer = None
                     if opproduct in frepple_buffers:
@@ -1539,7 +1540,7 @@ class Command(BaseCommand):
                   for ff_operationmachine in tmp4.findall('ManufacturingOperationMachine'):
                     machine = self.resources.get(ff_operationmachine.find('machine').get('id'), None)
                     if not machine:
-                      continue # Unknown machine
+                      continue  # Unknown machine
                     loads.append( (step_name, machine, 1) )
         # Clean the XML hierarchy
         root.clear()
@@ -1599,10 +1600,10 @@ class Command(BaseCommand):
         print("Imported processplans in %.2f seconds" % (time() - starttime))
     except Exception as e:
       transaction.rollback(using=self.database)
-      import sys, traceback
+      import sys
+      import traceback
       traceback.print_exc(file=sys.stdout)
       raise CommandError("Error importing processplans: %s" % e)
     finally:
       transaction.commit(using=self.database)
       transaction.leave_transaction_management(using=self.database)
-

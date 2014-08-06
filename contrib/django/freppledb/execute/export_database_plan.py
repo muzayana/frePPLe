@@ -62,7 +62,7 @@ def exportProblems(cursor):
     [(
        i.entity, i.name,
        isinstance(i.owner,frepple.operationplan) and unicode(i.owner.operation) or unicode(i.owner),
-       i.description[0:settings.NAMESIZE+20], str(i.start), str(i.end),
+       i.description[0 : settings.NAMESIZE + 20], str(i.start), str(i.end),
        round(i.weight,settings.DECIMAL_PLACES)
      ) for i in frepple.problems()
     ])
@@ -83,7 +83,7 @@ def exportConstraints(cursor):
       [(
          d.name,i.entity, i.name,
          isinstance(i.owner,frepple.operationplan) and unicode(i.owner.operation) or unicode(i.owner),
-         i.description[0:settings.NAMESIZE+20], str(i.start), str(i.end),
+         i.description[0 : settings.NAMESIZE + 20], str(i.start), str(i.end),
          round(i.weight,settings.DECIMAL_PLACES)
        ) for i in d.constraints
       ])
@@ -101,12 +101,13 @@ def exportOperationplans(cursor):
   for i in frepple.operations():
     cursor.executemany(
       "insert into out_operationplan \
-       (id,operation,quantity,startdate,enddate,locked,unavailable,owner) \
-       values (%s,%s,%s,%s,%s,%s,%s,%s)",
+       (id,operation,quantity,startdate,enddate,criticality,locked,unavailable,owner) \
+       values (%s,%s,%s,%s,%s,%s,%s,%s,%s)",
       [(
         j.id, i.name.replace("'","''"),
         round(j.quantity,settings.DECIMAL_PLACES), str(j.start), str(j.end),
-        j.locked, j.unavailable, j.owner and j.owner.id or None
+        round(j.criticality,settings.DECIMAL_PLACES), j.locked, j.unavailable,
+        j.owner and j.owner.id or None
        ) for j in i.operationplans ])
     cnt += 1
     if cnt % 300 == 0: transaction.commit(using=database)

@@ -35,7 +35,7 @@ class DurationWidget(TextInput):
       try:
         value = float(value)
         days = math.floor(value / 86400)
-        hours   = math.floor((value - (days * 86400)) / 3600)
+        hours = math.floor((value - (days * 86400)) / 3600)
         minutes = math.floor((value - (days * 86400) - (hours * 3600)) / 60)
         seconds = value - (days * 86400) - (hours * 3600) - (minutes * 60)
         if days > 0:
@@ -53,6 +53,7 @@ class DurationWidget(TextInput):
 
 numericTypes = (Decimal, float) + six.integer_types
 
+
 class DurationFormField(fields.RegexField):
 
   widget = DurationWidget
@@ -69,7 +70,7 @@ class DurationFormField(fields.RegexField):
     super(DurationFormField, self).__init__(**kwargs)
 
   def to_python(self, value):
-    if isinstance(value, numericTypes) or value == None:
+    if isinstance(value, numericTypes) or value is None:
       # Empty fields and numeric values pass directly
       return value
     if value == u'': return None
@@ -83,15 +84,15 @@ class DurationFormField(fields.RegexField):
         return float(t[0])
       elif tl == 2:
         # Minutes and seconds
-        return int(t[0])*60 + float(t[1])
+        return int(t[0]) * 60 + float(t[1])
       elif tl == 3:
         v = t[0].split(' ')
         if len(v) > 1:
           # Days, hours, minutes, seconds
-          return int(v[0])*86400 + int(v[1])*3600 + int(t[1])*60 + float(t[2])
+          return int(v[0]) * 86400 + int(v[1]) * 3600 + int(t[1]) * 60 + float(t[2])
         else:
           # Hours, minutes, seconds
-          return int(t[0])*3600 + int(t[1])*60 + float(t[2])
+          return int(t[0]) * 3600 + int(t[1]) * 60 + float(t[2])
     except:
       raise ValidationError(_('Expected format "DD HH:MM:SS", "HH:MM:SS", "MM:SS" or "SS"'), code='invalid')
 
@@ -152,4 +153,3 @@ class JSONField(models.TextField):
       return 'json'
     else:
       return super(JSONField, self).db_type(connection)
-

@@ -51,7 +51,7 @@ class CrumbsNode(Node):
   def render(self, context):
     try: req = context['request']
     except: return ''  # No request found in the context: no crumbs...
-    if not hasattr(req,'session'): return # No session found in the context: no crumbs...
+    if not hasattr(req,'session'): return  # No session found in the context: no crumbs...
 
     # Pick up the current crumbs from the session cookie
     try:
@@ -115,6 +115,7 @@ class CrumbsNode(Node):
 
   def __repr__(self):
     return "<Crumbs Node>"
+
 
 def do_crumbs(parser, token):
     return CrumbsNode()
@@ -219,6 +220,7 @@ class SelectDatabaseNode(Node):
   def __repr__(self):
     return "<SelectDatabase Node>"
 
+
 def selectDatabase(parser, token):
     return SelectDatabaseNode()
 
@@ -245,13 +247,13 @@ version.is_safe = True
 
 def duration(value):
   try:
-    if value == None: return ''
+    if value is None: return ''
     value = Decimal(force_unicode(value))
     if value == 0: return '0 s'
-    if value % 604800 == 0: return '%.2f w' % (value/Decimal('604800.0'))
+    if value % 604800 == 0: return '%.2f w' % (value / Decimal('604800.0'))
     if value % 3600 != 0 and value < 86400: return '%.2f s' % value
-    if value % 86400 != 0 and value < 604800: return '%.2f h' % (value/Decimal('3600'))
-    return '%.2f d' % (value/Decimal('86400'))
+    if value % 86400 != 0 and value < 604800: return '%.2f h' % (value / Decimal('3600'))
+    return '%.2f d' % (value / Decimal('86400'))
   except Exception:
     return ''
 
@@ -267,17 +269,21 @@ def verbose_name(obj):
   return obj._meta.verbose_name
 register.filter(verbose_name)
 
+
 def verbose_name_plural(obj):
   return obj._meta.verbose_name_plural
 register.filter(verbose_name_plural)
+
 
 def app_label(obj):
   return obj._meta.app_label
 register.filter(app_label)
 
+
 def object_name(obj):
   return obj._meta.object_name
 register.filter(object_name)
+
 
 def model_name(obj):
   return "%s.%s" % (obj._meta.app_label, obj._meta.model_name)

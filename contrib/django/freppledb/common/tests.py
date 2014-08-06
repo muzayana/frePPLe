@@ -15,7 +15,8 @@
 # License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import os, os.path
+import os
+import os.path
 
 from django.test import TestCase, TransactionTestCase
 from django.conf import settings
@@ -24,6 +25,7 @@ from django.core import management
 from freppledb.common.models import User
 import freppledb.input as input
 import freppledb.common as common
+
 
 class DataLoadTest(TestCase):
 

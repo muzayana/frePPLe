@@ -79,7 +79,7 @@ class Dashboard:
       if widget.__module__.startswith(app):
         # Loop over all permissions of the widget class
         for k in widget.permissions:
-          if content_type == None:
+          if content_type is None:
             # Create a dummy contenttype in the app
             content_type = ContentType.objects.get_or_create(name="reports", model="", app_label=app.split('.')[-1])[0]
           # Create the permission object
@@ -149,6 +149,6 @@ class Widget:
     for i in range(len(s),0,-1):
       x = '.'.join(s[0:i])
       if x in settings.INSTALLED_APPS:
-        cls.app_label = s[i-1]
+        cls.app_label = s[i - 1]
         return cls.app_label
     raise Exception("Can't identify app of widget %s" % cls)

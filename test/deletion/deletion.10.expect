@@ -9,15 +9,6 @@
     dangling pointers likely to surface soon and crash the application. Ha...
   </description>
 	<current>2009-01-01T00:00:00</current>
-	<solvers>
-		<solver name="MRP" xsi:type="solver_mrp">
-			<plantype>2</plantype>
-			<iterationthreshold>1</iterationthreshold>
-			<iterationaccuracy>0.01</iterationaccuracy>
-			<lazydelay>P1D</lazydelay>
-			<autocommit>true</autocommit>
-		</solver>
-	</solvers>
 	<locations>
 		<location name="All places">
 			<members>
@@ -145,18 +136,21 @@
 			<start>2009-01-31T00:00:00</start>
 			<end>2009-02-01T00:00:00</end>
 			<quantity>1</quantity>
+			<criticality>0</criticality>
 		</operationplan>
 		<operationplan id="15" operation="delivery 1">
 			<demand name="order 1"/>
 			<start>2009-02-28T00:00:00</start>
 			<end>2009-03-01T00:00:00</end>
 			<quantity>1</quantity>
+			<criticality>0</criticality>
 		</operationplan>
 		<operationplan id="16" operation="delivery 1">
 			<demand name="order 3"/>
 			<start>2009-03-31T00:00:00</start>
 			<end>2009-04-01T00:00:00</end>
 			<quantity>1</quantity>
+			<criticality>0</criticality>
 		</operationplan>
 	</operationplans>
 	<problems>

@@ -8,6 +8,7 @@
 # or in the form of compiled binaries.
 #
 from datetime import datetime
+import logging
 
 from django.db import models, DEFAULT_DB_ALIAS, connections, transaction
 from django.contrib.contenttypes import generic
@@ -18,8 +19,6 @@ from django.contrib.auth.models import AbstractUser
 
 from freppledb.common.fields import JSONField
 
-
-import logging
 logger = logging.getLogger(__name__)
 
 
@@ -28,9 +27,9 @@ class HierarchyModel(models.Model):
   rght = models.PositiveIntegerField(null=True, editable=False, blank=True)
   lvl = models.PositiveIntegerField(null=True, editable=False, blank=True)
   name = models.CharField(_('name'), max_length=settings.NAMESIZE, primary_key=True,
-    help_text=_('Unique identifier'))
-  owner = models.ForeignKey('self', verbose_name=_('owner'), null=True, blank=True, related_name='xchildren',
-    help_text=_('Hierarchical parent'))
+                          help_text=_('Unique identifier'))
+  owner = models.ForeignKey('self', verbose_name=_('owner'), null=True, blank=True,
+                            related_name='xchildren', help_text=_('Hierarchical parent'))
 
   def save(self, *args, **kwargs):
     # Trigger recalculation of the hieracrhy
@@ -88,7 +87,7 @@ class HierarchyModel(models.Model):
     # Loop over nodes without parent
     cnt = 1
     for i, j in keys:
-      if j == None:
+      if j is None:
         cnt = tagChildren(i,cnt,0)
 
     if nodes:
@@ -117,13 +116,13 @@ class HierarchyModel(models.Model):
       # Continue loop over nodes without parent
       keys = sorted(nodes.items())
       for i, j in keys:
-        if j == None:
+        if j is None:
           cnt = tagChildren(i,cnt,0)
 
     # Write all results to the database
     with transaction.atomic(using=database):
       connections[database].cursor().executemany(
-        'update %s set lft=%%s, rght=%%s, lvl=%%s where name = %%s' %  connections[database].ops.quote_name(cls._meta.db_table),
+        'update %s set lft=%%s, rght=%%s, lvl=%%s where name = %%s' % connections[database].ops.quote_name(cls._meta.db_table),
         updates
         )
 
@@ -149,7 +148,7 @@ class AuditModel(models.Model):
   source = models.CharField(_('source'), db_index=True, max_length=settings.CATEGORYSIZE, null=True, blank=True)
   lastmodified = models.DateTimeField(_('last modified'), editable=False, db_index=True, default=datetime.now())
 
-  objects = MultiDBManager() # The default manager.
+  objects = MultiDBManager()  # The default manager.
 
   def save(self, *args, **kwargs):
     # Update the field with every change
@@ -186,19 +185,23 @@ class Parameter(AuditModel):
 class User(AbstractUser):
   languageList = tuple( [ ('auto',_('Detect automatically')), ] + list(settings.LANGUAGES) )
   language = models.CharField(_('language'), max_length=10, choices=languageList,
-    default='auto')
+                              default='auto')
   theme = models.CharField(_('theme'), max_length=20, default=settings.DEFAULT_THEME,
-    choices=settings.THEMES)
+                           choices=settings.THEMES)
   pagesize = models.PositiveIntegerField(_('page size'), default=settings.DEFAULT_PAGESIZE)
   horizonbuckets = models.CharField(max_length=settings.NAMESIZE, blank=True, null=True)
   horizonstart = models.DateTimeField(blank=True, null=True)
   horizonend = models.DateTimeField(blank=True, null=True)
   horizontype = models.BooleanField(blank=True, default=True)
   horizonlength = models.IntegerField(blank=True, default=6, null=True)
-  horizonunit = models.CharField(blank=True, max_length=5, default='month', null=True,
-    choices=(("day","day"),("week","week"),("month","month")))
-  lastmodified = models.DateTimeField(_('last modified'), auto_now=True, null=True, blank=True,
-    editable=False, db_index=True)
+  horizonunit = models.CharField(
+                  blank=True, max_length=5, default='month', null=True,
+                  choices=(("day","day"),("week","week"),("month","month"))
+                  )
+  lastmodified = models.DateTimeField(
+                   _('last modified'), auto_now=True, null=True, blank=True,
+                   editable=False, db_index=True
+                   )
 
 
   def joined_age(self):
@@ -249,9 +252,10 @@ class UserPreference(models.Model):
 
 class Comment(models.Model):
   id = models.AutoField(_('identifier'), primary_key=True)
-  content_type = models.ForeignKey(ContentType,
-          verbose_name=_('content type'),
-          related_name="content_type_set_for_%(class)s")
+  content_type = models.ForeignKey(
+    ContentType, verbose_name=_('content type'),
+    related_name="content_type_set_for_%(class)s"
+    )
   object_pk = models.TextField(_('object ID'))
   content_object = generic.GenericForeignKey(ct_field="content_type", fk_field="object_pk")
   comment = models.TextField(_('comment'), max_length=settings.COMMENT_MAX_LENGTH)
@@ -300,4 +304,3 @@ class BucketDetail(AuditModel):
     db_table = 'common_bucketdetail'
     unique_together = (('bucket', 'startdate'),)
     ordering = ['bucket','startdate']
-

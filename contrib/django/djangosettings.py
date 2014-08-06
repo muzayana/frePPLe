@@ -288,10 +288,11 @@ DEFAULT_DASHBOARD = [
     ("alerts",{}),
     ("late_orders",{"limit":20}),
     ("short_orders",{"limit":20}),
+    ("purchase_order_analysis",{"limit":20}),
   ]},
   {'width':'25%', 'widgets':[
     ("news",{}),
-    ('resource_utilization',{"limit":5}),
+    ('resource_utilization',{"limit":5, "medium": 80, "high": 90}),
     ("delivery_performance",{"green": 90, "yellow": 80}),
     ("inventory_by_location",{"limit":5}),
     ("inventory_by_item",{"limit":10}),

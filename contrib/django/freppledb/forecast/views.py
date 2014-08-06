@@ -21,7 +21,7 @@ from django.http import HttpResponse, HttpResponseForbidden
 from freppledb.forecast.models import Forecast, ForecastDemand, ForecastPlan
 from freppledb.common.db import python_date
 from freppledb.common.report import GridPivot, GridFieldText, GridFieldInteger, GridFieldDate
-from freppledb.common.report import GridReport, GridFieldBool, GridFieldLastModified, GridFieldGraph
+from freppledb.common.report import GridReport, GridFieldBool, GridFieldLastModified
 from freppledb.common.report import GridFieldChoice, GridFieldNumber
 
 
@@ -88,8 +88,7 @@ class OverviewReport(GridPivot):
   rows = (
     GridFieldText('forecast', title=_('forecast'), key=True, field_name='name', formatter='forecast', editable=False),
     GridFieldText('item', title=_('item'), field_name='item__name', formatter='item', editable=False),
-    GridFieldText('customer', title=_('customer'), field_name='customer__name', formatter='customer', editable=False),
-    GridFieldGraph('graph', title=_('graph'), width="(5*numbuckets<200 ? 5*numbuckets : 200)"),
+    GridFieldText('customer', title=_('customer'), field_name='customer__name', formatter='customer', editable=False)
     )
   crosses = (
     ('orderstotal',{'title': _('total orders')}),
