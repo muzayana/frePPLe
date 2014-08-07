@@ -257,7 +257,3 @@ class OverviewReport(GridPivot):
     if ok: resp.write("OK")
     resp.status_code = ok and 200 or 403
     return resp
-
-
-class AnalysisReport(OverviewReport):
-  template = 'forecast/forecast_analysis.html'
