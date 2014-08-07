@@ -84,7 +84,8 @@ class GridField(object):
     self.name = name
     for key, value in kwargs.iteritems():
       setattr(self, key, value)
-    if 'key' in kwargs: self.editable = False
+    if 'key' in kwargs:
+      self.editable = False
     if not 'title' in kwargs and not self.title:
       self.title = self.name and _(self.name) or ''
     if not self.name:
@@ -99,14 +100,22 @@ class GridField(object):
            force_unicode(self.title).title().replace("'","\\'"),
            self.width, self.align
            ), ]
-    if self.key: o.append( ",key:true" )
-    if not self.sortable: o.append(",sortable:false")
-    if not self.search: o.append(",search:false")
-    if self.formatter: o.append(",formatter:'%s'" % self.formatter)
-    if self.unformat: o.append(",unformat:'%s'" % self.unformat)
-    if self.searchrules: o.append(",searchrules:{%s}" % self.searchrules)
-    if self.hidden: o.append(",hidden:true,alwayshidden:true")
-    if self.extra: o.append(",%s" % force_unicode(self.extra))
+    if self.key:
+      o.append( ",key:true" )
+    if not self.sortable:
+      o.append(",sortable:false")
+    if not self.search:
+      o.append(",search:false")
+    if self.formatter:
+      o.append(",formatter:'%s'" % self.formatter)
+    if self.unformat:
+      o.append(",unformat:'%s'" % self.unformat)
+    if self.searchrules:
+      o.append(",searchrules:{%s}" % self.searchrules)
+    if self.hidden:
+      o.append(",hidden:true")
+    if self.extra:
+      o.append(",%s" % force_unicode(self.extra))
     return ''.join(o)
 
   name = None
@@ -209,12 +218,18 @@ def getBOM(encoding):
     name = codecs.lookup(encoding).name
   except:
     return ''  # Unknown encoding, without BOM header
-  if name == 'utf-32-be': return codecs.BOM_UTF32_BE
-  elif name == 'utf-32-le': return codecs.BOM_UTF32_LE
-  elif name == 'utf-16-be': return codecs.BOM_UTF16_BE
-  elif name == 'utf-16-le': return codecs.BOM_UTF16_LE
-  elif name == 'utf-8': return codecs.BOM_UTF8
-  else: return ''
+  if name == 'utf-32-be':
+    return codecs.BOM_UTF32_BE
+  elif name == 'utf-32-le':
+    return codecs.BOM_UTF32_LE
+  elif name == 'utf-16-be':
+    return codecs.BOM_UTF16_BE
+  elif name == 'utf-16-le':
+    return codecs.BOM_UTF16_LE
+  elif name == 'utf-8':
+    return codecs.BOM_UTF8
+  else:
+    return ''
 
 
 class UTF8Recoder:
@@ -362,8 +377,10 @@ class GridReport(View):
     try:
       bucket = Bucket.objects.using(request.database).get(name=pref.horizonbuckets)
     except:
-      try: bucket = Bucket.objects.using(request.database).order_by('name')[0].name
-      except: bucket = None
+      try:
+        bucket = Bucket.objects.using(request.database).order_by('name')[0].name
+      except:
+        bucket = None
 
     if pref.horizontype:
       # First type: Start and end dates relative to current
@@ -414,8 +431,10 @@ class GridReport(View):
     request.report_bucket = unicode(bucket)
     if bucket:
       res = BucketDetail.objects.using(request.database).filter(bucket=bucket)
-      if start: res = res.filter(enddate__gt=start)
-      if end: res = res.filter(startdate__lt=end)
+      if start:
+        res = res.filter(enddate__gt=start)
+      if end:
+        res = res.filter(startdate__lt=end)
       request.report_bucketlist = res.values('name','startdate','enddate')
     else:
       request.report_bucketlist = []
@@ -467,7 +486,7 @@ class GridReport(View):
   @classmethod
   def _generate_spreadsheet_data(reportclass, request, *args, **kwargs):
     # Create a workbook
-    wb = Workbook(optimized_write = True)
+    wb = Workbook(optimized_write=True)
     title = force_unicode(reportclass.model and reportclass.model._meta.verbose_name or reportclass.title)
     ws = wb.create_sheet(title=title)
 
@@ -500,9 +519,9 @@ class GridReport(View):
     output = StringIO()
     wb.save(output)
     response = HttpResponse(
-       mimetype = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-       content = output.getvalue()
-       )
+      mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      content=output.getvalue()
+      )
     response['Content-Disposition'] = 'attachment; filename=%s.xlsx' % title
     response['Cache-Control'] = "no-cache, no-store"
     return response
@@ -570,14 +589,17 @@ class GridReport(View):
     sort = None
     if 'sidx' in request.GET:
       sort = request.GET['sidx']
-      if 'sord' in request.GET and request.GET['sord'] == 'desc': asc = False
+      if 'sord' in request.GET and request.GET['sord'] == 'desc':
+        asc = False
     if not sort:
       if prefs and 'sidx' in prefs:
         sort = prefs['sidx']
-        if 'sord' in prefs and prefs['sord'] == 'desc': asc = False
+        if 'sord' in prefs and prefs['sord'] == 'desc':
+          asc = False
       if not sort and reportclass.default_sort:
         sort = reportclass.rows[reportclass.default_sort[0]].name
-        if reportclass.default_sort[1] == 'desc': asc = False
+        if reportclass.default_sort[1] == 'desc':
+          asc = False
       else:
         return query  # No sorting
     return query.order_by(asc and sort or ('-%s' % sort))
@@ -594,7 +616,8 @@ class GridReport(View):
             ok = True
             break
           sort += 1
-        if not ok: sort = reportclass.default_sort[0]
+        if not ok:
+          sort = reportclass.default_sort[0]
       else:
         sort = reportclass.default_sort[0]
     except:
@@ -614,8 +637,10 @@ class GridReport(View):
       query = reportclass.filter_items(request, reportclass.basequeryset).using(request.database)
     recs = query.count()
     total_pages = math.ceil(float(recs) / request.pagesize)
-    if page > total_pages: page = total_pages
-    if page < 1: page = 1
+    if page > total_pages:
+      page = total_pages
+    if page < 1:
+      page = 1
     query = reportclass._apply_sort(request, query, request.user.getPreference(reportclass.getKey()))
 
     yield '{"total":%d,\n' % total_pages
@@ -635,9 +660,10 @@ class GridReport(View):
         r = [ ',\n{' ]
       first2 = True
       for f in reportclass.rows:
-        if not f.name: continue
+        if not f.name:
+          continue
         if isinstance(i[f.field_name], basestring) or isinstance(i[f.field_name], (list,tuple)):
-          s = json.dumps(i[f.field_name], encoding = settings.DEFAULT_CHARSET)
+          s = json.dumps(i[f.field_name], encoding=settings.DEFAULT_CHARSET)
         else:
           s = '"%s"' % i[f.field_name]
         if first2:
@@ -728,9 +754,9 @@ class GridReport(View):
     elif fmt == 'json':
       # Return JSON data to fill the grid.
       response = StreamingHttpResponse(
-         content_type = 'application/json; charset=%s' % settings.DEFAULT_CHARSET,
-         streaming_content = reportclass._generate_json_data(request, *args, **kwargs)
-         )
+        content_type='application/json; charset=%s' % settings.DEFAULT_CHARSET,
+        streaming_content=reportclass._generate_json_data(request, *args, **kwargs)
+        )
       response['Cache-Control'] = "no-cache, no-store"
       return response
     elif fmt in ('spreadsheetlist','spreadsheettable','spreadsheet'):
@@ -739,9 +765,9 @@ class GridReport(View):
     elif fmt in ('csvlist','csvtable','csv'):
       # Return CSV data to export the data
       response = StreamingHttpResponse(
-         content_type = 'text/csv; charset=%s' % settings.CSV_CHARSET,
-         streaming_content = reportclass._generate_csv_data(request, *args, **kwargs)
-         )
+        content_type='text/csv; charset=%s' % settings.CSV_CHARSET,
+        streaming_content=reportclass._generate_csv_data(request, *args, **kwargs)
+        )
       response['Content-Disposition'] = 'attachment; filename=%s.csv' % iri_to_uri(reportclass.title.lower())
       response['Cache-Control'] = "no-cache, no-store"
       return response
@@ -771,11 +797,11 @@ class GridReport(View):
               obj = reportclass.model.objects.using(request.database).get(pk=key)
               obj.delete()
               LogEntry(
-                  user_id = request.user.id,
-                  content_type_id = content_type_id,
-                  object_id = force_unicode(key),
-                  object_repr = force_unicode(key)[:200],
-                  action_flag = DELETION
+                user_id=request.user.id,
+                content_type_id=content_type_id,
+                object_id=force_unicode(key),
+                object_repr=force_unicode(key)[:200],
+                action_flag=DELETION
               ).save(using=request.database)
             except reportclass.model.DoesNotExist:
               ok = False
@@ -802,12 +828,12 @@ class GridReport(View):
                 raise Exception(_("Can't copy %s") % reportclass.model._meta.app_label)
               obj.save(using=request.database, force_insert=True)
               LogEntry(
-                  user_id = request.user.pk,
-                  content_type_id = content_type_id,
-                  object_id = obj.pk,
-                  object_repr = force_unicode(obj),
-                  action_flag = ADDITION,
-                  change_message = _('Copied from %s.') % key
+                user_id=request.user.pk,
+                content_type_id=content_type_id,
+                object_id=obj.pk,
+                object_repr=force_unicode(obj),
+                action_flag=ADDITION,
+                change_message=_('Copied from %s.') % key
               ).save(using=request.database)
               transaction.commit(using=request.database)
             except reportclass.model.DoesNotExist:
@@ -829,20 +855,20 @@ class GridReport(View):
             del rec['id']
             UploadForm = modelform_factory(
               reportclass.model,
-              fields = tuple(rec.keys()),
-              formfield_callback = lambda f: (isinstance(f, RelatedField) and f.formfield(using=request.database)) or f.formfield()
+              fields=tuple(rec.keys()),
+              formfield_callback=lambda f: (isinstance(f, RelatedField) and f.formfield(using=request.database)) or f.formfield()
               )
             form = UploadForm(rec, instance=obj)
             if form.has_changed():
               obj = form.save(commit=False)
               obj.save(using=request.database)
               LogEntry(
-                  user_id = request.user.pk,
-                  content_type_id = content_type_id,
-                  object_id = obj.pk,
-                  object_repr = force_unicode(obj),
-                  action_flag = CHANGE,
-                  change_message = _('Changed %s.') % get_text_list(form.changed_data, _('and'))
+                user_id=request.user.pk,
+                content_type_id=content_type_id,
+                object_id=obj.pk,
+                object_repr=force_unicode(obj),
+                action_flag=CHANGE,
+                change_message=_('Changed %s.') % get_text_list(form.changed_data, _('and'))
               ).save(using=request.database)
           except reportclass.model.DoesNotExist:
             ok = False
@@ -864,7 +890,8 @@ class GridReport(View):
     finally:
       transaction.commit(using=request.database)
       transaction.leave_transaction_management(using=request.database)
-    if ok: resp.write("OK")
+    if ok:
+      resp.write("OK")
     resp.status_code = ok and 200 or 500
     return resp
 
@@ -889,25 +916,22 @@ class GridReport(View):
       if not request.user.has_perm('%s.%s' % (m._meta.app_label, m._meta.get_delete_permission())):
         return string_concat(m._meta.verbose_name, ':', _('Permission denied'))
 
-    transaction.enter_transaction_management(using=request.database)
-    try:
-      # Delete the data records
-      cursor = connections[request.database].cursor()
+    # Delete the data records
+    cursor = connections[request.database].cursor()
+    with transaction.atomic(using=request.database):
       sql_list = connections[request.database].ops.sql_flush(no_style(), [m._meta.db_table for m in deps], [] )
       for sql in sql_list:
         cursor.execute(sql)
-        transaction.commit(using=request.database)
       # Erase comments and history
       content_ids = [ContentType.objects.get_for_model(m) for m in deps]
       LogEntry.objects.filter(content_type__in=content_ids).delete()
-      transaction.commit(using=request.database)
       Comment.objects.filter(content_type__in=content_ids).delete()
-      transaction.commit(using=request.database)
-    except Exception as e:
-      return str(e)
-    finally:
-      transaction.commit(using=request.database)
-      transaction.leave_transaction_management(using=request.database)
+      # Prepare message
+      for m in deps:
+        messages.add_message(
+          request, messages.INFO,
+          _('Erasing data from %(model)s') % {'model': force_unicode(m._meta.verbose_name)}
+          )
 
     # Finished successfully
     return None
@@ -931,13 +955,6 @@ class GridReport(View):
         messages.add_message(request, messages.ERROR, _('Permission denied'))
         return HttpResponseRedirect(request.prefix + request.get_full_path())
 
-      # Erase all records and related tables
-      if 'erase' in request.POST:
-        returnvalue = reportclass.erase(request)
-        if returnvalue:
-          messages.add_message(request, messages.ERROR, returnvalue)
-          return HttpResponseRedirect(request.prefix + request.get_full_path())
-
       # Choose the right delimiter and language
       delimiter = get_format('DECIMAL_SEPARATOR', request.LANGUAGE_CODE, True) == ',' and ';' or ','
       if translation.get_language() != request.LANGUAGE_CODE:
@@ -952,8 +969,16 @@ class GridReport(View):
       errors = []
       content_type_id = ContentType.objects.get_for_model(reportclass.model).pk
 
-      transaction.enter_transaction_management(using=request.database)
-      try:
+      # Handle the complete upload as a single database transaction
+      with transaction.atomic(using=request.database):
+
+        # Erase all records and related tables
+        if 'erase' in request.POST:
+          returnvalue = reportclass.erase(request)
+          if returnvalue:
+            messages.add_message(request, messages.ERROR, returnvalue)
+            return HttpResponseRedirect(request.prefix + request.get_full_path())
+
         # Loop through the data records
         has_pk_field = False
         for row in UnicodeReader(request.FILES['csv_file'].read(), delimiter=delimiter):
@@ -975,7 +1000,8 @@ class GridReport(View):
                     headers.append(False)
                   ok = True
                   break
-              if not ok: errors.append(_('Incorrect field %(column)s') % {'column': col})
+              if not ok:
+                errors.append(_('Incorrect field %(column)s') % {'column': col})
               if col == reportclass.model._meta.pk.name.lower() \
                 or col == reportclass.model._meta.pk.verbose_name.lower():
                   has_pk_field = True
@@ -983,13 +1009,14 @@ class GridReport(View):
               # The primary key is not an auto-generated id and it is not mapped in the input...
               errors.append(_('Missing primary key field %(key)s') % {'key': reportclass.model._meta.pk.name})
             # Abort when there are errors
-            if len(errors) > 0: break
+            if len(errors) > 0:
+              break
 
             # Create a form class that will be used to validate the data
             UploadForm = modelform_factory(
               reportclass.model,
-              fields = tuple([i.name for i in headers if isinstance(i,Field)]),
-              formfield_callback = lambda f: (isinstance(f, RelatedField) and f.formfield(using=request.database, localize=True)) or f.formfield(localize=True)
+              fields=tuple([i.name for i in headers if isinstance(i,Field)]),
+              formfield_callback=lambda f: (isinstance(f, RelatedField) and f.formfield(using=request.database, localize=True)) or f.formfield(localize=True)
               )
 
           ### Case 2: Skip empty rows and comments rows
@@ -1004,8 +1031,10 @@ class GridReport(View):
               colnum = 0
               for col in row:
                 # More fields in data row than headers. Move on to the next row.
-                if colnum >= len(headers): break
-                if isinstance(headers[colnum],Field): d[headers[colnum].name] = col.strip()
+                if colnum >= len(headers):
+                  break
+                if isinstance(headers[colnum],Field):
+                  d[headers[colnum].name] = col.strip()
                 colnum += 1
 
               # Step 2: Fill the form with data, either updating an existing
@@ -1027,20 +1056,21 @@ class GridReport(View):
               # Step 3: Validate the data and save to the database
               if form.has_changed():
                 try:
-                  obj = form.save(commit=False)
-                  obj.save(using=request.database)
-                  LogEntry(
-                      user_id = request.user.pk,
-                      content_type_id = content_type_id,
-                      object_id = obj.pk,
-                      object_repr = force_unicode(obj),
-                      action_flag = it and CHANGE or ADDITION,
-                      change_message = _('Changed %s.') % get_text_list(form.changed_data, _('and'))
-                  ).save(using=request.database)
-                  if it:
-                    changed += 1
-                  else:
-                    added += 1
+                  with transaction.atomic(using=request.database):
+                    obj = form.save(commit=False)
+                    obj.save(using=request.database)
+                    LogEntry(
+                      user_id=request.user.pk,
+                      content_type_id=content_type_id,
+                      object_id=obj.pk,
+                      object_repr=force_unicode(obj),
+                      action_flag=it and CHANGE or ADDITION,
+                      change_message=_('Changed %s.') % get_text_list(form.changed_data, _('and'))
+                    ).save(using=request.database)
+                    if it:
+                      changed += 1
+                    else:
+                      added += 1
                 except Exception as e:
                   # Validation fails
                   for error in form.non_field_errors():
@@ -1055,14 +1085,8 @@ class GridReport(View):
                           'rownum': rownumber, 'data': d[field.name],
                           'field': field.name, 'message': error
                         })
-
-              # Step 4: Commit the database changes from time to time
-              if rownumber % 500 == 0: transaction.commit(using=request.database)
             except Exception as e:
               errors.append(_("Exception during upload: %(message)s") % {'message': e,})
-      finally:
-        transaction.commit(using=request.database)
-        transaction.leave_transaction_management(using=request.database)
 
       # Report all failed records
       if len(errors) > 0:
@@ -1070,13 +1094,15 @@ class GridReport(View):
           request, messages.INFO,
           _('File upload aborted with errors: changed %(changed)d and added %(added)d records') % {'changed': changed, 'added': added}
           )
-        for i in errors: messages.add_message(request, messages.INFO, i)
+        for i in errors:
+          messages.add_message(request, messages.INFO, i)
       elif len(warnings) > 0:
         messages.add_message(
           request, messages.INFO,
           _('Uploaded file processed with warnings: changed %(changed)d and added %(added)d records') % {'changed': changed, 'added': added}
           )
-        for i in warnings: messages.add_message(request, messages.INFO, i)
+        for i in warnings:
+          messages.add_message(request, messages.INFO, i)
       else:
         messages.add_message(
           request, messages.INFO,
@@ -1104,13 +1130,6 @@ class GridReport(View):
         messages.add_message(request, messages.ERROR, _('Permission denied'))
         return HttpResponseRedirect(request.prefix + request.get_full_path())
 
-      # Erase all records and related tables
-      if 'erase' in request.POST:
-        returnvalue = reportclass.erase(request)
-        if returnvalue:
-          messages.add_message(request, messages.ERROR, returnvalue)
-          return HttpResponseRedirect(request.prefix + request.get_full_path())
-
       # Choose the right language
       if translation.get_language() != request.LANGUAGE_CODE:
         translation.activate(request.LANGUAGE_CODE)
@@ -1124,10 +1143,18 @@ class GridReport(View):
       errors = []
       content_type_id = ContentType.objects.get_for_model(reportclass.model).pk
 
-      transaction.enter_transaction_management(using=request.database)
-      try:
+      # Handle the complete upload as a single database transaction
+      with transaction.atomic(using=request.database):
+
+        # Erase all records and related tables
+        if 'erase' in request.POST:
+          returnvalue = reportclass.erase(request)
+          if returnvalue:
+            messages.add_message(request, messages.ERROR, returnvalue)
+            return HttpResponseRedirect(request.prefix + request.get_full_path())
+
         # Loop through the data records
-        wb = load_workbook(filename = request.FILES['csv_file'], use_iterators = True, data_only=True)
+        wb = load_workbook(filename=request.FILES['csv_file'], use_iterators=True, data_only=True)
         ws = wb.worksheets[0]
         has_pk_field = False
         for row in ws.iter_rows():
@@ -1149,7 +1176,8 @@ class GridReport(View):
                     headers.append(False)
                   ok = True
                   break
-              if not ok: errors.append(_('Incorrect field %(column)s') % {'column': col})
+              if not ok:
+                errors.append(_('Incorrect field %(column)s') % {'column': col})
               if col == reportclass.model._meta.pk.name.lower() \
                 or col == reportclass.model._meta.pk.verbose_name.lower():
                   has_pk_field = True
@@ -1157,13 +1185,14 @@ class GridReport(View):
               # The primary key is not an auto-generated id and it is not mapped in the input...
               errors.append(_('Missing primary key field %(key)s') % {'key': reportclass.model._meta.pk.name})
             # Abort when there are errors
-            if len(errors) > 0: break
+            if len(errors) > 0:
+              break
 
             # Create a form class that will be used to validate the data
             UploadForm = modelform_factory(
               reportclass.model,
-              fields = tuple([i.name for i in headers if isinstance(i,Field)]),
-              formfield_callback = lambda f: (isinstance(f, RelatedField) and f.formfield(using=request.database, localize=True)) or f.formfield(localize=True)
+              fields=tuple([i.name for i in headers if isinstance(i,Field)]),
+              formfield_callback=lambda f: (isinstance(f, RelatedField) and f.formfield(using=request.database, localize=True)) or f.formfield(localize=True)
               )
 
           ### Case 2: Skip empty rows and comments rows
@@ -1178,14 +1207,16 @@ class GridReport(View):
               colnum = 0
               for col in row:
                 # More fields in data row than headers. Move on to the next row.
-                if colnum >= len(headers): break
+                if colnum >= len(headers):
+                  break
                 if isinstance(headers[colnum],Field):
                   data = col.internal_value
                   if isinstance(headers[colnum],CharField):
                     if data and isinstance(data, six.string_types):
                       data = data.strip()
                   elif isinstance(headers[colnum], (IntegerField, AutoField)):
-                    if isinstance(data, numericTypes): data = int(data)
+                    if isinstance(data, numericTypes):
+                      data = int(data)
                   d[headers[colnum].name] = data
                 colnum += 1
 
@@ -1208,20 +1239,21 @@ class GridReport(View):
               # Step 3: Validate the data and save to the database
               if form.has_changed():
                 try:
-                  obj = form.save(commit=False)
-                  obj.save(using=request.database)
-                  LogEntry(
-                      user_id = request.user.pk,
-                      content_type_id = content_type_id,
-                      object_id = obj.pk,
-                      object_repr = force_unicode(obj),
-                      action_flag = it and CHANGE or ADDITION,
-                      change_message = _('Changed %s.') % get_text_list(form.changed_data, _('and'))
-                  ).save(using=request.database)
-                  if it:
-                    changed += 1
-                  else:
-                    added += 1
+                  with transaction.atomic(using=request.database):
+                    obj = form.save(commit=False)
+                    obj.save(using=request.database)
+                    LogEntry(
+                      user_id=request.user.pk,
+                      content_type_id=content_type_id,
+                      object_id=obj.pk,
+                      object_repr=force_unicode(obj),
+                      action_flag=it and CHANGE or ADDITION,
+                      change_message=_('Changed %s.') % get_text_list(form.changed_data, _('and'))
+                    ).save(using=request.database)
+                    if it:
+                      changed += 1
+                    else:
+                      added += 1
                 except Exception as e:
                   # Validation fails
                   for error in form.non_field_errors():
@@ -1236,14 +1268,8 @@ class GridReport(View):
                           'rownum': rownumber, 'data': d[field.name],
                           'field': field.name, 'message': error
                         })
-
-              # Step 4: Commit the database changes from time to time
-              if rownumber % 500 == 0: transaction.commit(using=request.database)
             except Exception as e:
               errors.append(_("Exception during upload: %(message)s") % {'message': e,})
-      finally:
-        transaction.commit(using=request.database)
-        transaction.leave_transaction_management(using=request.database)
 
       # Report all failed records
       if len(errors) > 0:
@@ -1251,13 +1277,15 @@ class GridReport(View):
           request, messages.INFO,
           _('File upload aborted with errors: changed %(changed)d and added %(added)d records') % {'changed': changed, 'added': added}
           )
-        for i in errors: messages.add_message(request, messages.INFO, i)
+        for i in errors:
+          messages.add_message(request, messages.INFO, i)
       elif len(warnings) > 0:
         messages.add_message(
           request, messages.INFO,
           _('Uploaded file processed with warnings: changed %(changed)d and added %(added)d records') % {'changed': changed, 'added': added}
           )
-        for i in warnings: messages.add_message(request, messages.INFO, i)
+        for i in warnings:
+          messages.add_message(request, messages.INFO, i)
       else:
         messages.add_message(
           request, messages.INFO,
@@ -1322,8 +1350,10 @@ class GridReport(View):
           try:
             filters.append('{"field":"%s","op":"%s","data":"%s"},' % (r.field_name, reportclass._filter_map_django_jqgrid[operator], j.replace('"','\\"')))
             filtered = True
-          except: pass  # Ignore invalid operators
-    if not filtered: return None
+          except:
+            pass  # Ignore invalid operators
+    if not filtered:
+      return None
     filters.append(']}')
     return ''.join(filters)
 
@@ -1350,7 +1380,8 @@ class GridReport(View):
       for group in filterdata['groups']:
         try:
           z = reportclass._get_q_filter(group)
-          if z: q_filters.append(z)
+          if z:
+            q_filters.append(z)
         except:
           pass  # Silently ignore invalid groups
     if len(q_filters) == 0:
@@ -1397,8 +1428,10 @@ class GridReport(View):
       for i,j in request.GET.iteritems():
         for r in reportclass.rows:
           if r.name and i.startswith(r.field_name):
-            try: items = items.filter(**{i:j})
-            except: pass  # silently ignore invalid filters
+            try:
+              items = items.filter(**{i:j})
+            except:
+              pass  # silently ignore invalid filters
     return items
 
 
@@ -1435,7 +1468,7 @@ class GridPivot(GridReport):
 
 
   @classmethod
-  def _render_colmodel(cls, is_popup = False, prefs = None, mode = "graph"):
+  def _render_colmodel(cls, is_popup=False, prefs=None, mode="graph"):
     if not prefs:
       rows = [ (i,False,cls.rows[i].width) for i in range(len(cls.rows)) ]
     else:
@@ -1504,8 +1537,10 @@ class GridPivot(GridReport):
       else:
         recs = reportclass.filter_items(request, reportclass.basequeryset).using(request.database).count()
       total_pages = math.ceil(float(recs) / request.pagesize)
-      if page > total_pages: page = total_pages
-      if page < 1: page = 1
+      if page > total_pages:
+        page = total_pages
+      if page < 1:
+        page = 1
       cnt = (page - 1) * request.pagesize + 1
       if callable(reportclass.basequeryset):
         query = reportclass.query(
@@ -1548,7 +1583,8 @@ class GridPivot(GridReport):
               first2 = False
             elif i[f.name] is not None:
               r.append(', "%s":"%s"' % (f.name,s))
-          except: pass
+          except:
+            pass
       r.append(', "%s":[' % i['bucket'])
       first2 = True
       for f in reportclass.crosses:
@@ -1688,7 +1724,7 @@ class GridPivot(GridReport):
   @classmethod
   def _generate_spreadsheet_data(reportclass, request, *args, **kwargs):
     # Create a workbook
-    wb = Workbook(optimized_write = True)
+    wb = Workbook(optimized_write=True)
     ws = wb.create_sheet(title=force_unicode(reportclass.model._meta.verbose_name))
 
     # Prepare the query
@@ -1746,7 +1782,8 @@ class GridPivot(GridReport):
         else:
           # Write a row
           for cross in mycrosses:
-            if 'visible' in cross[1] and not cross[1]['visible']: continue
+            if 'visible' in cross[1] and not cross[1]['visible']:
+              continue
             fields = [ _getCellValue(row_of_buckets[0][s.name]) for s in myrows ]
             fields.extend([ _getCellValue(('title' in cross[1] and capfirst(_(cross[1]['title'])) or capfirst(_(cross[0])))) ])
             fields.extend([ _getCellValue(bucket[cross[0]]) for bucket in row_of_buckets ])
@@ -1755,7 +1792,8 @@ class GridPivot(GridReport):
           row_of_buckets = [row]
       # Write the last row
       for cross in mycrosses:
-        if 'visible' in cross[1] and not cross[1]['visible']: continue
+        if 'visible' in cross[1] and not cross[1]['visible']:
+          continue
         fields = [ _getCellValue(row_of_buckets[0][s.name]) for s in myrows ]
         fields.extend([ _getCellValue(('title' in cross[1] and capfirst(_(cross[1]['title'])) or capfirst(_(cross[0])))) ])
         fields.extend([ _getCellValue(bucket[cross[0]]) for bucket in row_of_buckets ])
@@ -1765,9 +1803,9 @@ class GridPivot(GridReport):
     output = StringIO()
     wb.save(output)
     response = HttpResponse(
-       mimetype = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-       content = output.getvalue()
-       )
+      mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      content=output.getvalue()
+      )
     response['Content-Disposition'] = 'attachment; filename=%s.xlsx' % reportclass.model._meta.model_name
     response['Cache-Control'] = "no-cache, no-store"
     return response
@@ -1794,14 +1832,16 @@ def _localize(value, decimal_separator):
 
 
 def _getCellValue(data):
-  if data is None: return ''
-  if isinstance(data, numericTypes): return data
+  if data is None:
+    return ''
+  if isinstance(data, numericTypes):
+    return data
   return unicode(data)
 
 
 def exportWorkbook(request):
   # Create a workbook
-  wb = Workbook(optimized_write = True)
+  wb = Workbook(optimized_write=True)
 
   # Loop over all selected entity types
   ok = False
@@ -1861,15 +1901,16 @@ def exportWorkbook(request):
       pass  # Silently ignore the error and move on to the next entity.
 
   # Not a single entity to export
-  if not ok: raise Exception(_("Nothing to export"))
+  if not ok:
+    raise Exception(_("Nothing to export"))
 
   # Write the excel from memory to a string and then to a HTTP response
   output = StringIO()
   wb.save(output)
   response = HttpResponse(
-     mimetype = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-     content = output.getvalue()
-     )
+    mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    content=output.getvalue()
+    )
   response['Content-Disposition'] = 'attachment; filename=frepple.xlsx'
   response['Cache-Control'] = "no-cache, no-store"
   return response
@@ -1887,7 +1928,7 @@ def importWorkbook(request):
   all_models = [ (ct.model_class(),ct.pk) for ct in ContentType.objects.all() if ct.model_class() ]
   with transaction.atomic(using=request.database):
     # Find all models in the workbook
-    wb = load_workbook(filename = request.FILES['spreadsheet'], use_iterators = True, data_only=True)
+    wb = load_workbook(filename=request.FILES['spreadsheet'], use_iterators=True, data_only=True)
     models = []
     for ws_name in wb.get_sheet_names():
       # Find the model
@@ -1974,8 +2015,8 @@ def importWorkbook(request):
               break
             uploadform = modelform_factory(
               model,
-              fields = tuple([i.name for i in headers if isinstance(i,Field)]),
-              formfield_callback = lambda f: (isinstance(f, RelatedField) and f.formfield(using=request.database, localize=True)) or f.formfield(localize=True)
+              fields=tuple([i.name for i in headers if isinstance(i,Field)]),
+              formfield_callback=lambda f: (isinstance(f, RelatedField) and f.formfield(using=request.database, localize=True)) or f.formfield(localize=True)
               )
           else:
             # Process a data row
@@ -1984,14 +2025,16 @@ def importWorkbook(request):
             colnum = 0
             for cell in row:
               # More fields in data row than headers. Move on to the next row.
-              if colnum >= len(headers): break
+              if colnum >= len(headers):
+                break
               if isinstance(headers[colnum],Field):
                 data = cell.internal_value
                 if isinstance(headers[colnum],CharField):
                   if data and isinstance(data, six.string_types):
                     data = data.strip()
                 elif isinstance(headers[colnum], (IntegerField, AutoField)):
-                  if isinstance(data, numericTypes): data = int(data)
+                  if isinstance(data, numericTypes):
+                    data = int(data)
                 d[headers[colnum].name] = data
               colnum += 1
             # Step 2: Fill the form with data, either updating an existing
@@ -2017,12 +2060,12 @@ def importWorkbook(request):
                   obj = form.save(commit=False)
                   obj.save(using=request.database)
                   LogEntry(
-                      user_id = request.user.pk,
-                      content_type_id = contenttype_id,
-                      object_id = obj.pk,
-                      object_repr = force_unicode(obj),
-                      action_flag = it and CHANGE or ADDITION,
-                      change_message = _('Changed %s.') % get_text_list(form.changed_data, _('and'))
+                    user_id=request.user.pk,
+                    content_type_id=contenttype_id,
+                    object_id=obj.pk,
+                    object_repr=force_unicode(obj),
+                    action_flag=it and CHANGE or ADDITION,
+                    change_message=_('Changed %s.') % get_text_list(form.changed_data, _('and'))
                   ).save(using=request.database)
                   if it:
                     changed += 1
@@ -2053,9 +2096,9 @@ def importWorkbook(request):
 
   if errors:
     response = HttpResponse(
-       mimetype = 'text/plain',
-       content = '\n'.join(errors)
-       )
+      mimetype='text/plain',
+      content='\n'.join(errors)
+      )
     response['Content-Disposition'] = 'attachment; filename=errors.txt'
     return response
   else:

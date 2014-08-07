@@ -34,7 +34,7 @@ import frepple
 
 class exportStaticModel(object):
 
-  def __init__(self, database = None, source = None):
+  def __init__(self, database=None, source=None):
     if database:
       self.database = database
     elif 'FREPPLE_DATABASE' in os.environ:
@@ -109,7 +109,8 @@ class exportStaticModel(object):
       cursor.execute("SELECT max(id) FROM calendarbucket")
       cnt = cursor.fetchone()[0] or 1
       for c in frepple.calendars():
-        if self.source and self.source != c.source: continue
+        if self.source and self.source != c.source:
+          continue
         for i in c.buckets:
           cnt += 1
           yield i, cnt
@@ -781,7 +782,7 @@ class exportStaticModel(object):
     '''
     This function exports the data from the frePPLe memory into the database.
     '''
-    transaction.set_autocommit(False, using = self.database)
+    transaction.set_autocommit(False, using=self.database)
     try:
       # Make sure the debug flag is not set!
       # When it is set, the django database wrapper collects a list of all sql
@@ -844,9 +845,11 @@ class exportStaticModel(object):
             DatabaseTask(self, self.exportCustomers, self.exportDemands, self.exportForecasts, self.exportForecastDemands),
             )
           # Start all threads
-          for i in tasks: i.start()
+          for i in tasks:
+            i.start()
           # Wait for all threads to finish
-          for i in tasks: i.join()
+          for i in tasks:
+            i.join()
         except Exception as e:
           print("Error exporting static model:", e)
 
@@ -877,10 +880,10 @@ class exportStaticModel(object):
 
       # Close the database connection
       cursor.close()
-      transaction.commit(using = self.database)
+      transaction.commit(using=self.database)
     finally:
-      transaction.rollback(using = self.database)
-      transaction.set_autocommit(True, using = self.database)
+      transaction.rollback(using=self.database)
+      transaction.set_autocommit(True, using=self.database)
 
 
 class DatabaseTask(Thread):
@@ -894,7 +897,7 @@ class DatabaseTask(Thread):
     self.functions = f
 
   def run(self):
-    transaction.set_autocommit(False, using = self.export.database)
+    transaction.set_autocommit(False, using=self.export.database)
     try:
       # Create a database connection
       cursor = connections[self.export.database].cursor()
@@ -907,12 +910,14 @@ class DatabaseTask(Thread):
 
       # Run the functions sequentially
       for f in self.functions:
-        try: f(cursor)
-        except: traceback.print_exc()
+        try:
+          f(cursor)
+        except:
+          traceback.print_exc()
 
       # Close the connection
       cursor.close()
       transaction.commit(using=self.export.database)
     finally:
-      transaction.rollback(using = self.export.database)
-      transaction.set_autocommit(True, using = self.export.database)
+      transaction.rollback(using=self.export.database)
+      transaction.set_autocommit(True, using=self.export.database)

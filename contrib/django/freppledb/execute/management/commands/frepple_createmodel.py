@@ -100,31 +100,56 @@ class Command(BaseCommand):
     settings.DEBUG = False
 
     # Pick up the options
-    if 'verbosity' in options: verbosity = int(options['verbosity'])
-    else: verbosity = 1
-    if 'cluster' in options: cluster = int(options['cluster'])
-    else: cluster = 100
-    if 'demand' in options: demand = int(options['demand'])
-    else: demand = 30
-    if 'forecast_per_item' in options: forecast_per_item = int(options['forecast_per_item'])
-    else: forecast_per_item = 50
-    if 'level' in options: level = int(options['level'])
-    else: level = 5
-    if 'resource' in options: resource = int(options['resource'])
-    else: resource = 60
-    if 'resource_size' in options: resource_size = int(options['resource_size'])
-    else: resource_size = 5
-    if 'components' in options: components = int(options['components'])
-    else: components = 200
-    if 'components_per' in options: components_per = int(options['components_per'])
-    else: components_per = 5
-    if components == 0: components_per = 0
-    if 'deliver_lt' in options: deliver_lt = int(options['deliver_lt'])
-    else: deliver_lt = 30
-    if 'procure_lt' in options: procure_lt = int(options['procure_lt'])
-    else: procure_lt = 40
-    if 'currentdate' in options: currentdate = options['currentdate'] or datetime.strftime(date.today(),'%Y-%m-%d')
-    else: currentdate = datetime.strftime(date.today(),'%Y-%m-%d')
+    if 'verbosity' in options:
+      verbosity = int(options['verbosity'])
+    else:
+      verbosity = 1
+    if 'cluster' in options:
+      cluster = int(options['cluster'])
+    else:
+      cluster = 100
+    if 'demand' in options:
+      demand = int(options['demand'])
+    else:
+      demand = 30
+    if 'forecast_per_item' in options:
+      forecast_per_item = int(options['forecast_per_item'])
+    else:
+      forecast_per_item = 50
+    if 'level' in options:
+      level = int(options['level'])
+    else:
+      level = 5
+    if 'resource' in options:
+      resource = int(options['resource'])
+    else:
+      resource = 60
+    if 'resource_size' in options:
+      resource_size = int(options['resource_size'])
+    else:
+      resource_size = 5
+    if 'components' in options:
+      components = int(options['components'])
+    else:
+      components = 200
+    if 'components_per' in options:
+      components_per = int(options['components_per'])
+    else:
+      components_per = 5
+    if components == 0:
+      components_per = 0
+    if 'deliver_lt' in options:
+      deliver_lt = int(options['deliver_lt'])
+    else:
+      deliver_lt = 30
+    if 'procure_lt' in options:
+      procure_lt = int(options['procure_lt'])
+    else:
+      procure_lt = 40
+    if 'currentdate' in options:
+      currentdate = options['currentdate'] or datetime.strftime(date.today(),'%Y-%m-%d')
+    else:
+      currentdate = datetime.strftime(date.today(),'%Y-%m-%d')
     if 'database' in options:
       database = options['database'] or DEFAULT_DB_ALIAS
     else:
@@ -132,8 +157,10 @@ class Command(BaseCommand):
     if not database in settings.DATABASES:
       raise CommandError("No database settings known for '%s'" % database )
     if 'user' in options and options['user']:
-      try: user = User.objects.all().using(database).get(username=options['user'])
-      except: raise CommandError("User '%s' not found" % options['user'] )
+      try:
+        user = User.objects.all().using(database).get(username=options['user'])
+      except:
+        raise CommandError("User '%s' not found" % options['user'] )
     else:
       user = None
 
@@ -144,8 +171,10 @@ class Command(BaseCommand):
     try:
       # Initialize the task
       if 'task' in options and options['task']:
-        try: task = Task.objects.all().using(database).get(pk=options['task'])
-        except: raise CommandError("Task identifier not found")
+        try:
+          task = Task.objects.all().using(database).get(pk=options['task'])
+        except:
+          raise CommandError("Task identifier not found")
         if task.started or task.finished or task.status != "Waiting" or task.name != 'generate model':
           raise CommandError("Invalid task identifier")
         task.status = '0%'
@@ -171,7 +200,8 @@ class Command(BaseCommand):
         raise CommandError("Database must be empty before creating a model")
 
       # Plan start date
-      if verbosity > 0: print("Updating current date...")
+      if verbosity > 0:
+        print("Updating current date...")
       param = Parameter.objects.using(database).create(name="currentdate")
       param.value = datetime.strftime(startdate, "%Y-%m-%d %H:%M:%S")
       param.save(using=database)
@@ -255,15 +285,18 @@ class Command(BaseCommand):
 
       # Planning horizon
       # minimum 10 daily buckets, weekly buckets till 40 days after current
-      if verbosity > 0: print("Updating buckets...")
+      if verbosity > 0:
+        print("Updating buckets...")
       management.call_command('frepple_createbuckets', user=user, database=database)
-      if verbosity > 0: print("Updating horizon telescope...")
+      if verbosity > 0:
+        print("Updating horizon telescope...")
       updateTelescope(10, 40, 730, database)
       task.status = '2%'
       task.save(using=database)
 
       # Weeks calendar
-      if verbosity > 0: print("Creating weeks calendar...")
+      if verbosity > 0:
+        print("Creating weeks calendar...")
       with transaction.atomic(using=database):
         weeks = Calendar.objects.using(database).create(name="Weeks", defaultvalue=0)
         for i in BucketDetail.objects.using(database).filter(bucket="week").all():
@@ -272,7 +305,8 @@ class Command(BaseCommand):
         task.save(using=database)
 
       # Working days calendar
-      if verbosity > 0: print("Creating working days...")
+      if verbosity > 0:
+        print("Creating working days...")
       with transaction.atomic(using=database):
         workingdays = Calendar.objects.using(database).create(name="Working Days", defaultvalue=0)
         minmax = BucketDetail.objects.using(database).filter(bucket="week").aggregate(Min('startdate'),Max('startdate'))
@@ -285,7 +319,8 @@ class Command(BaseCommand):
       categories = [ 'cat A','cat B','cat C','cat D','cat E','cat F','cat G' ]
 
       # Create customers
-      if verbosity > 0: print("Creating customers...")
+      if verbosity > 0:
+        print("Creating customers...")
       with transaction.atomic(using=database):
         cust = []
         for i in range(100):
@@ -295,7 +330,8 @@ class Command(BaseCommand):
         task.save(using=database)
 
       # Create resources and their calendars
-      if verbosity > 0: print("Creating resources and calendars...")
+      if verbosity > 0:
+        print("Creating resources and calendars...")
       with transaction.atomic(using=database):
         res = []
         for i in range(resource):
@@ -312,7 +348,8 @@ class Command(BaseCommand):
         random.shuffle(res)
 
       # Create the components
-      if verbosity > 0: print("Creating raw materials...")
+      if verbosity > 0:
+        print("Creating raw materials...")
       with transaction.atomic(using=database):
         comps = []
         comploc = Location.objects.using(database).create(name='Procured materials')
@@ -342,7 +379,8 @@ class Command(BaseCommand):
       progress = 88.0 / cluster
       for i in range(cluster):
         with transaction.atomic(using=database):
-          if verbosity > 0: print("Creating supply chain for end item %d..." % i)
+          if verbosity > 0:
+            print("Creating supply chain for end item %d..." % i)
 
           # location
           loc = Location.objects.using(database).get_or_create(name='Loc %05d' % i)[0]
@@ -421,7 +459,8 @@ class Command(BaseCommand):
             ops.append(oper)
             buf.producing = oper
             # Some inventory in random buffers
-            if random.uniform(0,1) > 0.8: buf.onhand = int(random.uniform(5, 20))
+            if random.uniform(0,1) > 0.8:
+              buf.onhand = int(random.uniform(5, 20))
             buf.save(using=database)
             Flow(operation=oper, thebuffer=buf, quantity=1, type="end").save(using=database)
             if k != level - 1:
@@ -465,7 +504,8 @@ class Command(BaseCommand):
       raise e
 
     finally:
-      if task: task.save(using=database)
+      if task:
+        task.save(using=database)
       settings.DEBUG = tmp_debug
 
 

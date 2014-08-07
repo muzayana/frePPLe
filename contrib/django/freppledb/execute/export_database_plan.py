@@ -88,7 +88,8 @@ def exportConstraints(cursor):
        ) for i in d.constraints
       ])
     cnt += 1
-    if cnt % 300 == 0: transaction.commit(using=database)
+    if cnt % 300 == 0:
+      transaction.commit(using=database)
   transaction.commit(using=database)
   cursor.execute("select count(*) from out_constraint")
   print('Exported %d constraints in %.2f seconds' % (cursor.fetchone()[0], time() - starttime))
@@ -110,7 +111,8 @@ def exportOperationplans(cursor):
         j.owner and j.owner.id or None
        ) for j in i.operationplans ])
     cnt += 1
-    if cnt % 300 == 0: transaction.commit(using=database)
+    if cnt % 300 == 0:
+      transaction.commit(using=database)
   transaction.commit(using=database)
   cursor.execute("select count(*) from out_operationplan")
   print('Exported %d operationplans in %.2f seconds' % (cursor.fetchone()[0], time() - starttime))
@@ -132,7 +134,8 @@ def exportFlowplans(cursor):
        ) for j in i.flowplans
       ])
     cnt += 1
-    if cnt % 300 == 0: transaction.commit(using=database)
+    if cnt % 300 == 0:
+      transaction.commit(using=database)
   transaction.commit(using=database)
   cursor.execute("select count(*) from out_flowplan")
   print('Exported %d flowplans in %.2f seconds' % (cursor.fetchone()[0], time() - starttime))
@@ -154,7 +157,8 @@ def exportLoadplans(cursor):
        ) for j in i.loadplans if j.quantity < 0
       ])
     cnt += 1
-    if cnt % 100 == 0: transaction.commit(using=database)
+    if cnt % 100 == 0:
+      transaction.commit(using=database)
   transaction.commit(using=database)
   cursor.execute("select count(*) from out_loadplan")
   print('Exported %d loadplans in %.2f seconds' % (cursor.fetchone()[0], time() - starttime))
@@ -174,10 +178,14 @@ def exportResourceplans(cursor):
   enddate = datetime.min
   for i in frepple.resources():
     for j in i.loadplans:
-      if j.startdate < startdate: startdate = j.startdate
-      if j.enddate > enddate: enddate = j.enddate
-  if startdate == datetime.max: startdate = frepple.settings.current
-  if enddate == datetime.min: enddate = frepple.settings.current
+      if j.startdate < startdate:
+        startdate = j.startdate
+      if j.enddate > enddate:
+        enddate = j.enddate
+  if startdate == datetime.max:
+    startdate = frepple.settings.current
+  if enddate == datetime.min:
+    enddate = frepple.settings.current
   startdate = startdate - timedelta(days=30)
   startdate = datetime(startdate.year, startdate.month, startdate.day)
   enddate = enddate + timedelta(days=30)
@@ -207,7 +215,8 @@ def exportResourceplans(cursor):
          ) for j in i.plan(buckets)
         ])
       cnt += 1
-      if cnt % 100 == 0: transaction.commit(using=database)
+      if cnt % 100 == 0:
+        transaction.commit(using=database)
   except Exception as e:
     print(e)
   finally:
@@ -229,7 +238,8 @@ def exportDemand(cursor):
       cur = i.quantity
       if cumplanned > d.quantity:
         cur -= cumplanned - d.quantity
-        if cur < 0: cur = 0
+        if cur < 0:
+          cur = 0
       yield (
         d.name, d.item.name, d.customer and d.customer.name or None, str(d.due),
         round(cur,settings.DECIMAL_PLACES), str(i.end),
@@ -247,14 +257,16 @@ def exportDemand(cursor):
   starttime = time()
   cnt = 0
   for i in frepple.demands():
-    if i.quantity == 0: continue
+    if i.quantity == 0:
+      continue
     cursor.executemany(
       "insert into out_demand \
       (demand,item,customer,due,quantity,plandate,planquantity,operationplan) \
       values (%s,%s,%s,%s,%s,%s,%s,%s)",
       [ j for j in deliveries(i) ] )
     cnt += 1
-    if cnt % 500 == 0: transaction.commit(using=database)
+    if cnt % 500 == 0:
+      transaction.commit(using=database)
   transaction.commit(using=database)
   cursor.execute("select count(*) from out_demand")
   print('Exported %d demand plans in %.2f seconds' % (cursor.fetchone()[0], time() - starttime))
@@ -267,7 +279,8 @@ def exportPegging(cursor):
   for i in frepple.demands():
     # Find non-hidden demand owner
     n = i
-    while n.hidden and n.owner: n = n.owner
+    while n.hidden and n.owner:
+      n = n.owner
     n = n and n.name or 'unspecified'
     # Export pegging
     cursor.executemany(
@@ -285,7 +298,8 @@ def exportPegging(cursor):
        ) for j in i.pegging
       ])
     cnt += 1
-    if cnt % 500 == 0: transaction.commit(using=database)
+    if cnt % 500 == 0:
+      transaction.commit(using=database)
   transaction.commit(using=database)
   cursor.execute("select count(*) from out_demandpegging")
   print('Exported %d pegging in %.2f seconds' % (cursor.fetchone()[0], time() - starttime))
@@ -313,8 +327,10 @@ class DatabaseTask(Thread):
 
     # Run the functions sequentially
     for f in self.functions:
-      try: f(cursor)
-      except Exception as e: print(e)
+      try:
+        f(cursor)
+      except Exception as e:
+        print(e)
 
     # Close the connection
     cursor.close()
@@ -370,9 +386,11 @@ def exportfrepple():
       DatabaseTask(exportPegging),
       )
     # Start all threads
-    for i in tasks: i.start()
+    for i in tasks:
+      i.start()
     # Wait for all threads to finish
-    for i in tasks: i.join()
+    for i in tasks:
+      i.join()
 
   # Analyze
   if settings.DATABASES[database]['ENGINE'] == 'django.db.backends.sqlite3':

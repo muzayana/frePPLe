@@ -49,22 +49,29 @@ class CrumbsNode(Node):
   {%block breadcrumbs%}<div class="breadcrumbs">{%crumbs%}</div>{%endblock%}
   '''
   def render(self, context):
-    try: req = context['request']
-    except: return ''  # No request found in the context: no crumbs...
-    if not hasattr(req,'session'): return  # No session found in the context: no crumbs...
+    try:
+      req = context['request']
+    except:
+      return ''  # No request found in the context: no crumbs...
+    if not hasattr(req,'session'):
+      return  # No session found in the context: no crumbs...
 
     # Pick up the current crumbs from the session cookie
     try:
       cur = req.session['crumbs']
-      try: cur = cur[req.prefix]
-      except: cur = []
+      try:
+        cur = cur[req.prefix]
+      except:
+        cur = []
     except:
       req.session['crumbs'] = {}
       cur = []
 
     # Store the current and previous URLs in the session
-    try: u = req.session['prev']
-    except: u = req.session['prev'] = {}
+    try:
+      u = req.session['prev']
+    except:
+      u = req.session['prev'] = {}
     if req.prefix in u:
       if u[req.prefix][-1] != req.path:
         while len(u[req.prefix]) > 1:
@@ -75,8 +82,10 @@ class CrumbsNode(Node):
 
     # Compute the new crumb node
     count = 0
-    try: title = variable_title.resolve(context)
-    except: title = req.get_full_path()
+    try:
+      title = variable_title.resolve(context)
+    except:
+      title = req.get_full_path()
     if title != lazy_site_administration:
       # Don't handle the cockpit screen in the crumbs
       try:
@@ -85,7 +94,8 @@ class CrumbsNode(Node):
         exists = False
 
         for i in cur:
-          if i[0] == title: exists = True
+          if i[0] == title:
+            exists = True
           count += 1
 
         # Add current URL to the stack
@@ -175,7 +185,8 @@ class ModelTabs(Node):
       template = get_template("%stabs.html" % model)
       return template.render(context)
     except:
-      if settings.TEMPLATE_DEBUG: raise
+      if settings.TEMPLATE_DEBUG:
+        raise
       return ''
 
 
@@ -203,10 +214,13 @@ class SelectDatabaseNode(Node):
   A tag to return HTML code for a database selector.
   '''
   def render(self, context):
-    try: req = context['request']
-    except: return ''  # No request found in the context
+    try:
+      req = context['request']
+    except:
+      return ''  # No request found in the context
     scenarios = Scenario.objects.filter(status=u'In use').values('name')
-    if len(scenarios) <= 1: return ''
+    if len(scenarios) <= 1:
+      return ''
     s = [u'<form>%s&nbsp;<select id="database" name="%s" onchange="selectDatabase()">' % (force_unicode(_("Model:")), req.database) ]
     for i in scenarios:
       i = i['name']
@@ -247,12 +261,17 @@ version.is_safe = True
 
 def duration(value):
   try:
-    if value is None: return ''
+    if value is None:
+      return ''
     value = Decimal(force_unicode(value))
-    if value == 0: return '0 s'
-    if value % 604800 == 0: return '%.2f w' % (value / Decimal('604800.0'))
-    if value % 3600 != 0 and value < 86400: return '%.2f s' % value
-    if value % 86400 != 0 and value < 604800: return '%.2f h' % (value / Decimal('3600'))
+    if value == 0:
+      return '0 s'
+    if value % 604800 == 0:
+      return '%.2f w' % (value / Decimal('604800.0'))
+    if value % 3600 != 0 and value < 86400:
+      return '%.2f s' % value
+    if value % 86400 != 0 and value < 604800:
+      return '%.2f h' % (value / Decimal('3600'))
     return '%.2f d' % (value / Decimal('86400'))
   except Exception:
     return ''
@@ -303,8 +322,10 @@ class MenuNode(Node):
 
   def render(self, context):
     from freppledb.menu import menu
-    try: req = context['request']
-    except: return ''  # No request found in the context
+    try:
+      req = context['request']
+    except:
+      return ''  # No request found in the context
     o = []
     for i in menu.getMenu(req.LANGUAGE_CODE):
       group = [i[0], [] ]
@@ -374,8 +395,10 @@ class DashboardNode(Node):
 
   def render(self, context):
     from freppledb.common.dashboard import Dashboard
-    try: req = context['request']
-    except: return ''  # No request found in the context
+    try:
+      req = context['request']
+    except:
+      return ''  # No request found in the context
     reg = Dashboard.buildList()
     mydashboard = req.user.getPreference("freppledb.common.cockpit")
     if not mydashboard: mydashboard = settings.DEFAULT_DASHBOARD
