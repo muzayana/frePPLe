@@ -1,6 +1,7 @@
 from __future__ import print_function
 
-import os, time
+import os
+import time
 from datetime import datetime
 
 from django.db import DEFAULT_DB_ALIAS
@@ -12,8 +13,10 @@ from freppledb.execute.commands import logMessage
 
 if __name__ == "__main__":
   # Select database
-  try: db = os.environ['FREPPLE_DATABASE'] or DEFAULT_DB_ALIAS
-  except: db = DEFAULT_DB_ALIAS
+  try:
+    db = os.environ['FREPPLE_DATABASE'] or DEFAULT_DB_ALIAS
+  except:
+    db = DEFAULT_DB_ALIAS
 
   # Use the test database if we are running the test suite
   if 'FREPPLE_TEST' in os.environ:

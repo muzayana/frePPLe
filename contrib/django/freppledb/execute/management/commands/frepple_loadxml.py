@@ -24,12 +24,18 @@ from freppledb import VERSION
 class Command(BaseCommand):
   help = "Loads an XML file into the frePPLe database"
   option_list = BaseCommand.option_list + (
-    make_option('--user', dest='user', type='string',
-      help='User running the command'),
-    make_option('--database', action='store', dest='database',
-      default=DEFAULT_DB_ALIAS, help='Nominates a specific database to load data from and export results into'),
-    make_option('--task', dest='task', type='int',
-      help='Task identifier (generated automatically if not provided)'),
+    make_option(
+      '--user', dest='user', type='string',
+      help='User running the command'
+      ),
+    make_option(
+      '--database', action='store', dest='database', default=DEFAULT_DB_ALIAS,
+      help='Nominates a specific database to load data from and export results into'
+      ),
+    make_option(
+      '--task', dest='task', type='int',
+      help='Task identifier (generated automatically if not provided)'
+      ),
   )
   args = 'XMLfile(s)'
 
@@ -79,22 +85,22 @@ class Command(BaseCommand):
 
       # Execute
       # TODO: if frePPLe is available as a module, we don't really need to spawn another process.
-      os.environ['FREPPLE_HOME'] = settings.FREPPLE_HOME.replace('\\','\\\\')
+      os.environ['FREPPLE_HOME'] = settings.FREPPLE_HOME.replace('\\', '\\\\')
       os.environ['FREPPLE_APP'] = settings.FREPPLE_APP
       os.environ['FREPPLE_DATABASE'] = database
       os.environ['PATH'] = settings.FREPPLE_HOME + os.pathsep + os.environ['PATH'] + os.pathsep + settings.FREPPLE_APP
       os.environ['LD_LIBRARY_PATH'] = settings.FREPPLE_HOME
       if 'DJANGO_SETTINGS_MODULE' not in os.environ.keys():
         os.environ['DJANGO_SETTINGS_MODULE'] = 'freppledb.settings'
-      if os.path.exists(os.path.join(os.environ['FREPPLE_HOME'],'python27.zip')):
+      if os.path.exists(os.path.join(os.environ['FREPPLE_HOME'], 'python27.zip')):
         # For the py2exe executable
-        os.environ['PYTHONPATH'] = os.path.join(os.environ['FREPPLE_HOME'],'python27.zip') + ';' + os.path.normpath(os.environ['FREPPLE_APP'])
+        os.environ['PYTHONPATH'] = os.path.join(os.environ['FREPPLE_HOME'], 'python27.zip') + ';' + os.path.normpath(os.environ['FREPPLE_APP'])
       else:
         # Other executables
         os.environ['PYTHONPATH'] = os.path.normpath(os.environ['FREPPLE_APP'])
       cmdline = [ '"%s"' % i for i in args ]
       cmdline.insert(0, 'frepple')
-      cmdline.append( '"%s"' % os.path.join(settings.FREPPLE_APP,'freppledb','execute','loadxml.py') )
+      cmdline.append( '"%s"' % os.path.join(settings.FREPPLE_APP, 'freppledb', 'execute', 'loadxml.py') )
       ret = os.system(' '.join(cmdline))
       if ret:
         raise Exception('Exit code of the batch run is %d' % ret)

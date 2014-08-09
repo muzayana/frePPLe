@@ -15,7 +15,8 @@ import freppledb.quoting.views
 # Automatically add these URLs when the application is installed
 autodiscover = True
 
-urlpatterns = patterns('',
-    (r'^quote/$', freppledb.quoting.views.QuoteReport.as_view()),
-    (r'^quote/([^/]+)/$', freppledb.quoting.views.InfoView),
-    )
+urlpatterns = patterns(
+  '',  # Prefix
+  (r'^quote/$', freppledb.quoting.views.QuoteReport.as_view()),
+  (r'^quote/([^/]+)/$', freppledb.quoting.views.InfoView),
+  )

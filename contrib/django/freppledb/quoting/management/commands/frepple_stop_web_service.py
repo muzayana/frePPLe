@@ -26,11 +26,15 @@ class Command(BaseCommand):
   This command stops the frePPLe web service if it is running.
   '''
   option_list = BaseCommand.option_list + (
-      make_option('--database', action='store', dest='database',
-        default=DEFAULT_DB_ALIAS, help='Nominates a specific database to backup'),
-      make_option('--force', action="store_true", dest='force',
-        default=False, help='Force an immediate shutdown, rather than a graceful stop'),
-      )
+    make_option(
+      '--database', action='store', dest='database',
+      default=DEFAULT_DB_ALIAS, help='Nominates a specific database to backup'
+      ),
+    make_option(
+      '--force', action="store_true", dest='force',
+      default=False, help='Force an immediate shutdown, rather than a graceful stop'
+      ),
+    )
 
   requires_model_validation = False
 
@@ -40,8 +44,10 @@ class Command(BaseCommand):
   def handle(self, **options):
 
     # Pick up the options
-    if 'force' in options: force = options['force']
-    else: force = False
+    if 'force' in options:
+      force = options['force']
+    else:
+      force = False
     if 'database' in options:
       global database
       database = options['database'] or DEFAULT_DB_ALIAS

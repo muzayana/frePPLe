@@ -58,7 +58,7 @@ class HierarchyModel(models.Model):
     def tagChildren(me, left, level):
       right = left + 1
       # Get all children of this node
-      for i in children.get(me,[]):
+      for i in children.get(me, []):
         # Recursive execution of this function for each child of this node
         right = tagChildren(i, right, level + 1)
 
@@ -72,7 +72,7 @@ class HierarchyModel(models.Model):
       return right + 1
 
     # Load all nodes in memory
-    for i in cls.objects.using(database).values('name','owner'):
+    for i in cls.objects.using(database).values('name', 'owner'):
       if i['name'] == i['owner']:
         logging.error("Data error: '%s' points to itself as owner" % i['name'])
         nodes[i['name']] = None
@@ -88,7 +88,7 @@ class HierarchyModel(models.Model):
     cnt = 1
     for i, j in keys:
       if j is None:
-        cnt = tagChildren(i,cnt,0)
+        cnt = tagChildren(i, cnt, 0)
 
     if nodes:
       # If the nodes dictionary isn't empty, it is an indication of an
@@ -117,7 +117,7 @@ class HierarchyModel(models.Model):
       keys = sorted(nodes.items())
       for i, j in keys:
         if j is None:
-          cnt = tagChildren(i,cnt,0)
+          cnt = tagChildren(i, cnt, 0)
 
     # Write all results to the database
     with transaction.atomic(using=database):
@@ -184,11 +184,15 @@ class Parameter(AuditModel):
 
 
 class User(AbstractUser):
-  languageList = tuple( [ ('auto',_('Detect automatically')), ] + list(settings.LANGUAGES) )
-  language = models.CharField(_('language'), max_length=10, choices=languageList,
-                              default='auto')
-  theme = models.CharField(_('theme'), max_length=20, default=settings.DEFAULT_THEME,
-                           choices=settings.THEMES)
+  languageList = tuple( [ ('auto', _('Detect automatically')), ] + list(settings.LANGUAGES) )
+  language = models.CharField(
+    _('language'), max_length=10, choices=languageList,
+    default='auto'
+    )
+  theme = models.CharField(
+    _('theme'), max_length=20, default=settings.DEFAULT_THEME,
+    choices=settings.THEMES
+    )
   pagesize = models.PositiveIntegerField(_('page size'), default=settings.DEFAULT_PAGESIZE)
   horizonbuckets = models.CharField(max_length=settings.NAMESIZE, blank=True, null=True)
   horizonstart = models.DateTimeField(blank=True, null=True)
@@ -196,13 +200,13 @@ class User(AbstractUser):
   horizontype = models.BooleanField(blank=True, default=True)
   horizonlength = models.IntegerField(blank=True, default=6, null=True)
   horizonunit = models.CharField(
-                  blank=True, max_length=5, default='month', null=True,
-                  choices=(("day","day"),("week","week"),("month","month"))
-                  )
+    blank=True, max_length=5, default='month', null=True,
+    choices=(("day", "day"), ("week", "week"), ("month", "month"))
+    )
   lastmodified = models.DateTimeField(
-                   _('last modified'), auto_now=True, null=True, blank=True,
-                   editable=False, db_index=True
-                   )
+    _('last modified'), auto_now=True, null=True, blank=True,
+    editable=False, db_index=True
+    )
 
 
   def joined_age(self):
@@ -222,7 +226,7 @@ class User(AbstractUser):
     verbose_name = _('user')
     verbose_name_plural = _('users')
 
-  def getPreference(self, prop, default = None):
+  def getPreference(self, prop, default=None):
     try:
       return self.preferences.get(property=prop).value
     except ValueError:
@@ -246,7 +250,7 @@ class UserPreference(models.Model):
 
   class Meta:
     db_table = "common_preference"
-    unique_together = (('user','property'),)
+    unique_together = (('user', 'property'),)
     verbose_name = 'preference'
     verbose_name_plural = 'preferences'
 
@@ -306,4 +310,4 @@ class BucketDetail(AuditModel):
     verbose_name_plural = _('bucket dates')
     db_table = 'common_bucketdetail'
     unique_together = (('bucket', 'startdate'),)
-    ordering = ['bucket','startdate']
+    ordering = ['bucket', 'startdate']

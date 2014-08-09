@@ -8,7 +8,10 @@
 # or in the form of compiled binaries.
 #
 from __future__ import print_function
-import os, thread, sys, inspect
+import inspect
+import os
+import sys
+import thread
 from datetime import datetime
 import cherrypy
 
@@ -40,7 +43,7 @@ def error_page(status, message, traceback, version):
     <pre style="color:red">%(traceback)s</pre>
     </body>
     </html>
-    ''' % {'status':status, 'message':message, 'traceback':traceback, 'version':frepple.version}
+    ''' % {'status': status, 'message': message, 'traceback': traceback, 'version': frepple.version}
 
 
 def runWebService(database=DEFAULT_DB_ALIAS):
@@ -59,8 +62,8 @@ def runWebService(database=DEFAULT_DB_ALIAS):
     'server.environment': 'development',
     'server.socket_host': address,
     'server.socket_port': port,
-    'log.access_file': os.path.join(settings.FREPPLE_LOGDIR,"access.log"),
-    'log.error_file': os.path.join(settings.FREPPLE_LOGDIR,"error.log"),
+    'log.access_file': os.path.join(settings.FREPPLE_LOGDIR, "access.log"),
+    'log.error_file': os.path.join(settings.FREPPLE_LOGDIR, "error.log"),
     'log.screen': True,
     #'tools.gzip.on': True,
     'error_page.default': error_page,
@@ -78,7 +81,7 @@ def runWebService(database=DEFAULT_DB_ALIAS):
     '/frepple.xsd': {
       'tools.staticfile.on': True,
       'tools.staticfile.filename': os.path.join(settings.FREPPLE_HOME, 'frepple.xsd'),
-      'tools.staticfile.content_types':  {'xsd': 'application/xml'}
+      'tools.staticfile.content_types': {'xsd': 'application/xml'}
       },
     '/frepple_core.xsd': {
       'tools.staticfile.on': True,
@@ -123,8 +126,10 @@ class Interface:
 
 
   def __init__(self, database=DEFAULT_DB_ALIAS):
-    self.solver = frepple.solver_mrp(name="quote",
-      constraints=15, plantype=1, loglevel=int(Parameter.getValue('plan.loglevel', database, 0)))
+    self.solver = frepple.solver_mrp(
+      name="quote", constraints=15, plantype=1,
+      loglevel=int(Parameter.getValue('plan.loglevel', database, 0))
+      )
     self.lock = thread.allocate_lock()
     self.database = database
 
@@ -138,21 +143,25 @@ class Interface:
         # Get requests
         cherrypy.response.headers['content-type'] = 'application/xml'
         res = []
-        for i in self.top: res.append(i)
+        for i in self.top:
+          res.append(i)
         for i in gen(self, *__args):
-          if i: res.append(i)
-        for i in self.bottom: res.append(i)
+          if i:
+            res.append(i)
+        for i in self.bottom:
+          res.append(i)
         return "".join(res)
-      elif cherrypy.request.method  == 'POST' or cherrypy.request.method == 'PUT':
+      elif cherrypy.request.method in ('POST', 'PUT'):
         # Post and put requests
         cherrypy.response.headers['content-type'] = 'application/xml'
         res = []
         for i in gen(self, *__args):
-          if i: res.append(i)
+          if i:
+            res.append(i)
         return "".join(res)
       else:
         # Other HTTP verbs (such as head, delete, ...) are not supported
-        raise cherrypy.HTTPError(404,"Not found")
+        raise cherrypy.HTTPError(404, "Not found")
     return decorator
 
 
@@ -175,13 +184,13 @@ class Interface:
       error = []
       if xmldata:
         try:
-          if not isinstance(xmldata,basestring):
+          if not isinstance(xmldata, basestring):
             xmldata = xmldata.file.read()
           frepple.readXMLdata(xmldata)
         except Exception as e:
           error.append(str(e))
       if len(error) > 0:
-        raise cherrypy.HTTPError(500,'\n'.join(error))
+        raise cherrypy.HTTPError(500, '\n'.join(error))
       return "OK\n"
 
 
@@ -193,34 +202,44 @@ class Interface:
       # GET request
       res = []
       res.append('<locations>\n')
-      for f in frepple.locations(): res.append(f.toXML().encode('utf-8') or '')
+      for f in frepple.locations():
+        res.append(f.toXML().encode('utf-8') or '')
       res.append('</locations>\n')
       res.append('<customers>\n')
-      for f in frepple.customers(): res.append(f.toXML().encode('utf-8') or '')
+      for f in frepple.customers():
+        res.append(f.toXML().encode('utf-8') or '')
       res.append('</customers>\n')
       res.append('<calendars>\n')
-      for f in frepple.calendars(): res.append(f.toXML().encode('utf-8') or '')
+      for f in frepple.calendars():
+        res.append(f.toXML().encode('utf-8') or '')
       res.append('</calendars>\n')
       res.append('<operations>\n')
-      for f in frepple.operations(): res.append(f.toXML().encode('utf-8') or '')
+      for f in frepple.operations():
+        res.append(f.toXML().encode('utf-8') or '')
       res.append('</operations>\n')
       res.append('<items>\n')
-      for f in frepple.items(): res.append(f.toXML().encode('utf-8') or '')
+      for f in frepple.items():
+        res.append(f.toXML().encode('utf-8') or '')
       res.append('</items>\n')
       res.append('<buffers>\n')
-      for f in frepple.buffers(): res.append(f.toXML().encode('utf-8') or '')
+      for f in frepple.buffers():
+        res.append(f.toXML().encode('utf-8') or '')
       res.append('</buffers>\n')
       res.append('<demands>\n')
-      for f in frepple.demands(): res.append(f.toXML().encode('utf-8') or '')
+      for f in frepple.demands():
+        res.append(f.toXML().encode('utf-8') or '')
       res.append('</demands>\n')
       res.append('<resources>\n')
-      for f in frepple.resources(): res.append(f.toXML().encode('utf-8') or '')
+      for f in frepple.resources():
+        res.append(f.toXML().encode('utf-8') or '')
       res.append('</resources>\n')
       res.append('<operationplans>\n')
-      for f in frepple.operationplans(): res.append(f.toXML().encode('utf-8') or '')
+      for f in frepple.operationplans():
+        res.append(f.toXML().encode('utf-8') or '')
       res.append('</operationplans>\n')
       res.append('<problems>\n')
-      for f in frepple.problems(): res.append(f.toXML().encode('utf-8') or '')
+      for f in frepple.problems():
+        res.append(f.toXML().encode('utf-8') or '')
       res.append('</problems>\n')
       return "".join(res)
     else:
@@ -239,22 +258,24 @@ class Interface:
       if name:
         # Return a single location
         try:
-          yield frepple.location(name=name,action="C").toXML().encode('utf-8')
+          yield frepple.location(name=name, action="C").toXML().encode('utf-8')
         except:
           # Location not found
-          raise cherrypy.HTTPError(404,"Entity not found")
+          raise cherrypy.HTTPError(404, "Entity not found")
       else:
         # Return all locations
-        for f in frepple.locations(): yield f.toXML().encode('utf-8')
+        for f in frepple.locations():
+          yield f.toXML().encode('utf-8')
       yield '</locations>\n'
     else:
       # Create or update a location
-      if name == None: raise cherrypy.HTTPError(404,"Entity not found")
+      if name is None:
+        raise cherrypy.HTTPError(404, "Entity not found")
       try:
         loc = frepple.location(name=name)
       except:
         # Location not found
-        raise cherrypy.HTTPError(404,"Entity not found")
+        raise cherrypy.HTTPError(404, "Entity not found")
       ok = True
       for i in cherrypy.request.params:
         try:
@@ -262,7 +283,8 @@ class Interface:
         except Exception as e:
           yield "Error: %s\n" % e
           ok = False
-      if ok: yield "OK\n"
+      if ok:
+        yield "OK\n"
 
 
   # Interface for buffers handling URLs of the format:
@@ -272,28 +294,32 @@ class Interface:
   @simpleXMLdata
   def buffer(self, name=None):
     if cherrypy.request.method == 'GET':
-      try: mode = str(cherrypy.request.params.get('plan','S'))
-      except: mode = 'S'
+      try:
+        mode = str(cherrypy.request.params.get('plan', 'S'))
+      except:
+        mode = 'S'
       yield '<buffers>\n'
       if name:
         # Return a single buffer
         try:
-          yield frepple.buffer(name=name,action="C").toXML(mode).encode('utf-8')
+          yield frepple.buffer(name=name, action="C").toXML(mode).encode('utf-8')
         except:
           # Buffer not found
-          raise cherrypy.HTTPError(404,"Entity not found")
+          raise cherrypy.HTTPError(404, "Entity not found")
       else:
         # Return all buffers
-        for f in frepple.buffers(): yield f.toXML(mode).encode('utf-8')
+        for f in frepple.buffers():
+          yield f.toXML(mode).encode('utf-8')
       yield '</buffers>\n'
     else:
       # Create or update a buffer
-      if name == None: raise cherrypy.HTTPError(404,"Entity not found")
+      if name is None:
+        raise cherrypy.HTTPError(404, "Entity not found")
       try:
         loc = frepple.buffer(name=name)
       except:
         # Buffer not found
-        raise cherrypy.HTTPError(404,"Entity not found")
+        raise cherrypy.HTTPError(404, "Entity not found")
       ok = True
       for i in cherrypy.request.params:
         try:
@@ -301,7 +327,8 @@ class Interface:
         except Exception as e:
           yield "Error: %s\n" % e
           ok = False
-      if ok: yield "OK\n"
+      if ok:
+        yield "OK\n"
 
 
   # Interface for items handling URLs of the format:
@@ -315,22 +342,24 @@ class Interface:
       if name:
         # Return a single item
         try:
-          yield frepple.item(name=name,action="C").toXML().encode('utf-8')
+          yield frepple.item(name=name, action="C").toXML().encode('utf-8')
         except:
           # Item not found
-          raise cherrypy.HTTPError(404,"Entity not found")
+          raise cherrypy.HTTPError(404, "Entity not found")
       else:
         # Return all items
-        for f in frepple.items(): yield f.toXML().encode('utf-8')
+        for f in frepple.items():
+          yield f.toXML().encode('utf-8')
       yield '</items>\n'
     else:
       # Create or update an item
-      if name == None: raise cherrypy.HTTPError(404,"Entity not found")
+      if name is None:
+        raise cherrypy.HTTPError(404, "Entity not found")
       try:
         loc = frepple.item(name=name)
       except:
         # Item not found
-        raise cherrypy.HTTPError(404,"Entity not found")
+        raise cherrypy.HTTPError(404, "Entity not found")
       ok = True
       for i in cherrypy.request.params:
         try:
@@ -338,7 +367,8 @@ class Interface:
         except Exception as e:
           yield "Error: %s\n" % e
           ok = False
-      if ok: yield "OK\n"
+      if ok:
+        yield "OK\n"
 
 
   # Interface for operations handling URLs of the format:
@@ -348,30 +378,34 @@ class Interface:
   @simpleXMLdata
   def operation(self, name=None):
     if cherrypy.request.method == 'GET':
-      try: mode = str(cherrypy.request.params.get('plan','S'))
-      except: mode = 'S'
+      try:
+        mode = str(cherrypy.request.params.get('plan', 'S'))
+      except:
+        mode = 'S'
       yield '<operations>\n'
       if name:
         # Return a single operation
         try:
-          yield frepple.operation(name=name,action="C").toXML(mode).encode('utf-8')
+          yield frepple.operation(name=name, action="C").toXML(mode).encode('utf-8')
         except:
           # Operation not found
-          raise cherrypy.HTTPError(404,"Entity not found")
+          raise cherrypy.HTTPError(404, "Entity not found")
       else:
         # Return all operations
         for f in frepple.operations():
           t = f.toXML(mode).encode('utf-8')
-          if t: yield t
+          if t:
+            yield t
       yield '</operations>\n'
     else:
       # Create or update an operation
-      if name == None: raise cherrypy.HTTPError(404,"Entity not found")
+      if name is None:
+        raise cherrypy.HTTPError(404, "Entity not found")
       try:
         loc = frepple.operation(name=name)
       except:
         # Operation not found
-        raise cherrypy.HTTPError(404,"Entity not found")
+        raise cherrypy.HTTPError(404, "Entity not found")
       ok = True
       for i in cherrypy.request.params:
         try:
@@ -379,7 +413,8 @@ class Interface:
         except Exception as e:
           yield "Error: %s\n" % e
           ok = False
-      if ok: yield "OK\n"
+      if ok:
+        yield "OK\n"
 
 
   # Interface for demands handling URLs of the format:
@@ -389,40 +424,45 @@ class Interface:
   @simpleXMLdata
   def demand(self, name=None):
     if cherrypy.request.method == 'GET':
-      try: mode = str(cherrypy.request.params.get('plan','S'))
-      except: mode = 'S'
+      try:
+        mode = str(cherrypy.request.params.get('plan', 'S'))
+      except:
+        mode = 'S'
       yield '<demands>\n'
       if name:
         # Return a single demand
         try:
-          yield frepple.demand(name=name,action="C").toXML(mode).encode('utf-8')
+          yield frepple.demand(name=name, action="C").toXML(mode).encode('utf-8')
         except:
           # Demand not found
-          raise cherrypy.HTTPError(404,"Entity not found")
+          raise cherrypy.HTTPError(404, "Entity not found")
       else:
         # Return all locations
-        for f in frepple.demands(): yield f.toXML(mode).encode('utf-8')
+        for f in frepple.demands():
+          yield f.toXML(mode).encode('utf-8')
       yield '</demands>\n'
     else:
       # Create or update a demand
-      if name == None: raise cherrypy.HTTPError(404,"Entity not found")
+      if name is None:
+        raise cherrypy.HTTPError(404, "Entity not found")
       try:
         # Update the demand in memory.
         # In case of a delete, the deletion also cleans up all upstream supply.
-        dm = frepple.demand(name=name, action=cherrypy.request.params.get('action','AC'))
+        dm = frepple.demand(name=name, action=cherrypy.request.params.get('action', 'AC'))
       except:
         # Demand not found
-        raise cherrypy.HTTPError(404,"Entity not found")
+        raise cherrypy.HTTPError(404, "Entity not found")
       ok = True
       if dm:
         for i in cherrypy.request.params:
-          if i in ['action','persist','status']: continue
+          if i in ['action', 'persist', 'status']:
+            continue
           try:
             setattr(dm, i, cherrypy.request.params[i])
           except Exception as e:
             yield "Error: %s\n" % e
             ok = False
-      if ok and cherrypy.request.params.get('persist','0') == '1':
+      if ok and cherrypy.request.params.get('persist', '0') == '1':
         # Save the changes to the database as well
         if dm:
           dmdb = Demand.objects.using(self.database).get(name=name)
@@ -443,7 +483,8 @@ class Interface:
           dmdb.save(using=self.database)
         else:
           Demand.objects.using(self.database).get(name=name).delete()
-      if ok: yield "OK\n"
+      if ok:
+        yield "OK\n"
 
 
   # Interface for resources handling URLs of the format:
@@ -453,28 +494,32 @@ class Interface:
   @simpleXMLdata
   def resource(self, name=None):
     if cherrypy.request.method == 'GET':
-      try: mode = str(cherrypy.request.params.get('plan','S'))
-      except: mode = 'S'
+      try:
+        mode = str(cherrypy.request.params.get('plan', 'S'))
+      except:
+        mode = 'S'
       yield '<resources>\n'
       if name:
         # Return a single resource
         try:
-          yield frepple.resource(name=name,action="C").toXML(mode).encode('utf-8')
+          yield frepple.resource(name=name, action="C").toXML(mode).encode('utf-8')
         except:
           # Resource not found
-          raise cherrypy.HTTPError(404,"Entity not found")
+          raise cherrypy.HTTPError(404, "Entity not found")
       else:
         # Return all resources
-        for f in frepple.resources(): yield f.toXML(mode).encode('utf-8')
+        for f in frepple.resources():
+          yield f.toXML(mode).encode('utf-8')
       yield '</resources>\n'
     else:
       # Create or update a resource
-      if name == None: raise cherrypy.HTTPError(404,"Entity not found")
+      if name is None:
+        raise cherrypy.HTTPError(404, "Entity not found")
       try:
         loc = frepple.resource(name=name)
       except:
         # Resource not found
-        raise cherrypy.HTTPError(404,"Entity not found")
+        raise cherrypy.HTTPError(404, "Entity not found")
       ok = True
       for i in cherrypy.request.params:
         try:
@@ -482,7 +527,8 @@ class Interface:
         except Exception as e:
           yield "Error: %s\n" % e
           ok = False
-      if ok: yield "OK\n"
+      if ok:
+        yield "OK\n"
 
 
   # Interface for calendars handling URLs of the format:
@@ -496,22 +542,24 @@ class Interface:
       if name:
         # Return a single calendar
         try:
-          yield frepple.calendar(name=name,action="C").toXML().encode('utf-8')
+          yield frepple.calendar(name=name, action="C").toXML().encode('utf-8')
         except:
           # Calendar not found
-          raise cherrypy.HTTPError(404,"Entity not found")
+          raise cherrypy.HTTPError(404, "Entity not found")
       else:
         # Return all calendars
-        for f in frepple.calendars(): yield f.toXML().encode('utf-8')
+        for f in frepple.calendars():
+          yield f.toXML().encode('utf-8')
       yield '</calendars>\n'
     else:
       # Create or update a calendar
-      if name == None: raise cherrypy.HTTPError(404,"Entity not found")
+      if name is None:
+        raise cherrypy.HTTPError(404, "Entity not found")
       try:
         loc = frepple.calendar(name=name)
       except:
         # Calendar not found
-        raise cherrypy.HTTPError(404,"Entity not found")
+        raise cherrypy.HTTPError(404, "Entity not found")
       ok = True
       for i in cherrypy.request.params:
         try:
@@ -519,7 +567,8 @@ class Interface:
         except Exception as e:
           yield "Error: %s\n" % e
           ok = False
-      if ok: yield "OK\n"
+      if ok:
+        yield "OK\n"
 
 
   # Interface for calendars handling URLs of the format:
@@ -533,22 +582,24 @@ class Interface:
       if name:
         # Return a single setupmatrix
         try:
-          yield frepple.setupmatrix(name=name,action="C").toXML().encode('utf-8')
+          yield frepple.setupmatrix(name=name, action="C").toXML().encode('utf-8')
         except:
           # Calendar not found
-          raise cherrypy.HTTPError(404,"Entity not found")
+          raise cherrypy.HTTPError(404, "Entity not found")
       else:
         # Return all setupmatrix
-        for f in frepple.setupmatrices(): yield f.toXML().encode('utf-8')
+        for f in frepple.setupmatrices():
+          yield f.toXML().encode('utf-8')
       yield '</setupmatrices>\n'
     else:
       # Create or update a calendar
-      if name == None: raise cherrypy.HTTPError(404,"Entity not found")
+      if name is None:
+        raise cherrypy.HTTPError(404, "Entity not found")
       try:
         loc = frepple.setupmatrix(name=name)
       except:
         # Calendar not found
-        raise cherrypy.HTTPError(404,"Entity not found")
+        raise cherrypy.HTTPError(404, "Entity not found")
       ok = True
       for i in cherrypy.request.params:
         try:
@@ -556,7 +607,8 @@ class Interface:
         except Exception as e:
           yield "Error: %s\n" % e
           ok = False
-      if ok: yield "OK\n"
+      if ok:
+        yield "OK\n"
 
 
   # Interface for customers handling URLs of the format:
@@ -570,22 +622,24 @@ class Interface:
       if name:
         # Return a single customer
         try:
-          yield frepple.customer(name=name,action="C").toXML().encode('utf-8')
+          yield frepple.customer(name=name, action="C").toXML().encode('utf-8')
         except:
           # Customer not found
-          raise cherrypy.HTTPError(404,"Entity not found")
+          raise cherrypy.HTTPError(404, "Entity not found")
       else:
         # Return all customers
-        for f in frepple.customers(): yield f.toXML().encode('utf-8')
+        for f in frepple.customers():
+          yield f.toXML().encode('utf-8')
       yield '</customers>\n'
     else:
       # Create or update a customer
-      if name == None: raise cherrypy.HTTPError(404,"Entity not found")
+      if name is None:
+        raise cherrypy.HTTPError(404, "Entity not found")
       try:
         loc = frepple.customer(name=name)
       except:
         # Customer not found
-        raise cherrypy.HTTPError(404,"Entity not found")
+        raise cherrypy.HTTPError(404, "Entity not found")
       ok = True
       for i in cherrypy.request.params:
         try:
@@ -593,7 +647,8 @@ class Interface:
         except Exception as e:
           yield "Error: %s\n" % e
           ok = False
-      if ok: yield "OK\n"
+      if ok:
+        yield "OK\n"
 
 
   # Interface for flows handling URLs of the format:
@@ -603,10 +658,11 @@ class Interface:
     if cherrypy.request.method == 'GET':
       yield '<flows>\n'
       for b in frepple.buffers():
-        for f in b.flows: yield f.toXML().encode('utf-8')
+        for f in b.flows:
+          yield f.toXML().encode('utf-8')
       yield '</flows>\n'
     else:
-      raise cherrypy.HTTPError(404,"Not supported")
+      raise cherrypy.HTTPError(404, "Not supported")
 
 
   # Interface for loads handling URLs of the format:
@@ -616,10 +672,11 @@ class Interface:
     if cherrypy.request.method == 'GET':
       yield '<loads>\n'
       for b in frepple.resources():
-        for f in b.loads: yield f.toXML().encode('utf-8')
+        for f in b.loads:
+          yield f.toXML().encode('utf-8')
       yield '</loads>\n'
     else:
-      raise cherrypy.HTTPError(404,"Not supported")
+      raise cherrypy.HTTPError(404, "Not supported")
 
 
   # Interface for problems handling URLs of the format:
@@ -628,10 +685,11 @@ class Interface:
   def problem(self):
     if cherrypy.request.method == 'GET':
       yield '<problems>\n'
-      for f in frepple.problems(): yield f.toXML()
+      for f in frepple.problems():
+        yield f.toXML()
       yield '</problems>\n'
     else:
-      raise cherrypy.HTTPError(404,"Not supported")
+      raise cherrypy.HTTPError(404, "Not supported")
 
 
   # Top-level interface handling URLs of the format:
@@ -643,8 +701,8 @@ class Interface:
     with self.lock:
       logger.info("Reloading data from the database")
       frepple.erase(True)
-      from freppledb.execute.load import loadfrepple
-      loadfrepple(self.database)
+      from freppledb.execute.load import loadData
+      loadData(database=self.database, filter=None).run()
       frepple.printsize()
     raise cherrypy.HTTPRedirect('/')
 
@@ -657,7 +715,8 @@ class Interface:
   def replan(self, plantype=1, constraint=15, loglevel=0):
     with self.lock:
       logger.info("Regenerating the plan of type %s and constraints %s" % (plantype, constraint))
-      solver = frepple.solver_mrp(name="MRP",
+      solver = frepple.solver_mrp(
+        name="MRP",
         constraints=int(constraint),
         plantype=int(plantype),
         loglevel=int(loglevel)
@@ -666,7 +725,9 @@ class Interface:
       if 'solver_forecast' in [ a for a, b in inspect.getmembers(frepple) ]:
         # The forecast module is available
         logger.info("Start forecast netting at %s" % datetime.now().strftime("%H:%M:%S"))
-        frepple.solver_forecast(name="Netting orders from forecast",loglevel=int(loglevel)).solve()
+        frepple.solver_forecast(
+          name="Netting orders from forecast", loglevel=int(loglevel)
+          ).solve()
 
       logger.info("Start plan generation at %s" % datetime.now().strftime("%H:%M:%S"))
       solver.solve()
@@ -682,7 +743,7 @@ class Interface:
   #    POST /stop?hard=true
   #    PUT /stop?hard=true
   @cherrypy.expose
-  def stop(self, hard = False):
+  def stop(self, hard=False):
     if hard:
       logger.info("Immediate shutdown of the service")
       sys.exit(0)
@@ -695,26 +756,27 @@ class Interface:
   def quote_and_inquiry(self, keepreservation, xmldata):
     # Verify request type
     request = cherrypy.request
-    if request.method not in ('POST','PUT'):
-      raise cherrypy.HTTPError(404,"Not supported")
+    if request.method not in ('POST', 'PUT'):
+      raise cherrypy.HTTPError(404, "Not supported")
     if not xmldata:
-      raise cherrypy.HTTPError(404,"No data")
+      raise cherrypy.HTTPError(404, "No data")
     with self.lock:
       # Read all demands
       callback = collectdemands()
       cherrypy.response.headers['content-type'] = 'application/xml'
       try:
-        if not isinstance(xmldata,basestring):
+        if not isinstance(xmldata, basestring):
           xmldata = xmldata.file.read()
         frepple.readXMLdata(xmldata.encode('utf-8'), 1, 0, callback)
       except Exception as e:
-        raise cherrypy.HTTPError(500,str(e))
+        raise cherrypy.HTTPError(500, str(e))
       if not callback.demands:
-        raise cherrypy.HTTPError(404,"No data")
+        raise cherrypy.HTTPError(404, "No data")
 
       # Process the demands
       res = []
-      for i in self.top: res.append(i)
+      for i in self.top:
+        res.append(i)
       res.append('<demands>\n')
       for name, dm in callback.demands.items():
         try:
@@ -728,9 +790,9 @@ class Interface:
         except Exception as e:
           logger.error("When planning %s: %s" % (name, e))
 
-        item_db = Item.objects.using(self.database).get(pk = dm.item.name)
+        item_db = Item.objects.using(self.database).get(pk=dm.item.name)
         if dm.customer:
-          customer_db = Customer.objects.using(self.database).get(pk = dm.customer.name)
+          customer_db = Customer.objects.using(self.database).get(pk=dm.customer.name)
         else:
           customer_db = None
         try:
@@ -747,15 +809,17 @@ class Interface:
           dm_db.category = dm.category
           dm_db.subcategory = dm.subcategory
         except:
-          dm_db = Demand(name=name, quantity=dm.quantity, due=dm.due, priority=dm.priority,
-              description=dm.description, status='quote', item=item_db, customer=customer_db,
-              minshipment=dm.minshipment, maxlateness=dm.maxlateness, category=dm.category,
-              subcategory=dm.subcategory)
+          dm_db = Demand(
+            name=name, quantity=dm.quantity, due=dm.due, priority=dm.priority,
+            description=dm.description, status='quote', item=item_db, customer=customer_db,
+            minshipment=dm.minshipment, maxlateness=dm.maxlateness, category=dm.category,
+            subcategory=dm.subcategory
+            )
         dm_db.save(using=self.database)
 
       res.append('</demands>\n')
-      for i in self.bottom: res.append(i)
-
+      for i in self.bottom:
+        res.append(i)
       return "".join(res)
 
 

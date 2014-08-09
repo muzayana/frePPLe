@@ -15,9 +15,10 @@ import freppledb.forecast.views
 # Automatically add these URLs when the application is installed
 autodiscover = True
 
-urlpatterns = patterns('',
-    (r'^data/forecast/forecastdemand/$', freppledb.forecast.views.ForecastDemandList.as_view()),
-    (r'^data/forecast/forecast/$', freppledb.forecast.views.ForecastList.as_view()),
-    (r'^forecast/(.+)/$',  freppledb.forecast.views.OverviewReport.as_view()),
-    (r'^forecast/$', freppledb.forecast.views.OverviewReport.as_view()),
-    )
+urlpatterns = patterns(
+  '',  # Prefix
+  (r'^data/forecast/forecastdemand/$', freppledb.forecast.views.ForecastDemandList.as_view()),
+  (r'^data/forecast/forecast/$', freppledb.forecast.views.ForecastList.as_view()),
+  (r'^forecast/(.+)/$', freppledb.forecast.views.OverviewReport.as_view()),
+  (r'^forecast/$', freppledb.forecast.views.OverviewReport.as_view()),
+  )

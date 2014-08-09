@@ -33,14 +33,22 @@ class Command(BaseCommand):
   Another difference is that the initial_data fixture is not loaded.
   '''
   option_list = BaseCommand.option_list + (
-    make_option('--user', dest='user', type='string',
-      help='User running the command'),
-    make_option('--database', action='store', dest='database',
-      default=DEFAULT_DB_ALIAS, help='Nominates a specific database to delete data from'),
-    make_option('--task', dest='task', type='int',
-      help='Task identifier (generated automatically if not provided)'),
-    make_option('--models', dest='models', type='string',
-      help='Comma-separated list of models to erase')
+    make_option(
+      '--user', dest='user', type='string',
+      help='User running the command'
+      ),
+    make_option(
+      '--database', action='store', dest='database',
+      default=DEFAULT_DB_ALIAS, help='Nominates a specific database to delete data from'
+      ),
+    make_option(
+      '--task', dest='task', type='int',
+      help='Task identifier (generated automatically if not provided)'
+      ),
+    make_option(
+      '--models', dest='models', type='string',
+      help='Comma-separated list of models to erase'
+      )
     )
 
   requires_model_validation = False
@@ -98,7 +106,7 @@ class Command(BaseCommand):
         models2tables = set()
         for m in models:
           try:
-            x = m.split('.',1)
+            x = m.split('.', 1)
             x = get_model(x[0], x[1])
             if x in EXCLUDE_FROM_BULK_OPERATIONS:
               continue

@@ -83,7 +83,7 @@ class OverviewReport(GridPivot):
   title = _('Forecast Report')
   basequeryset = Forecast.objects.all()
   model = Forecast
-  permissions = (('view_forecast_report','Can view forecast report'),)
+  permissions = (('view_forecast_report', 'Can view forecast report'),)
   editable = True
   rows = (
     GridFieldText('forecast', title=_('forecast'), key=True, field_name='name', formatter='forecast', editable=False),
@@ -91,18 +91,18 @@ class OverviewReport(GridPivot):
     GridFieldText('customer', title=_('customer'), field_name='customer__name', formatter='customer', editable=False)
     )
   crosses = (
-    ('orderstotal',{'title': _('total orders')}),
-    ('ordersopen',{'title': _('open orders')}),
-    ('ordersadjustment',{'title': _('orders adjustment'), 'editable': lambda req: req.user.has_perm('input.change_forecastdemand'),}),
-    ('forecastbaseline',{'title': _('forecast baseline')}),
-    ('forecastadjustment',{'title': _('forecast adjustment')}),
-    ('forecasttotal',{'title': _('forecast total')}),
-    ('forecastnet',{'title': _('forecast net')}),
-    ('forecastconsumed',{'title': _('forecast consumed')}),
-    ('ordersplanned',{'title': _('planned orders')}),
-    ('forecastplanned',{'title': _('planned net forecast')}),
-    ('past',{'visible':False}),
-    ('future',{'visible':False}),
+    ('orderstotal', {'title': _('total orders')}),
+    ('ordersopen', {'title': _('open orders')}),
+    ('ordersadjustment', {'title': _('orders adjustment'), 'editable': lambda req: req.user.has_perm('input.change_forecastdemand')}),
+    ('forecastbaseline', {'title': _('forecast baseline')}),
+    ('forecastadjustment', {'title': _('forecast adjustment')}),
+    ('forecasttotal', {'title': _('forecast total')}),
+    ('forecastnet', {'title': _('forecast net')}),
+    ('forecastconsumed', {'title': _('forecast consumed')}),
+    ('ordersplanned', {'title': _('planned orders')}),
+    ('forecastplanned', {'title': _('planned net forecast')}),
+    ('past', {'visible': False}),
+    ('future', {'visible': False}),
     )
 
   @classmethod
@@ -157,7 +157,7 @@ class OverviewReport(GridPivot):
         group by fcst.name, fcst.item_id, fcst.customer_id,
                d.bucket, d.startdate, d.enddate
         order by %s, d.startdate
-        ''' % (basesql,request.report_bucket,request.report_startdate,request.report_enddate,sortsql)
+        ''' % (basesql, request.report_bucket, request.report_startdate, request.report_enddate, sortsql)
     cursor.execute(query, baseparams)
 
     # Build the python result
@@ -198,9 +198,9 @@ class OverviewReport(GridPivot):
       for rec in json.JSONDecoder().decode(request.read()):
         try:
           # Find the forecastplan records that are affected
-          start = datetime.strptime(rec['startdate'],'%Y-%m-%d').date()
-          end = datetime.strptime(rec['enddate'],'%Y-%m-%d').date()
-          fcsts = [ i for i in ForecastPlan.objects.all().using(request.database).filter(forecast__name=rec['id'], startdate__gte=start, startdate__lt=end).only('ordersadjustment','forecastadjustment')]
+          start = datetime.strptime(rec['startdate'], '%Y-%m-%d').date()
+          end = datetime.strptime(rec['enddate'], '%Y-%m-%d').date()
+          fcsts = [ i for i in ForecastPlan.objects.all().using(request.database).filter(forecast__name=rec['id'], startdate__gte=start, startdate__lt=end).only('ordersadjustment', 'forecastadjustment')]
 
           # Which field to update
           if 'adjHistory' in rec:
@@ -216,7 +216,7 @@ class OverviewReport(GridPivot):
           tot = Decimal(0.0)
           cnt = 0
           for i in fcsts:
-            tot += getattr(i,field)
+            tot += getattr(i, field)
             cnt += 1
 
           # Adjust forecastplan entries
@@ -224,12 +224,12 @@ class OverviewReport(GridPivot):
             # Existing non-zero records are proportionally scaled
             factor = Decimal(value) / tot
             for i in fcsts:
-              setattr(i,field, getattr(i,field) * factor)
+              setattr(i, field, getattr(i, field) * factor)
           elif cnt > 0:
             # All entries are 0 and we initialize them to the average
             eql = Decimal(value) / cnt
             for i in fcsts:
-              setattr(i,field, eql)
+              setattr(i, field, eql)
           else:
             # Not a single active record exists, so we try to create
             fcst = Forecast.objects.all().using(request.database).get(name=rec['id'])
@@ -238,7 +238,7 @@ class OverviewReport(GridPivot):
             if cnt > 0:
               eql = Decimal(value) / cnt
               for i in fcstplan:
-                setattr(i,field, eql)
+                setattr(i, field, eql)
                 i.save(using=request.database)
             else:
               raise Exception("Can't create matching forecastplan entries")
@@ -254,6 +254,7 @@ class OverviewReport(GridPivot):
     finally:
       transaction.commit(using=request.database)
       transaction.leave_transaction_management(using=request.database)
-    if ok: resp.write("OK")
+    if ok:
+      resp.write("OK")
     resp.status_code = ok and 200 or 403
     return resp

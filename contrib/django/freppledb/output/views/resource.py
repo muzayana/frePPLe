@@ -37,11 +37,14 @@ class OverviewReport(GridPivot):
     GridFieldText('avgutil', title=_('utilization %'), field_name='util', formatter='percentage', editable=False, width=100, align='center', search=False),
     )
   crosses = (
-    ('available',{'title': _('available'), 'editable': lambda req: req.user.has_perm('input.change_resource'),}),
-    ('unavailable',{'title': _('unavailable')}),
-    ('setup',{'title': _('setup')}),
-    ('load',{'title': _('load')}),
-    ('utilization',{'title': _('utilization %'),}),
+    ('available', {
+       'title': _('available'),
+       'editable': lambda req: req.user.has_perm('input.change_resource')
+       }),
+    ('unavailable', {'title': _('unavailable')}),
+    ('setup', {'title': _('setup')}),
+    ('load', {'title': _('load')}),
+    ('utilization', {'title': _('utilization %')}),
     )
 
   @classmethod
@@ -120,14 +123,15 @@ class OverviewReport(GridPivot):
       -- Grouping and sorting
       group by res.name, res.location_id, res.type, d.bucket, d.startdate
       order by %s, d.startdate
-      ''' % ( units[0], units[0], units[0], units[0],
+      ''' % (
+        units[0], units[0], units[0], units[0],
         basesql, request.report_bucket, request.report_startdate,
         request.report_enddate,
         connections[basequery.db].ops.quote_name('resource'),
         request.report_startdate, request.report_enddate,
-        sql_max('sum(out_resourceplan.available)','0.0001'),
+        sql_max('sum(out_resourceplan.available)', '0.0001'),
         request.report_startdate, request.report_enddate, sortsql
-       )
+      )
     cursor.execute(query, baseparams)
 
     # Build the python result
@@ -139,14 +143,14 @@ class OverviewReport(GridPivot):
       yield {
         'resource': row[0],
         'location': row[1],
-        'avgutil': round(row[2],2),
+        'avgutil': round(row[2], 2),
         'bucket': row[3],
         'startdate': python_date(row[4]),
-        'available': round(row[5],1),
-        'unavailable': round(row[6],1),
-        'load': round(row[7],1),
-        'setup': round(row[8],1),
-        'utilization': round(util,2),
+        'available': round(row[5], 1),
+        'unavailable': round(row[6], 1),
+        'load': round(row[7], 1),
+        'setup': round(row[8], 1),
+        'utilization': round(util, 2)
         }
 
 
@@ -166,10 +170,10 @@ class DetailReport(GridReport):
   def basequeryset(reportclass, request, args, kwargs):
     if args and args[0]:
       return LoadPlan.objects.filter(theresource__exact=args[0]).select_related() \
-        .extra(select={'operation_in': "select name from operation where out_operationplan.operation = operation.name",})
+        .extra(select={'operation_in': "select name from operation where out_operationplan.operation = operation.name"})
     else:
       return LoadPlan.objects.select_related() \
-        .extra(select={'operation_in': "select name from operation where out_operationplan.operation = operation.name",})
+        .extra(select={'operation_in': "select name from operation where out_operationplan.operation = operation.name"})
 
   @classmethod
   def extra_context(reportclass, request, *args, **kwargs):
@@ -202,7 +206,7 @@ class GanttReport(GridReport):
   multiselect = False
   heightmargin = 87
   frozenColumns = 0   # TODO freeze 2 columns - doesn't work now because row height is not good in the frozen cols
-  default_sort = (1,'asc')
+  default_sort = (1, 'asc')
   hasTimeBuckets = True
   rows = (
     GridFieldText('name', title=_('resource'), key=True, field_name='name', formatter='resource', editable=False),
@@ -268,9 +272,12 @@ class GanttReport(GridReport):
       on resource.name = plan_summary.theresource
       -- Ordering info
       order by %s, res.name, out_loadplan.startdate
-      ''' % ( basesql,
-              sql_max('sum(out_resourceplan.available)','0.0001'),
-              request.report_startdate, request.report_enddate, reportclass.get_sort(request) )
+      ''' % (
+            basesql,
+            sql_max('sum(out_resourceplan.available)', '0.0001'),
+            request.report_startdate, request.report_enddate,
+            reportclass.get_sort(request)
+            )
     cursor.execute(query, baseparams)
 
     # Build the Python result
@@ -290,19 +297,19 @@ class GanttReport(GridReport):
             }
         prevRes = row[0]
         prevLocation = row[1]
-        prevUtil = row[2] and round(row[2],2) or 0
+        prevUtil = row[2] and round(row[2], 2) or 0
         results = []
       if row[4]:
-        results.append( {
-            'operation': row[6],
-            'description': row[7],
-            'quantity': float(row[3]),
-            'x': round((row[4] - request.report_startdate).total_seconds() / horizon, 3),
-            'w': round((row[5] - row[4]).total_seconds() / horizon, 3),
-            'startdate': str(row[4]),
-            'enddate': str(row[5]),
-            'locked': row[8] and 1 or 0,
-            } )
+        results.append({
+          'operation': row[6],
+          'description': row[7],
+          'quantity': float(row[3]),
+          'x': round((row[4] - request.report_startdate).total_seconds() / horizon, 3),
+          'w': round((row[5] - row[4]).total_seconds() / horizon, 3),
+          'startdate': str(row[4]),
+          'enddate': str(row[5]),
+          'locked': row[8] and 1 or 0,
+          })
     if prevRes:
       yield {
         'name': prevRes,

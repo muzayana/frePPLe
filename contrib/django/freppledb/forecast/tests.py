@@ -10,6 +10,7 @@
 
 from django.test import TestCase
 
+
 class OutputTest(TestCase):
 
   def setUp(self):

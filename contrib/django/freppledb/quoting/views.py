@@ -8,7 +8,8 @@
 # or in the form of compiled binaries.
 #
 
-import json, httplib
+import httplib
+import json
 
 from django.views.decorators.csrf import csrf_protect
 from django.contrib.auth.decorators import login_required
@@ -33,11 +34,19 @@ BOUNDARY = '----------ThIs_Is_tHe_bouNdaRY_$'
 
 from freppledb.admin import data_site
 
+
 class QuoteForm(forms.ModelForm):
   # ASSUMPTION: quoting is assumed to be on the default database only
   due = forms.DateField(widget=AdminSplitDateTime())
-  customer = forms.ModelChoiceField(queryset=Customer.objects.all(), widget=ForeignKeyRawIdWidget(Demand._meta.get_field("customer").rel, data_site, using=DEFAULT_DB_ALIAS))
-  item = forms.ModelChoiceField(queryset=Item.objects.all(), widget=ForeignKeyRawIdWidget(Demand._meta.get_field("item").rel, data_site, using=DEFAULT_DB_ALIAS))
+  customer = forms.ModelChoiceField(
+    queryset=Customer.objects.all(),
+    widget=ForeignKeyRawIdWidget(Demand._meta.get_field("customer").rel, data_site, using=DEFAULT_DB_ALIAS)
+    )
+  item = forms.ModelChoiceField(
+    queryset=Item.objects.all(),
+    widget=ForeignKeyRawIdWidget(Demand._meta.get_field("item").rel, data_site, using=DEFAULT_DB_ALIAS)
+    )
+
   class Meta:
     model = Demand
     fields = ('name', 'description', 'item', 'customer', 'quantity', 'due', 'minshipment', 'maxlateness')
@@ -47,7 +56,7 @@ class QuoteReport(GridReport):
   template = 'quoting/quote.html'
   title = _('Quotes')
   basequeryset = Demand.objects.all().filter(status='quote')
-  permissions = (('view_quote_report','Can view quote report'),)
+  permissions = (('view_quote_report', 'Can view quote report'),)
   model = Demand
   frozenColumns = 1
   multiselect = False
@@ -100,13 +109,13 @@ def InfoView(request, action):
     conn = httplib.HTTPConnection(url)
     if action == 'info':
       data = json.loads(request.body)
-      conn.request("GET", '/demand/' + iri_to_uri(urlquote(data[0],'')) + '/?plan=P')
+      conn.request("GET", '/demand/' + iri_to_uri(urlquote(data[0], '')) + '/?plan=P')
     elif action == 'cancel':
       data = request.GET['name']
-      conn.request("POST", '/demand/' + iri_to_uri(urlquote(data,'')) + '/?action=R&persist=1', "", {"content-length": 0})
+      conn.request("POST", '/demand/' + iri_to_uri(urlquote(data, '')) + '/?action=R&persist=1', "", {"content-length": 0})
     elif action == 'confirm':
       data = request.GET['name']
-      conn.request("POST", '/demand/' + iri_to_uri(urlquote(data,'')) + '/?status=open&persist=1', "", {"content-length": 0})
+      conn.request("POST", '/demand/' + iri_to_uri(urlquote(data, '')) + '/?status=open&persist=1', "", {"content-length": 0})
     elif action == 'inquiry' or action == 'quote':
       data = '\r\n'.join([
         '--' + BOUNDARY,
@@ -134,4 +143,3 @@ def InfoView(request, action):
     msg = "Error: %s" % e
     logger.error(msg)
     return HttpResponseServerError(msg)
-

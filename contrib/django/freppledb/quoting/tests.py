@@ -8,7 +8,10 @@
 # or in the form of compiled binaries.
 #
 from __future__ import print_function
-import os, thread, httplib, time
+import httplib
+import os
+import thread
+import time
 from xml.dom import minidom
 from cherrypy.process import servers
 
@@ -73,20 +76,20 @@ class baseTest(TestCase):
     </plan>'''
 
 
-  def buildQuoteXML(self, name = None, customer = None, quantity = 1, item = None,
-        due = None, minshipment = 1, maxlateness = 1000):
+  def buildQuoteXML(self, name=None, customer=None, quantity=1, item=None,
+        due=None, minshipment=1, maxlateness=1000):
     msg = '\r\n'.join([
-        '--' + self.boundary,
-        'Content-Disposition: form-data; name="xmldata"',
-        '',
-        self.xmltemplate % {
-            'name': name, 'customer': customer, 'quantity': quantity,
-            'item': item, 'due': due, 'minshipment': minshipment,
-            'maxlateness': maxlateness
-            },
-        '--' + self.boundary + '--',
-        ''
-        ])
+      '--' + self.boundary,
+      'Content-Disposition: form-data; name="xmldata"',
+      '',
+      self.xmltemplate % {
+        'name': name, 'customer': customer, 'quantity': quantity,
+        'item': item, 'due': due, 'minshipment': minshipment,
+        'maxlateness': maxlateness
+        },
+      '--' + self.boundary + '--',
+      ''
+      ])
     headers = {
       "Content-type": 'multipart/form-data; boundary=%s' % self.boundary,
       "content-length": len(msg)
@@ -238,10 +241,10 @@ class quoteAndInquiry(baseTest):
     # Send a first inquiry
     conn = httplib.HTTPConnection(self.url)
     (msg1, headers1) = self.buildQuoteXML(
-        name = "test", customer = "Customer near factory 1",
-        quantity = 100, item = "product",
-        due = '2013-01-01T00:00:00', minshipment = 1
-        )
+      name="test", customer="Customer near factory 1",
+      quantity=100, item="product",
+      due='2013-01-01T00:00:00', minshipment=1
+      )
     conn.request("POST", "/inquiry/", msg1, headers1)
     resp = conn.getresponse()
     self.assertEqual(resp.status, httplib.OK)
@@ -263,10 +266,10 @@ class quoteAndInquiry(baseTest):
 
     # Send a second inquiry
     (msg2, headers2) = self.buildQuoteXML(
-        name = "test2", customer = "Customer near factory 1",
-        quantity = 100, item = "product",
-        due = '2013-01-01T00:00:00', minshipment = 1
-        )
+      name="test2", customer="Customer near factory 1",
+      quantity=100, item="product",
+      due='2013-01-01T00:00:00', minshipment=1
+      )
     conn.request("POST", "/inquiry/", msg2, headers2)
     resp = conn.getresponse()
     self.assertEqual(resp.status, httplib.OK)
@@ -287,10 +290,10 @@ class requoteTest(baseTest):
     # Send a quote
     conn = httplib.HTTPConnection(self.url)
     (msg, headers) = self.buildQuoteXML(
-        name = "test", customer = "Customer near factory 1",
-        quantity = 100, item = "product",
-        due = '2013-01-01T00:00:00', minshipment = 1
-        )
+      name="test", customer="Customer near factory 1",
+      quantity=100, item="product",
+      due='2013-01-01T00:00:00', minshipment=1
+      )
     conn.request("POST", "/quote/", msg, headers)
     resp = conn.getresponse()
     self.assertEqual(resp.status, httplib.OK)

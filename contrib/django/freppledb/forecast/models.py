@@ -21,12 +21,12 @@ from freppledb.input.models import Customer, Operation, Item, Calendar, Demand
 class Forecast(AuditModel):
   # Forecasting methods
   methods = (
-    ('automatic',_('Automatic')),
-    ('constant',_('Constant')),
-    ('trend',_('Trend')),
-    ('seasonal',_('Seasonal')),
-    ('intermittent',_('Intermittent')),
-    ('manual',_('Manual')),
+    ('automatic', _('Automatic')),
+    ('constant', _('Constant')),
+    ('trend', _('Trend')),
+    ('seasonal', _('Seasonal')),
+    ('intermittent', _('Intermittent')),
+    ('manual', _('Manual')),
   )
 
   # Database fields
@@ -36,22 +36,37 @@ class Forecast(AuditModel):
   subcategory = models.CharField(_('subcategory'), max_length=settings.CATEGORYSIZE, null=True, blank=True, db_index=True)
   customer = models.ForeignKey(Customer, verbose_name=_('customer'), db_index=True)
   item = models.ForeignKey(Item, verbose_name=_('item'), db_index=True)
-  method = models.CharField(_('Forecast method'), max_length=20, null=True, blank=True, choices=methods, default='automatic',
-    help_text=_('Method used to generate a base forecast'),
+  method = models.CharField(
+    _('Forecast method'), max_length=20, null=True, blank=True,
+    choices=methods, default='automatic',
+    help_text=_('Method used to generate a base forecast')
     )
   calendar = models.ForeignKey(Calendar, verbose_name=_('calendar'), null=False)
-  operation = models.ForeignKey(Operation, verbose_name=_('delivery operation'), null=True, blank=True,
-    related_name='used_forecast', help_text=_('Operation used to satisfy this demand'))
-  priority = models.PositiveIntegerField(_('priority'), default=10, choices=Demand.demandpriorities,
-    help_text=_('Priority of the demand (lower numbers indicate more important demands)'))
-  minshipment = models.DecimalField(_('minimum shipment'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True, blank=True,
+  operation = models.ForeignKey(
+    Operation, verbose_name=_('delivery operation'), null=True, blank=True,
+    related_name='used_forecast', help_text=_('Operation used to satisfy this demand')
+    )
+  priority = models.PositiveIntegerField(
+    _('priority'), default=10, choices=Demand.demandpriorities,
+    help_text=_('Priority of the demand (lower numbers indicate more important demands)')
+    )
+  minshipment = models.DecimalField(
+    _('minimum shipment'), null=True, blank=True,
+    max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES,
     help_text=_('Minimum shipment quantity when planning this demand'))
-  maxlateness = models.DecimalField(_('maximum lateness'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True, blank=True,
-    help_text=_("Maximum lateness allowed when planning this demand"))
-  discrete = models.BooleanField(_('discrete'),default=True, help_text=_('Round forecast numbers to integers'))
+  maxlateness = models.DecimalField(
+    _('maximum lateness'), null=True, blank=True,
+    max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES,
+    help_text=_("Maximum lateness allowed when planning this demand")
+    )
+  discrete = models.BooleanField(
+    _('discrete'), default=True,
+    help_text=_('Round forecast numbers to integers')
+    )
 
   # Convenience methods
-  def __unicode__(self): return self.name
+  def __unicode__(self):
+    return self.name
 
   def setTotal(self, startdate, enddate, quantity):
     '''
@@ -69,9 +84,11 @@ class Forecast(AuditModel):
       startdate = enddate
       enddate = tmp
     # Assure the type of the quantity
-    if not isinstance(quantity,Decimal): quantity = Decimal(str(quantity))
+    if not isinstance(quantity, Decimal):
+      quantity = Decimal(str(quantity))
     # Round the quantity, if discrete flag is on
-    if self.discrete: quantity = quantity.to_integral()
+    if self.discrete:
+      quantity = quantity.to_integral()
     # Step 0: Check for forecast entries intersecting with the current daterange
     startdate = startdate.date()
     enddate = enddate.date()
@@ -81,7 +98,7 @@ class Forecast(AuditModel):
       # We just create an entry for the given start and end date
       # Note: if the calendar values are updated later on, such changes are
       # obviously not reflected any more in the forecast entries.
-      self.entries.create(startdate=startdate,enddate=enddate,quantity=str(quantity)).save()
+      self.entries.create(startdate=startdate, enddate=enddate, quantity=str(quantity)).save()
     else:
       # Case 2: Entries already exist in this daterange, which will be rescaled
       # Case 1, step 1: calculate current quantity and "clip" the existing entries
@@ -90,7 +107,7 @@ class Forecast(AuditModel):
       for i in entries:
         # Calculate the length of this bucket in seconds
         duration = i.enddate - i.startdate
-        duration = duration.days+86400*duration.seconds
+        duration = duration.days + 86400 * duration.seconds
         if i.startdate == startdate and i.enddate == enddate:
           # This entry has exactly the same daterange: update the quantity and exit
           i.quantity = str(quantity)
@@ -101,24 +118,26 @@ class Forecast(AuditModel):
           # We need to split the entry in three.
           # Part one: after our daterange, create a new entry
           p = i.enddate - enddate
-          q = i.quantity * (p.days+86400*p.seconds) / duration
-          if self.discrete: q = round(q)
-          self.entries.create( \
-             startdate = enddate,
-             enddate = i.enddate,
-             quantity = str(q),
-             ).save()
+          q = i.quantity * (p.days + 86400 * p.seconds) / duration
+          if self.discrete:
+            q = round(q)
+          self.entries.create(
+            startdate=enddate,
+            enddate=i.enddate,
+            quantity=str(q),
+            ).save()
           # Part two: our date range, create a new entry
-          self.entries.create( \
-             startdate = startdate,
-             enddate = enddate,
-             quantity = str(quantity),
-             ).save()
+          self.entries.create(
+            startdate=startdate,
+            enddate=enddate,
+            quantity=str(quantity),
+            ).save()    # TODO Possible bug? Does this save to the correct database?
           # Part three: before our daterange, update the existing entry
           p = startdate - i.startdate
           i.enddate = startdate
-          i.quantity = i.quantity * (p.days+86400*p.seconds) / duration
-          if self.discrete: i.quantity = round(i.quantity)
+          i.quantity = i.quantity * (p.days + 86400 * p.seconds) / duration
+          if self.discrete:
+            i.quantity = round(i.quantity)
           i.quantity = str(i.quantity)
           i.save()
           # Done with this case...
@@ -131,38 +150,43 @@ class Forecast(AuditModel):
           # This entry starts in the range and ends later.
           # Split the entry in two.
           p = i.enddate - enddate
-          fraction = Decimal(i.quantity * (p.days+86400*p.seconds) / duration)
+          fraction = Decimal(i.quantity * (p.days + 86400 * p.seconds) / duration)
           current += i.quantity - fraction
-          self.entries.create( \
-             startdate = i.startdate,
-             enddate = enddate,
-             quantity = str(i.quantity - fraction),
-             ).save()
+          self.entries.create(
+            startdate=i.startdate,
+            enddate=enddate,
+            quantity=str(i.quantity - fraction),
+            ).save()
           i.startdate = enddate
-          if self.discrete: i.quantity = str(round(fraction))
-          else: i.quantity = str(fraction)
+          if self.discrete:
+            i.quantity = str(round(fraction))
+          else:
+            i.quantity = str(fraction)
           i.save()
         elif i.enddate > startdate and i.startdate <= startdate:
           # This entry ends in the range and starts earlier.
           # Split the entry in two.
           p = startdate - i.startdate
-          fraction = Decimal(i.quantity * (p.days+86400*p.seconds) / duration)
+          fraction = Decimal(i.quantity * (p.days + 86400 * p.seconds) / duration)
           current += i.quantity - fraction
-          self.entries.create( \
-             startdate = startdate,
-             enddate = i.enddate,
-             quantity = str(i.quantity - fraction),
-             ).save()
+          self.entries.create(
+            startdate=startdate,
+            enddate=i.enddate,
+            quantity=str(i.quantity - fraction)
+            ).save()
           i.enddate = startdate
-          if self.discrete: i.quantity = str(round(fraction))
-          else: i.quantity = str(fraction)
+          if self.discrete:
+            i.quantity = str(round(fraction))
+          else:
+            i.quantity = str(fraction)
           i.save()
       # Case 1, step 2: Rescale the existing entries
       # Note that we retrieve an updated set of buckets from the database here...
       entries = self.entries.filter(enddate__gt=startdate).filter(startdate__lt=enddate)
       factor = quantity / current
       if factor == 0:
-        for i in entries: i.delete()
+        for i in entries:
+          i.delete()
       elif self.discrete:
         # Only put integers
         remainder = 0
@@ -195,7 +219,8 @@ class ForecastDemand(AuditModel):
   quantity = models.DecimalField(_('quantity'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default=0)
 
   # Convenience methods
-  def __unicode__(self): return self.forecast.name + " " + str(self.startdate) + " - " + str(self.enddate)
+  def __unicode__(self):
+    return self.forecast.name + " " + str(self.startdate) + " - " + str(self.enddate)
 
   class Meta(AuditModel.Meta):
     db_table = 'forecastdemand'

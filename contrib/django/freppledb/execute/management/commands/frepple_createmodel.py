@@ -55,34 +55,62 @@ class Command(BaseCommand):
     '''
 
   option_list = BaseCommand.option_list + (
-      make_option('--user', dest='user', type='string',
-        help='User running the command'),
-      make_option('--cluster', dest='cluster', type="int",
-        help='Number of end items', default=100),
-      make_option('--demand', dest='demand', type="int",
-        help='Demands per end item', default=30),
-      make_option('--forecast_per_item', dest='forecast_per_item', type="int",
-        help='Monthly forecast per end item', default=30),
-      make_option('--level', dest='level', type="int",
-        help='Depth of bill-of-material', default=5),
-      make_option('--resource', dest='resource', type="int",
-        help='Number of resources', default=60),
-      make_option('--resource_size', dest='resource_size', type="int",
-        help='Size of each resource', default=5),
-      make_option('--components', dest='components', type="int",
-        help='Total number of components', default=200),
-      make_option('--components_per', dest='components_per', type="int",
-        help='Number of components per end item', default=4),
-      make_option('--deliver_lt', dest='deliver_lt', type="int",
-        help='Average delivery lead time of orders', default=30),
-      make_option('--procure_lt', dest='procure_lt', type="int",
-        help='Average procurement lead time', default=40),
-      make_option('--currentdate', dest='currentdate', type="string",
-        help='Current date of the plan in YYYY-MM-DD format'),
-      make_option('--database', action='store', dest='database',
-        default=DEFAULT_DB_ALIAS, help='Nominates a specific database to populate'),
-      make_option('--task', dest='task', type='int',
-        help='Task identifier (generated automatically if not provided)'),
+    make_option(
+      '--user', dest='user', type='string',
+      help='User running the command'
+      ),
+    make_option(
+      '--cluster', dest='cluster', type="int",
+      help='Number of end items', default=100
+      ),
+    make_option(
+      '--demand', dest='demand', type="int",
+      help='Demands per end item', default=30),
+    make_option(
+      '--forecast_per_item', dest='forecast_per_item', type="int",
+      help='Monthly forecast per end item', default=30
+      ),
+    make_option(
+      '--level', dest='level', type="int",
+      help='Depth of bill-of-material', default=5
+      ),
+    make_option(
+      '--resource', dest='resource', type="int",
+      help='Number of resources', default=60
+      ),
+    make_option(
+      '--resource_size', dest='resource_size', type="int",
+      help='Size of each resource', default=5
+      ),
+    make_option(
+      '--components', dest='components', type="int",
+      help='Total number of components', default=200
+      ),
+    make_option(
+      '--components_per', dest='components_per', type="int",
+      help='Number of components per end item', default=4
+      ),
+    make_option(
+      '--deliver_lt', dest='deliver_lt', type="int",
+      help='Average delivery lead time of orders', default=30
+      ),
+    make_option(
+      '--procure_lt', dest='procure_lt', type="int",
+      help='Average procurement lead time', default=40
+      ),
+    make_option(
+      '--currentdate', dest='currentdate', type="string",
+      help='Current date of the plan in YYYY-MM-DD format'
+      ),
+    make_option(
+      '--database', action='store', dest='database',
+      default=DEFAULT_DB_ALIAS,
+      help='Nominates a specific database to populate'
+      ),
+    make_option(
+      '--task', dest='task', type='int',
+      help='Task identifier (generated automatically if not provided)'
+      ),
   )
 
   requires_model_validation = False
@@ -147,9 +175,9 @@ class Command(BaseCommand):
     else:
       procure_lt = 40
     if 'currentdate' in options:
-      currentdate = options['currentdate'] or datetime.strftime(date.today(),'%Y-%m-%d')
+      currentdate = options['currentdate'] or datetime.strftime(date.today(), '%Y-%m-%d')
     else:
-      currentdate = datetime.strftime(date.today(),'%Y-%m-%d')
+      currentdate = datetime.strftime(date.today(), '%Y-%m-%d')
     if 'database' in options:
       database = options['database'] or DEFAULT_DB_ALIAS
     else:
@@ -183,15 +211,15 @@ class Command(BaseCommand):
         task = Task(name='generate model', submitted=now, started=now, status='0%', user=user)
       task.arguments = "--cluster=%s --demand=%s --forecast_per_item=%s --level=%s --resource=%s " \
         "--resource_size=%s --components=%s --components_per=%s --deliver_lt=%s --procure_lt=%s" % (
-        cluster, demand, forecast_per_item, level, resource,
-        resource_size, components, components_per, deliver_lt, procure_lt
+          cluster, demand, forecast_per_item, level, resource,
+          resource_size, components, components_per, deliver_lt, procure_lt
         )
       task.save(using=database)
       transaction.commit(using=database)
 
       # Pick up the startdate
       try:
-        startdate = datetime.strptime(currentdate,'%Y-%m-%d')
+        startdate = datetime.strptime(currentdate, '%Y-%m-%d')
       except:
         raise CommandError("current date is not matching format YYYY-MM-DD")
 
@@ -207,81 +235,155 @@ class Command(BaseCommand):
       param.save(using=database)
 
       # Parameters
-      Parameter.objects.using(database).create(name='loading_time_units', value='days',
-        description='Time units to be used for the resource report: hours, days, weeks').save(using=database)
-      Parameter.objects.using(database).create(name='plan.loglevel', value='0',
-        description='Controls the verbosity of the planning log file. Accepted values are 0(silent - default), 1 and 2 (verbose)').save(using=database)
+      Parameter.objects.using(database).create(
+        name='loading_time_units', value='days',
+        description='Time units to be used for the resource report: hours, days, weeks'
+        ).save(using=database)
+      Parameter.objects.using(database).create(
+        name='plan.loglevel', value='0',
+        description='Controls the verbosity of the planning log file. Accepted values are 0(silent - default), 1 and 2 (verbose)'
+        ).save(using=database)
       if has_forecast:
-        Parameter.objects.using(database).create(name='forecast.Croston_initialAlfa', value='0.1',
-          description='Initial parameter for the Croston forecast method.').save(using=database)
-        Parameter.objects.using(database).create(name='forecast.Croston_maxAlfa', value='1',
-          description='Maximum parameter for the Croston forecast method.').save(using=database)
-        Parameter.objects.using(database).create(name='forecast.Croston_minAlfa', value='0.03',
-          description='Minimum parameter for the Croston forecast method.').save(using=database)
-        Parameter.objects.using(database).create(name='forecast.Croston_minIntermittence', value='0.33',
-          description='Minimum intermittence (defined as the percentage of zero demand buckets) before the Croston method is applied.').save(using=database)
-        Parameter.objects.using(database).create(name='forecast.DoubleExponential_dampenTrend', value='0.8',
-          description='Dampening factor applied to the trend in future periods.').save(using=database)
-        Parameter.objects.using(database).create(name='forecast.DoubleExponential_initialAlfa', value='0.2',
-          description='Initial smoothing constant.').save(using=database)
-        Parameter.objects.using(database).create(name='forecast.DoubleExponential_initialGamma', value='0.2',
-          description='Initial trend smoothing constant.').save(using=database)
-        Parameter.objects.using(database).create(name='forecast.DoubleExponential_maxAlfa', value='1',
-          description='Maximum smoothing constant.').save(using=database)
-        Parameter.objects.using(database).create(name='forecast.DoubleExponential_maxGamma', value='1',
-          description='Maximum trend smoothing constant.').save(using=database)
-        Parameter.objects.using(database).create(name='forecast.DoubleExponential_minAlfa', value='0.02',
-          description='Minimum smoothing constant.').save(using=database)
-        Parameter.objects.using(database).create(name='forecast.DoubleExponential_minGamma', value='0.05',
-          description='Minimum trend smoothing constant.').save(using=database)
-        Parameter.objects.using(database).create(name='forecast.DueAtEndOfBucket', value='1',
-          description='By setting this flag to true, the forecast will be due at the end of the forecast bucket.').save(using=database)
-        Parameter.objects.using(database).create(name='forecast.Iterations', value='15',
-          description='Specifies the maximum number of iterations allowed for a forecast method to tune its parameters.').save(using=database)
-        Parameter.objects.using(database).create(name='forecast.loglevel', value='0',
-          description='Verbosity of the forecast solver').save(using=database)
-        Parameter.objects.using(database).create(name='forecast.MovingAverage_order', value='5',
-          description='This parameter controls the number of buckets to be averaged by the moving average forecast method.').save(using=database)
-        Parameter.objects.using(database).create(name='forecast.Net_CustomerThenItemHierarchy', value='1',
-          description='This flag allows us to control whether we first search the customer hierarchy and then the item hierarchy, or the other way around.').save(using=database)
-        Parameter.objects.using(database).create(name='forecast.Net_MatchUsingDeliveryOperation', value='1',
-          description='Specifies whether or not a demand and a forecast require to have the same delivery operation to be a match.').save(using=database)
-        Parameter.objects.using(database).create(name='forecast.Net_NetEarly', value='0',
-          description='Defines how much time before the due date of an order we are allowed to search for a forecast bucket to net from.').save(using=database)
-        Parameter.objects.using(database).create(name='forecast.Net_NetLate', value='0',
-          description='Defines how much time after the due date of an order we are allowed to search for a forecast bucket to net from.').save(using=database)
-        Parameter.objects.using(database).create(name='forecast.Outlier_maxDeviation', value='4',
-          description='Multiple of the standard deviation used to detect outliers').save(using=database)
-        Parameter.objects.using(database).create(name='forecast.Seasonal_dampenTrend', value='0.8',
-          description='Dampening factor applied to the trend in future periods.').save(using=database)
-        Parameter.objects.using(database).create(name='forecast.Seasonal_gamma', value='0.05',
-          description='Value of the seasonal parameter').save(using=database)
-        Parameter.objects.using(database).create(name='forecast.Seasonal_initialAlfa', value='0.2',
-          description='Initial value for the constant parameter').save(using=database)
-        Parameter.objects.using(database).create(name='forecast.Seasonal_initialBeta', value='0.2',
-          description='Initial value for the trend parameter').save(using=database)
-        Parameter.objects.using(database).create(name='forecast.Seasonal_maxAlfa', value='1',
-          description='Maximum value for the constant parameter').save(using=database)
-        Parameter.objects.using(database).create(name='forecast.Seasonal_maxBeta', value='1',
-          description='Maximum value for the trend parameter').save(using=database)
-        Parameter.objects.using(database).create(name='forecast.Seasonal_maxPeriod', value='14',
-          description='Maximum seasonal cycle to be checked.').save(using=database)
-        Parameter.objects.using(database).create(name='forecast.Seasonal_minAlfa', value='0.02',
-          description='Minimum value for the constant parameter').save(using=database)
-        Parameter.objects.using(database).create(name='forecast.Seasonal_minBeta', value='0.2',
-          description='Initial value for the trend parameter').save(using=database)
-        Parameter.objects.using(database).create(name='forecast.Seasonal_minPeriod', value='2',
-          description='Minimum seasonal cycle to be checked.').save(using=database)
-        Parameter.objects.using(database).create(name='forecast.SingleExponential_initialAlfa', value='0.2',
-          description='Initial smoothing constant.').save(using=database)
-        Parameter.objects.using(database).create(name='forecast.SingleExponential_maxAlfa', value='1',
-          description='Maximum smoothing constant.').save(using=database)
-        Parameter.objects.using(database).create(name='forecast.SingleExponential_minAlfa', value='0.03',
-          description='Minimum smoothing constant.').save(using=database)
-        Parameter.objects.using(database).create(name='forecast.Skip', value='0',
-          description="Specifies the number of time series values used to initialize the forecasting method. The forecast error in these bucket isn't counted.").save(using=database)
-        Parameter.objects.using(database).create(name='forecast.SmapeAlfa', value='0.95',
-          description='Specifies how the sMAPE forecast error is weighted for different time buckets.').save(using=database)
+        Parameter.objects.using(database).create(
+          name='forecast.Croston_initialAlfa', value='0.1',
+          description='Initial parameter for the Croston forecast method.'
+          ).save(using=database)
+        Parameter.objects.using(database).create(
+          name='forecast.Croston_maxAlfa', value='1',
+          description='Maximum parameter for the Croston forecast method.'
+          ).save(using=database)
+        Parameter.objects.using(database).create(
+          name='forecast.Croston_minAlfa', value='0.03',
+          description='Minimum parameter for the Croston forecast method.'
+          ).save(using=database)
+        Parameter.objects.using(database).create(
+          name='forecast.Croston_minIntermittence', value='0.33',
+          description='Minimum intermittence (defined as the percentage of zero demand buckets) before the Croston method is applied.'
+          ).save(using=database)
+        Parameter.objects.using(database).create(
+          name='forecast.DoubleExponential_dampenTrend', value='0.8',
+          description='Dampening factor applied to the trend in future periods.'
+          ).save(using=database)
+        Parameter.objects.using(database).create(
+          name='forecast.DoubleExponential_initialAlfa', value='0.2',
+          description='Initial smoothing constant.'
+          ).save(using=database)
+        Parameter.objects.using(database).create(
+          name='forecast.DoubleExponential_initialGamma', value='0.2',
+          description='Initial trend smoothing constant.'
+          ).save(using=database)
+        Parameter.objects.using(database).create(
+          name='forecast.DoubleExponential_maxAlfa', value='1',
+          description='Maximum smoothing constant.'
+          ).save(using=database)
+        Parameter.objects.using(database).create(
+          name='forecast.DoubleExponential_maxGamma', value='1',
+          description='Maximum trend smoothing constant.'
+          ).save(using=database)
+        Parameter.objects.using(database).create(
+          name='forecast.DoubleExponential_minAlfa', value='0.02',
+          description='Minimum smoothing constant.'
+          ).save(using=database)
+        Parameter.objects.using(database).create(
+          name='forecast.DoubleExponential_minGamma', value='0.05',
+          description='Minimum trend smoothing constant.'
+          ).save(using=database)
+        Parameter.objects.using(database).create(
+          name='forecast.DueAtEndOfBucket', value='1',
+          description='By setting this flag to true, the forecast will be due at the end of the forecast bucket.'
+          ).save(using=database)
+        Parameter.objects.using(database).create(
+          name='forecast.Iterations', value='15',
+          description='Specifies the maximum number of iterations allowed for a forecast method to tune its parameters.'
+          ).save(using=database)
+        Parameter.objects.using(database).create(
+          name='forecast.loglevel', value='0',
+          description='Verbosity of the forecast solver'
+          ).save(using=database)
+        Parameter.objects.using(database).create(
+          name='forecast.MovingAverage_order', value='5',
+          description='This parameter controls the number of buckets to be averaged by the moving average forecast method.'
+          ).save(using=database)
+        Parameter.objects.using(database).create(
+          name='forecast.Net_CustomerThenItemHierarchy', value='1',
+          description='This flag allows us to control whether we first search the customer hierarchy and then the item hierarchy, or the other way around.'
+          ).save(using=database)
+        Parameter.objects.using(database).create(
+          name='forecast.Net_MatchUsingDeliveryOperation', value='1',
+          description='Specifies whether or not a demand and a forecast require to have the same delivery operation to be a match.'
+          ).save(using=database)
+        Parameter.objects.using(database).create(
+          name='forecast.Net_NetEarly', value='0',
+          description='Defines how much time before the due date of an order we are allowed to search for a forecast bucket to net from.'
+          ).save(using=database)
+        Parameter.objects.using(database).create(
+          name='forecast.Net_NetLate', value='0',
+          description='Defines how much time after the due date of an order we are allowed to search for a forecast bucket to net from.'
+          ).save(using=database)
+        Parameter.objects.using(database).create(
+          name='forecast.Outlier_maxDeviation', value='4',
+          description='Multiple of the standard deviation used to detect outliers'
+          ).save(using=database)
+        Parameter.objects.using(database).create(
+          name='forecast.Seasonal_dampenTrend', value='0.8',
+          description='Dampening factor applied to the trend in future periods.'
+          ).save(using=database)
+        Parameter.objects.using(database).create(
+          name='forecast.Seasonal_gamma', value='0.05',
+          description='Value of the seasonal parameter'
+          ).save(using=database)
+        Parameter.objects.using(database).create(
+          name='forecast.Seasonal_initialAlfa', value='0.2',
+          description='Initial value for the constant parameter'
+          ).save(using=database)
+        Parameter.objects.using(database).create(
+          name='forecast.Seasonal_initialBeta', value='0.2',
+          description='Initial value for the trend parameter'
+          ).save(using=database)
+        Parameter.objects.using(database).create(
+          name='forecast.Seasonal_maxAlfa', value='1',
+          description='Maximum value for the constant parameter'
+          ).save(using=database)
+        Parameter.objects.using(database).create(
+          name='forecast.Seasonal_maxBeta', value='1',
+          description='Maximum value for the trend parameter'
+          ).save(using=database)
+        Parameter.objects.using(database).create(
+          name='forecast.Seasonal_maxPeriod', value='14',
+          description='Maximum seasonal cycle to be checked.'
+          ).save(using=database)
+        Parameter.objects.using(database).create(
+          name='forecast.Seasonal_minAlfa', value='0.02',
+          description='Minimum value for the constant parameter'
+          ).save(using=database)
+        Parameter.objects.using(database).create(
+          name='forecast.Seasonal_minBeta', value='0.2',
+          description='Initial value for the trend parameter'
+          ).save(using=database)
+        Parameter.objects.using(database).create(
+          name='forecast.Seasonal_minPeriod', value='2',
+          description='Minimum seasonal cycle to be checked.'
+          ).save(using=database)
+        Parameter.objects.using(database).create(
+          name='forecast.SingleExponential_initialAlfa', value='0.2',
+          description='Initial smoothing constant.'
+          ).save(using=database)
+        Parameter.objects.using(database).create(
+          name='forecast.SingleExponential_maxAlfa', value='1',
+          description='Maximum smoothing constant.'
+          ).save(using=database)
+        Parameter.objects.using(database).create(
+          name='forecast.SingleExponential_minAlfa', value='0.03',
+          description='Minimum smoothing constant.'
+          ).save(using=database)
+        Parameter.objects.using(database).create(
+          name='forecast.Skip', value='0',
+          description="Specifies the number of time series values used to initialize the forecasting method. The forecast error in these bucket isn't counted."
+          ).save(using=database)
+        Parameter.objects.using(database).create(
+          name='forecast.SmapeAlfa', value='0.95',
+          description='Specifies how the sMAPE forecast error is weighted for different time buckets.'
+          ).save(using=database)
 
       # Planning horizon
       # minimum 10 daily buckets, weekly buckets till 40 days after current
@@ -300,7 +402,9 @@ class Command(BaseCommand):
       with transaction.atomic(using=database):
         weeks = Calendar.objects.using(database).create(name="Weeks", defaultvalue=0)
         for i in BucketDetail.objects.using(database).filter(bucket="week").all():
-          CalendarBucket(startdate=i.startdate, enddate=i.enddate, value=1, calendar=weeks).save(using=database)
+          CalendarBucket(
+            startdate=i.startdate, enddate=i.enddate, value=1, calendar=weeks
+            ).save(using=database)
         task.status = '4%'
         task.save(using=database)
 
@@ -309,14 +413,18 @@ class Command(BaseCommand):
         print("Creating working days...")
       with transaction.atomic(using=database):
         workingdays = Calendar.objects.using(database).create(name="Working Days", defaultvalue=0)
-        minmax = BucketDetail.objects.using(database).filter(bucket="week").aggregate(Min('startdate'),Max('startdate'))
-        CalendarBucket(startdate=minmax['startdate__min'], enddate=minmax['startdate__max'],
-            value=1, calendar=workingdays, priority=1, saturday=False, sunday=False).save(using=database)
+        minmax = BucketDetail.objects.using(database).filter(bucket="week").aggregate(Min('startdate'), Max('startdate'))
+        CalendarBucket(
+          startdate=minmax['startdate__min'], enddate=minmax['startdate__max'],
+          value=1, calendar=workingdays, priority=1, saturday=False, sunday=False
+          ).save(using=database)
         task.status = '6%'
         task.save(using=database)
 
       # Create a random list of categories to choose from
-      categories = [ 'cat A','cat B','cat C','cat D','cat E','cat F','cat G' ]
+      categories = [
+        'cat A', 'cat B', 'cat C', 'cat D', 'cat E', 'cat F', 'cat G'
+        ]
 
       # Create customers
       if verbosity > 0:
@@ -335,13 +443,15 @@ class Command(BaseCommand):
       with transaction.atomic(using=database):
         res = []
         for i in range(resource):
-          loc = Location(name='Loc %05d' % int(random.uniform(1,cluster)))
+          loc = Location(name='Loc %05d' % int(random.uniform(1, cluster)))
           loc.save(using=database)
           cal = Calendar(name='capacity for res %03d' % i, category='capacity', defaultvalue=0)
           bkt = CalendarBucket(startdate=startdate, value=resource_size, calendar=cal)
           cal.save(using=database)
           bkt.save(using=database)
-          r = Resource.objects.using(database).create(name='Res %03d' % i, maximum_calendar=cal, location=loc)
+          r = Resource.objects.using(database).create(
+            name='Res %03d' % i, maximum_calendar=cal, location=loc
+            )
           res.append(r)
         task.status = '10%'
         task.save(using=database)
@@ -354,22 +464,24 @@ class Command(BaseCommand):
         comps = []
         comploc = Location.objects.using(database).create(name='Procured materials')
         for i in range(components):
-          it = Item.objects.using(database).create(name='Component %04d' % i,
-                 category='Procured',
-                 price=str(round(random.uniform(0,100)))
-                 )
+          it = Item.objects.using(database).create(
+            name='Component %04d' % i,
+            category='Procured',
+            price=str(round(random.uniform(0, 100)))
+            )
           ld = abs(round(random.normalvariate(procure_lt, procure_lt / 3)))
-          c = Buffer.objects.using(database).create(name='Component %04d' % i,
-               location=comploc,
-               category='Procured',
-               item=it,
-               type='procure',
-               min_inventory=20,
-               max_inventory=100,
-               size_multiple=10,
-               leadtime=str(ld * 86400),
-               onhand=str(round(forecast_per_item * random.uniform(1, 3) * ld / 30)),
-               )
+          c = Buffer.objects.using(database).create(
+            name='Component %04d' % i,
+            location=comploc,
+            category='Procured',
+            item=it,
+            type='procure',
+            min_inventory=20,
+            max_inventory=100,
+            size_multiple=10,
+            leadtime=str(ld * 86400),
+            onhand=str(round(forecast_per_item * random.uniform(1, 3) * ld / 30)),
+            )
           comps.append(c)
         task.status = '12%'
         task.save(using=database)
@@ -389,21 +501,22 @@ class Command(BaseCommand):
 
           # Item and delivery operation
           oper = Operation.objects.using(database).create(name='Del %05d' % i, sizemultiple=1, location=loc)
-          it = Item.objects.using(database).create(name='Itm %05d' % i,
-                 operation=oper,
-                 category=random.choice(categories),
-                 price=str(round(random.uniform(100,200)))
-                 )
+          it = Item.objects.using(database).create(
+            name='Itm %05d' % i,
+            operation=oper,
+            category=random.choice(categories),
+            price=str(round(random.uniform(100, 200)))
+            )
 
           if has_forecast:
             # Forecast
-            fcst = Forecast.objects.using(database).create( \
+            fcst = Forecast.objects.using(database).create(
               name='Forecast item %05d' % i,
               calendar=weeks,
               item=it,
               customer=random.choice(cust),
-              maxlateness=60*86400, # Forecast can only be planned 2 months late
-              priority=3, # Low priority: prefer planning orders over forecast
+              maxlateness=60 * 86400,  # Forecast can only be planned 2 months late
+              priority=3,  # Low priority: prefer planning orders over forecast
               discrete=True
               )
 
@@ -412,7 +525,8 @@ class Command(BaseCommand):
             fcst.setTotal(startdate, startdate + timedelta(365), forecast_per_item * 12)
 
           # Level 0 buffer
-          buf = Buffer.objects.using(database).create(name='Buf %05d L00' % i,
+          buf = Buffer.objects.using(database).create(
+            name='Buf %05d L00' % i,
             item=it,
             location=loc,
             category='00'
@@ -421,13 +535,14 @@ class Command(BaseCommand):
 
           # Demand
           for j in range(demand):
-            Demand.objects.using(database).create(name='Dmd %05d %05d' % (i,j),
+            Demand.objects.using(database).create(
+              name='Dmd %05d %05d' % (i, j),
               item=it,
-              quantity=int(random.uniform(1,6)),
+              quantity=int(random.uniform(1, 6)),
               # Exponential distribution of due dates, with an average of deliver_lt days.
               due=startdate + timedelta(days=round(random.expovariate(float(1) / deliver_lt / 24)) / 24),
               # Orders have higher priority than forecast
-              priority=random.choice([1,2]),
+              priority=random.choice([1, 2]),
               customer=random.choice(cust),
               category=random.choice(categories)
               )
@@ -437,7 +552,8 @@ class Command(BaseCommand):
           for k in range(level):
             if k == 1 and res:
               # Create a resource load for operations on level 1
-              oper = Operation.objects.using(database).create(name='Oper %05d L%02d' % (i,k),
+              oper = Operation.objects.using(database).create(
+                name='Oper %05d L%02d' % (i, k),
                 type='time_per',
                 location=loc,
                 duration_per=86400,
@@ -451,7 +567,7 @@ class Command(BaseCommand):
                 Load.objects.using(database).create(resource=random.choice(res), operation=oper)
             else:
               oper = Operation.objects.using(database).create(
-                name='Oper %05d L%02d' % (i,k),
+                name='Oper %05d L%02d' % (i, k),
                 duration=random.choice(durations),
                 sizemultiple=1,
                 location=loc,
@@ -459,7 +575,7 @@ class Command(BaseCommand):
             ops.append(oper)
             buf.producing = oper
             # Some inventory in random buffers
-            if random.uniform(0,1) > 0.8:
+            if random.uniform(0, 1) > 0.8:
               buf.onhand = int(random.uniform(5, 20))
             buf.save(using=database)
             Flow(operation=oper, thebuffer=buf, quantity=1, type="end").save(using=database)
@@ -478,14 +594,15 @@ class Command(BaseCommand):
           for j in range(components_per):
             o = random.choice(ops)
             b = random.choice(comps)
-            while (o,b) in c:
+            while (o, b) in c:
               # A flow with the same operation and buffer already exists
               o = random.choice(ops)
               b = random.choice(comps)
-            c.append( (o,b) )
+            c.append( (o, b) )
             Flow.objects.using(database).create(
               operation=o, thebuffer=b,
-              quantity=random.choice([-1,-1,-1,-2,-3]))
+              quantity=random.choice([-1, -1, -1, -2, -3])
+              )
 
           # Commit the current cluster
           task.status = '%d%%' % (12 + progress * (i + 1))
@@ -548,7 +665,7 @@ def updateTelescope(min_day_horizon=10, min_week_horizon=40, min_month_horizon=7
     BucketDetail(
       bucket=b,
       name='past',
-      startdate=datetime(2000,1,1),
+      startdate=datetime(2000, 1, 1),
       enddate=curdate,
       ).save(using=database)
 

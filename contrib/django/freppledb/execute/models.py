@@ -59,15 +59,16 @@ class Task(models.Model):
 
 class Scenario(models.Model):
   scenarioStatus = (
-    ('free',_('Free')),
-    ('in use',_('In use')),
-    ('busy',_('Busy')),
+    ('free', _('Free')),
+    ('in use', _('In use')),
+    ('busy', _('Busy')),
   )
 
   # Database fields
   name = models.CharField(_('name'), max_length=settings.NAMESIZE, primary_key=True)
   description = models.CharField(_('description'), max_length=settings.DESCRIPTIONSIZE, null=True, blank=True)
-  status = models.CharField(_('status'), max_length=10,
+  status = models.CharField(
+    _('status'), max_length=10,
     null=False, blank=False, choices=scenarioStatus
     )
   lastrefresh = models.DateTimeField(_('last refreshed'), null=True, editable=False)
@@ -81,7 +82,7 @@ class Scenario(models.Model):
     transaction.set_autocommit(False)
     try:
       # Bring the scenario table in sync with settings.databases
-      dbs = [ i for i,j in settings.DATABASES.items() if j['NAME'] ]
+      dbs = [ i for i, j in settings.DATABASES.items() if j['NAME'] ]
       for sc in Scenario.objects.all():
         if sc.name not in dbs:
           sc.delete()
@@ -112,7 +113,7 @@ class Scenario(models.Model):
 
 @receiver(post_save, sender=User)
 def sync_handler(sender, **kwargs):
-  if not kwargs.get('created',False) or kwargs.get('using',DEFAULT_DB_ALIAS) != DEFAULT_DB_ALIAS:
+  if not kwargs.get('created', False) or kwargs.get('using', DEFAULT_DB_ALIAS) != DEFAULT_DB_ALIAS:
     return
   # A new user is created in the default database.
   # We create the same user in all scenarios that are in use. Otherwise the user can't create

@@ -70,7 +70,7 @@ class Constraint(models.Model):
 
   class Meta:
     db_table = 'out_constraint'
-    ordering = ['demand','startdate']
+    ordering = ['demand', 'startdate']
     verbose_name = _('constraint')
     verbose_name_plural = _('constraints')
 
@@ -86,7 +86,7 @@ class ResourceSummary(models.Model):
 
   class Meta:
     db_table = 'out_resourceplan'
-    ordering = ['theresource','startdate']
+    ordering = ['theresource', 'startdate']
     unique_together = (('theresource', 'startdate'),)
     verbose_name = 'resource summary'  # No need to translate these since only used internally
     verbose_name_plural = 'resource summaries'
@@ -106,7 +106,7 @@ class LoadPlan(models.Model):
 
   class Meta:
     db_table = 'out_loadplan'
-    ordering = ['theresource','startdate']
+    ordering = ['theresource', 'startdate']
     verbose_name = _('loadplan')
     verbose_name_plural = _('loadplans')
 
@@ -124,7 +124,7 @@ class FlowPlan(models.Model):
 
   class Meta:
     db_table = 'out_flowplan'
-    ordering = ['thebuffer','flowdate']
+    ordering = ['thebuffer', 'flowdate']
     verbose_name = _('flowplan')
     verbose_name_plural = _('flowplans')
 

@@ -1,5 +1,6 @@
 from __future__ import print_function
-import os, inspect
+import inspect
+import os
 from datetime import datetime, timedelta
 from time import time
 
@@ -12,6 +13,7 @@ from freppledb.execute.commands import printWelcome, logProgress, createPlan, ex
 
 import frepple
 
+
 def loadForecast(cursor):
   print('Importing forecast...')
   cnt = 0
@@ -20,16 +22,23 @@ def loadForecast(cursor):
     operation_id, minshipment, calendar_id, discrete, maxlateness,
     category,subcategory
     FROM forecast''')
-  for i,j,k,l,m,n,o,p,q,r,s in cursor.fetchall():
+  for i in cursor.fetchall():
     cnt += 1
-    fcst = frepple.demand_forecast(name=i, priority=l, category=r, subcategory=s)
-    if j: fcst.customer = frepple.customer(name=j)
-    if k: fcst.item = frepple.item(name=k)
-    if m: fcst.operation = frepple.operation(name=m)
-    if n: fcst.minshipment = n
-    if o: fcst.calendar = frepple.calendar(name=o)
-    if not p: fcst.discrete = False
-    if q != None: fcst.maxlateness = q
+    fcst = frepple.demand_forecast(name=i[0], priority=i[3], category=i[9], subcategory=i[10])
+    if i[1]:
+      fcst.customer = frepple.customer(name=i[1])
+    if i[2]:
+      fcst.item = frepple.item(name=i[2])
+    if i[4]:
+      fcst.operation = frepple.operation(name=i[4])
+    if i[5]:
+      fcst.minshipment = i[5]
+    if i[6]:
+      fcst.calendar = frepple.calendar(name=i[6])
+    if not i[7]:
+      fcst.discrete = False
+    if i[8] is not None:
+      fcst.maxlateness = i[8]
   print('Loaded %d forecasts in %.2f seconds' % (cnt, time() - starttime))
 
 
@@ -70,19 +79,18 @@ def aggregateDemand(cursor):
   starttime = time()
   cursor.execute('''
     insert into forecastplan (
-        forecast_id, customerlvl, itemlvl, startdate, orderstotal, ordersopen,
-        forecastbaseline, forecastadjustment, forecasttotal, forecastnet, forecastconsumed,
-        ordersadjustment, ordersplanned, forecastplanned
-        )
-      select demand_history.forecast, demand_history.customer, demand_history.item,
-         demand_history.startdate, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-      from demand_history
-      left outer join forecastplan
-        on demand_history.forecast = forecastplan.forecast_id
-        and demand_history.startdate = forecastplan.startdate
-      where forecastplan.forecast_id is null
-      '''
-  )
+      forecast_id, customerlvl, itemlvl, startdate, orderstotal, ordersopen,
+      forecastbaseline, forecastadjustment, forecasttotal, forecastnet, forecastconsumed,
+      ordersadjustment, ordersplanned, forecastplanned
+      )
+    select demand_history.forecast, demand_history.customer, demand_history.item,
+       demand_history.startdate, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    from demand_history
+    left outer join forecastplan
+      on demand_history.forecast = forecastplan.forecast_id
+      and demand_history.startdate = forecastplan.startdate
+    where forecastplan.forecast_id is null
+    ''')
   print('Aggregate - init past records in %.2f seconds' % (time() - starttime))
 
   # Merge aggregate demand history into the forecastplan table
@@ -137,7 +145,8 @@ def processForecastDemand(cursor):
   for fcstname, start, end, qty in cursor.fetchall():
     fcsts = ForecastPlan.objects.all().using(cursor.db.alias).filter(forecast__name=fcstname, startdate__gte=start, startdate__lt=end)
     cnt = fcsts.count()
-    if cnt: fcsts.update(forecastadjustment = qty / cnt)
+    if cnt:
+      fcsts.update(forecastadjustment=qty / cnt)
   cursor.execute('delete from forecastdemand')
 
 
@@ -190,7 +199,7 @@ def generateBaseline(solver_fcst, cursor):
       curfcst = fcst
       data = []
       first = True
-    elif not first or rec[2] > 0 :
+    elif not first or rec[2] > 0:
       data.append(rec[2])
       first = False
   if curfcst:
@@ -207,11 +216,13 @@ def generateBaseline(solver_fcst, cursor):
     update forecastplan
     set forecastbaseline=%s
     where forecast_id = %s and startdate=%s
-    ''',
-    [(
-       round(i.total,settings.DECIMAL_PLACES),
-       i.owner.name, str(i.startdate)
-     ) for i in frepple.demands() if isinstance(i, frepple.demand_forecastbucket)
+    ''', [
+      (
+        round(i.total, settings.DECIMAL_PLACES),
+        i.owner.name, str(i.startdate)
+      )
+      for i in frepple.demands()
+      if isinstance(i, frepple.demand_forecastbucket)
     ])
 
 
@@ -245,8 +256,9 @@ def createSolver(cursor):
     if key in ('forecast.Horizon_future', 'forecast.Horizon_history'):
       continue
     elif key in ('forecast.DueAtEndOfBucket', 'forecast.Iterations', 'forecast.loglevel',
-      'forecast.MovingAverage_order', 'forecast.Net_CustomerThenItemHierarchy', 'forecast.Net_MatchUsingDeliveryOperation',
-      'forecast.Net_NetEarly', 'forecast.Net_NetLate', 'forecast.Skip'):
+                 'forecast.MovingAverage_order', 'forecast.Net_CustomerThenItemHierarchy',
+                 'forecast.Net_MatchUsingDeliveryOperation', 'forecast.Net_NetEarly',
+                 'forecast.Net_NetLate', 'forecast.Skip'):
       kw[key[9:]] = int(value)
     else:
       kw[key[9:]] = float(value)
@@ -270,16 +282,17 @@ def exportForecast(cursor):
   cursor.executemany(
     '''update forecastplan
      set forecasttotal=%s, forecastnet=%s, forecastconsumed=%s
-     where forecast_id = %s and startdate=%s''',
-    [(
-       round(i.total,settings.DECIMAL_PLACES),
-       round(i.quantity,settings.DECIMAL_PLACES),
-       round(i.consumed,settings.DECIMAL_PLACES),
-       i.owner.name, str(i.startdate)
-     ) for i in generator(cursor)
+     where forecast_id = %s and startdate=%s''', [
+      (
+        round(i.total, settings.DECIMAL_PLACES),
+        round(i.quantity, settings.DECIMAL_PLACES),
+        round(i.consumed, settings.DECIMAL_PLACES),
+        i.owner.name, str(i.startdate)
+      )
+      for i in generator(cursor)
     ])
   transaction.commit(using=cursor.db.alias)
-  print('Exported forecast in %.2f seconds' % (time() - starttime)) # TODO use fast export for forecast
+  print('Exported forecast in %.2f seconds' % (time() - starttime))  # TODO use fast export for forecast
   cursor.execute('update forecastplan set ordersplanned = 0, forecastplanned = 0')
   transaction.commit(using=cursor.db.alias)
   cursor.execute('''
@@ -320,8 +333,10 @@ def exportForecast(cursor):
 
 def generate_plan():
   # Select database
-  try: db = os.environ['FREPPLE_DATABASE'] or DEFAULT_DB_ALIAS
-  except: db = DEFAULT_DB_ALIAS
+  try:
+    db = os.environ['FREPPLE_DATABASE'] or DEFAULT_DB_ALIAS
+  except:
+    db = DEFAULT_DB_ALIAS
 
   # Use the test database if we are running the test suite
   if 'FREPPLE_TEST' in os.environ:

@@ -20,7 +20,7 @@ class ForecastDemand_admin(MultiDBModelAdmin):
   raw_id_fields = ('forecast',)
   save_on_top = True
   exclude = ('source',)
-data_site.register(ForecastDemand,ForecastDemand_admin)
+data_site.register(ForecastDemand, ForecastDemand_admin)
 
 
 class ForecastDemand_inline(MultiDBTabularInline):
@@ -28,13 +28,14 @@ class ForecastDemand_inline(MultiDBTabularInline):
   extra = 5
   exclude = ('source',)
 
+
 class Forecast_admin(MultiDBModelAdmin):
   model = Forecast
   raw_id_fields = ('customer', 'item', 'calendar', 'operation')
   fieldsets = (
-            (None, {'fields': ('name', 'item', 'customer', 'calendar', 'method', 'description', 'category','subcategory', 'priority')}),
-            (_('Planning parameters'), {'fields': ('discrete', 'operation', 'minshipment', 'maxlateness'), 'classes': ('collapse')}),
-        )
+    (None, {'fields': ('name', 'item', 'customer', 'calendar', 'method', 'description', 'category', 'subcategory', 'priority')}),
+    (_('Planning parameters'), {'fields': ('discrete', 'operation', 'minshipment', 'maxlateness'), 'classes': ('collapse')}),
+    )
   inlines = [ ForecastDemand_inline, ]
   save_on_top = True
-data_site.register(Forecast,Forecast_admin)
+data_site.register(Forecast, Forecast_admin)

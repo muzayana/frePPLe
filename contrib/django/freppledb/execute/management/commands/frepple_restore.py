@@ -48,12 +48,18 @@ class Command(BaseCommand):
        - Can't run multiple copies in parallel!
   '''
   option_list = BaseCommand.option_list + (
-    make_option('--user', dest='user', type='string',
-      help='User running the command'),
-    make_option('--database', action='store', dest='database',
-      default=DEFAULT_DB_ALIAS, help='Nominates a specific database to backup'),
-    make_option('--task', dest='task', type='int',
-      help='Task identifier (generated automatically if not provided)'),
+    make_option(
+      '--user', dest='user', type='string',
+      help='User running the command'
+      ),
+    make_option(
+      '--database', action='store', dest='database',
+      default=DEFAULT_DB_ALIAS, help='Nominates a specific database to backup'
+      ),
+    make_option(
+      '--task', dest='task', type='int',
+      help='Task identifier (generated automatically if not provided)'
+      ),
     )
 
   requires_model_validation = False
@@ -101,25 +107,26 @@ class Command(BaseCommand):
       # Validate options
       if not args:
         raise CommandError("No dump file specified")
-      if not os.path.isfile(os.path.join(settings.FREPPLE_LOGDIR,args[0])):
+      if not os.path.isfile(os.path.join(settings.FREPPLE_LOGDIR, args[0])):
         raise CommandError("Dump file not found")
 
       # Run the restore command
       if settings.DATABASES[database]['ENGINE'] == 'django.db.backends.sqlite3':
         # SQLITE
-        shutil.copy2(os.path.abspath(os.path.join(settings.FREPPLE_LOGDIR,args[0])), settings.DATABASES[database]['NAME'])
+        shutil.copy2(os.path.abspath(os.path.join(settings.FREPPLE_LOGDIR, args[0])), settings.DATABASES[database]['NAME'])
       elif settings.DATABASES[database]['ENGINE'] == 'django.db.backends.mysql':
         # MYSQL
-        cmd = [ 'mysql',
-            '--password=%s' % settings.DATABASES[database]['PASSWORD'],
-            '--user=%s' % settings.DATABASES[database]['USER']
-            ]
+        cmd = [
+          'mysql',
+          '--password=%s' % settings.DATABASES[database]['PASSWORD'],
+          '--user=%s' % settings.DATABASES[database]['USER']
+          ]
         if settings.DATABASES[database]['HOST']:
           cmd.append("--host=%s " % settings.DATABASES[database]['HOST'])
         if settings.DATABASES[database]['PORT']:
           cmd.append("--port=%s " % settings.DATABASES[database]['PORT'])
         cmd.append(settings.DATABASES[database]['NAME'])
-        cmd.append('<%s' % os.path.abspath(os.path.join(settings.FREPPLE_LOGDIR,args[0])))
+        cmd.append('<%s' % os.path.abspath(os.path.join(settings.FREPPLE_LOGDIR, args[0])))
         ret = subprocess.call(cmd, shell=True)  # Shell needs to be True in order to interpret the < character
         if ret:
           raise Exception("Run of mysql failed")
@@ -128,20 +135,21 @@ class Command(BaseCommand):
         if settings.DATABASES[database]['HOST'] and settings.DATABASES[database]['PORT']:
           # The setting 'NAME' contains the SID name
           dsn = "%s/%s@//%s:%s/%s" % (
-                settings.DATABASES[database]['USER'],
-                settings.DATABASES[database]['PASSWORD'],
-                settings.DATABASES[database]['HOST'],
-                settings.DATABASES[database]['PORT'],
-                settings.DATABASES[database]['NAME']
-                )
+            settings.DATABASES[database]['USER'],
+            settings.DATABASES[database]['PASSWORD'],
+            settings.DATABASES[database]['HOST'],
+            settings.DATABASES[database]['PORT'],
+            settings.DATABASES[database]['NAME']
+            )
         else:
           # The setting 'NAME' contains the TNS name
           dsn = "%s/%s@%s" % (
-                settings.DATABASES[database]['USER'],
-                settings.DATABASES[database]['PASSWORD'],
-                settings.DATABASES[database]['NAME']
-                )
-        cmd = [ "impdp",
+            settings.DATABASES[database]['USER'],
+            settings.DATABASES[database]['PASSWORD'],
+            settings.DATABASES[database]['NAME']
+            )
+        cmd = [
+          "impdp",
           dsn,
           "table_exists_action=replace",
           "nologfile=Y",
@@ -161,7 +169,7 @@ class Command(BaseCommand):
         if settings.DATABASES[database]['PORT']:
           cmd.append("--port=%s " % settings.DATABASES[database]['PORT'])
         cmd.append(settings.DATABASES[database]['NAME'])
-        cmd.append('<%s' % os.path.abspath(os.path.join(settings.FREPPLE_LOGDIR,args[0])))
+        cmd.append('<%s' % os.path.abspath(os.path.join(settings.FREPPLE_LOGDIR, args[0])))
         ret = subprocess.call(cmd, shell=True)  # Shell needs to be True in order to interpret the < character
         if ret:
           raise Exception("Run of run psql failed")
@@ -170,8 +178,11 @@ class Command(BaseCommand):
 
       # Task update
       # We need to recreate a new task record, since the previous one is lost during the restoration.
-      task = Task(name='restore database', submitted=task.submitted, started=task.started,
-            arguments=task.arguments, status='Done', finished=datetime.now(), user=task.user)
+      task = Task(
+        name='restore database', submitted=task.submitted, started=task.started,
+        arguments=task.arguments, status='Done', finished=datetime.now(),
+        user=task.user
+        )
 
     except Exception as e:
       if task:

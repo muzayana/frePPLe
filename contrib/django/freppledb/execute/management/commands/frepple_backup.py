@@ -28,15 +28,19 @@ class Command(BaseCommand):
   help = '''
   This command creates a database dump of the frePPLe database.
 
+  It also removes dumps older than a month to limit the disk space usage.
+  If you want to keep dumps for a longer period of time, you'll need to
+  copy the dumps to a different location.
+
   To use this command the following prerequisites need to be met:
-    * MySQL:
-        - mysqldump and mysql need to be in the path
     * PostgreSQL:
        - pg_dump and psql need to be in the path
        - The passwords need to be specified upfront in a file ~/.pgpass
     * SQLite:
        - none
-    * Oracle:
+    * MySQL (unsupported!):
+        - mysqldump and mysql need to be in the path
+    * Oracle (unsupported!):
        - impdp and expdp need to be in the path
        - The DBA has to create a server side directory, pointing to the directory configured as
          FREPPLE_LOGDIR. The oracle user will need to be granted rights to it:
@@ -49,12 +53,19 @@ class Command(BaseCommand):
        - Can't run multiple copies in parallel!
   '''
   option_list = BaseCommand.option_list + (
-    make_option('--user', dest='user', type='string',
-      help='User running the command'),
-    make_option('--database', action='store', dest='database',
-      default=DEFAULT_DB_ALIAS, help='Nominates a specific database to backup'),
-    make_option('--task', dest='task', type='int',
-      help='Task identifier (generated automatically if not provided)'),
+    make_option(
+      '--user', dest='user', type='string',
+      help='User running the command'
+      ),
+    make_option(
+      '--database', action='store', dest='database',
+      default=DEFAULT_DB_ALIAS,
+      help='Nominates a specific database to backup'
+      ),
+    make_option(
+      '--task', dest='task', type='int',
+      help='Task identifier (generated automatically if not provided)'
+      ),
     )
 
   requires_model_validation = False
@@ -105,15 +116,16 @@ class Command(BaseCommand):
       # Run the backup command
       if settings.DATABASES[database]['ENGINE'] == 'django.db.backends.sqlite3':
         # SQLITE
-        shutil.copy2(settings.DATABASES[database]['NAME'], os.path.abspath(os.path.join(settings.FREPPLE_LOGDIR,backupfile)))
+        shutil.copy2(settings.DATABASES[database]['NAME'], os.path.abspath(os.path.join(settings.FREPPLE_LOGDIR, backupfile)))
       elif settings.DATABASES[database]['ENGINE'] == 'django.db.backends.mysql':
         # MYSQL
-        args = [ "mysqldump",
-            "--password=%s" % settings.DATABASES[database]['PASSWORD'],
-            "--user=%s" % settings.DATABASES[database]['USER'],
-            "--quick", "--compress", "--extended-insert", "--add-drop-table",
-            "--result-file=%s" % os.path.abspath(os.path.join(settings.FREPPLE_LOGDIR,backupfile))
-            ]
+        args = [
+          "mysqldump",
+          "--password=%s" % settings.DATABASES[database]['PASSWORD'],
+          "--user=%s" % settings.DATABASES[database]['USER'],
+          "--quick", "--compress", "--extended-insert", "--add-drop-table",
+          "--result-file=%s" % os.path.abspath(os.path.join(settings.FREPPLE_LOGDIR, backupfile))
+          ]
         if settings.DATABASES[database]['HOST']:
           args.append("--host=%s " % settings.DATABASES[database]['HOST'])
         if settings.DATABASES[database]['PORT']:
@@ -127,26 +139,27 @@ class Command(BaseCommand):
         if settings.DATABASES[database]['HOST'] and settings.DATABASES[database]['PORT']:
           # The setting 'NAME' contains the SID name
           dsn = "%s/%s@//%s:%s/%s" % (
-                settings.DATABASES[database]['USER'],
-                settings.DATABASES[database]['PASSWORD'],
-                settings.DATABASES[database]['HOST'],
-                settings.DATABASES[database]['PORT'],
-                settings.DATABASES[database]['NAME']
-                )
+            settings.DATABASES[database]['USER'],
+            settings.DATABASES[database]['PASSWORD'],
+            settings.DATABASES[database]['HOST'],
+            settings.DATABASES[database]['PORT'],
+            settings.DATABASES[database]['NAME']
+            )
         else:
           # The setting 'NAME' contains the TNS name
           dsn = "%s/%s@%s" % (
-                settings.DATABASES[database]['USER'],
-                settings.DATABASES[database]['PASSWORD'],
-                settings.DATABASES[database]['NAME']
-                )
-        args = [ "expdp",
-            dsn,
-            "schemas=%s" % settings.DATABASES[database]['USER'],
-            "directory=frepple_logdir",
-            "nologfile=Y",
-            "dumpfile=%s" % backupfile
-            ]
+            settings.DATABASES[database]['USER'],
+            settings.DATABASES[database]['PASSWORD'],
+            settings.DATABASES[database]['NAME']
+            )
+        args = [
+          "expdp",
+          dsn,
+          "schemas=%s" % settings.DATABASES[database]['USER'],
+          "directory=frepple_logdir",
+          "nologfile=Y",
+          "dumpfile=%s" % backupfile
+          ]
         ret = subprocess.call(args)
         if ret:
           raise Exception("Run of expdp failed")
@@ -154,11 +167,12 @@ class Command(BaseCommand):
         # POSTGRESQL
         # Commenting the next line is a little more secure, but requires you to create a .pgpass file.
         os.environ['PGPASSWORD'] = settings.DATABASES[database]['PASSWORD']
-        args = [ "pg_dump",
-            "-b", "-w",
-            '--username=%s' % settings.DATABASES[database]['USER'],
-            '--file=%s' % os.path.abspath(os.path.join(settings.FREPPLE_LOGDIR,backupfile))
-            ]
+        args = [
+          "pg_dump",
+          "-b", "-w",
+          '--username=%s' % settings.DATABASES[database]['USER'],
+          '--file=%s' % os.path.abspath(os.path.join(settings.FREPPLE_LOGDIR, backupfile))
+          ]
         if settings.DATABASES[database]['HOST']:
           args.append("--host=%s" % settings.DATABASES[database]['HOST'])
         if settings.DATABASES[database]['PORT']:
@@ -178,12 +192,12 @@ class Command(BaseCommand):
       # Delete backups older than a month
       pattern = re.compile("database.*.*.*.dump")
       for f in os.listdir(settings.FREPPLE_LOGDIR):
-        if os.path.isfile(os.path.join(settings.FREPPLE_LOGDIR,f)):
+        if os.path.isfile(os.path.join(settings.FREPPLE_LOGDIR, f)):
           # Note this is NOT 100% correct on UNIX. st_ctime is not alawys the creation date...
-          created = datetime.fromtimestamp(os.stat(os.path.join(settings.FREPPLE_LOGDIR,f)).st_ctime)
+          created = datetime.fromtimestamp(os.stat(os.path.join(settings.FREPPLE_LOGDIR, f)).st_ctime)
           if pattern.match(f) and (now - created).days > 31:
             try:
-              os.remove(os.path.join(settings.FREPPLE_LOGDIR,f))
+              os.remove(os.path.join(settings.FREPPLE_LOGDIR, f))
             except:
               pass
 

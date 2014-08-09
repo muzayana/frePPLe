@@ -53,7 +53,7 @@ class CrumbsNode(Node):
       req = context['request']
     except:
       return ''  # No request found in the context: no crumbs...
-    if not hasattr(req,'session'):
+    if not hasattr(req, 'session'):
       return  # No session found in the context: no crumbs...
 
     # Pick up the current crumbs from the session cookie
@@ -100,7 +100,8 @@ class CrumbsNode(Node):
 
         # Add current URL to the stack
         if not exists:
-          cur.append( (title,
+          cur.append( (
+            title,
             '<span> &gt; <a href="%s%s%s">%s</a></span>' % (
               req.prefix, urlquote(req.path),
               req.GET and ('?' + iri_to_uri(req.GET.urlencode())) or '',
@@ -164,8 +165,8 @@ def set_var(parser, token):
   from re import split
   bits = split(r'\s+', token.contents, 2)
   if len(bits) < 2:
-      raise TemplateSyntaxError("'%s' tag requires two arguments" % bits[0])
-  return SetVariable(bits[1],bits[2])
+    raise TemplateSyntaxError("'%s' tag requires two arguments" % bits[0])
+  return SetVariable(bits[1], bits[2])
 
 register.tag('set', set_var)
 
@@ -225,9 +226,9 @@ class SelectDatabaseNode(Node):
     for i in scenarios:
       i = i['name']
       if i == req.database:
-        s.append(u'<option value="%s" selected="selected">%s</option>' % (i,i))
+        s.append(u'<option value="%s" selected="selected">%s</option>' % (i, i))
       else:
-        s.append(u'<option value="%s">%s</option>' % (i,i))
+        s.append(u'<option value="%s">%s</option>' % (i, i))
     s.append(u'</select></form>')
     return ''.join(s)
 
@@ -364,13 +365,17 @@ class ModelDependenciesNode(Node):
   '''
   def render(self, context):
     return json.dumps( dict([
-      ("%s.%s" % (i._meta.app_label, i._meta.model_name),
-       [ "%s.%s" % (j[0].model._meta.app_label, j[0].model._meta.model_name)
-         for j in i._meta.get_all_related_objects_with_model()
-         if j[0].model != i
-       ])
-      for i in models.get_models(include_auto_created=True)
-      ]) )
+        (
+         "%s.%s" % (i._meta.app_label, i._meta.model_name),
+         [
+           "%s.%s" % (j[0].model._meta.app_label, j[0].model._meta.model_name)
+           for j in i._meta.get_all_related_objects_with_model()
+           if j[0].model != i
+         ]
+        )
+        for i in models.get_models(include_auto_created=True)
+      ])
+      )
 
   def __repr__(self):
     return "<getModelDependencies Node>"
@@ -401,15 +406,16 @@ class DashboardNode(Node):
       return ''  # No request found in the context
     reg = Dashboard.buildList()
     mydashboard = req.user.getPreference("freppledb.common.cockpit")
-    if not mydashboard: mydashboard = settings.DEFAULT_DASHBOARD
-    context[self.hiddenvarname] = { i:j for i,j in reg.iteritems() }
+    if not mydashboard:
+      mydashboard = settings.DEFAULT_DASHBOARD
+    context[self.hiddenvarname] = { i: j for i, j in reg.iteritems() }
     context[self.varname] = []
     for i in mydashboard:
       w = []
       for j in i['widgets']:
         if reg[j[0]].has_permission(req.user):
           w.append(reg[j[0]](**j[1]))
-          context[self.hiddenvarname].pop(j[0],None)
+          context[self.hiddenvarname].pop(j[0], None)
       context[self.varname].append( {'width': i['width'], 'widgets': w}  )
     return ''
 
@@ -426,4 +432,3 @@ def getDashboard(parser, token):
   return DashboardNode(tokens[2], tokens[3])
 
 register.tag('getDashboard', getDashboard)
-

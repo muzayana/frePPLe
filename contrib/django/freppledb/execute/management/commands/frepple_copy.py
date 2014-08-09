@@ -47,14 +47,22 @@ class Command(BaseCommand):
        - Can't run multiple copies in parallel!
   '''
   option_list = BaseCommand.option_list + (
-    make_option('--user', dest='user', type='string',
-      help='User running the command'),
-    make_option('--force', action="store_true", dest='force',
-      default=False, help='Overwrite scenarios already in use'),
-    make_option('--description', dest='description', type='string',
-      help='Description of the destination scenario'),
-    make_option('--task', dest='task', type='int',
-      help='Task identifier (generated automatically if not provided)'),
+    make_option(
+      '--user', dest='user', type='string',
+      help='User running the command'
+      ),
+    make_option(
+      '--force', action="store_true", dest='force',
+      default=False, help='Overwrite scenarios already in use'
+      ),
+    make_option(
+      '--description', dest='description', type='string',
+      help='Description of the destination scenario'
+      ),
+    make_option(
+      '--task', dest='task', type='int',
+      help='Task identifier (generated automatically if not provided)'
+      ),
     )
   args = 'source_database destination_database'
 
@@ -175,7 +183,7 @@ class Command(BaseCommand):
       elif settings.DATABASES[source]['ENGINE'] == 'django.db.backends.oracle':
         try:
           try:
-            os.unlink(os.path.join(settings.FREPPLE_LOGDIR,'frepple.dmp'))
+            os.unlink(os.path.join(settings.FREPPLE_LOGDIR, 'frepple.dmp'))
           except:
             pass
           ret = os.system("expdp %s/%s@//%s:%s/%s schemas=%s directory=frepple_logdir nologfile=Y dumpfile=frepple.dmp" % (
@@ -201,7 +209,7 @@ class Command(BaseCommand):
             raise Exception('Exit code of the database import command is %d' % ret)
         finally:
           try:
-            os.unlink(os.path.join(settings.FREPPLE_LOGDIR,'frepple.dmp'))
+            os.unlink(os.path.join(settings.FREPPLE_LOGDIR, 'frepple.dmp'))
           except:
             pass
       else:

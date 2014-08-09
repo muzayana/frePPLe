@@ -74,7 +74,7 @@ class TaskReport(GridReport):
 
     # Check if web service is required
     if 'freppledb.quoting' in settings.INSTALLED_APPS:
-      webservice = request.session.get('webservice',False)=="1" and 1 or -1
+      webservice = request.session.get('webservice', False) == "1" and 1 or -1
     else:
       webservice = 0
 
@@ -149,8 +149,10 @@ def LaunchTask(request, action):
       wrapTask(request, action)
       return HttpResponseRedirect('%s/execute/' % request.prefix)
   except Exception as e:
-    messages.add_message(request, messages.ERROR,
-        force_unicode(_('Failure launching action: %(msg)s') % {'msg':e}))
+    messages.add_message(
+      request, messages.ERROR,
+      force_unicode(_('Failure launching action: %(msg)s') % {'msg': e})
+      )
     return HttpResponseRedirect('%s/execute/' % request.prefix)
 
 
@@ -181,11 +183,11 @@ def wrapTask(request, action):
     task = Task(name='generate plan', submitted=now, status='Waiting', user=request.user)
     task.arguments = "--constraint=%s --plantype=%s" % (constraint, request.POST.get('plantype'))
     env = []
-    if request.POST.get('webservice','0') == u'1':
+    if request.POST.get('webservice', '0') == u'1':
       env.append("webservice")
-    if request.POST.get('odoo_read',None) == u'1':
+    if request.POST.get('odoo_read', None) == u'1':
       env.append("odoo_read")
-    if request.POST.get('odoo_write',None) == u'1':
+    if request.POST.get('odoo_write', None) == u'1':
       env.append("odoo_write")
     if env:
       task.arguments = "%s --env=%s" % (task.arguments, ','.join(env))
@@ -193,16 +195,16 @@ def wrapTask(request, action):
     # Update the session object   TODO REPLACE WITH PREFERENCE INFO
     request.session['plantype'] = request.POST.get('plantype')
     request.session['constraint'] = constraint
-    request.session['webservice'] = request.POST.get('webservice','0')
+    request.session['webservice'] = request.POST.get('webservice', '0')
   # B
   elif action == 'frepple_createmodel':
     task = Task(name='generate model', submitted=now, status='Waiting', user=request.user)
     task.arguments = "--cluster=%s --demand=%s --forecast_per_item=%s --level=%s --resource=%s " \
       "--resource_size=%s --components=%s --components_per=%s --deliver_lt=%s --procure_lt=%s" % (
-      request.POST['clusters'], request.POST['demands'], request.POST['fcst'], request.POST['levels'],
-      request.POST['rsrc_number'], request.POST['rsrc_size'], request.POST['components'],
-      request.POST['components_per'], request.POST['deliver_lt'], request.POST['procure_lt']
-      )
+        request.POST['clusters'], request.POST['demands'], request.POST['fcst'], request.POST['levels'],
+        request.POST['rsrc_number'], request.POST['rsrc_size'], request.POST['components'],
+        request.POST['components_per'], request.POST['deliver_lt'], request.POST['procure_lt']
+        )
     task.save(using=request.database)
   # C
   elif action == 'frepple_flush':
@@ -222,7 +224,7 @@ def wrapTask(request, action):
         raise Exception('Missing execution privileges')
       source = request.POST.get('source', DEFAULT_DB_ALIAS)
       for sc in Scenario.objects.all():
-        if request.POST.get(sc.name,'off') == 'on' and sc.status == u'Free':
+        if request.POST.get(sc.name, 'off') == 'on' and sc.status == u'Free':
           task = Task(name='copy scenario', submitted=now, status='Waiting', user=request.user, arguments="%s %s" % (source, sc.name))
           task.save()
     elif 'release' in request.POST:
@@ -230,7 +232,7 @@ def wrapTask(request, action):
       if not request.user.has_perm('execute.release_scenario'):
         raise Exception('Missing execution privileges')
       for sc in Scenario.objects.all():
-        if request.POST.get(sc.name,'off') == u'on' and sc.status != u'Free':
+        if request.POST.get(sc.name, 'off') == u'on' and sc.status != u'Free':
           sc.status = u'Free'
           sc.lastrefresh = now
           sc.save()
@@ -241,7 +243,7 @@ def wrapTask(request, action):
       # Note: update is immediate and synchronous.
       for sc in Scenario.objects.all():
         if request.POST.get(sc.name, 'off') == 'on':
-          sc.description = request.POST.get('description',None)
+          sc.description = request.POST.get('description', None)
           sc.save()
     else:
       raise Exception('Invalid scenario task')
@@ -280,12 +282,12 @@ def wrapTask(request, action):
 
   # Launch a worker process
   if task and not checkActive(worker_database):
-    if os.path.isfile(os.path.join(settings.FREPPLE_APP,"frepplectl.py")):
+    if os.path.isfile(os.path.join(settings.FREPPLE_APP, "frepplectl.py")):
       if "python" in sys.executable:
         # Development layout
         Popen([
           sys.executable,  # Python executable
-          os.path.join(settings.FREPPLE_APP,"frepplectl.py"),
+          os.path.join(settings.FREPPLE_APP, "frepplectl.py"),
           "frepple_runworker",
           "--database=%s" % worker_database
           ])
@@ -293,14 +295,14 @@ def wrapTask(request, action):
         # Deployment on Apache web server
         Popen([
           "python",
-          os.path.join(settings.FREPPLE_APP,"frepplectl.py"),
+          os.path.join(settings.FREPPLE_APP, "frepplectl.py"),
           "frepple_runworker",
           "--database=%s" % worker_database
           ], creationflags=0x08000000)
     elif sys.executable.find('freppleserver.exe') >= 0:
       # Py2exe executable
       Popen([
-        sys.executable.replace('freppleserver.exe','frepplectl.exe'),  # frepplectl executable
+        sys.executable.replace('freppleserver.exe', 'frepplectl.exe'),  # frepplectl executable
         "frepple_runworker",
         "--database=%s" % worker_database
         ], creationflags=0x08000000)  # Do not create a console window

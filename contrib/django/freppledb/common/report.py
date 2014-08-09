@@ -97,7 +97,7 @@ class GridField(object):
   def __unicode__(self):
     o = [ "name:'%s',index:'%s',editable:%s,label:'%s',width:%s,align:'%s',title:false" %
           (self.name or '', self.name or '', self.editable and "true" or "false",
-           force_unicode(self.title).title().replace("'","\\'"),
+           force_unicode(self.title).title().replace("'", "\\'"),
            self.width, self.align
            ), ]
     if self.key:
@@ -187,7 +187,7 @@ class GridFieldChoice(GridField):
   align = 'center'
 
   def __init__(self, name, **kwargs):
-    super(GridFieldChoice,self).__init__(name, **kwargs)
+    super(GridFieldChoice, self).__init__(name, **kwargs)
     e = ["formatter:'select', edittype:'select', editoptions:{value:'"]
     first = True
     for i in kwargs["choices"]:
@@ -344,10 +344,10 @@ class GridReport(View):
     '''
     Return the name of the Django application which defines this report.
     '''
-    if hasattr(cls,'app_label'):
+    if hasattr(cls, 'app_label'):
       return cls.app_label
     s = cls.__module__.split('.')
-    for i in range(len(s),0,-1):
+    for i in range(len(s), 0, -1):
       x = '.'.join(s[0:i])
       if x in settings.INSTALLED_APPS:
         cls.app_label = s[i - 1]
@@ -403,7 +403,7 @@ class GridReport(View):
         while m > 12:
           y += 1
           m -= 12
-        end = datetime(y,m,1)
+        end = datetime(y, m, 1)
     else:
       # Second type: Absolute start and end dates given
       start = pref.horizonstart
@@ -435,7 +435,7 @@ class GridReport(View):
         res = res.filter(enddate__gt=start)
       if end:
         res = res.filter(startdate__lt=end)
-      request.report_bucketlist = res.values('name','startdate','enddate')
+      request.report_bucketlist = res.values('name', 'startdate', 'enddate')
     else:
       request.report_bucketlist = []
 
@@ -457,14 +457,14 @@ class GridReport(View):
     elif request.method == 'POST':
       return self.post(request, *args_unquoted, **kwargs)
     else:
-      return HttpResponseNotAllowed(['get','post'])
+      return HttpResponseNotAllowed(['get', 'post'])
 
 
   @classmethod
-  def _render_colmodel(cls, is_popup=False, prefs = None, mode="graph"):
+  def _render_colmodel(cls, is_popup=False, prefs=None, mode="graph"):
     if not prefs:
       frozencolumns = cls.frozenColumns
-      rows = [ (i,False,cls.rows[i].width) for i in range(len(cls.rows)) ]
+      rows = [ (i, False, cls.rows[i].width) for i in range(len(cls.rows)) ]
     else:
       frozencolumns = prefs.get('frozen', cls.frozenColumns)
       rows = prefs['rows']
@@ -495,10 +495,14 @@ class GridReport(View):
     if prefs:
       # Customized settings
       prefs = prefs['rows']
-      fields = [ reportclass.rows[f[0]] for f in prefs if not f[1] and not isinstance(reportclass.rows[f[0]],GridFieldGraph) and not reportclass.rows[f[0]].hidden ]
+      fields = [
+        reportclass.rows[f[0]]
+        for f in prefs
+        if not f[1] and not reportclass.rows[f[0]].hidden
+        ]
     else:
       # Default settings
-      fields = [ i for i in reportclass.rows if i.field_name and not isinstance(i,GridFieldGraph) and not i.hidden ]
+      fields = [ i for i in reportclass.rows if i.field_name and not i.hidden ]
     field_names = [ f.field_name for f in fields]
 
     # Write a header row
@@ -509,11 +513,11 @@ class GridReport(View):
       query = reportclass._apply_sort(request, reportclass.filter_items(request, reportclass.basequeryset(request, args, kwargs), False).using(request.database))
     else:
       query = reportclass._apply_sort(request, reportclass.filter_items(request, reportclass.basequeryset).using(request.database))
-    for row in hasattr(reportclass,'query') and reportclass.query(request,query) or query.values(*field_names):
+    for row in hasattr(reportclass, 'query') and reportclass.query(request, query) or query.values(*field_names):
       if hasattr(row, "__getitem__"):
         ws.append([ _getCellValue(row[f]) for f in field_names ])
       else:
-        ws.append([ _getCellValue(getattr(row,f)) for f in field_names ])
+        ws.append([ _getCellValue(getattr(row, f)) for f in field_names ])
 
     # Write the spreadsheet from memory to a string and then to a HTTP response
     output = StringIO()
@@ -547,12 +551,12 @@ class GridReport(View):
     if prefs:
       # Customized settings
       prefs = prefs['rows']
-      writer.writerow([ force_unicode(reportclass.rows[f[0]].title).title().encode(encoding,"ignore") for f in prefs if not f[1] and not isinstance(reportclass.rows[f[0]],GridFieldGraph) and not reportclass.rows[f[0]].hidden ])
-      fields = [ reportclass.rows[f[0]].field_name for f in prefs if not f[1] and not isinstance(reportclass.rows[f[0]],GridFieldGraph) and not reportclass.rows[f[0]].hidden ]
+      writer.writerow([ force_unicode(reportclass.rows[f[0]].title).title().encode(encoding, "ignore") for f in prefs if not f[1] and not reportclass.rows[f[0]].hidden ])
+      fields = [ reportclass.rows[f[0]].field_name for f in prefs if not f[1] and not reportclass.rows[f[0]].hidden ]
     else:
       # Default settings
-      writer.writerow([ force_unicode(f.title).title().encode(encoding,"ignore") for f in reportclass.rows if f.title and not isinstance(f,GridFieldGraph) and not f.hidden ])
-      fields = [ i.field_name for i in reportclass.rows if i.field_name and not isinstance(i,GridFieldGraph) and not i.hidden ]
+      writer.writerow([ force_unicode(f.title).title().encode(encoding, "ignore") for f in reportclass.rows if f.title and not f.hidden ])
+      fields = [ i.field_name for i in reportclass.rows if i.field_name and not i.hidden ]
 
     # Write a header row
     yield sf.getvalue()
@@ -562,18 +566,18 @@ class GridReport(View):
       query = reportclass._apply_sort(request, reportclass.filter_items(request, reportclass.basequeryset(request, args, kwargs), False).using(request.database), prefs)
     else:
       query = reportclass._apply_sort(request, reportclass.filter_items(request, reportclass.basequeryset).using(request.database), prefs)
-    for row in hasattr(reportclass,'query') and reportclass.query(request,query) or query.values(*fields):
+    for row in hasattr(reportclass, 'query') and reportclass.query(request, query) or query.values(*fields):
       # Clear the return string buffer
       sf.truncate(0)
       # Build the return value, encoding all output
       if hasattr(row, "__getitem__"):
         writer.writerow([
-          row[f] is None and ' ' or unicode(_localize(row[f],decimal_separator)).encode(encoding,"ignore")
+          row[f] is None and ' ' or unicode(_localize(row[f], decimal_separator)).encode(encoding, "ignore")
           for f in fields
           ])
       else:
         writer.writerow([
-          getattr(row,f) is None and ' ' or unicode(_localize(getattr(row,f),decimal_separator)).encode(encoding,"ignore")
+          getattr(row, f) is None and ' ' or unicode(_localize(getattr(row, f), decimal_separator)).encode(encoding, "ignore")
           for f in fields
           ])
       # Return string
@@ -652,7 +656,7 @@ class GridReport(View):
 
     # GridReport
     fields = [ i.field_name for i in reportclass.rows if i.field_name ]
-    for i in hasattr(reportclass,'query') and reportclass.query(request,query) or query[cnt - 1:cnt + request.pagesize].values(*fields):
+    for i in hasattr(reportclass, 'query') and reportclass.query(request, query) or query[cnt - 1:cnt + request.pagesize].values(*fields):
       if first:
         r = [ '{' ]
         first = False
@@ -662,16 +666,16 @@ class GridReport(View):
       for f in reportclass.rows:
         if not f.name:
           continue
-        if isinstance(i[f.field_name], basestring) or isinstance(i[f.field_name], (list,tuple)):
+        if isinstance(i[f.field_name], basestring) or isinstance(i[f.field_name], (list, tuple)):
           s = json.dumps(i[f.field_name], encoding=settings.DEFAULT_CHARSET)
         else:
           s = '"%s"' % i[f.field_name]
         if first2:
           # if isinstance(i[f.field_name], (list,tuple)): pegging report has a tuple of strings...
-          r.append('"%s":%s' % (f.name,s))
+          r.append('"%s":%s' % (f.name, s))
           first2 = False
         elif i[f.field_name] is not None:
-          r.append(', "%s":%s' % (f.name,s))
+          r.append(', "%s":%s' % (f.name, s))
       r.append('}')
       yield ''.join(r)
     yield '\n]}\n'
@@ -706,14 +710,14 @@ class GridReport(View):
       # Return HTML page
       reportkey = reportclass.getKey()
       prefs = request.user.getPreference(reportkey)
-      if not hasattr(reportclass,'crosses'):
+      if not hasattr(reportclass, 'crosses'):
         cross_idx = None
         cross_list = None
       elif prefs and 'crosses' in prefs:
         cross_idx = ','.join([str(i) for i in prefs['crosses']])
         cross_list = reportclass._render_cross()
       else:
-        cross_idx = ','.join([str(i) for i in range(len(reportclass.crosses)) if not reportclass.crosses[i][1].get('hidden',False)])
+        cross_idx = ','.join([str(i) for i in range(len(reportclass.crosses)) if not reportclass.crosses[i][1].get('hidden', False)])
         cross_list = reportclass._render_cross()
       mode = request.GET.get('mode', None)
       if mode:
@@ -721,11 +725,11 @@ class GridReport(View):
         request.session['mode'] = mode
       else:
         # Pick up the mode from the session
-        mode = request.session.get('mode','graph')
+        mode = request.session.get('mode', 'graph')
       is_popup = '_popup' in request.GET
       context = {
         'reportclass': reportclass,
-        'title': (args and args[0] and _('%(title)s for %(entity)s') % {'title': force_unicode(reportclass.title), 'entity':force_unicode(args[0])}) or reportclass.title,
+        'title': (args and args[0] and _('%(title)s for %(entity)s') % {'title': force_unicode(reportclass.title), 'entity': force_unicode(args[0])}) or reportclass.title,
         'preferences': prefs,
         'reportkey': reportkey,
         'colmodel': reportclass._render_colmodel(is_popup, prefs, mode),
@@ -734,17 +738,17 @@ class GridReport(View):
         'object_id': args and args[0] or None,
         'preferences': prefs,
         'page': prefs and prefs.get('page', 1) or 1,
-        'sord': prefs and prefs.get('sord', request.GET.get('sord','asc')) or request.GET.get('sord','asc'),
-        'sidx': prefs and prefs.get('sidx', request.GET.get('sidx','')) or request.GET.get('sidx',''),
+        'sord': prefs and prefs.get('sord', request.GET.get('sord', 'asc')) or request.GET.get('sord', 'asc'),
+        'sidx': prefs and prefs.get('sidx', request.GET.get('sidx', '')) or request.GET.get('sidx', ''),
         'is_popup': is_popup,
-        'filters': reportclass.getQueryString(request) or (prefs and prefs.get('filter',None)),
+        'filters': reportclass.getQueryString(request) or (prefs and prefs.get('filter', None)),
         'args': args,
         'bucketnames': bucketnames,
         'model': reportclass.model,
         'adminsite': reportclass.adminsite,
-        'hasaddperm': reportclass.editable and reportclass.model and request.user.has_perm('%s.%s' % (reportclass.model._meta.app_label, get_permission_codename('add',reportclass.model._meta))),
-        'hasdeleteperm': reportclass.editable and reportclass.model and request.user.has_perm('%s.%s' % (reportclass.model._meta.app_label, get_permission_codename('delete',reportclass.model._meta))),
-        'haschangeperm': reportclass.editable and reportclass.model and request.user.has_perm('%s.%s' % (reportclass.model._meta.app_label, get_permission_codename('change',reportclass.model._meta))),
+        'hasaddperm': reportclass.editable and reportclass.model and request.user.has_perm('%s.%s' % (reportclass.model._meta.app_label, get_permission_codename('add', reportclass.model._meta))),
+        'hasdeleteperm': reportclass.editable and reportclass.model and request.user.has_perm('%s.%s' % (reportclass.model._meta.app_label, get_permission_codename('delete', reportclass.model._meta))),
+        'haschangeperm': reportclass.editable and reportclass.model and request.user.has_perm('%s.%s' % (reportclass.model._meta.app_label, get_permission_codename('change', reportclass.model._meta))),
         'active_tab': 'plan',
         'mode': mode
         }
@@ -759,10 +763,10 @@ class GridReport(View):
         )
       response['Cache-Control'] = "no-cache, no-store"
       return response
-    elif fmt in ('spreadsheetlist','spreadsheettable','spreadsheet'):
+    elif fmt in ('spreadsheetlist', 'spreadsheettable', 'spreadsheet'):
       # Return an excel spreadsheet
       return reportclass._generate_spreadsheet_data(request, *args, **kwargs)
-    elif fmt in ('csvlist','csvtable','csv'):
+    elif fmt in ('csvlist', 'csvtable', 'csv'):
       # Return CSV data to export the data
       response = StreamingHttpResponse(
         content_type='text/csv; charset=%s' % settings.CSV_CHARSET,
@@ -1015,7 +1019,7 @@ class GridReport(View):
             # Create a form class that will be used to validate the data
             UploadForm = modelform_factory(
               reportclass.model,
-              fields=tuple([i.name for i in headers if isinstance(i,Field)]),
+              fields=tuple([i.name for i in headers if isinstance(i, Field)]),
               formfield_callback=lambda f: (isinstance(f, RelatedField) and f.formfield(using=request.database, localize=True)) or f.formfield(localize=True)
               )
 
@@ -1033,7 +1037,7 @@ class GridReport(View):
                 # More fields in data row than headers. Move on to the next row.
                 if colnum >= len(headers):
                   break
-                if isinstance(headers[colnum],Field):
+                if isinstance(headers[colnum], Field):
                   d[headers[colnum].name] = col.strip()
                 colnum += 1
 
@@ -1086,7 +1090,7 @@ class GridReport(View):
                           'field': field.name, 'message': error
                         })
             except Exception as e:
-              errors.append(_("Exception during upload: %(message)s") % {'message': e,})
+              errors.append(_("Exception during upload: %(message)s") % {'message': e})
 
       # Report all failed records
       if len(errors) > 0:
@@ -1191,7 +1195,7 @@ class GridReport(View):
             # Create a form class that will be used to validate the data
             UploadForm = modelform_factory(
               reportclass.model,
-              fields=tuple([i.name for i in headers if isinstance(i,Field)]),
+              fields=tuple([i.name for i in headers if isinstance(i, Field)]),
               formfield_callback=lambda f: (isinstance(f, RelatedField) and f.formfield(using=request.database, localize=True)) or f.formfield(localize=True)
               )
 
@@ -1209,9 +1213,9 @@ class GridReport(View):
                 # More fields in data row than headers. Move on to the next row.
                 if colnum >= len(headers):
                   break
-                if isinstance(headers[colnum],Field):
+                if isinstance(headers[colnum], Field):
                   data = col.internal_value
-                  if isinstance(headers[colnum],CharField):
+                  if isinstance(headers[colnum], CharField):
                     if data and isinstance(data, six.string_types):
                       data = data.strip()
                   elif isinstance(headers[colnum], (IntegerField, AutoField)):
@@ -1269,7 +1273,7 @@ class GridReport(View):
                           'field': field.name, 'message': error
                         })
             except Exception as e:
-              errors.append(_("Exception during upload: %(message)s") % {'message': e,})
+              errors.append(_("Exception during upload: %(message)s") % {'message': e})
 
       # Report all failed records
       if len(errors) > 0:
@@ -1296,7 +1300,7 @@ class GridReport(View):
 
   @classmethod
   def _getRowByName(reportclass, name):
-    if not hasattr(reportclass,'_rowsByName'):
+    if not hasattr(reportclass, '_rowsByName'):
       reportclass._rowsByName = {}
       for i in reportclass.rows:
         reportclass._rowsByName[i.name] = i
@@ -1343,12 +1347,12 @@ class GridReport(View):
     # Django-style filtering (which uses URL parameters) are converted to a jqgrid filter expression
     filtered = False
     filters = ['{"groupOp":"AND","rules":[']
-    for i,j in request.GET.iteritems():
+    for i, j in request.GET.iteritems():
       for r in reportclass.rows:
         if r.field_name and i.startswith(r.field_name):
           operator = (i == r.field_name) and 'exact' or i[i.rfind('_') + 1:]
           try:
-            filters.append('{"field":"%s","op":"%s","data":"%s"},' % (r.field_name, reportclass._filter_map_django_jqgrid[operator], j.replace('"','\\"')))
+            filters.append('{"field":"%s","op":"%s","data":"%s"},' % (r.field_name, reportclass._filter_map_django_jqgrid[operator], j.replace('"', '\\"')))
             filtered = True
           except:
             pass  # Ignore invalid operators
@@ -1425,11 +1429,11 @@ class GridReport(View):
 
     # Django-style filtering, using URL parameters
     if plus_django_style:
-      for i,j in request.GET.iteritems():
+      for i, j in request.GET.iteritems():
         for r in reportclass.rows:
           if r.name and i.startswith(r.field_name):
             try:
-              items = items.filter(**{i:j})
+              items = items.filter(**{i: j})
             except:
               pass  # silently ignore invalid filters
     return items
@@ -1462,7 +1466,7 @@ class GridPivot(GridReport):
     for i in cls.crosses:
       result.append(
         "{name:'%s',editable:%s}"
-        % (title('title' in i[1] and i[1]['title'] or ''), getattr(i[1],'editable',False) and 'true' or 'false')
+        % (title('title' in i[1] and i[1]['title'] or ''), getattr(i[1], 'editable', False) and 'true' or 'false')
         )
     return ',\n'.join(result)
 
@@ -1470,7 +1474,7 @@ class GridPivot(GridReport):
   @classmethod
   def _render_colmodel(cls, is_popup=False, prefs=None, mode="graph"):
     if not prefs:
-      rows = [ (i,False,cls.rows[i].width) for i in range(len(cls.rows)) ]
+      rows = [ (i, False, cls.rows[i].width) for i in range(len(cls.rows)) ]
     else:
       rows = prefs['rows']
     result = []
@@ -1480,10 +1484,10 @@ class GridPivot(GridReport):
     for (index, hidden, width) in rows:
       count += 1
       result.append(u"{%s,width:%s,counter:%d,frozen:true%s%s,searchoptions:{searchhidden: true},fixed:true}" % (
-         cls.rows[index], width, index,
-         is_popup and ',popup:true' or '',
-         hidden and not cls.rows[index].hidden and ',hidden:true' or ''
-         ))
+        cls.rows[index], width, index,
+        is_popup and ',popup:true' or '',
+        hidden and not cls.rows[index].hidden and ',hidden:true' or ''
+        ))
     if mode == "graph":
       result.append(
         "{name:'graph',index:'graph',editable:false,label:' ',title:false,"
@@ -1577,12 +1581,12 @@ class GridPivot(GridReport):
         first2 = True
         for f in reportclass.rows:
           try:
-            s = isinstance(i[f.name], basestring) and escape(i[f.name].encode(settings.DEFAULT_CHARSET,"ignore")) or i[f.name]
+            s = isinstance(i[f.name], basestring) and escape(i[f.name].encode(settings.DEFAULT_CHARSET, "ignore")) or i[f.name]
             if first2:
-              r.append('"%s":"%s"' % (f.name,s))
+              r.append('"%s":"%s"' % (f.name, s))
               first2 = False
             elif i[f.name] is not None:
-              r.append(', "%s":"%s"' % (f.name,s))
+              r.append(', "%s":"%s"' % (f.name, s))
           except:
             pass
       r.append(', "%s":[' % i['bucket'])
@@ -1609,7 +1613,7 @@ class GridPivot(GridReport):
       writer = csv.writer(sf, quoting=csv.QUOTE_NONNUMERIC, delimiter=',')
     if translation.get_language() != request.LANGUAGE_CODE:
       translation.activate(request.LANGUAGE_CODE)
-    listformat = (request.GET.get('format','csvlist') == 'csvlist')
+    listformat = (request.GET.get('format', 'csvlist') == 'csvlist')
 
     # Prepare the query
     if args and args[0]:
@@ -1626,26 +1630,26 @@ class GridPivot(GridReport):
     # Pick up the preferences
     prefs = request.user.getPreference(reportclass.getKey())
     if prefs and 'rows' in prefs:
-      myrows = [ reportclass.rows[f[0]] for f in prefs['rows'] if not f[1] and not isinstance(reportclass.rows[f[0]],GridFieldGraph) and not reportclass.rows[f[0]].hidden ]
+      myrows = [ reportclass.rows[f[0]] for f in prefs['rows'] if not f[1] and not reportclass.rows[f[0]].hidden ]
     else:
-      myrows = [ f for f in reportclass.rows if f.name and not isinstance(f,GridFieldGraph) and not f.hidden ]
+      myrows = [ f for f in reportclass.rows if f.name and not f.hidden ]
     if prefs and 'crosses' in prefs:
       mycrosses = [ reportclass.crosses[f] for f in prefs['crosses'] ]
     else:
-      mycrosses = [ f for f in reportclass.crosses if f[1].get('visible',True) ]
+      mycrosses = [ f for f in reportclass.crosses if f[1].get('visible', True) ]
 
     # Write a header row
-    fields = [ 
-      force_unicode(f.title).title().encode(encoding,"ignore") 
-      for f in myrows 
+    fields = [
+      force_unicode(f.title).title().encode(encoding, "ignore")
+      for f in myrows
       ]
 
     if listformat:
-      fields.extend([ capfirst(force_unicode(_('bucket'))).encode(encoding,"ignore") ])
-      fields.extend([ capfirst(_(f[1].get('title',_(f[0])))).encode(encoding,"ignore") for f in mycrosses ])
+      fields.extend([ capfirst(force_unicode(_('bucket'))).encode(encoding, "ignore") ])
+      fields.extend([ capfirst(_(f[1].get('title', _(f[0])))).encode(encoding, "ignore") for f in mycrosses ])
     else:
-      fields.extend( [capfirst(_('data field')).encode(encoding,"ignore")])
-      fields.extend([ unicode(b['name']).encode(encoding,"ignore") for b in request.report_bucketlist])
+      fields.extend( [capfirst(_('data field')).encode(encoding, "ignore")])
+      fields.extend([ unicode(b['name']).encode(encoding, "ignore") for b in request.report_bucketlist])
     writer.writerow(fields)
     yield sf.getvalue()
 
@@ -1656,23 +1660,23 @@ class GridPivot(GridReport):
         sf.truncate(0)
         # Data for rows
         if hasattr(row, "__getitem__"):
-          fields = [ 
-            row[f.name]==None and ' ' or unicode(row[f.name]).encode(encoding,"ignore") 
-            for f in myrows 
+          fields = [
+            row[f.name] is None and ' ' or unicode(row[f.name]).encode(encoding, "ignore")
+            for f in myrows
             ]
-          fields.extend([ row['bucket'].encode(encoding,"ignore") ])
-          fields.extend([ 
-            row[f[0]]==None and ' ' or unicode(_localize(row[f[0]],decimal_separator)).encode(encoding,"ignore")
-            for f in mycrosses 
+          fields.extend([ row['bucket'].encode(encoding, "ignore") ])
+          fields.extend([
+            row[f[0]] is None and ' ' or unicode(_localize(row[f[0]], decimal_separator)).encode(encoding, "ignore")
+            for f in mycrosses
             ])
         else:
-          fields = [ 
-            getattr(row,f.name)==None and ' ' or unicode(getattr(row,f.name)).encode(encoding,"ignore")
-            for f in myrows 
+          fields = [
+            getattr(row, f.name) is None and ' ' or unicode(getattr(row, f.name)).encode(encoding, "ignore")
+            for f in myrows
             ]
-          fields.extend([ getattr(row,'bucket').encode(encoding,"ignore") ])
-          fields.extend([ 
-            getattr(row,f[0])==None and ' ' or unicode(_localize(getattr(row,f[0]),decimal_separator)).encode(encoding,"ignore")
+          fields.extend([ getattr(row, 'bucket').encode(encoding, "ignore") ])
+          fields.extend([
+            getattr(row, f[0]) is None and ' ' or unicode(_localize(getattr(row, f[0]), decimal_separator)).encode(encoding, "ignore")
             for f in mycrosses
             ])
         # Return string
@@ -1693,11 +1697,11 @@ class GridPivot(GridReport):
             # Clear the return string buffer
             sf.truncate(0)
             fields = [
-              unicode(row_of_buckets[0][s.name]).encode(encoding,"ignore")
+              unicode(row_of_buckets[0][s.name]).encode(encoding, "ignore")
               for s in myrows
               ]
-            fields.extend( [('title' in cross[1] and capfirst(_(cross[1]['title'])) or capfirst(_(cross[0]))).encode(encoding,"ignore")] )
-            fields.extend([ unicode(_localize(bucket[cross[0]],decimal_separator)).encode(encoding,"ignore") for bucket in row_of_buckets ])
+            fields.extend( [('title' in cross[1] and capfirst(_(cross[1]['title'])) or capfirst(_(cross[0]))).encode(encoding, "ignore")] )
+            fields.extend([ unicode(_localize(bucket[cross[0]], decimal_separator)).encode(encoding, "ignore") for bucket in row_of_buckets ])
             # Return string
             writer.writerow(fields)
             yield sf.getvalue()
@@ -1708,12 +1712,12 @@ class GridPivot(GridReport):
         # Clear the return string buffer
         sf.truncate(0)
         fields = [
-          unicode(row_of_buckets[0][s.name]).encode(encoding,"ignore") 
+          unicode(row_of_buckets[0][s.name]).encode(encoding, "ignore")
           for s in myrows
           ]
-        fields.extend( [('title' in cross[1] and capfirst(_(cross[1]['title'])) or capfirst(_(cross[0]))).encode(encoding,"ignore")] )
+        fields.extend( [('title' in cross[1] and capfirst(_(cross[1]['title'])) or capfirst(_(cross[0]))).encode(encoding, "ignore")] )
         fields.extend([
-          unicode(_localize(bucket[cross[0]],decimal_separator)).encode(encoding,"ignore")
+          unicode(_localize(bucket[cross[0]], decimal_separator)).encode(encoding, "ignore")
           for bucket in row_of_buckets
           ])
         # Return string
@@ -1728,7 +1732,7 @@ class GridPivot(GridReport):
     ws = wb.create_sheet(title=force_unicode(reportclass.model._meta.verbose_name))
 
     # Prepare the query
-    listformat = (request.GET.get('format','spreadsheetlist') == 'spreadsheetlist')
+    listformat = (request.GET.get('format', 'spreadsheetlist') == 'spreadsheetlist')
     if args and args[0]:
       query = reportclass.query(request, reportclass.basequeryset.filter(pk__exact=args[0]).using(request.database), sortsql="1 asc")
     elif callable(reportclass.basequeryset):
@@ -1739,19 +1743,19 @@ class GridPivot(GridReport):
     # Pick up the preferences
     prefs = request.user.getPreference(reportclass.getKey())
     if prefs and 'rows' in prefs:
-      myrows = [ reportclass.rows[f[0]] for f in prefs['rows'] if not f[1] and not isinstance(reportclass.rows[f[0]],GridFieldGraph) and not reportclass.rows[f[0]].hidden ]
+      myrows = [ reportclass.rows[f[0]] for f in prefs['rows'] if not f[1] and not reportclass.rows[f[0]].hidden ]
     else:
-      myrows = [ f for f in reportclass.rows if f.name and not isinstance(f,GridFieldGraph) and not f.hidden ]
+      myrows = [ f for f in reportclass.rows if f.name and not f.hidden ]
     if prefs and 'crosses' in prefs:
       mycrosses = [ reportclass.crosses[f] for f in prefs['crosses'] ]
     else:
-      mycrosses = [ f for f in reportclass.crosses if f[1].get('visible',True) ]
+      mycrosses = [ f for f in reportclass.crosses if f[1].get('visible', True) ]
 
     # Write a header row
     fields = [ force_unicode(f.title).title() for f in myrows ]
     if listformat:
       fields.extend([ capfirst(force_unicode(_('bucket'))) ])
-      fields.extend([ capfirst(_(f[1].get('title',_(f[0])))) for f in mycrosses ])
+      fields.extend([ capfirst(_(f[1].get('title', _(f[0])))) for f in mycrosses ])
     else:
       fields.extend( [capfirst(_('data field'))])
       fields.extend([ unicode(b['name']) for b in request.report_bucketlist])
@@ -1766,9 +1770,9 @@ class GridPivot(GridReport):
           fields.extend([ _getCellValue(row['bucket']) ])
           fields.extend([ _getCellValue(row[f[0]]) for f in mycrosses ])
         else:
-          fields = [ _getCellValue(getattr(row,f.name)) for f in myrows ]
-          fields.extend([ _getCellValue(getattr(row,'bucket')) ])
-          fields.extend([ _getCellValue(getattr(row,f[0])) for f in mycrosses ])
+          fields = [ _getCellValue(getattr(row, f.name)) for f in myrows ]
+          fields.extend([ _getCellValue(getattr(row, 'bucket')) ])
+          fields.extend([ _getCellValue(getattr(row, f[0])) for f in mycrosses ])
         ws.append(fields)
     else:
       currentkey = None
@@ -1824,9 +1828,9 @@ def _localize(value, decimal_separator):
   if callable(value):
     value = value()
   if isinstance(value, numericTypes):
-    return decimal_separator == "," and six.text_type(value).replace(".",",") or six.text_type(value)
-  elif isinstance(value, (list,tuple) ):
-    return "|".join([ unicode(_localize(i,decimal_separator)) for i in value ])
+    return decimal_separator == "," and six.text_type(value).replace(".", ",") or six.text_type(value)
+  elif isinstance(value, (list, tuple) ):
+    return "|".join([ unicode(_localize(i, decimal_separator)) for i in value ])
   else:
     return value
 
@@ -1852,7 +1856,7 @@ def exportWorkbook(request):
       (app_label, model_label) = entity_name.split('.')
       model = get_model(app_label, model_label)
       # Verify access rights
-      if not request.user.has_perm("%s.%s" % (app_label, get_permission_codename('change',model._meta))):
+      if not request.user.has_perm("%s.%s" % (app_label, get_permission_codename('change', model._meta))):
         continue
       # Never export some special administrative models
       if model in EXCLUDE_FROM_BULK_OPERATIONS:
@@ -1863,7 +1867,7 @@ def exportWorkbook(request):
       source = False
       lastmodified = False
       for i in model._meta.fields:
-        if i.name in ['lft','rght','lvl']:
+        if i.name in ['lft', 'rght', 'lvl']:
           continue  # Skip some fields of HierarchyModel
         elif i.name == 'source':
           source = True  # Put the source field at the end
@@ -1925,7 +1929,7 @@ def importWorkbook(request):
   '''
   errors = []
   # Build a list of all contenttypes
-  all_models = [ (ct.model_class(),ct.pk) for ct in ContentType.objects.all() if ct.model_class() ]
+  all_models = [ (ct.model_class(), ct.pk) for ct in ContentType.objects.all() if ct.model_class() ]
   with transaction.atomic(using=request.database):
     # Find all models in the workbook
     wb = load_workbook(filename=request.FILES['spreadsheet'], use_iterators=True, data_only=True)
@@ -1941,7 +1945,7 @@ def importWorkbook(request):
           break
       if not model or model in EXCLUDE_FROM_BULK_OPERATIONS:
         errors.append(force_unicode(_("Ignoring data in worksheet: %s") % ws_name))
-      elif not request.user.has_perm('%s.%s' % (model._meta.app_label, get_permission_codename('add',model._meta))):
+      elif not request.user.has_perm('%s.%s' % (model._meta.app_label, get_permission_codename('add', model._meta))):
         # Check permissions
         errors.append(force_unicode(_("You don't permissions to add: %s") % ws_name))
       else:
@@ -2015,7 +2019,7 @@ def importWorkbook(request):
               break
             uploadform = modelform_factory(
               model,
-              fields=tuple([i.name for i in headers if isinstance(i,Field)]),
+              fields=tuple([i.name for i in headers if isinstance(i, Field)]),
               formfield_callback=lambda f: (isinstance(f, RelatedField) and f.formfield(using=request.database, localize=True)) or f.formfield(localize=True)
               )
           else:
@@ -2027,9 +2031,9 @@ def importWorkbook(request):
               # More fields in data row than headers. Move on to the next row.
               if colnum >= len(headers):
                 break
-              if isinstance(headers[colnum],Field):
+              if isinstance(headers[colnum], Field):
                 data = cell.internal_value
-                if isinstance(headers[colnum],CharField):
+                if isinstance(headers[colnum], CharField):
                   if data and isinstance(data, six.string_types):
                     data = data.strip()
                 elif isinstance(headers[colnum], (IntegerField, AutoField)):

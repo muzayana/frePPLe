@@ -15,10 +15,11 @@ import freppledb.execute.views
 # Automatically add these URLs when the application is installed
 autodiscover = True
 
-urlpatterns = patterns('',
-    (r'^execute/$', freppledb.execute.views.TaskReport.as_view()),
-    (r'^execute/logfrepple/$', freppledb.execute.views.logfile),
-    (r'^execute/launch/(.+)/$', freppledb.execute.views.LaunchTask),
-    (r'^execute/cancel/(.+)/$', freppledb.execute.views.CancelTask),
-    (r'^execute/api/(.+)/$', freppledb.execute.views.APITask),
+urlpatterns = patterns(
+  '',   # Prefix
+  (r'^execute/$', freppledb.execute.views.TaskReport.as_view()),
+  (r'^execute/logfrepple/$', freppledb.execute.views.logfile),
+  (r'^execute/launch/(.+)/$', freppledb.execute.views.LaunchTask),
+  (r'^execute/cancel/(.+)/$', freppledb.execute.views.CancelTask),
+  (r'^execute/api/(.+)/$', freppledb.execute.views.APITask),
 )

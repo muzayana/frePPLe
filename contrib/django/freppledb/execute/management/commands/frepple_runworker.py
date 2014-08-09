@@ -44,7 +44,7 @@ class WorkerAlive(Thread):
 def checkActive(database=DEFAULT_DB_ALIAS):
     try:
       p = Parameter.objects.all().using(database).get(pk='Worker alive')
-      return datetime.now() - datetime.strptime(p.value, "%Y-%m-%d %H:%M:%S") <= timedelta(0,5)
+      return datetime.now() - datetime.strptime(p.value, "%Y-%m-%d %H:%M:%S") <= timedelta(0, 5)
     except:
       return False
 
@@ -54,10 +54,14 @@ class Command(BaseCommand):
     The command is intended only to be used internally by frePPLe, not by an API or user.
     '''
   option_list = BaseCommand.option_list + (
-    make_option('--database', action='store', dest='database',
-      default=DEFAULT_DB_ALIAS, help='Nominates a specific database to load data from and export results into'),
-    make_option('--continuous', action="store_true", dest='continuous',
-      default=False, help='Keep the worker alive after the queue is empty'),
+    make_option(
+      '--database', action='store', dest='database',
+      default=DEFAULT_DB_ALIAS, help='Nominates a specific database to load data from and export results into'
+      ),
+    make_option(
+      '--continuous', action="store_true", dest='continuous',
+      default=False, help='Keep the worker alive after the queue is empty'
+      ),
   )
   requires_model_validation = False
 
@@ -162,13 +166,13 @@ class Command(BaseCommand):
           logger.error('Task %s not recognized' % task.name)
         # Read the task again from the database and update.
         task = Task.objects.all().using(database).get(pk=task.id)
-        if task.status not in ('Done','Failed') or not task.finished or not task.started:
+        if task.status not in ('Done', 'Failed') or not task.finished or not task.started:
           now = datetime.now()
           if not task.started:
             task.started = now
           if not task.finished:
             task.finished = now
-          if task.status not in ('Done','Failed'):
+          if task.status not in ('Done', 'Failed'):
             task.status = 'Done'
           task.save(using=database)
         logger.info("finished task %d at %s: success" % (task.id, datetime.now()))

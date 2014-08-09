@@ -23,19 +23,32 @@ from freppledb.execute.models import Task
 
 class Command(BaseCommand):
   option_list = BaseCommand.option_list + (
-    make_option('--user', dest='user', type='string',
-      help='User running the command'),
-    make_option('--constraint', dest='constraint', type='choice',
-      choices=['0','1','2','3','4','5','6','7','8','9','10','11','12','13','14','15'], default='15',
-      help='Constraints to be considered: 1=lead time, 2=material, 4=capacity, 8=release fence'),
-    make_option('--plantype', dest='plantype', type='choice', choices=['1','2'],
-      default='1', help='Plan type: 1=constrained, 2=unconstrained'),
-    make_option('--database', action='store', dest='database',
-      default=DEFAULT_DB_ALIAS, help='Nominates a specific database to load data from and export results into'),
-    make_option('--task', dest='task', type='int',
-      help='Task identifier (generated automatically if not provided)'),
-    make_option('--env', dest='env', type='string',
-      help='A comma separated list of extra settings passed as environment variables to the engine'),
+    make_option(
+      '--user', dest='user', type='string',
+      help='User running the command'
+      ),
+    make_option(
+      '--constraint', dest='constraint', type='choice', default='15',
+      choices=['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15'],
+      help='Constraints to be considered: 1=lead time, 2=material, 4=capacity, 8=release fence'
+      ),
+    make_option(
+      '--plantype', dest='plantype', type='choice', choices=['1', '2'],
+      default='1', help='Plan type: 1=constrained, 2=unconstrained'
+      ),
+    make_option(
+      '--database', action='store', dest='database',
+      default=DEFAULT_DB_ALIAS,
+      help='Nominates a specific database to load data from and export results into'
+      ),
+    make_option(
+      '--task', dest='task', type='int',
+      help='Task identifier (generated automatically if not provided)'
+      ),
+    make_option(
+      '--env', dest='env', type='string',
+      help='A comma separated list of extra settings passed as environment variables to the engine'
+      ),
   )
   help = "Runs frePPLe to generate a plan"
 
@@ -106,8 +119,8 @@ class Command(BaseCommand):
       cmd = None
       for app in settings.INSTALLED_APPS:
         mod = import_module(app)
-        if os.path.exists(os.path.join(os.path.dirname(mod.__file__),'commands.py')):
-          cmd = os.path.join(os.path.dirname(mod.__file__),'commands.py')
+        if os.path.exists(os.path.join(os.path.dirname(mod.__file__), 'commands.py')):
+          cmd = os.path.join(os.path.dirname(mod.__file__), 'commands.py')
           break
       if not cmd:
         raise Exception("Can't locate commands.py")
@@ -118,17 +131,17 @@ class Command(BaseCommand):
       os.environ['FREPPLE_TASKID'] = str(task.id)
       os.environ['FREPPLE_DATABASE'] = database
       os.environ['PATH'] = settings.FREPPLE_HOME + os.pathsep + os.environ['PATH'] + os.pathsep + settings.FREPPLE_APP
-      if os.path.isfile(os.path.join(settings.FREPPLE_HOME,'libfrepple.so')):
+      if os.path.isfile(os.path.join(settings.FREPPLE_HOME, 'libfrepple.so')):
         os.environ['LD_LIBRARY_PATH'] = settings.FREPPLE_HOME
       if 'DJANGO_SETTINGS_MODULE' not in os.environ:
         os.environ['DJANGO_SETTINGS_MODULE'] = 'freppledb.settings'
-      if os.path.exists(os.path.join(settings.FREPPLE_HOME,'python27.zip')):
+      if os.path.exists(os.path.join(settings.FREPPLE_HOME, 'python27.zip')):
         # For the py2exe executable
-        os.environ['PYTHONPATH'] = os.path.join(settings.FREPPLE_HOME,'python27.zip') + os.pathsep + os.path.normpath(settings.FREPPLE_APP)
+        os.environ['PYTHONPATH'] = os.path.join(settings.FREPPLE_HOME, 'python27.zip') + os.pathsep + os.path.normpath(settings.FREPPLE_APP)
       else:
         # Other executables
         os.environ['PYTHONPATH'] = os.path.normpath(settings.FREPPLE_APP)
-      ret = os.system('frepple "%s"' % cmd.replace('\\','\\\\'))
+      ret = os.system('frepple "%s"' % cmd.replace('\\', '\\\\'))
       if ret != 0 and ret != 2:
         # Return code 0 is a successful run
         # Return code is 2 is a run cancelled by a user. That's shown in the status field.

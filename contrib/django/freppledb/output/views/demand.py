@@ -32,11 +32,11 @@ class OverviewReport(GridPivot):
     GridFieldText('item', title=_('item'), key=True, field_name='name', formatter='item', editable=False),
     )
   crosses = (
-    ('forecast',{'title': _('net forecast')}),
-    ('orders',{'title': _('orders')}),
-    ('demand',{'title': _('total demand')}),
-    ('supply',{'title': _('total supply')}),
-    ('backlog',{'title': _('backlog')}),
+    ('forecast', {'title': _('net forecast')}),
+    ('orders', {'title': _('orders')}),
+    ('demand', {'title': _('total demand')}),
+    ('supply', {'title': _('total supply')}),
+    ('backlog', {'title': _('backlog')}),
     )
 
   @classmethod
@@ -127,7 +127,7 @@ class OverviewReport(GridPivot):
         inner join item
         on item.lft between y.lft and y.rght
         left join (select forecast.item_id as item_id, forecastplan.startdate as startdate,
-		        forecastplan.forecastnet as quantity
+          forecastplan.forecastnet as quantity
           from forecastplan, forecast
           where forecastplan.forecast_id = forecast.name
           ) fcst
@@ -141,7 +141,7 @@ class OverviewReport(GridPivot):
               request.report_enddate, request.report_startdate,
               request.report_enddate, request.report_startdate,
               request.report_enddate, sortsql)
-    cursor.execute(query,baseparams)
+    cursor.execute(query, baseparams)
 
     # Build the python result
     previtem = None
@@ -155,11 +155,11 @@ class OverviewReport(GridPivot):
         'bucket': row[1],
         'startdate': python_date(row[2]),
         'enddate': python_date(row[3]),
-        'orders': round(row[4],1),
-        'forecast': round(row[5],1),
-        'demand': round(float(row[4]) + float(row[5]),1),
-        'supply': round(row[6],1),
-        'backlog': round(backlog,1),
+        'orders': round(row[4], 1),
+        'forecast': round(row[5], 1),
+        'demand': round(float(row[4]) + float(row[5]), 1),
+        'supply': round(row[6], 1),
+        'backlog': round(backlog, 1),
         }
 
 
@@ -169,7 +169,7 @@ class DetailReport(GridReport):
   '''
   template = 'output/demandplan.html'
   title = _("Demand plan detail")
-  basequeryset = Demand.objects.extra(select={'forecast': "select name from forecast where out_demand.demand like forecast.name || ' - %%'",})
+  basequeryset = Demand.objects.extra(select={'forecast': "select name from forecast where out_demand.demand like forecast.name || ' - %%'"})
   model = Demand
   permissions = (("view_demand_report", "Can view demand report"),)
   frozenColumns = 0

@@ -28,18 +28,31 @@ class Command(BaseCommand):
   '''
 
   option_list = BaseCommand.option_list + (
-      make_option('--start', dest='start', type='string',
-          help='Start date in YYYY-MM-DD format'),
-      make_option('--end', dest='end', type='string',
-          help='End date in YYYY-MM-DD format'),
-      make_option('--weekstart', dest='weekstart', type='int', default=1,
-          help='First day of a week: 0=sunday, 1=monday (default), 2=tuesday, 3=wednesday, 4=thursday, 5=friday, 6=saturday'),
-      make_option('--user', dest='user', type='string',
-          help='User running the command'),
-      make_option('--database', action='store', dest='database',
-        default=DEFAULT_DB_ALIAS, help='Nominates a specific database to populate date information into'),
-      make_option('--task', dest='task', type='int',
-        help='Task identifier (generated automatically if not provided)'),
+    make_option(
+      '--start', dest='start', type='string',
+      help='Start date in YYYY-MM-DD format'
+      ),
+    make_option(
+      '--end', dest='end', type='string',
+      help='End date in YYYY-MM-DD format'
+      ),
+    make_option(
+      '--weekstart', dest='weekstart', type='int', default=1,
+      help='First day of a week: 0=sunday, 1=monday (default), 2=tuesday, 3=wednesday, 4=thursday, 5=friday, 6=saturday'
+      ),
+    make_option(
+      '--user', dest='user', type='string',
+      help='User running the command'
+      ),
+    make_option(
+      '--database', action='store', dest='database',
+      default=DEFAULT_DB_ALIAS,
+      help='Nominates a specific database to populate date information into'
+      ),
+    make_option(
+      '--task', dest='task', type='int',
+      help='Task identifier (generated automatically if not provided)'
+      ),
   )
 
   requires_model_validation = False
@@ -107,8 +120,8 @@ class Command(BaseCommand):
 
       # Validate the date arguments
       try:
-        curdate = datetime.strptime(start,'%Y-%m-%d')
-        enddate = datetime.strptime(end,'%Y-%m-%d')
+        curdate = datetime.strptime(start, '%Y-%m-%d')
+        enddate = datetime.strptime(end, '%Y-%m-%d')
       except Exception as e:
         raise CommandError("Date is not matching format YYYY-MM-DD")
 
@@ -121,11 +134,11 @@ class Command(BaseCommand):
         )
 
       # Create buckets
-      y = Bucket(name='year',description='Yearly time buckets')
-      q = Bucket(name='quarter',description='Quarterly time buckets')
-      m = Bucket(name='month',description='Monthly time buckets')
-      w = Bucket(name='week',description='Weeky time buckets')
-      d = Bucket(name='day',description='Daily time buckets')
+      y = Bucket(name='year', description='Yearly time buckets')
+      q = Bucket(name='quarter', description='Quarterly time buckets')
+      m = Bucket(name='month', description='Monthly time buckets')
+      w = Bucket(name='week', description='Weeky time buckets')
+      d = Bucket(name='day', description='Daily time buckets')
       y.save(using=database)
       q.save(using=database)
       m.save(using=database)
@@ -164,7 +177,7 @@ class Command(BaseCommand):
           prev_quarter = quarter
           BucketDetail(
             bucket=q,
-            name="%02d Q%s" % (year - 2000,quarter),
+            name="%02d Q%s" % (year - 2000, quarter),
             startdate=date(year, quarter * 3 - 2, 1),
             enddate=date(year + quarter / 4, quarter * 3 + 1 - 12 * (quarter / 4), 1)
             ).save(using=database)
