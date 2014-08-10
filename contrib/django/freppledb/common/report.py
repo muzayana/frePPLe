@@ -719,13 +719,16 @@ class GridReport(View):
       else:
         cross_idx = ','.join([str(i) for i in range(len(reportclass.crosses)) if not reportclass.crosses[i][1].get('hidden', False)])
         cross_list = reportclass._render_cross()
-      mode = request.GET.get('mode', None)
-      if mode:
-        # Store the mode passed in the URL on the session to remember for the next report
-        request.session['mode'] = mode
+      if args:
+        mode = "table"
       else:
-        # Pick up the mode from the session
-        mode = request.session.get('mode', 'graph')
+        mode = request.GET.get('mode', None)
+        if mode:
+          # Store the mode passed in the URL on the session to remember for the next report
+          request.session['mode'] = mode
+        else:
+          # Pick up the mode from the session
+          mode = request.session.get('mode', 'graph')
       is_popup = '_popup' in request.GET
       context = {
         'reportclass': reportclass,

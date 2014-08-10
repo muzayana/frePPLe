@@ -15,6 +15,7 @@
 # License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import os
 import os.path
 
 from django.test import TestCase, TransactionTestCase
@@ -36,7 +37,10 @@ class DataLoadTest(TestCase):
 
   def test_common_parameter(self):
     response = self.client.get('/admin/common/parameter/?format=json')
-    self.assertContains(response, '"records":')
+    for i in response.streaming_content:
+      if '"records":15,' in i:
+        return
+    self.fail("Didn't find expected number of parameters")
 
 
 class UserPreferenceTest(TestCase):
