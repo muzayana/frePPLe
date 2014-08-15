@@ -76,7 +76,7 @@ def odoo_read(db=DEFAULT_DB_ALIAS):
     raise e
 
   # Download and parse XML data
-  frepple.readXMLdata(f.read().decode('ascii', 'ignore'), False, False)  # TODO HANDLE UNICODE!
+  frepple.readXMLdata(f.read(), False, False)
 
 
 def odoo_write(db=DEFAULT_DB_ALIAS):
@@ -179,8 +179,8 @@ def odoo_write(db=DEFAULT_DB_ALIAS):
 
   # Connect to the odoo URL to POST data
   try:
-    req = Request("%s/frepple/xml/" % odoo_url)
-    body = '\n'.join(publishPlan())
+    req = Request("%s/frepple/xml/" % odoo_url.encode('ascii'))
+    body = '\n'.join(publishPlan()).encode('utf-8')
     size = len(body)
     encoded = base64.encodestring('%s:%s' % (odoo_user, odoo_password)).replace('\n', '')
     req.add_header("Authorization", "Basic %s" % encoded)
@@ -196,6 +196,7 @@ def odoo_write(db=DEFAULT_DB_ALIAS):
     print("Odoo response:")
     for i in urlopen(req):
       print(i, end="")
+    print("")
 
   except HTTPError as e:
     print("Error connecting to odoo", e.read())
