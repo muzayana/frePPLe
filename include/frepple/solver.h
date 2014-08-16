@@ -746,6 +746,41 @@ class SolverMRP : public Solver
 };
 
 
+/** @brief A lightweight solver class to remove excess material.
+  *
+  * The class works in a single thread only.
+  */
+class OperatorDelete : public Solver
+{
+  public:
+	/** Constructor. */
+	OperatorDelete(const string& n, CommandManager* c = NULL) : Solver(n), cmds(c) {};
+
+	/** Remove all entities for excess material that can be removed. */
+	void solve(void *v = NULL);
+
+	/** Remove excess from a buffer and all its upstream colleagues. */
+	void solve(const Buffer*, void* = NULL);
+
+	/** Remove excess starting from a single demand. */
+	void solve(const Demand*, void* = NULL);
+
+	/** Remove excess operations on a resource. */
+	void solve(const Resource*, void* = NULL);
+
+  private:
+	void pushBuffers(OperationPlan*, bool);
+
+	/** A list of buffers still to scan for excess. */
+	vector<Buffer*> buffersToScan;   // TODO Use a different data structure to allow faster lookups and sorting?
+
+	/** A pointer to a command manager that takes care of the commit and
+	  * rollback of all actions.
+	  */
+	CommandManager* cmds;
+};
+
+
 /** @brief This class holds functions that used for maintenance of the solver
   * code.
   */
