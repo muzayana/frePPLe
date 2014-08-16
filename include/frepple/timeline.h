@@ -349,7 +349,7 @@ template <class type> class TimeLine
       * and the end of the horizon.<br>
       * If the boolean argument is true, excess is defined as the difference
       * between the onhand level and the minimum stock level.<br>
-      * If the boolean argument is falsee, excess is defined as the onhand level.
+      * If the boolean argument is false, excess is defined as the onhand level.
       */
     double getExcess(const Event* curevent, bool consider_min_stock = true) const
     {
