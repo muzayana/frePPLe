@@ -447,8 +447,11 @@ class Interface:
         raise cherrypy.HTTPError(404, "Entity not found")
       try:
         # Update the demand in memory.
-        # In case of a delete, the deletion also cleans up all upstream supply.
-        dm = frepple.demand(name=name, action=cherrypy.request.params.get('action', 'AC'))
+        action = cherrypy.request.params.get('action', 'AC')
+        if action == "R":
+          # In case of a delete, cleans up all upstream supply.
+          frepple.solver_delete("clean inventory").solve(dm)
+        dm = frepple.demand(name=name, action=action)
       except:
         # Demand not found
         raise cherrypy.HTTPError(404, "Entity not found")

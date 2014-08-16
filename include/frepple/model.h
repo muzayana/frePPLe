@@ -1807,9 +1807,6 @@ class OperationPlan
     /** Destructor. */
     virtual DECLARE_EXPORT ~OperationPlan();
 
-    /** Push all consuming flowplans on a stack. */
-    void DECLARE_EXPORT pushConsumingBuffers(vector<Buffer*>*) const;
-
     virtual DECLARE_EXPORT void setChanged(bool b = true);
 
     /** Returns the quantity. */
@@ -2959,9 +2956,6 @@ class Buffer : public HasHierarchy<Buffer>, public HasLevel,
     virtual DECLARE_EXPORT void followPegging
     (PeggingIterator&, FlowPlan*, short, double, double);
 
-    /** Clean up excess producing operationplans from the buffer. */
-    virtual void removeExcess(vector<Buffer*>* buflist = NULL, CommandManager* = NULL) {}
-
     /** Return the minimum interval between purchasing operations.<br>
       * This parameter doesn't control the timing of the first purchasing
       * operation, but only to the subsequent ones.
@@ -3075,9 +3069,6 @@ class BufferDefault : public Buffer
     {return sizeof(BufferDefault) + Buffer::extrasize();}
     static DECLARE_EXPORT const MetaClass* metadata;
     static int initialize();
-    
-    /** Clean up excess producing operationplans from the buffer. */
-    virtual DECLARE_EXPORT void removeExcess(vector<Buffer*>* buflist = NULL, CommandManager* = NULL);
 };
 
 
@@ -4686,20 +4677,10 @@ class Demand
       * The (optional) boolean parameter controls whether we delete also locked
       * operationplans or not.<br>
       * The second (optional) argument is a command list that can be used to
-      * remove the operationplans in an undo-able way.<br>
-      * The optional third argument is used to flag whether or not we also
-      * want to delete the upstream pegged operationplans along the supply
-      * path.
-      *
-      * \attention This method is implemented differently in the enterprise
-      * edition. The community edition only deletes the delivery
-      * operationplans.
+      * remove the operationplans in an undo-able way.
       */
-    DECLARE_EXPORT void deleteOperationPlans (
-      bool deleteLockedOpplans = false,
-      CommandManager* = NULL,
-      bool deleteUpstream = true
-      );
+    DECLARE_EXPORT void deleteOperationPlans
+    (bool deleteLockedOpplans = false, CommandManager* = NULL);
 
     /** Returns the due date of the demand. */
     const Date& getDue() const {return dueDate;}

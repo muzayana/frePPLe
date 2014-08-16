@@ -480,29 +480,6 @@ DECLARE_EXPORT OperationPlan::~OperationPlan()
 }
 
 
-void DECLARE_EXPORT OperationPlan::pushConsumingBuffers(vector<Buffer*>* buffersToScan) const
-{
-  for (OperationPlan::FlowPlanIterator i = beginFlowPlans(); i != endFlowPlans(); ++i)
-  {
-    // Skip producing flowplans
-    if (i->getQuantity() >= 0) continue;
-
-    // Check if the buffer is already found on the stack
-    bool found = false;
-    for (int j = buffersToScan->size()-1; j>=0 && !found; --j)
-      if ((*buffersToScan)[j] == i->getBuffer())
-        found = true;
-
-    // Add the buffer to the stack
-    if (!found) buffersToScan->push_back(const_cast<Buffer*>(i->getBuffer()));
-  }
-
-  // Recursive call for all suboperationplans
-  for (OperationPlan::iterator subopplan(this); subopplan != end(); ++subopplan)
-    subopplan->pushConsumingBuffers(buffersToScan);
-}
-
-
 void DECLARE_EXPORT OperationPlan::setOwner(OperationPlan* o, bool fast)
 {
   // Special case: the same owner is set twice

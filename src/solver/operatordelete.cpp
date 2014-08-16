@@ -18,6 +18,24 @@ namespace frepple
 {
 
 
+const MetaClass* OperatorDelete::metadata;
+
+
+int OperatorDelete::initialize()
+{
+  // Initialize the metadata
+  metadata = new MetaClass(
+    "solver", "solver_delete", Object::createString<OperatorDelete>, true
+    );
+
+  // Initialize the Python class
+  FreppleClass<OperatorDelete, Solver>::getType().addMethod(
+    "solve", solve, METH_VARARGS, "run the solver"
+    );
+  return FreppleClass<OperatorDelete, Solver>::initialize();
+}
+
+
 void OperatorDelete::solve(void *v)
 {
    // Loop over all buffers
@@ -26,9 +44,9 @@ void OperatorDelete::solve(void *v)
   // Clean up all buffers in the list
   while(!buffersToScan.empty())
   {
-	Buffer* curbuf = buffersToScan.back();
-	buffersToScan.pop_back();
-	curbuf->removeExcess(&buffersToScan, cmds);
+      Buffer* curbuf = buffersToScan.back();
+      buffersToScan.pop_back();
+      solve(curbuf);
   }
 }
 
@@ -39,48 +57,50 @@ void OperatorDelete::solve(const Resource* r, void* v)
   for (Resource::loadplanlist::const_iterator i = r->getLoadPlans().begin();
     i != r->getLoadPlans().end(); ++i)
   {
-	const LoadPlan* lp = dynamic_cast<const LoadPlan*>(&*i);
-	if (lp)
-	  // Add all buffers into which material is produced to the stack
-	  pushBuffers(lp->getOperationPlan(), false);
+    const LoadPlan* lp = dynamic_cast<const LoadPlan*>(&*i);
+    if (lp)
+      // Add all buffers into which material is produced to the stack
+      pushBuffers(lp->getOperationPlan(), false);
   }
 
   // Process all buffers found, and their upstream colleagues
   while(!buffersToScan.empty())
   {
-	Buffer* curbuf = buffersToScan.back();
-	buffersToScan.pop_back();
-	curbuf->removeExcess(&buffersToScan, cmds);
+      Buffer* curbuf = buffersToScan.back();
+      buffersToScan.pop_back();
+      solve(curbuf);
   }
 }
 
 
 void OperatorDelete::solve(const Demand* d, void* v)
 {
+  logger << "delete for " << d << endl;
+
   // Delete all delivery operationplans.
   // Note that an extra loop is used to assure that our iterator doesn't get
   // invalidated during the deletion.
   while (true)
   {
-	// Find a candidate operationplan to delete
-	OperationPlan *candidate = NULL;
-	for (Demand::OperationPlan_list::const_iterator i = d->getDelivery().begin();
-	  i != d->getDelivery().end(); ++i)  // TODO the getDelivery() method isn't lightweight to call in every iteration
-	  if (!(*i)->getLocked())
-	  {
-		candidate = *i;
-		break;
-	  }
-	if (!candidate) break;
+    // Find a candidate operationplan to delete
+    OperationPlan *candidate = NULL;
+    const Demand::OperationPlan_list& deli = d->getDelivery();
+    for (Demand::OperationPlan_list::const_iterator i = deli.begin(); i != deli.end(); ++i)
+      if (!(*i)->getLocked())
+      {
+        candidate = *i;
+        break;
+      }
+      if (!candidate) break;
 
-	// Push the buffer on the stack in which the deletion creates excess inventory
-	pushBuffers(candidate, true);
+      // Push the buffer on the stack in which the deletion creates excess inventory
+      pushBuffers(candidate, true);
 
-	// Delete only the delivery, immediately or through a delete command
-	if (cmds)
-	  cmds->add(new CommandDeleteOperationPlan(candidate));
-	else
-	  delete candidate;
+      // Delete only the delivery, immediately or through a delete command
+      if (cmds)
+        cmds->add(new CommandDeleteOperationPlan(candidate));
+      else
+        delete candidate;
   }
 
   // Propagate to all upstream buffers
@@ -88,7 +108,7 @@ void OperatorDelete::solve(const Demand* d, void* v)
   {
     Buffer* curbuf = buffersToScan.back();
     buffersToScan.pop_back();
-    curbuf->removeExcess(&buffersToScan, cmds);
+    solve(curbuf);
   }
 }
 
@@ -124,64 +144,96 @@ void OperatorDelete::solve(const Buffer* b, void* v)
   Buffer::flowplanlist::const_iterator fiter = b->getFlowPlans().rbegin();
   Buffer::flowplanlist::const_iterator fend = b->getFlowPlans().end();
   if (fiter == fend)
-	return; // There isn't a single flowplan in the buffer
+    return; // There isn't a single flowplan in the buffer
   double excess = fiter->getOnhand() - fiter->getMin();
 
   // Find the earliest occurence of the excess
   fiter = b->getFlowPlans().begin();
   while (excess > ROUNDING_ERROR && fiter != fend)
   {
-	if (fiter->getQuantity() <= 0)
-	{
-	  // Not a producer
-	  ++fiter;
-	  continue;
-	}
-	FlowPlan* fp = const_cast<FlowPlan*>(dynamic_cast<const FlowPlan*>(&*fiter));
-	double cur_excess = b->getFlowPlans().getExcess(&*fiter);
-	if (!fp || fp->getOperationPlan()->getLocked() || cur_excess < ROUNDING_ERROR)
-	{
-	  // No excess producer, or it's locked
-	  ++fiter;
-	  continue;
-	}
-	assert(fp);
-	++fiter;  // Increment the iterator here, because it can get invalidated later on
-	// Add upstream buffers to the stack
-	pushBuffers(fp->getOperationPlan(), true);
-	if (cur_excess >= fp->getQuantity() - ROUNDING_ERROR)
-	{
-	  // The complete operationplan is excess.
-	  // Reduce the excess
-	  excess -= fp->getQuantity();
-	  // Delete operationplan
-	  if (cmds)
-		cmds->add(new CommandDeleteOperationPlan(fp->getOperationPlan()));
-	  else
-		delete fp->getOperationPlan();
-	}
-	else
-	{
-	  // Reduce the operationplan
-	  double newsize = fp->setQuantity(fp->getQuantity() - cur_excess, false, false);
-	  if (newsize == fp->getQuantity())
-		// No resizing is feasible
-		continue;
-
-	  // TODO Push also the buffers?
-	  // Reduce the excess
-	  excess -= fp->getQuantity() - newsize;
-	  // Resize operationplan
-	  if (cmds)
-		cmds->add(new CommandMoveOperationPlan(
-		  fp->getOperationPlan(), Date::infinitePast,
-		  fp->getOperationPlan()->getDates().getEnd(), newsize)
-	      );
-	  else
-		fp->getOperationPlan()->setQuantity(newsize);
-	}
+    if (fiter->getQuantity() <= 0)
+    {
+      // Not a producer
+      ++fiter;
+      continue;
+    }
+    FlowPlan* fp = const_cast<FlowPlan*>(dynamic_cast<const FlowPlan*>(&*fiter));
+    double cur_excess = b->getFlowPlans().getExcess(&*fiter);
+    if (!fp || fp->getOperationPlan()->getLocked() || cur_excess < ROUNDING_ERROR)
+    {
+      // No excess producer, or it's locked
+      ++fiter;
+      continue;
+    }
+    assert(fp);
+    ++fiter;  // Increment the iterator here, because it can get invalidated later on
+    if (cur_excess >= fp->getQuantity() - ROUNDING_ERROR)
+    {
+      // The complete operationplan is excess.
+      // Reduce the excess
+      excess -= fp->getQuantity();
+      // Add upstream buffers to the stack
+      pushBuffers(fp->getOperationPlan(), true);
+      // Delete operationplan
+      if (cmds)
+      cmds->add(new CommandDeleteOperationPlan(fp->getOperationPlan()));
+      else
+      delete fp->getOperationPlan();
+    }
+    else
+    {
+      // Reduce the operationplan
+      double newsize = fp->setQuantity(fp->getQuantity() - cur_excess, false, false);
+      if (newsize == fp->getQuantity())
+        // No resizing is feasible
+        continue;
+      // Add upstream buffers to the stack
+      pushBuffers(fp->getOperationPlan(), true);
+      // Reduce the excess
+      excess -= fp->getQuantity() - newsize;
+      // Resize operationplan
+      if (cmds)
+      cmds->add(new CommandMoveOperationPlan(
+        fp->getOperationPlan(), Date::infinitePast,
+        fp->getOperationPlan()->getDates().getEnd(), newsize)
+          );
+      else
+      fp->getOperationPlan()->setQuantity(newsize);
+    }
   }
 }
 
+
+PyObject* OperatorDelete::solve(PyObject *self, PyObject *args)
+{
+  // Parse the argument
+  PyObject *dem = NULL;
+  if (args && !PyArg_ParseTuple(args, "|O:solve", &dem)) return NULL;
+  if (dem && !PyObject_TypeCheck(dem, Demand::metadata->pythonClass))
+  {
+    PyErr_SetString(PythonDataException, "solve(d) argument must be a demand");
+    return NULL;
+  }
+
+  Py_BEGIN_ALLOW_THREADS   // Free Python interpreter for other threads
+  try
+  {
+    OperatorDelete* sol = static_cast<OperatorDelete*>(self); 
+    if (dem)
+      // Delete upstream of a single demand
+      sol->solve(dem);
+    else
+      // Remove all excess
+      sol->solve();
+  }
+  catch(...)
+  {
+    Py_BLOCK_THREADS;
+    PythonType::evalException();
+    return NULL;
+  }
+  Py_END_ALLOW_THREADS   // Reclaim Python interpreter
+  return Py_BuildValue("");
+}
 
 }

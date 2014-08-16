@@ -71,12 +71,11 @@ DECLARE_EXPORT Demand::~Demand()
 
 
 DECLARE_EXPORT void Demand::deleteOperationPlans
-(bool deleteLocked, CommandManager* cmds, bool deleteUpstream)
+(bool deleteLocked, CommandManager* cmds)
 {
   // Delete all delivery operationplans.
   // Note that an extra loop is used to assure that our iterator doesn't get
   // invalidated during the deletion.
-  vector<Buffer*> buffersToScan;
   while (true)
   {
     // Find a candidate to delete
@@ -88,29 +87,14 @@ DECLARE_EXPORT void Demand::deleteOperationPlans
         break;
       }
     if (!candidate) break;
-
-    // Push the buffer on the stack in which the deletion creates excess inventory
-    if (deleteUpstream)
-      candidate->pushConsumingBuffers(&buffersToScan);
-
-    // Delete only the delivery, immediately or through a delete command
     if (cmds)
+      // Use delete command
       cmds->add(new CommandDeleteOperationPlan(candidate));
     else
+      // Delete immediately
       delete candidate;
   }
 
-  // Delete upstream operation plans as well
-  if (deleteUpstream)
-  {
-    // Pick a next buffer from the stack
-    while(!buffersToScan.empty())
-    {
-      Buffer* curbuf = buffersToScan.back();
-      buffersToScan.pop_back();
-      curbuf->removeExcess(&buffersToScan, cmds);
-    }
-  }
 
   // Mark the demand as being changed, so the problems can be redetected
   setChanged();
