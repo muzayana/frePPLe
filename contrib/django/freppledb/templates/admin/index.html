@@ -2,7 +2,7 @@
 {% load i18n %}
 
 {% block title %}frePPLe{% endblock %}
-{% block content_title %}<div class="tools"><a id="filter" href="javascript:dashboard.customize();" class="icon"><span class="ui-icon ui-icon-wrench"></span>{% trans 'Customize' %}</a></div>
+{% block content_title %}<div id="toolicons"><span onclick="dashboard.customize();" title="{% trans 'Customize'|escape %}" class="fa fa-wrench fa-lg"></span></div>
 <h1>{% trans "Cockpit" %}</h1>{% endblock %}
 {% block extrahead %}{{block.super}}
 <script type="text/javascript" src="/static/js/d3.min.js"></script>
@@ -59,6 +59,7 @@
 </style>
 <script>
   $(function() {
+    // Grid layout
     $(".column").sortable({
       connectWith: ".column",
       handle: ".portlet-header",
@@ -66,18 +67,21 @@
       placeholder: "portlet-placeholder ui-corner-all",
       stop: dashboard.save
     });
-
     $(".portlet-toggle").click(function() {
       var icon = $(this);
       icon.toggleClass("ui-icon-minus ui-icon-plus");
       icon.closest(".portlet").find(".portlet-content").toggle();
     });
-
     $(".portlet-close").click(function() {
       $(this).closest(".portlet").remove();
       dashboard.save();
     });
+
+    // Buttons
     $(".button").button();
+
+    // Tooltips
+    $("#toolicons").tooltip({show: {effect: "fade", delay: 500}});
   });
 </script>
 {% endblock %}
