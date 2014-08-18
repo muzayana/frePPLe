@@ -755,7 +755,7 @@ class OperatorDelete : public Solver
   public:
 	  /** Constructor. */
     OperatorDelete(const string& n, CommandManager* c = NULL) :
-        Solver(n), cmds(c) {};
+        Solver(n), cmds(c) { initType(metadata); }
 
     /** Python method for running the solver. */
     static PyObject* solve(PyObject*, PyObject*);

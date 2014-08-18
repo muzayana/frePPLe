@@ -25,7 +25,7 @@ int OperatorDelete::initialize()
 {
   // Initialize the metadata
   metadata = new MetaClass(
-    "solver", "solver_delete", Object::createString<OperatorDelete>, true
+    "solver", "solver_delete", Object::createString<OperatorDelete>
     );
 
   // Initialize the Python class
@@ -38,21 +38,23 @@ int OperatorDelete::initialize()
 
 void OperatorDelete::solve(void *v)
 {
-   // Loop over all buffers
-   // Push to stack, in order of level
+   // Loop over all buffers Push to stack, in order of level TODO
 
   // Clean up all buffers in the list
   while(!buffersToScan.empty())
   {
-      Buffer* curbuf = buffersToScan.back();
-      buffersToScan.pop_back();
-      solve(curbuf);
+    Buffer* curbuf = buffersToScan.back();
+    buffersToScan.pop_back();
+    solve(curbuf);
   }
 }
 
 
 void OperatorDelete::solve(const Resource* r, void* v)
 {
+  if (getLogLevel()>0)
+    logger << "Scanning " << r << " for excess" << endl;
+
   // Loop over all operationplans on the resource
   for (Resource::loadplanlist::const_iterator i = r->getLoadPlans().begin();
     i != r->getLoadPlans().end(); ++i)
@@ -66,16 +68,17 @@ void OperatorDelete::solve(const Resource* r, void* v)
   // Process all buffers found, and their upstream colleagues
   while(!buffersToScan.empty())
   {
-      Buffer* curbuf = buffersToScan.back();
-      buffersToScan.pop_back();
-      solve(curbuf);
+    Buffer* curbuf = buffersToScan.back();
+    buffersToScan.pop_back();
+    solve(curbuf);
   }
 }
 
 
 void OperatorDelete::solve(const Demand* d, void* v)
 {
-  logger << "delete for " << d << endl;
+  if (getLogLevel()>1)
+    logger << "Scanning " << d << " for excess" << endl;
 
   // Delete all delivery operationplans.
   // Note that an extra loop is used to assure that our iterator doesn't get
@@ -141,6 +144,9 @@ void OperatorDelete::pushBuffers(OperationPlan* o, bool consuming)
 
 void OperatorDelete::solve(const Buffer* b, void* v)
 {
+  if (getLogLevel()>1)
+    logger << "Scanning " << b << " for excess" << endl;
+
   Buffer::flowplanlist::const_iterator fiter = b->getFlowPlans().rbegin();
   Buffer::flowplanlist::const_iterator fend = b->getFlowPlans().end();
   if (fiter == fend)
@@ -174,11 +180,18 @@ void OperatorDelete::solve(const Buffer* b, void* v)
       excess -= fp->getQuantity();
       // Add upstream buffers to the stack
       pushBuffers(fp->getOperationPlan(), true);
+      // Log message
+      if (getLogLevel()>0)
+        logger << "Removing excess operationplan: '"
+          << fp->getOperationPlan()->getOperation()
+          << "'  " << fp->getOperationPlan()->getDates()
+          << "  " << fp->getOperationPlan()->getQuantity()
+          << endl;
       // Delete operationplan
       if (cmds)
-      cmds->add(new CommandDeleteOperationPlan(fp->getOperationPlan()));
+        cmds->add(new CommandDeleteOperationPlan(fp->getOperationPlan()));
       else
-      delete fp->getOperationPlan();
+        delete fp->getOperationPlan();
     }
     else
     {
@@ -191,14 +204,20 @@ void OperatorDelete::solve(const Buffer* b, void* v)
       pushBuffers(fp->getOperationPlan(), true);
       // Reduce the excess
       excess -= fp->getQuantity() - newsize;
+      if (getLogLevel()>0)
+        logger << "Resizing excess operationplan to " << newsize << ": '"
+          << fp->getOperationPlan()->getOperation()
+          << "'  " << fp->getOperationPlan()->getDates()
+          << "  " << fp->getOperationPlan()->getQuantity()
+          << endl;
       // Resize operationplan
       if (cmds)
-      cmds->add(new CommandMoveOperationPlan(
-        fp->getOperationPlan(), Date::infinitePast,
-        fp->getOperationPlan()->getDates().getEnd(), newsize)
+        cmds->add(new CommandMoveOperationPlan(
+          fp->getOperationPlan(), Date::infinitePast,
+          fp->getOperationPlan()->getDates().getEnd(), newsize)
           );
       else
-      fp->getOperationPlan()->setQuantity(newsize);
+        fp->getOperationPlan()->setQuantity(newsize);
     }
   }
 }
@@ -207,24 +226,49 @@ void OperatorDelete::solve(const Buffer* b, void* v)
 PyObject* OperatorDelete::solve(PyObject *self, PyObject *args)
 {
   // Parse the argument
-  PyObject *dem = NULL;
-  if (args && !PyArg_ParseTuple(args, "|O:solve", &dem)) return NULL;
-  if (dem && !PyObject_TypeCheck(dem, Demand::metadata->pythonClass))
+  PyObject *obj = NULL;
+  short objtype = 0;
+  if (args && !PyArg_ParseTuple(args, "|O:solve", &obj)) return NULL;
+  if (obj)
   {
-    PyErr_SetString(PythonDataException, "solve(d) argument must be a demand");
-    return NULL;
+    if (PyObject_TypeCheck(obj, Demand::metadata->pythonClass))
+      objtype = 1;
+    else if (PyObject_TypeCheck(obj, Buffer::metadata->pythonClass))
+      objtype = 2;
+    else if (PyObject_TypeCheck(obj, Resource::metadata->pythonClass))
+      objtype = 3;
+    else
+    {
+      PyErr_SetString(
+        PythonDataException,
+        "solve(d) argument must be a demand, buffer or resource"
+        );
+      return NULL;
+    }
   }
 
   Py_BEGIN_ALLOW_THREADS   // Free Python interpreter for other threads
   try
   {
-    OperatorDelete* sol = static_cast<OperatorDelete*>(self); 
-    if (dem)
-      // Delete upstream of a single demand
-      sol->solve(dem);
-    else
-      // Remove all excess
-      sol->solve();
+    OperatorDelete* sol = static_cast<OperatorDelete*>(self);
+    switch (objtype)
+    {
+      case 0:
+        // Delete all excess
+        sol->solve();
+        break;
+      case 1:
+        // Delete upstream of a single demand
+        sol->solve(static_cast<Demand*>(obj));
+        break;
+      case 2:
+        // Delete upstream of a single buffer
+        sol->solve(static_cast<Buffer*>(obj));
+        break;
+      case 3:
+        // Delete upstream of a single resource
+        sol->solve(static_cast<Resource*>(obj));
+    }
   }
   catch(...)
   {

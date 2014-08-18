@@ -126,9 +126,13 @@ class Interface:
 
 
   def __init__(self, database=DEFAULT_DB_ALIAS):
-    self.solver = frepple.solver_mrp(
+    loglevel = int(Parameter.getValue('plan.loglevel', database, 0))
+    self.solver_create = frepple.solver_mrp(
       name="quote", constraints=15, plantype=1,
-      loglevel=int(Parameter.getValue('plan.loglevel', database, 0))
+      loglevel=loglevel
+      )
+    self.solver_delete = frepple.solver_delete(
+      name="clean inventory", loglevel=loglevel
       )
     self.lock = thread.allocate_lock()
     self.database = database
@@ -449,8 +453,9 @@ class Interface:
         # Update the demand in memory.
         action = cherrypy.request.params.get('action', 'AC')
         if action == "R":
-          # In case of a delete, cleans up all upstream supply.
-          frepple.solver_delete("clean inventory").solve(dm)
+          # In case of a delete, clean up all upstream supply.
+          dm = frepple.demand(name=name, action="C")
+          self.solver_delete.solve(dm)
         dm = frepple.demand(name=name, action=action)
       except:
         # Demand not found
@@ -781,15 +786,24 @@ class Interface:
       for i in self.top:
         res.append(i)
       res.append('<demands>\n')
+
+      # Clean up the supply planned for all demands
       for name, dm in callback.demands.items():
         try:
-          self.solver.solve(dm)
+          self.solver_delete.solve(dm)
+        except Exception as e:
+          logger.error("When deleting %s: %s" % (name, e))
+
+      # Plan each demand
+      for name, dm in callback.demands.items():
+        try:
+          self.solver_create.solve(dm)
           if keepreservation:
-            self.solver.commit()
+            self.solver_create.commit()
             res.append(dm.toXML('P').encode('utf-8'))
           else:
             res.append(dm.toXML('P').encode('utf-8'))
-            self.solver.rollback()
+            self.solver_create.rollback()
         except Exception as e:
           logger.error("When planning %s: %s" % (name, e))
 
