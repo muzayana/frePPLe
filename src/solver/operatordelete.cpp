@@ -50,6 +50,29 @@ void OperatorDelete::solve(void *v)
 }
 
 
+void OperatorDelete::solve(OperationPlan* o, void* v)
+{
+  if (!o) return; // Null argument passed
+
+  // Mark all buffers we consume from
+  pushBuffers(o, true);
+
+  // Delete the operationplan
+  if (cmds)
+    cmds->add(new CommandDeleteOperationPlan(o));
+  else
+    delete o;
+
+  // Propagate to all upstream buffers
+  while(!buffersToScan.empty())
+  {
+    Buffer* curbuf = buffersToScan.back();
+    buffersToScan.pop_back();
+    solve(curbuf);
+  }
+}
+
+
 void OperatorDelete::solve(const Resource* r, void* v)
 {
   if (getLogLevel()>0)
@@ -237,11 +260,13 @@ PyObject* OperatorDelete::solve(PyObject *self, PyObject *args)
       objtype = 2;
     else if (PyObject_TypeCheck(obj, Resource::metadata->pythonClass))
       objtype = 3;
+    else if (PyObject_TypeCheck(obj, OperationPlan::metadata->pythonClass))
+      objtype = 4;
     else
     {
       PyErr_SetString(
         PythonDataException,
-        "solve(d) argument must be a demand, buffer or resource"
+        "solve(d) argument must be a demand, buffer, resource or operationplan"
         );
       return NULL;
     }
@@ -268,6 +293,9 @@ PyObject* OperatorDelete::solve(PyObject *self, PyObject *args)
       case 3:
         // Delete upstream of a single resource
         sol->solve(static_cast<Resource*>(obj));
+      case 4:
+        // Delete an operationplan
+        sol->solve(static_cast<OperationPlan*>(obj));
     }
   }
   catch(...)

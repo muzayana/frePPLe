@@ -5,10 +5,10 @@
 #
 # Copyright (C) 2007-2014 by Johan De Taeye, frePPLe bvba
 #
-# All information contained herein is, and remains the property of frePPLe.  
+# All information contained herein is, and remains the property of frePPLe.
 # You are allowed to use and modify the source code, as long as the software is used
 # within your company.
-# You are not allowed to distribute the software, either in the form of source code 
+# You are not allowed to distribute the software, either in the form of source code
 # or in the form of compiled binaries.
 #
 
@@ -340,7 +340,7 @@ AC_CONFIG_FILES([ test/Makefile test/cluster/Makefile test/custom_fields/Makefil
 
 # Define extra output make files for the Enterprise Edition
 AC_CONFIG_FILES([ modules/forecast/Makefile ])
-AC_CONFIG_FILES([ test/forecast_1/Makefile test/forecast_2/Makefile test/forecast_3/Makefile test/forecast_4/Makefile test/forecast_5/Makefile test/forecast_6/Makefile])
+AC_CONFIG_FILES([ test/buffer_batch/Makefile test/forecast_1/Makefile test/forecast_2/Makefile test/forecast_3/Makefile test/forecast_4/Makefile test/forecast_5/Makefile test/forecast_6/Makefile])
 
 # Generate all make files
 AC_OUTPUT
