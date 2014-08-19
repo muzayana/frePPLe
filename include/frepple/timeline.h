@@ -369,6 +369,39 @@ template <class type> class TimeLine
       return excess;
     }
 
+    /** Return the total production or consumption between 2 events. */
+    double getFlow(
+      const Event* strt, const Event* nd, bool consumed
+      ) const
+    {
+      double total = 0.0;
+      for (const_iterator cur(strt); cur != end() && &*cur != nd; ++cur)
+      {
+        if (consumed && cur->getQuantity() < 0)
+          total -= cur->getQuantity();
+        else if (!consumed && cur->getQuantity() > 0)
+          total += cur->getQuantity();
+      }
+      return total;
+    }
+
+    /** Return the total production or consumption between an event. */
+    double getFlow(
+      const Event* strt, TimePeriod prd, bool consumed
+      ) const
+    {
+      Date nd = strt->getDate() + prd;
+      double total = 0.0;
+      for (const_iterator cur(strt); cur != end() && cur->getDate() <= nd; ++cur)
+      {
+        if (consumed && cur->getQuantity() < 0)
+          total -= cur->getQuantity();
+        else if (!consumed && cur->getQuantity() > 0)
+          total += cur->getQuantity();
+      }
+      return total;
+    }
+
     /** This function is used to trace the consistency of the data structure. */
     bool check() const;
 
