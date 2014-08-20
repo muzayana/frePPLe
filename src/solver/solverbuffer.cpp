@@ -95,9 +95,10 @@ DECLARE_EXPORT void SolverMRP::solve(const Buffer* b, void* v)
       // Solution one: we scan backward in time for producers we can merge with.
       if (theDelta < -ROUNDING_ERROR && b->getMinimumInterval())
       {
+        Buffer::flowplanlist::const_iterator prevbatchiter = b->getFlowPlans().end();
         for (Buffer::flowplanlist::const_iterator batchiter = prev;
           batchiter != b->getFlowPlans().end() && batchiter->getDate() >= theDate - b->getMinimumInterval();
-          --batchiter)
+          prevbatchiter = batchiter--)
         {
           // Check if it is an unlocked producing operationplan
           if (batchiter->getQuantity() <= 0) continue;
@@ -142,14 +143,14 @@ DECLARE_EXPORT void SolverMRP::solve(const Buffer* b, void* v)
           {
             // It didn't work.
             if (loglevel > 1)
-              logger << indent(b->getLevel()) 
+              logger << indent(b->getLevel())
                 << "  Rejected resized batch '" << candidate_operation
                 << "' " << candidate_dates << " " << candidate_qty << endl;
             data->rollback(batchbookmark);
-            Buffer::flowplanlist::const_iterator c = cur;
-            --c;
-            prev = (c == b->getFlowPlans().end()) ? NULL : &*c;
-            break; // TODO NOT CORRECT, BUT AVOIDS CRASH
+            // Assure batchiter remains valid
+            batchiter = prevbatchiter;
+            if (batchiter != b->getFlowPlans().end())
+              --batchiter;
           }
           else
           {
@@ -161,8 +162,7 @@ DECLARE_EXPORT void SolverMRP::solve(const Buffer* b, void* v)
             theDelta = 0.0;
             break;
           }
-
-          // Assure the prev pointer remains valid
+          // Assure the prev pointer remains valid after this loop
           Buffer::flowplanlist::const_iterator c = cur;
           --c;
           prev = (c == b->getFlowPlans().end()) ? NULL : &*c;
@@ -172,9 +172,10 @@ DECLARE_EXPORT void SolverMRP::solve(const Buffer* b, void* v)
       // Solution two: we scan forward in time for producers we can replace.
       if (theDelta < -ROUNDING_ERROR && b->getMinimumInterval())
       {
+        Buffer::flowplanlist::const_iterator prevbatchiter = b->getFlowPlans().end();
         for (Buffer::flowplanlist::const_iterator batchiter = cur;
           batchiter != b->getFlowPlans().end() && batchiter->getDate() <= theDate + b->getMinimumInterval();
-          ++batchiter)
+          prevbatchiter = batchiter++)
         {
           // Check if it is an unlocked producing operationplan
           if (batchiter->getQuantity() <= 0) continue;
@@ -216,28 +217,32 @@ DECLARE_EXPORT void SolverMRP::solve(const Buffer* b, void* v)
           // Check results
           if (data->state->a_qty < batchqty - ROUNDING_ERROR)
           {
+            // It didn't work.
             if (loglevel > 1)
               logger << indent(b->getLevel())
                 << "  Rejected joining batch with '" << candidate_operation
                 << "' " << candidate_dates << " " << candidate_qty << endl;
-             // It didn't work.
             data->rollback(batchbookmark);
+            // Assure batchiter remains valid
+            batchiter = prevbatchiter;
+            if (batchiter != b->getFlowPlans().end())
+              ++batchiter;
           }
           else
           {
             // It worked.
             if (loglevel > 1)
-              logger << indent(b->getLevel()) 
+              logger << indent(b->getLevel())
                 << "  Accepted joining batch with '" << candidate_operation
                 << "' " << candidate_dates << " " << candidate_qty << endl;
             theDelta = 0.0;
+            // Assure the cur iterator remains valid after this loop
             cur = prev;
             if (cur != b->getFlowPlans().end())
               ++cur;
             break;
           }
-
-          // Assure the cur iterator remains valid
+          // Assure the cur iterator remains valid after this loop
           cur = prev;
           if (cur != b->getFlowPlans().end())
             ++cur;
@@ -298,7 +303,7 @@ DECLARE_EXPORT void SolverMRP::solve(const Buffer* b, void* v)
         }
 
         // Not enough supply was received to repair the complete problem
-        if (prev->getOnhand() + shortage < -ROUNDING_ERROR)
+        if (prev && prev->getOnhand() + shortage < -ROUNDING_ERROR)
         {
           // Keep track of the shorted quantity.
           // Only consider shortages later than the requested date.
