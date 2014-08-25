@@ -128,8 +128,10 @@ class Interface:
   def __init__(self, database=DEFAULT_DB_ALIAS):
     loglevel = int(Parameter.getValue('plan.loglevel', database, 0))
     self.solver_create = frepple.solver_mrp(
-      name="quote", constraints=15, plantype=1,
-      loglevel=loglevel
+      name="MRP", constraints=15,
+      plantype=1, loglevel=loglevel,
+      lazydelay=int(Parameter.getValue('lazydelay', database, '86400')),
+      allowsplits=(Parameter.getValue('allowsplits', database, 'true') == "true")
       )
     self.solver_delete = frepple.solver_delete(
       name="clean inventory", loglevel=loglevel
@@ -724,10 +726,11 @@ class Interface:
     with self.lock:
       logger.info("Regenerating the plan of type %s and constraints %s" % (plantype, constraint))
       solver = frepple.solver_mrp(
-        name="MRP",
-        constraints=int(constraint),
-        plantype=int(plantype),
-        loglevel=int(loglevel)
+        name="MRP", constraints=int(constraint),
+        plantype=int(plantype), loglevel=int(loglevel),
+        lazydelay=int(Parameter.getValue('lazydelay', self.database, '86400')),
+        allowsplits=(Parameter.getValue('allowsplits', self.database, 'true') == "true"),
+        plansafetystockfirst=False
         )
 
       if 'solver_forecast' in [ a for a, b in inspect.getmembers(frepple) ]:
