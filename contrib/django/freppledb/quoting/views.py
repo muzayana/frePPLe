@@ -19,7 +19,6 @@ from django.utils.http import urlquote
 from django.utils.encoding import iri_to_uri
 from django.http import Http404, HttpResponseServerError, HttpResponse
 from django.contrib.admin.widgets import ForeignKeyRawIdWidget, AdminSplitDateTime
-from django.db import DEFAULT_DB_ALIAS
 
 from freppledb.input.models import Demand, Item, Customer
 from freppledb.common.models import Parameter
@@ -35,21 +34,22 @@ BOUNDARY = '----------ThIs_Is_tHe_bouNdaRY_$'
 from freppledb.admin import data_site
 
 
-class QuoteForm(forms.ModelForm):
-  # ASSUMPTION: quoting is assumed to be on the default database only
-  due = forms.DateField(widget=AdminSplitDateTime())
-  customer = forms.ModelChoiceField(
-    queryset=Customer.objects.all(),
-    widget=ForeignKeyRawIdWidget(Demand._meta.get_field("customer").rel, data_site, using=DEFAULT_DB_ALIAS)
-    )
-  item = forms.ModelChoiceField(
-    queryset=Item.objects.all(),
-    widget=ForeignKeyRawIdWidget(Demand._meta.get_field("item").rel, data_site, using=DEFAULT_DB_ALIAS)
-    )
+def createQuoteForm(db):
+  class QuoteForm(forms.ModelForm):
+    due = forms.DateField(widget=AdminSplitDateTime())
+    customer = forms.ModelChoiceField(
+      queryset=Customer.objects.all(),
+      widget=ForeignKeyRawIdWidget(Demand._meta.get_field("customer").rel, data_site, using=db)
+      )
+    item = forms.ModelChoiceField(
+      queryset=Item.objects.all(),
+      widget=ForeignKeyRawIdWidget(Demand._meta.get_field("item").rel, data_site, using=db)
+      )
 
-  class Meta:
-    model = Demand
-    fields = ('name', 'description', 'item', 'customer', 'quantity', 'due', 'minshipment', 'maxlateness')
+    class Meta:
+      model = Demand
+      fields = ('name', 'description', 'item', 'customer', 'quantity', 'due', 'minshipment', 'maxlateness')
+  return QuoteForm()
 
 
 class QuoteReport(GridReport):
@@ -83,7 +83,7 @@ class QuoteReport(GridReport):
   @classmethod
   def extra_context(reportclass, request, *args, **kwargs):
     return {
-      'form': QuoteForm(),
+      'form': createQuoteForm(request.database)
       }
 
 
