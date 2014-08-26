@@ -96,7 +96,7 @@ DECLARE_EXPORT void SolverMRP::solve(const Buffer* b, void* v)
       //  - Create new supply for the shortage at that date.
 
       // Solution one: we scan backward in time for producers we can merge with.
-      if (theDelta < -ROUNDING_ERROR && b->getMinimumInterval())
+      if (theDelta < -ROUNDING_ERROR)
       {
         Buffer::flowplanlist::const_iterator prevbatchiter = b->getFlowPlans().end();
         for (Buffer::flowplanlist::const_iterator batchiter = prev;
@@ -173,7 +173,7 @@ DECLARE_EXPORT void SolverMRP::solve(const Buffer* b, void* v)
       }
 
       // Solution two: we scan forward in time for producers we can replace.
-      if (theDelta < -ROUNDING_ERROR && b->getMinimumInterval())
+      if (theDelta < -ROUNDING_ERROR)
       {
         Buffer::flowplanlist::const_iterator prevbatchiter = b->getFlowPlans().end();
         for (Buffer::flowplanlist::const_iterator batchiter = cur;
