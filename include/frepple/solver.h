@@ -747,7 +747,7 @@ class SolverMRP : public Solver
         /** An identifier of the cluster being replanned. Note that it isn't
           * always the complete cluster that is being planned.
           */
-        int cluster;
+        unsigned int cluster;
 
         /** Internal solver to remove material. */
         OperatorDelete *operator_delete;
