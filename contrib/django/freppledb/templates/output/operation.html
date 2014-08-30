@@ -51,6 +51,11 @@ function drawGraphs(jsondata)
   {% endif %}var width = $({% if args.0 %}"#graph"{% else %}"#grid_graph"{% endif %}).width() - margin.left - margin.right;
   var height = {% if args.0 %}$("#graph").height(){% else %}80{% endif %} - margin.top - margin.bottom;
 
+  // Lookup table of displayed columns
+  var fields = {};
+  for (var i in cross_idx)
+    fields[cross_idx[i]] = 0;
+
   // Define X-axis
   var domain_x = [];
   for (var i in timebuckets)
@@ -91,8 +96,14 @@ function drawGraphs(jsondata)
         'locked_end': tmp[2],
         'total_end': tmp[3]
         });
-      if (tmp[1] > max_y) max_y = tmp[1] ;
-      if (tmp[3] > max_y) max_y = tmp[3] ;
+      if (tmp[1] > max_y && 1 in fields)
+        max_y = tmp[1];
+      else if (tmp[0] > max_y && 0 in fields)
+        max_y = tmp[0];
+      if (tmp[3] > max_y && 3 in fields)
+        max_y = tmp[3];
+      else if (tmp[2] > max_y && 2 in fields)
+        max_y = tmp[2];
     }
 
     // Update the scale of the Y-axis by looking for the max value
@@ -145,17 +156,17 @@ function drawGraphs(jsondata)
       .each(function(d) {
         var bucket = d3.select(this);
         var top = y(0);
-        if (d['locked_start'] > 0)
+        if (d['locked_start'] > 0 && 0 in fields)
         {
           top = y(d['locked_start']);
           bucket.append("rect")
             .attr("width", x_width/2)
             .attr("x", x_width/2)
             .attr("y", top)
-            .attr("height", top)
+            .attr("height", y(0) - top)
             .style("fill","#113C5E");
         }
-        if (d['total_start'] > d['locked_start'])
+        if (d['total_start'] > 0 && 1 in fields)
         {
           var newtop = y(d['total_start']);
           bucket.append("rect")
@@ -166,16 +177,16 @@ function drawGraphs(jsondata)
             .style("fill","#2B95EC");
         }
         top = y(0);
-        if (d['locked_end'] > 0)
+        if (d['locked_end'] > 0 && 2 in fields)
         {
           top = y(d['locked_end']);
           bucket.append("rect")
             .attr("width", x_width/2)
             .attr("y", top)
-            .attr("height", top)
+            .attr("height", y(0) - top)
             .style("fill","#7B5E08");
         }
-        if (d['total_end'] > d['locked_end'])
+        if (d['total_end'] > 0 && 3 in fields)
         {
           var newtop = y(d['total_end']);
           bucket.append("rect")
@@ -208,25 +219,25 @@ function drawGraphs(jsondata)
     // Display legend
     var legend = svg.append("g");
     var codes = [
-      [1, "{{_('locked starts')|capfirst}}", "#113C5E"],
-      [2, "{{_('new starts')|capfirst}}", "#2B95EC"],
-      [3, "{{_('locked ends')|capfirst}}", "#7B5E08"],
-      [4, "{{_('new ends')|capfirst}}", "#F6BD0F"],
+      ["{{_('locked starts')|capfirst}}", "#113C5E"],
+      ["{{_('new starts')|capfirst}}", "#2B95EC"],
+      ["{{_('locked ends')|capfirst}}", "#7B5E08"],
+      ["{{_('new ends')|capfirst}}", "#F6BD0F"],
       ];
-    for (var i in codes)
+    for (var i in cross_idx)
     {
       legend.append("rect")
         .attr("x", width + 82)
         .attr("width", 18)
         .attr("height", 18)
-        .style("fill", codes[i][2])
+        .style("fill", codes[cross_idx[i]][1])
         .attr("transform", "translate(0," + (i*20+10) + ")");
       legend.append("text")
         .attr("x", width + 76)
         .attr("y", 9)
         .attr("dy", ".35em")
         .style("text-anchor", "end")
-        .text(codes[i][1])
+        .text(codes[cross_idx[i]][0])
         .attr("transform", "translate(0," + (i*20+10) + ")");
     }{% endif %}
     });

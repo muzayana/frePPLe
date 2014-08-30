@@ -717,7 +717,7 @@ class GridReport(View):
         cross_idx = ','.join([str(i) for i in prefs['crosses']])
         cross_list = reportclass._render_cross()
       else:
-        cross_idx = ','.join([str(i) for i in range(len(reportclass.crosses)) if not reportclass.crosses[i][1].get('hidden', False)])
+        cross_idx = ','.join([str(i) for i in range(len(reportclass.crosses)) if reportclass.crosses[i][1].get('visible', True)])
         cross_list = reportclass._render_cross()
       if args:
         mode = "table"

@@ -67,8 +67,8 @@ $(function() {
 	  height: {% if reportclass.height %}{{reportclass.height}}{% else %}$(window).height() - $("#grid").offset().top - {{reportclass.heightmargin}}{% endif %}
     });
   {% if mode == "table" %}jQuery("#grid").jqGrid('setFrozenColumns');
-  {% endif %}jQuery("#radio1").click(function() {grid.displayMode("table");});
-  jQuery("#radio2").click(function() {grid.displayMode("graph");});{% if reportclass.editable and haschangeperm %}
+  {% endif %}jQuery("#gridmode").click(function() {grid.displayMode("table");});
+  jQuery("#graphmode").click(function() {grid.displayMode("graph");});{% if reportclass.editable and haschangeperm %}
   $("th").bindFirst('click', upload.validateSort);{% endif %}
   {% if reportclass.height %}$("#grid").gridResize({
      handles: 's', minHeight: {{reportclass.height}},
@@ -93,8 +93,8 @@ $(window).bind('resize', function() {
 {% endblock %}
 {% block content %}
 {% block before_table %}{% endblock %}<div id="toolicons">{% if reportclass.hasTimeBuckets and not args.0 %}<form style="display: inline"><span id="displaymode">
-<input type="radio" id="radio1" name="radio" value="grid" {% if mode == 'table' %}checked{% endif %}><label for="radio1"><span title="{% trans "Display table"|escape %}" class="fa fa-table fa-lg" style="color:#4c3000"></span></label>
-<input type="radio" id="radio2" name="radio" value="graph" {% if mode == 'graph' %}checked{% endif %}><label for="radio2"><span title="{% trans "Display graph"|escape %}" class="fa fa-image fa-lg" style="color:#4c3000"></span></label>
+<input type="radio" id="gridmode" name="mode" value="grid" {% if mode == 'table' %}checked{% endif %}><label for="gridmode"><span title="{% trans "Display table"|escape %}" class="fa fa-table fa-lg" style="color:#4c3000"></span></label>
+<input type="radio" id="graphmode" name="mode" value="graph" {% if mode == 'graph' %}checked{% endif %}><label for="graphmode"><span title="{% trans "Display graph"|escape %}" class="fa fa-image fa-lg" style="color:#4c3000"></span></label>
 </span></form>&nbsp;&nbsp;
 {% endif %}{% if reportclass.filterable and not args.0 %}<span onclick="grid.showFilter()" title="{% trans 'Filter data'|escape%}" class="fa fa-search fa-lg"></span>&nbsp;&nbsp;{% endif %}
 {% if reportclass.editable and haschangeperm %}
@@ -103,7 +103,7 @@ $(window).bind('resize', function() {
 {% endif %}
 {% if reportclass.hasTimeBuckets %}<span onclick="grid.showBucket()" title="{% trans 'Configure time buckets'|escape %}" class="fa fa-clock-o fa-lg"></span>&nbsp;&nbsp;
 {% endif %}<span onclick="grid.showExport(false)" title="{% trans 'Export as CSV or Excel file'|escape %}" class="fa fa-arrow-down fa-lg"></span>
-&nbsp;<span onclick="grid.showCustomize(false);" title="{% trans 'Customize'|escape %}" class="fa fa-wrench fa-lg"></span>
+&nbsp;<span onclick="grid.showCustomize(true);" title="{% trans 'Customize'|escape %}" class="fa fa-wrench fa-lg"></span>
 </div>
 <div id="content-main" style="margin-right: 15px;">
 <table id="grid"></table>

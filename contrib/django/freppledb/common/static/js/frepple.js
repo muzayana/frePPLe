@@ -385,9 +385,12 @@ var grid = {
     var colModel = $("#grid")[0].p.colModel;
     var maxfrozen = 0;
     var skipped = 0;
+    var graph = false;
     for (var i in colModel)
     {
-      if (colModel[i].name != "rn" && colModel[i].name != "cb" && colModel[i].counter != null && colModel[i].label != '' && !('alwayshidden' in colModel[i]))
+      if (colModel[i].name == 'graph')
+        graph = true;
+      else if (colModel[i].name != "rn" && colModel[i].name != "cb" && colModel[i].counter != null && colModel[i].label != '' && !('alwayshidden' in colModel[i]))
       {
         if (colModel[i].frozen) maxfrozen = parseInt(i,10) + 1 - skipped;
         val += "<option value='" + (i) + "'";
@@ -441,7 +444,8 @@ var grid = {
            var hiddenrows = [];
            if (colModel[0].name == "cb") perm.push(0);
            cross_idx = [];
-           $("#grid").jqGrid('destroyFrozenColumns');
+           if (!graph)
+             $("#grid").jqGrid('destroyFrozenColumns');
            $('#configure option').each(function() {
              val = parseInt(this.value,10);
              if (val < 100)
@@ -483,8 +487,9 @@ var grid = {
                $("#grid").jqGrid('setColProp', colModel[i].name, {frozen:i-skipped<numfrozen});
              else
                skipped++;
-           $("#grid").jqGrid('setFrozenColumns');
-           $("#grid").trigger('reloadGrid', [{current:true}]);
+           if (!graph)
+             $("#grid").jqGrid('setFrozenColumns');
+           $("#grid").trigger('reloadGrid');
            grid.saveColumnConfiguration();
            $(this).dialog("close");
          }},
@@ -539,7 +544,7 @@ var grid = {
         colArray.push([colModel[i].counter, colModel[i].hidden, colModel[i].width]);
         if (colModel[i].frozen) maxfrozen = parseInt(i) + 1 - skipped;
       }
-      else if (colModel[i].name == 'columns')
+      else if (colModel[i].name == 'columns' || colModel[i].name == 'graph')
         pivot = true;
       else
         skipped++;
