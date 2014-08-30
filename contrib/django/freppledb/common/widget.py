@@ -21,6 +21,7 @@ from freppledb.common.dashboard import Dashboard, Widget
 class WelcomeWidget(Widget):
   name = "welcome"
   title = _("Welcome")
+  tooltip = _("Some links to get started")
   async = False
 
   def render(self, request=None):
@@ -39,6 +40,7 @@ Dashboard.register(WelcomeWidget)
 class NewsWidget(Widget):
   name = "news"
   title = _("News")
+  tooltip = _("Show the latest news items from the frePPLe website")
   async = False
 
   def render(self, request=None):
@@ -50,6 +52,7 @@ Dashboard.register(NewsWidget)
 class RecentActionsWidget(Widget):
   name = "recent_actions"
   title = _("My actions")
+  tooltip = _("Display a list of the entities you recently changed")
   async = False
   limit = 10
 

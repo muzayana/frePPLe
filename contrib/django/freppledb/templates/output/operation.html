@@ -249,7 +249,7 @@ function crosses (cellvalue, options, rowdata)
   var result = '';
   for (var i in cross_idx)
     if (cellvalue[cross_idx[i]] != 0.0)
-      result += cellvalue[cross_idx[i]] + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail" + cross_idx[i] + "'></span><br/>";
+      result += cellvalue[cross_idx[i]] + "<span class='context cross fa fa-caret-right' role='detail" + cross_idx[i] + "'></span><br/>";
     else
       result += '0.0</br>';
   return result;
