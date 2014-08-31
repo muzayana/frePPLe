@@ -113,7 +113,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Copy the XML schema definition file"
-				CommandLine="copy $(TargetDir)\..\modules\forecast\mod_forecast.xsd  $(TargetDir)"
+				CommandLine="copy &quot;$(TargetDir)\..\modules\forecast\mod_forecast.xsd&quot; &quot;$(TargetDir)&quot;"
 			/>
 		</Configuration>
 		<Configuration
@@ -222,7 +222,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Copy the XML schema definition file"
-				CommandLine="copy &quot;$(TargetDir)\..\modules\forecast\mod_forecast.xsd&quot;  &quot;$(TargetDir)&quot;"
+				CommandLine="copy &quot;$(TargetDir)\..\modules\forecast\mod_forecast.xsd&quot; &quot;$(TargetDir)&quot;"
 			/>
 		</Configuration>
 	</Configurations>
