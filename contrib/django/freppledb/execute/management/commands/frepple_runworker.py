@@ -170,15 +170,18 @@ class Command(BaseCommand):
           now = datetime.now()
           if not task.started:
             task.started = now
-          if not task.finished:
-            task.finished = now
-          if task.status not in ('Done', 'Failed'):
-            task.status = 'Done'
+          #if not task.finished:
+          #  task.finished = now
+          #if task.status not in ('Done', 'Failed'):
+          #  task.status = 'Done'
           task.save(using=database)
         logger.info("finished task %d at %s: success" % (task.id, datetime.now()))
       except Exception as e:
         task.status = 'Failed'
-        task.finished = datetime.now()
+        now = datetime.now()
+        if not task.started:
+          task.started = now
+        task.finished = now
         task.message = str(e)
         task.save(using=database)
         logger.info("finished task %d at %s: failed" % (task.id, datetime.now()))
