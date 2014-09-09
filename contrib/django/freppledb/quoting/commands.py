@@ -50,5 +50,5 @@ if __name__ == "__main__":
     print("\nOrder quoting service starting at", datetime.now().strftime("%H:%M:%S"))
     logMessage("Order quoting service active", database=db)
     runWebService(database=db)
-    logMessage(None, database=db)
+    logMessage(None, status='Done', database=db)
     print("\nOrder quoting service finishing at", datetime.now().strftime("%H:%M:%S"))
