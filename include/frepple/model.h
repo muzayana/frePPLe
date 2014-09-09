@@ -1950,7 +1950,17 @@ class OperationPlan
       * If no owner exists the method returns the current operationplan.
       * @see getOwner
       */
-    const OperationPlan* getTopOwner() const
+    inline const OperationPlan* getTopOwner() const
+    {
+      return const_cast<OperationPlan*>(this);
+    }
+
+    /** Returns a pointer to the operationplan owning a set of
+      * sub-operationplans. There can be multiple levels of suboperations.<br>
+      * If no owner exists the method returns the current operationplan.
+      * @see getOwner
+      */
+    OperationPlan* getTopOwner()
     {
       if (owner)
       {
@@ -5514,7 +5524,10 @@ class CommandCreateOperationPlan : public Command
 };
 
 
-/** @brief This command is used to delete an operationplan. */
+/** @brief This command is used to delete an operationplan.<br>
+  * The implementation assumes there is only a single level of child
+  * sub operationplans.
+  */
 class CommandDeleteOperationPlan : public Command
 {
   public:
