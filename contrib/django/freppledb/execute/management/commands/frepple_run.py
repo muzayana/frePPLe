@@ -50,6 +50,10 @@ class Command(BaseCommand):
       '--env', dest='env', type='string',
       help='A comma separated list of extra settings passed as environment variables to the engine'
       ),
+    make_option(
+      '--background', dest='background', action='store_true', default=False,
+      help='Run the planning engine in the background (default = False)'
+      ),
   )
   help = "Runs frePPLe to generate a plan"
 
@@ -143,7 +147,7 @@ class Command(BaseCommand):
         # Other executables
         os.environ['PYTHONPATH'] = os.path.normpath(settings.FREPPLE_APP)
 
-      if 'webservice' in os.environ:
+      if options['background']:
         # Execute as background process on Windows
         if os.name == 'nt':
           subprocess.Popen(['frepple', cmd], creationflags=0x08000000)

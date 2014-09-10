@@ -185,6 +185,7 @@ def wrapTask(request, action):
     env = []
     if request.POST.get('webservice', '0') == u'1':
       env.append("webservice")
+      task.arguments += " --background"
     if request.POST.get('odoo_read', None) == u'1':
       env.append("odoo_read")
     if request.POST.get('odoo_write', None) == u'1':

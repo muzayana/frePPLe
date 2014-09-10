@@ -106,11 +106,14 @@ class Command(BaseCommand):
         logger.info("starting task %d at %s" % (task.id, datetime.now()))
         # A
         if task.name == 'generate plan':
-          args = {}
+          kwargs = {}
           for i in task.arguments.split():
-            key, val = i.split('=')
-            args[key[2:]] = val
-          management.call_command('frepple_run', database=database, task=task.id, **args)
+            j = i.split('=')
+            if len(j) > 1:
+              kwargs[j[0][2:]] = j[1]
+            else:
+              kwargs[j[0][2:]] = True
+          management.call_command('frepple_run', database=database, task=task.id, **kwargs)
         # B
         elif task.name == 'generate model':
           args = {}
