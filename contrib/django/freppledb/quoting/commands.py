@@ -29,10 +29,15 @@ if __name__ == "__main__":
       settings.DATABASES[db]['USER'] = settings.DATABASES[db]['TEST_USER']
 
   # Generate plan as usual
-  from freppledb.forecast.commands import generate_plan
-  generate_plan()
+  ok = True
+  try:
+    from freppledb.forecast.commands import generate_plan
+    generate_plan()
+  except Exception as e:
+    logMessage(str(e), status='Failed', database=db)
+    ok = False
 
-  if 'webservice' in os.environ:
+  if 'webservice' in os.environ and ok:
     # Shut down the previous quoting server
     # The previous order quoting service is only shut it down when the new plan
     # is ready to take over.
@@ -52,3 +57,5 @@ if __name__ == "__main__":
     runWebService(database=db)
     logMessage(None, status='Done', database=db)
     print("\nOrder quoting service finishing at", datetime.now().strftime("%H:%M:%S"))
+  elif ok:
+    logMessage(None, status='Done', database=db)
