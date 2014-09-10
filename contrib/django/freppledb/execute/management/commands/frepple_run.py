@@ -115,6 +115,8 @@ class Command(BaseCommand):
             os.environ[j[0]] = j[1]
       else:
         task.arguments = "--constraint=%d --plantype=%d" % (constraint, plantype)
+      if options['background']:
+        task.arguments += " --background"
 
       # Log task
       task.save(using=database)
