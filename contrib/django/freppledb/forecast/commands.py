@@ -438,7 +438,8 @@ def generate_plan():
 
   print("\nStart exporting plan to the database at", datetime.now().strftime("%H:%M:%S"))
   exportPlan(db)
-  exportForecast(cursor)
+  if with_forecasting:
+    exportForecast(cursor)
 
   if 'odoo_write' in os.environ:
     from freppledb.odoo.commands import odoo_write
