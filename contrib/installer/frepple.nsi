@@ -147,7 +147,8 @@ Var DatabaseEngine
 
 ; Declare everything that needs to be extracted on startup.
 ; Only useful for BZIP2 compression
-ReserveFile "licensefile.ini"ReserveFile "parameters.ini"
+ReserveFile "licensefile.ini"
+ReserveFile "parameters.ini"
 ReserveFile "finish.ini"
 ReserveFile '${NSISDIR}\Plugins\InstallOptions.dll'
 ReserveFile "finish.bmp"
