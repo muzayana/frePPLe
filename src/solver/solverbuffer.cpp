@@ -96,7 +96,10 @@ DECLARE_EXPORT void SolverMRP::solve(const Buffer* b, void* v)
       //  - Create new supply for the shortage at that date.
 
       // Solution one: we scan backward in time for producers we can merge with.
-      if (theDelta < -ROUNDING_ERROR)
+      if (theDelta < -ROUNDING_ERROR
+        && b->getMinimumInterval() >= 0L
+        && prev
+        && prev->getDate() >= theDate - b->getMinimumInterval())
       {
         Buffer::flowplanlist::const_iterator prevbatchiter = b->getFlowPlans().end();
         for (Buffer::flowplanlist::const_iterator batchiter = prev;
@@ -111,7 +114,7 @@ DECLARE_EXPORT void SolverMRP::solve(const Buffer* b, void* v)
 
           // Store date and quantity of the candidate
           Date batchdate = batchcandidate->getDate();
-          double batchqty = batchcandidate->getQuantity()- theDelta;
+          double batchqty = batchcandidate->getOperationPlan()->getTotalFlow(b) - theDelta;
           double consumed_in_window = b->getFlowPlans().getFlow(batchcandidate, b->getMinimumInterval(), true);
           if (batchqty > consumed_in_window)
             batchqty = consumed_in_window;
@@ -162,18 +165,31 @@ DECLARE_EXPORT void SolverMRP::solve(const Buffer* b, void* v)
               logger << indent(b->getLevel())
                 << "  Accepting resized batch '" << candidate_operation
                 << "' " << candidate_dates << " " << candidate_qty << endl;
+
             theDelta = 0.0;
             break;
           }
           // Assure the prev pointer remains valid after this loop
           Buffer::flowplanlist::const_iterator c = cur;
           --c;
-          prev = (c == b->getFlowPlans().end()) ? NULL : &*c;
+          if (c == b->getFlowPlans().end())
+          {
+            c = b->getFlowPlans().rbegin();
+            if (c == b->getFlowPlans().end())
+              prev = NULL;
+            else
+              prev = &*c;
+          }
+          else
+            prev = &*c;
         }
       }
 
       // Solution two: we scan forward in time for producers we can replace.
-      if (theDelta < -ROUNDING_ERROR)
+      if (theDelta < -ROUNDING_ERROR
+        && b->getMinimumInterval() >= 0L
+        && cur != b->getFlowPlans().end()
+        && cur->getDate() <= theDate + b->getMinimumInterval())
       {
         Buffer::flowplanlist::const_iterator prevbatchiter = b->getFlowPlans().end();
         for (Buffer::flowplanlist::const_iterator batchiter = cur;
