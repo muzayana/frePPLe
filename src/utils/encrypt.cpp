@@ -64,14 +64,14 @@ string Decryptor::base64(const unsigned char *input, int length)
 unsigned char* Decryptor::unbase64(string input)
 {
   BIO *b64, *bmem;
-  int length = input.size();
+  size_t length = input.size();
   unsigned char *buffer = (unsigned char *)malloc(length);
   memset(buffer, 0, length);
   b64 = BIO_new(BIO_f_base64());
   //BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
-  bmem = BIO_new_mem_buf(const_cast<char*>(input.c_str()), length);
+  bmem = BIO_new_mem_buf(const_cast<char*>(input.c_str()), static_cast<int>(length));
   bmem = BIO_push(b64, bmem);
-  BIO_read(bmem, buffer, input.size());
+  BIO_read(bmem, buffer, static_cast<int>(input.size()));
   BIO_free_all(bmem);
   return buffer;
 }

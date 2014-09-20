@@ -4668,7 +4668,7 @@ class XMLInput : public NonCopyable,  private xercesc::DefaultHandler
     /** Clears the previously read object. */
     Object* getParentObject() const
     {
-      int x = m_EHStack.size();
+      size_t x = m_EHStack.size();
       return x>1 ? m_EHStack[x-2].first : NULL;
     }
 
