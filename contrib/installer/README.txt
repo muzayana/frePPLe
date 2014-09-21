@@ -48,5 +48,15 @@ To create the installer, the following steps are required:
 8) Before building the installer script you'll need to update the frepple.nsi
    script to point to the directory where the xerces-c dll is stored.
 
+9) Patch the NSIS MultiUser.sh script
+   The determination of the default installation folder doesn't make the
+   distinction between the 64-bit and 32-bit folder.
+   At 2 places in the file you need something like:
+     !ifdef 64BIT
+     StrCpy $INSTDIR "$PROGRAMFILES64\${MULTIUSER_INSTALLMODE_INSTDIR}"
+     !else
+     StrCpy $INSTDIR "$PROGRAMFILES\${MULTIUSER_INSTALLMODE_INSTDIR}"
+     !endif
+
 CONSIDERING ALL THE ABOVE, BUILDING THE INSTALLER ISN'T FOR BEGINNERS.
 IT REQUIRES PROPER UNDERSTANDING OF ALL COMPONENTS AND THE FREPPLE BUILD PROCESS...

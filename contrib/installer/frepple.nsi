@@ -29,8 +29,6 @@
 !define PRODUCT_WEB_SITE "http://frepple.com"
 !define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\frepple.exe"
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME} ${PRODUCT_VERSION}"
-!define PLATFORM1 ""
-!define PLATFORM2 ""
 
 ; Select compressor
 SetCompressor /SOLID lzma
@@ -138,9 +136,15 @@ VIAddVersionKey /LANG=${LANG_ENGLISH} CompanyName "frePPLe"
 VIAddVersionKey /LANG=${LANG_ENGLISH} LegalCopyright "Commercial license agreement with frePPLe bvba"
 VIAddVersionKey /LANG=${LANG_ENGLISH} FileDescription "frePPLe enterprise edition installer"
 
-Name "${PRODUCT_NAME} ${PRODUCT_VERSION}${PLATFORM1}"
-OutFile "${PRODUCT_NAME}_${PRODUCT_VERSION}${PLATFORM2}_setup.exe"
-BrandingText "${PRODUCT_NAME} ${PRODUCT_VERSION}${PLATFORM1}"
+!ifdef 64BIT
+Name "${PRODUCT_NAME} ${PRODUCT_VERSION} 64bit"
+OutFile "${PRODUCT_NAME}_${PRODUCT_VERSION}_64bit_setup.exe"
+BrandingText "${PRODUCT_NAME} ${PRODUCT_VERSION} 64bit"
+!else
+Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
+OutFile "${PRODUCT_NAME}_${PRODUCT_VERSION}_setup.exe"
+BrandingText "${PRODUCT_NAME} ${PRODUCT_VERSION}"
+!endif
 CRCcheck on
 ShowInstDetails show
 ShowUnInstDetails show
