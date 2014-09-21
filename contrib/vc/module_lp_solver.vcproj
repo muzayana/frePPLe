@@ -19,8 +19,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="..\..\bin\"
-			IntermediateDirectory=".\module_lp_solver\Debug"
+			OutputDirectory="..\..\bin"
+			IntermediateDirectory="..\module_lpsolver\$(ConfigurationName)$(PlatformName)"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -82,7 +82,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="glpk.lib"
 				OutputFile="../../bin/mod_lpsolver.so"
-				LinkIncremental="2"
+				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				IgnoreDefaultLibraryNames="LIBCMT"
 				ModuleDefinitionFile=""
@@ -120,8 +120,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|x64"
-			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
-			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			OutputDirectory="..\..\bin"
+			IntermediateDirectory=".\module_lpsolver\$(ConfigurationName)$(PlatformName)"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -183,7 +183,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="glpk.lib"
 				OutputFile="../../bin/mod_lpsolver.so"
-				LinkIncremental="2"
+				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				IgnoreDefaultLibraryNames="LIBCMT"
 				ModuleDefinitionFile=""
@@ -222,8 +222,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="..\..\bin\"
-			IntermediateDirectory=".\module_lp_solver\Release"
+			OutputDirectory="..\..\bin"
+			IntermediateDirectory="..\module_lpsolver\$(ConfigurationName)$(PlatformName)"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -329,8 +329,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|x64"
-			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
-			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			OutputDirectory="..\..\bin"
+			IntermediateDirectory="..\module_lpsolver\$(ConfigurationName)$(PlatformName)"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"

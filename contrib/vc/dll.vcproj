@@ -19,8 +19,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="..\..\bin\"
-			IntermediateDirectory=".\dll\Debug"
+			OutputDirectory="..\..\bin"
+			IntermediateDirectory=".\dll\$(ConfigurationName)$(PlatformName)"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -122,8 +122,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|x64"
-			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
-			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			OutputDirectory="..\..\bin"
+			IntermediateDirectory=".\dll\$(ConfigurationName)$(PlatformName)"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -184,7 +184,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				OutputFile="../../bin/frepple_debug.dll"
-				LinkIncremental="2"
+				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				IgnoreDefaultLibraryNames="LIBCMT"
 				ModuleDefinitionFile=""
@@ -226,8 +226,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="..\..\bin\"
-			IntermediateDirectory=".\dll\Release"
+			OutputDirectory="..\..\bin"
+			IntermediateDirectory=".\dll\$(ConfigurationName)$(PlatformName)"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -332,8 +332,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|x64"
-			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
-			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			OutputDirectory="..\..\bin"
+			IntermediateDirectory=".\dll\$(ConfigurationName)$(PlatformName)"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
