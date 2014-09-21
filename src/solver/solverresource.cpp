@@ -109,7 +109,9 @@ DECLARE_EXPORT void SolverMRP::solve(const Resource* res, void* v)
         if (cur->getType() == 4)
           curMax = cur->getMax(false);
 
-        const LoadPlan* ldplan = dynamic_cast<const LoadPlan*>(&*cur);
+        const LoadPlan* ldplan = NULL;
+        if (cur->getType() == 1)
+          ldplan = static_cast<const LoadPlan*>(&*cur);
         if (ldplan && ldplan->getOperationPlan()->getOperation() == OperationSetup::setupoperation
           && ldplan->getOperationPlan()->getDates().overlap(data->state->q_operationplan->getDates()) > 0L
           && ldplan->getOperationPlan() != setupOpplan)
@@ -151,7 +153,9 @@ DECLARE_EXPORT void SolverMRP::solve(const Resource* res, void* v)
             curMax = cur->getMax(false);
 
           // Must be same setup
-          const LoadPlan* ldplan = dynamic_cast<const LoadPlan*>(&*cur);
+          const LoadPlan* ldplan = NULL;
+          if (cur->getType() == 1)
+            ldplan = static_cast<const LoadPlan*>(&*cur);
           if (ldplan
             && ldplan->getOperationPlan()->getDates().overlap(setupOpplan->getDates()) > 0L
             && ldplan->getSetup() != setupLdplan->getSetup())
@@ -232,7 +236,9 @@ DECLARE_EXPORT void SolverMRP::solve(const Resource* res, void* v)
           if (cur->getType() == 4) curMax = cur->getMax(false);
 
           // Ongoing setup
-          const LoadPlan* ldplan = dynamic_cast<const LoadPlan*>(&*cur);
+          const LoadPlan* ldplan = NULL;
+          if (cur->getType() == 1)
+            ldplan = static_cast<const LoadPlan*>(&*cur);
           if (ldplan
             && ldplan->getOperationPlan()->getOperation() == OperationSetup::setupoperation
             && ldplan->isStart()
@@ -314,7 +320,9 @@ DECLARE_EXPORT void SolverMRP::solve(const Resource* res, void* v)
       double ignored = 0.0;
       for (cur = res->getLoadPlans().begin(); cur!=res->getLoadPlans().begin(data->state->q_loadplan); ++cur)
       {
-        const LoadPlan* ldplan = dynamic_cast<const LoadPlan*>(&*cur);
+        const LoadPlan* ldplan = NULL;
+        if (cur->getType() == 1)
+          ldplan = static_cast<const LoadPlan*>(&*cur);
         if (ldplan && !ldplan->getOperationPlan()->getRawIdentifier()
           && ldplan->getOperationPlan()->getOperation()!=data->state->q_operationplan->getOperation() )
           ignored += ldplan->getQuantity();
@@ -328,7 +336,9 @@ DECLARE_EXPORT void SolverMRP::solve(const Resource* res, void* v)
           curMax = cur->getMax();
 
         /* @todo is this required?
-        const LoadPlan* ldplan = dynamic_cast<const LoadPlan*>(&*cur);
+        const LoadPlan* ldplan = NULL;
+        if (cur->getType() == 1)
+          ldplan = static_cast<const LoadPlan*>(&*cur);
         if (ldplan && ldplan->getOperationPlan()->getOperation() == OperationSetup::setupoperation
           && ldplan->getOperationPlan()->getDates().getDuration() > 0L)
         {
@@ -338,7 +348,9 @@ DECLARE_EXPORT void SolverMRP::solve(const Resource* res, void* v)
           continue;
         }
         */
-        const LoadPlan* ldplan = dynamic_cast<const LoadPlan*>(&*cur);
+        const LoadPlan* ldplan = NULL;
+        if (cur->getType() == 1)
+          ldplan = static_cast<const LoadPlan*>(&*cur);
         if (ldplan && !ldplan->getOperationPlan()->getRawIdentifier()
           && ldplan->getOperationPlan()->getOperation()!=data->state->q_operationplan->getOperation())
           ignored += ldplan->getQuantity();

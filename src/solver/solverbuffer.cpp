@@ -108,7 +108,9 @@ DECLARE_EXPORT void SolverMRP::solve(const Buffer* b, void* v)
         {
           // Check if it is an unlocked producing operationplan
           if (batchiter->getQuantity() <= 0) continue;
-          const FlowPlan* batchcandidate = dynamic_cast<const FlowPlan*>(&*batchiter);
+          const FlowPlan* batchcandidate = NULL;
+          if (batchiter->getType() == 1)
+            batchcandidate = static_cast<const FlowPlan*>(&*batchiter);
           if (!batchcandidate || batchcandidate->getOperationPlan()->getLocked())
             continue;
 
@@ -198,7 +200,9 @@ DECLARE_EXPORT void SolverMRP::solve(const Buffer* b, void* v)
         {
           // Check if it is an unlocked producing operationplan
           if (batchiter->getQuantity() <= 0) continue;
-          const FlowPlan* batchcandidate = dynamic_cast<const FlowPlan*>(&*batchiter);
+          const FlowPlan* batchcandidate = NULL;
+          if (batchiter->getType() == 1)
+            batchcandidate = static_cast<const FlowPlan*>(&*batchiter);
           if (!batchcandidate || batchcandidate->getOperationPlan()->getLocked())
             continue;
 
