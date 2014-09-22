@@ -227,8 +227,11 @@ DECLARE_EXPORT void Environment::setLogFile(const string& x)
   logger.rdbuf(logfile.rdbuf());
 
   // Print a nice header
-  logger << "Start logging frePPLe " << PACKAGE_VERSION << " ("
-      << __DATE__ << ") at " << Date::now() << endl;
+  logger << "Start logging frePPLe " << PACKAGE_VERSION
+#ifdef _WIN64
+    << " 64-bit"
+#endif
+	<< " (" << __DATE__ << ") at " << Date::now() << endl;
 }
 
 
