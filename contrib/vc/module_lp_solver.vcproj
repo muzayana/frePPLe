@@ -20,7 +20,7 @@
 		<Configuration
 			Name="Debug|Win32"
 			OutputDirectory="..\..\bin"
-			IntermediateDirectory="..\module_lpsolver\$(ConfigurationName)$(PlatformName)"
+			IntermediateDirectory=".\module_lpsolver\$(ConfigurationName)$(PlatformName)"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -223,7 +223,7 @@
 		<Configuration
 			Name="Release|Win32"
 			OutputDirectory="..\..\bin"
-			IntermediateDirectory="..\module_lpsolver\$(ConfigurationName)$(PlatformName)"
+			IntermediateDirectory=".\module_lpsolver\$(ConfigurationName)$(PlatformName)"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -330,7 +330,7 @@
 		<Configuration
 			Name="Release|x64"
 			OutputDirectory="..\..\bin"
-			IntermediateDirectory="..\module_lpsolver\$(ConfigurationName)$(PlatformName)"
+			IntermediateDirectory=".\module_lpsolver\$(ConfigurationName)$(PlatformName)"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
