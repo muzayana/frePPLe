@@ -400,7 +400,7 @@ DECLARE_EXPORT void Buffer::setMinimum(double m)
     }
   // Create new event
   flowplanlist::EventMinQuantity *newEvent =
-    new flowplanlist::EventMinQuantity(Date::infinitePast, min_val);
+    new flowplanlist::EventMinQuantity(Date::infinitePast, &flowplans, min_val);
   flowplans.insert(newEvent);
 }
 
@@ -438,7 +438,7 @@ DECLARE_EXPORT void Buffer::setMinimumCalendar(CalendarDouble *cal)
     {
       curMin = x.getValue();
       flowplanlist::EventMinQuantity *newBucket =
-        new flowplanlist::EventMinQuantity(x.getDate(), curMin);
+        new flowplanlist::EventMinQuantity(x.getDate(), &flowplans, curMin);
       flowplans.insert(newBucket);
     }
 }
@@ -470,7 +470,7 @@ DECLARE_EXPORT void Buffer::setMaximum(double m)
     }
   // Create new event
   flowplanlist::EventMaxQuantity *newEvent =
-    new flowplanlist::EventMaxQuantity(Date::infinitePast, max_val);
+    new flowplanlist::EventMaxQuantity(Date::infinitePast, &flowplans, max_val);
   flowplans.insert(newEvent);
 }
 
@@ -508,7 +508,7 @@ DECLARE_EXPORT void Buffer::setMaximumCalendar(CalendarDouble *cal)
     {
       curMax = x.getValue();
       flowplanlist::EventMaxQuantity *newBucket =
-        new flowplanlist::EventMaxQuantity(x.getDate(), curMax);
+        new flowplanlist::EventMaxQuantity(x.getDate(), &flowplans, curMax);
       flowplans.insert(newBucket);
     }
 }
