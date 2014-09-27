@@ -88,14 +88,14 @@ $(function() {
 {% endblock %}
 
 {% block actions %}
-<a id="zoom_in" href="javascript:gantt.zoom(0.5,0);" class="icon"><span class="ui-icon ui-icon-zoomin"></span>{% trans 'Zoom in' %}</a>
-<a id="zoom_out" href="javascript:gantt.zoom(1.5,0);" class="icon"><span class="ui-icon ui-icon-zoomout"></span>{% trans 'Zoom out' %}</a>
-<a id="move_in" href="javascript:gantt.zoom(1,-86400000);" class="icon"><span class="ui-icon ui-icon-seek-prev"></span>{% trans 'Move in' %}</a>
-<a id="move_out" href="javascript:gantt.zoom(1,86400000);" class="icon"><span class="ui-icon ui-icon-seek-next"></span>{% trans 'Move out' %}</a>
-<a id="reset" href="javascript:gantt.reset();" class="icon"><span class="ui-icon ui-icon-stop"></span>{% trans 'Reset' %}</a>
-<a id="filter" href="javascript:grid.showFilter();" class="icon"><span class="ui-icon ui-icon-search"></span>{% trans 'Filter' %}</a>
-<a href="javascript:grid.showBucket();" id="bucketconfig" class="icon"><span class="ui-icon ui-icon-clock"></span>{% trans 'Time' %}</a>
-<a href="javascript:grid.showCustomize(false);" class="icon"><span class="ui-icon ui-icon-wrench"></span>{% trans 'Customize' %}</a>
+<span onclick="gantt.zoom(0.5,0)" class="fa fa-search-plus fa-lg" title="{% trans 'Zoom in'|escape %}"></span>&nbsp;&nbsp;
+<span onclick="gantt.zoom(1.5,0)" class="fa fa-search-minus fa-lg" title="{% trans 'Zoom out'|escape %}"></span>&nbsp;&nbsp;
+<span onclick="gantt.zoom(1,-86400000)" class="fa fa-backward fa-lg" title="{% trans 'Move in'|escape %}"></span>&nbsp;&nbsp;
+<span onclick="gantt.zoom(1,86400000)" class="fa fa-forward fa-lg" title="{% trans 'Move out'|escape %}"></span>&nbsp;&nbsp;
+<span onclick="gantt.reset()" class="fa fa-square fa-lg" title="{% trans 'Reset'|escape %}"></span>&nbsp;&nbsp;
+<span onclick="grid.showFilter()" title="{% trans 'Filter data'|escape%}" class="fa fa-search fa-lg"></span>&nbsp;&nbsp;
+<span onclick="grid.showBucket()" title="{% trans 'Configure time buckets'|escape %}" id="bucketconfig" class="fa fa-clock-o fa-lg"></span>&nbsp;&nbsp;
+<span onclick="grid.showCustomize(false);" title="{% trans 'Customize'|escape %}" class="fa fa-wrench fa-lg"></span>
 {% endblock %}
 
 {% block extra_grid_DIS %}resizeStop: function(width, index) {
