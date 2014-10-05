@@ -23,7 +23,7 @@ from django.utils.text import capfirst
 from freppledb.input.models import Resource, Operation, Location, SetupMatrix
 from freppledb.input.models import Buffer, Customer, Demand, Item, Load, Flow, Skill
 from freppledb.input.models import Calendar, CalendarBucket, OperationPlan, SubOperation
-from freppledb.input.models import ResourceSkill
+from freppledb.input.models import ResourceSkill, searchmode
 from freppledb.common.report import GridReport, GridFieldBool, GridFieldLastModified
 from freppledb.common.report import GridFieldDateTime, GridFieldTime, GridFieldText
 from freppledb.common.report import GridFieldNumber, GridFieldInteger, GridFieldCurrency
@@ -521,7 +521,7 @@ class LoadList(GridReport):
     GridFieldText('alternate', title=_('alternate')),
     GridFieldNumber('priority', title=_('priority')),
     GridFieldText('setup', title=_('setup')),
-    GridFieldText('search', title=_('search mode')),
+    GridFieldChoice('search', title=_('search mode'), choices=searchmode),
     GridFieldText('source', title=_('source')),
     GridFieldLastModified('lastmodified'),
     )
@@ -548,7 +548,7 @@ class FlowList(GridReport):
     GridFieldText('name', title=_('name')),
     GridFieldText('alternate', title=_('alternate')),
     GridFieldNumber('priority', title=_('priority')),
-    GridFieldText('search', title=_('search mode')),
+    GridFieldChoice('search', title=_('search mode'), choices=searchmode),
     GridFieldText('source', title=_('source')),
     GridFieldLastModified('lastmodified'),
     )
@@ -660,7 +660,7 @@ class OperationList(GridReport):
     GridFieldNumber('sizemultiple', title=_('size multiple')),
     GridFieldNumber('sizemaximum', title=_('size maximum')),
     GridFieldCurrency('cost', title=_('cost')),
-    GridFieldText('search', title=_('search mode')),
+    GridFieldChoice('search', title=_('search mode'), choices=searchmode),
     GridFieldText('source', title=_('source')),
     GridFieldLastModified('lastmodified'),
     )
