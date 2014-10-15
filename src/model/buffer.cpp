@@ -543,10 +543,8 @@ DECLARE_EXPORT Buffer::~Buffer()
 
 
 DECLARE_EXPORT void Buffer::followPegging
-(PeggingIterator& iter, FlowPlan* curflowplan, short nextlevel, double curqty, double curfactor)
+(PeggingIterator& iter, FlowPlan* curflowplan, double factor, short lvl)
 {
-
-  double peggedQty(0);
   Buffer::flowplanlist::const_iterator f = getFlowPlans().begin(curflowplan);
 
   if (curflowplan->getQuantity() < -ROUNDING_ERROR && !iter.isDownstream())
@@ -574,13 +572,14 @@ DECLARE_EXPORT void Buffer::followPegging
             newqty -= startQty - (f->getCumulativeProduced()-f->getQuantity());
           if (f->getCumulativeProduced() > endQty)
             newqty -= f->getCumulativeProduced() - endQty;
-          peggedQty += newqty;
-          const FlowPlan *x = dynamic_cast<const FlowPlan*>(&(*f));
-          iter.updateStack(nextlevel,
-              -curqty*newqty/curflowplan->getQuantity(),
-              curfactor*newqty/f->getQuantity(),
-              curflowplan, x);
-        }
+          const OperationPlan *opplan = dynamic_cast<const FlowPlan*>(&(*f))->getOperationPlan();
+          const OperationPlan *topopplan = opplan->getTopOwner();
+          iter.updateStack(
+            topopplan,
+            opplan->getQuantity() * factor * newqty / f->getQuantity(),
+            lvl
+            );
+       }
         ++f;
       }
     }
@@ -600,25 +599,17 @@ DECLARE_EXPORT void Buffer::followPegging
             newqty -= startQty - (f->getCumulativeProduced()-f->getQuantity());
           if (f->getCumulativeProduced() > endQty)
             newqty -= f->getCumulativeProduced() - endQty;
-          peggedQty += newqty;
-          const FlowPlan *x = dynamic_cast<const FlowPlan*>(&(*f));
-          iter.updateStack(nextlevel,
-              -curqty*newqty/curflowplan->getQuantity(),
-              curfactor*newqty/f->getQuantity(),
-              curflowplan, x);
+          const OperationPlan *opplan = dynamic_cast<const FlowPlan*>(&(*f))->getOperationPlan();
+          const OperationPlan *topopplan = opplan->getTopOwner();
+          iter.updateStack(
+            topopplan,
+            opplan->getQuantity() * factor * newqty / f->getQuantity(),
+            lvl
+            );
         }
         --f;
       }
     }
-    if (peggedQty < endQty - startQty - ROUNDING_ERROR)
-      // Unproduced material (i.e. material that is consumed but never
-      // produced) is handled with a special entry on the stack.
-      iter.updateStack(nextlevel,
-          curqty*(peggedQty - endQty + startQty)/curflowplan->getQuantity(),
-          curfactor,
-          curflowplan,
-          NULL,
-          false);
     return;
   }
 
@@ -647,12 +638,13 @@ DECLARE_EXPORT void Buffer::followPegging
             newqty -= startQty - (f->getCumulativeConsumed()+f->getQuantity());
           if (f->getCumulativeConsumed() > endQty)
             newqty -= f->getCumulativeConsumed() - endQty;
-          peggedQty += newqty;
-          const FlowPlan *x = dynamic_cast<const FlowPlan*>(&(*f));
-          iter.updateStack(nextlevel,
-              curqty*newqty/curflowplan->getQuantity(),
-              -curfactor*newqty/f->getQuantity(),
-              x, curflowplan);
+          const OperationPlan *opplan = dynamic_cast<const FlowPlan*>(&(*f))->getOperationPlan();
+          const OperationPlan *topopplan = opplan->getTopOwner();
+          iter.updateStack(
+            topopplan,
+            - opplan->getQuantity() * factor * newqty / f->getQuantity(),
+            lvl
+            );
         }
         ++f;
       }
@@ -672,25 +664,17 @@ DECLARE_EXPORT void Buffer::followPegging
             newqty -= startQty - (f->getCumulativeConsumed()+f->getQuantity());
           if (f->getCumulativeConsumed() > endQty)
             newqty -= f->getCumulativeConsumed() - endQty;
-          peggedQty += newqty;
-          const FlowPlan *x = dynamic_cast<const FlowPlan*>(&(*f));
-          iter.updateStack(nextlevel,
-              curqty*newqty/curflowplan->getQuantity(),
-              -curfactor*newqty/f->getQuantity(),
-              x, curflowplan);
+          const OperationPlan *opplan = dynamic_cast<const FlowPlan*>(&(*f))->getOperationPlan();
+          const OperationPlan *topopplan = opplan->getTopOwner();
+          iter.updateStack(
+            topopplan,
+            - opplan->getQuantity() * factor * newqty / f->getQuantity(),
+            lvl
+            );
         }
         --f;
       }
     }
-    if (peggedQty < endQty - startQty)
-      // Unpegged material (i.e. material that is produced but never consumed)
-      // is handled with a special entry on the stack.
-      iter.updateStack(nextlevel,
-          curqty*(endQty - startQty - peggedQty)/curflowplan->getQuantity(),
-          curfactor,
-          NULL, curflowplan,
-          false);
-    return;
   }
 }
 
