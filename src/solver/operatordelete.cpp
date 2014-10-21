@@ -196,7 +196,14 @@ void OperatorDelete::solve(const Buffer* b, void* v)
       continue;
     }
     assert(fp);
-    ++fiter;  // Increment the iterator here, because it can get invalidated later on
+
+    // Increment the iterator here, because it can get invalidated later on
+    while (
+      fiter != fend
+      && fiter->getType() == 1
+      && static_cast<const FlowPlan*>(&*fiter)->getOperationPlan()->getTopOwner()==fp->getOperationPlan()->getTopOwner()
+      )
+        ++fiter;
     if (cur_excess >= fp->getQuantity() - ROUNDING_ERROR)
     {
       // The complete operationplan is excess.
