@@ -1783,6 +1783,7 @@ class GridPivot(GridReport):
         ws.append(fields)
     else:
       currentkey = None
+      row_of_buckets = None
       for row in query:
         # We use the first field in the output to recognize new rows.
         if not currentkey:
@@ -1802,13 +1803,14 @@ class GridPivot(GridReport):
           currentkey = row[reportclass.rows[0].name]
           row_of_buckets = [row]
       # Write the last row
-      for cross in mycrosses:
-        if 'visible' in cross[1] and not cross[1]['visible']:
-          continue
-        fields = [ _getCellValue(row_of_buckets[0][s.name]) for s in myrows ]
-        fields.extend([ _getCellValue(('title' in cross[1] and capfirst(_(cross[1]['title'])) or capfirst(_(cross[0])))) ])
-        fields.extend([ _getCellValue(bucket[cross[0]]) for bucket in row_of_buckets ])
-        ws.append(fields)
+      if row_of_buckets:
+        for cross in mycrosses:
+          if 'visible' in cross[1] and not cross[1]['visible']:
+            continue
+          fields = [ _getCellValue(row_of_buckets[0][s.name]) for s in myrows ]
+          fields.extend([ _getCellValue(('title' in cross[1] and capfirst(_(cross[1]['title'])) or capfirst(_(cross[0])))) ])
+          fields.extend([ _getCellValue(bucket[cross[0]]) for bucket in row_of_buckets ])
+          ws.append(fields)
 
     # Write the spreadsheet from memory to a string and then to a HTTP response
     output = StringIO()
