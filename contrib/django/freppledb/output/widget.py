@@ -254,7 +254,7 @@ Dashboard.register(PurchaseAnalysisWidget)
 class AlertsWidget(Widget):
   name = "alerts"
   title = _("Alerts")
-  tooltip = _("Summary of all exceptions in the plan")
+  tooltip = _("Overview of all alerts in the plan")
   permissions = (("view_problem_report", "Can view problem report"),)
   async = True
   url = '/problem/'
