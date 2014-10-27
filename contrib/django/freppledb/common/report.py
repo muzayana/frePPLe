@@ -1171,7 +1171,7 @@ class GridReport(View):
           ### Case 1: The first line is read as a header line
           if rownumber == 1:
             for col in row:
-              col = unicode(col.internal_value).strip().strip('#').lower()
+              col = unicode(col.value).strip().strip('#').lower()
               if col == "":
                 headers.append(False)
                 continue
@@ -1204,7 +1204,7 @@ class GridReport(View):
               )
 
           ### Case 2: Skip empty rows and comments rows
-          elif len(row) == 0 or (isinstance(row[0].internal_value, six.string_types) and row[0].internal_value.startswith('#')):
+          elif len(row) == 0 or (isinstance(row[0].value, six.string_types) and row[0].value.startswith('#')):
             continue
 
           ### Case 3: Process a data row
@@ -1218,7 +1218,7 @@ class GridReport(View):
                 if colnum >= len(headers):
                   break
                 if isinstance(headers[colnum], Field):
-                  data = col.internal_value
+                  data = col.value
                   if isinstance(headers[colnum], CharField):
                     if data and isinstance(data, six.string_types):
                       data = data.strip()
@@ -1994,7 +1994,7 @@ def importWorkbook(request):
             header_ok = True
             for cell in row:
               ok = False
-              value = cell.internal_value
+              value = cell.value
               if not value:
                 headers.append(False)
                 continue
@@ -2042,7 +2042,7 @@ def importWorkbook(request):
               if colnum >= len(headers):
                 break
               if isinstance(headers[colnum], Field):
-                data = cell.internal_value
+                data = cell.value
                 if isinstance(headers[colnum], CharField):
                   if data and isinstance(data, six.string_types):
                     data = data.strip()
