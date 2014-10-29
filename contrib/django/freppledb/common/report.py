@@ -1356,7 +1356,10 @@ class GridReport(View):
         if r.field_name and i.startswith(r.field_name):
           operator = (i == r.field_name) and 'exact' or i[i.rfind('_') + 1:]
           try:
-            filters.append('{"field":"%s","op":"%s","data":"%s"},' % (r.field_name, reportclass._filter_map_django_jqgrid[operator], j.replace('"', '\\"')))
+            filters.append(
+              '{"field":"%s","op":"%s","data":"%s"},' % (
+              r.field_name, reportclass._filter_map_django_jqgrid[operator], unquote(j).replace('"', '\\"')
+              ))
             filtered = True
           except:
             pass  # Ignore invalid operators
@@ -1441,7 +1444,7 @@ class GridReport(View):
         for r in reportclass.rows:
           if r.name and i.startswith(r.field_name):
             try:
-              items = items.filter(**{i: j})
+              items = items.filter(**{i: unquote(j)})
             except:
               pass  # silently ignore invalid filters
     return items

@@ -12,6 +12,7 @@ from decimal import Decimal
 import json
 
 from django.db import models
+from django.contrib.admin.util import unquote
 from django.template import Library, Node, Variable, TemplateSyntaxError
 from django.template.loader import get_template
 from django.conf import settings
@@ -308,6 +309,11 @@ register.filter(object_name)
 def model_name(obj):
   return "%s.%s" % (obj._meta.app_label, obj._meta.model_name)
 register.filter(model_name)
+
+
+def admin_unquote(obj):
+  return unquote(obj)
+register.filter(admin_unquote)
 
 
 #

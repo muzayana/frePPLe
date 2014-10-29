@@ -10,6 +10,7 @@
 
 from datetime import datetime, timedelta
 
+from django.contrib.admin.util import unquote
 from django.db import connections
 from django.http import Http404
 from django.utils.translation import ugettext_lazy as _
@@ -52,7 +53,7 @@ class ReportByDemand(GridReport):
 
   @ classmethod
   def basequeryset(reportclass, request, args, kwargs):
-    return Demand.objects.filter(name__exact=args[0]).values('name')
+    return Demand.objects.filter(name__exact=unquote(args[0])).values('name')
 
 
   @classmethod
@@ -230,7 +231,7 @@ class ReportByBuffer(GridReport):
     for i, j in request.GET.iteritems():
       if i.startswith('thebuffer') or i.startswith('flowdate'):
         try:
-          query = query.filter(**{i: j})
+          query = query.filter(**{i: unquote(j)})
         except:
           pass  # silently ignore invalid filters
     return query
@@ -311,7 +312,7 @@ class ReportByResource(GridReport):
     for i, j in request.GET.iteritems():
       if i.startswith('theresource') or i.startswith('startdate') or i.startswith('enddate'):
         try:
-          query = query.filter(**{i: j})
+          query = query.filter(**{i: unquote(j)})
         except:
           pass  # silently ignore invalid filters
     return query
@@ -390,7 +391,7 @@ class ReportByOperation(GridReport):
     for i, j in request.GET.iteritems():
       if i.startswith('operation') or i.startswith('startdate') or i.startswith('enddate'):
         try:
-          query = query.filter(**{i: j})
+          query = query.filter(**{i: unquote(j)})
         except:
           pass  # silently ignore invalid filters
     return query
