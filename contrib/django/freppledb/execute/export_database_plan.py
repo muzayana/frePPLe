@@ -18,7 +18,6 @@ The code iterates over all objects in the C++ core engine, and creates
 database records with the information. The Django database wrappers are used
 to keep the code portable between different databases.
 '''
-from __future__ import print_function
 from datetime import timedelta, datetime, date
 from time import time
 from threading import Thread
@@ -60,7 +59,7 @@ def exportProblems(cursor):
     values(%s,%s,%s,%s,%s,%s,%s)",
     [(
        i.entity, i.name,
-       isinstance(i.owner, frepple.operationplan) and unicode(i.owner.operation) or unicode(i.owner),
+       isinstance(i.owner, frepple.operationplan) and str(i.owner.operation) or str(i.owner),
        i.description[0:settings.NAMESIZE + 20], str(i.start), str(i.end),
        round(i.weight, settings.DECIMAL_PLACES)
      ) for i in frepple.problems()]
@@ -80,7 +79,7 @@ def exportConstraints(cursor):
       values(%s,%s,%s,%s,%s,%s,%s,%s)",
       [(
          d.name, i.entity, i.name,
-         isinstance(i.owner, frepple.operationplan) and unicode(i.owner.operation) or unicode(i.owner),
+         isinstance(i.owner, frepple.operationplan) and str(i.owner.operation) or str(i.owner),
          i.description[0:settings.NAMESIZE + 20], str(i.start), str(i.end),
          round(i.weight, settings.DECIMAL_PLACES)
        ) for i in d.constraints]

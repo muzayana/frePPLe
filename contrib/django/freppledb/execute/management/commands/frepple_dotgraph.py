@@ -7,7 +7,6 @@
 # You are not allowed to distribute the software, either in the form of source code
 # or in the form of compiled binaries.
 #
-from __future__ import print_function
 from optparse import make_option
 
 from django.core.management.base import BaseCommand, CommandError

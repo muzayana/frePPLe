@@ -6,10 +6,7 @@
 # within your company.
 # You are not allowed to distribute the software, either in the form of source code
 # or in the form of compiled binaries.
-
 #
-
-import types
 
 from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse
@@ -23,7 +20,7 @@ from django.db import transaction
 from django.http import HttpResponseRedirect, Http404
 from django.shortcuts import get_object_or_404
 from django.template.response import SimpleTemplateResponse, TemplateResponse
-from django.utils.encoding import force_text, force_unicode
+from django.utils.encoding import force_text
 from django.utils.safestring import mark_safe
 from django.utils.html import escape, escapejs
 from django.utils.translation import ugettext_lazy as _
@@ -59,7 +56,7 @@ class MultiDBModelAdmin(admin.ModelAdmin):
     # FrePPLe specific addition
     if change:
       old_pk = unquote(request.path_info.rsplit("/", 2)[1])
-      if old_pk != (isinstance(obj.pk, basestring) and obj.pk or str(obj.pk)):
+      if old_pk != (isinstance(obj.pk, str) and obj.pk or str(obj.pk)):
         # The object was renamed. We continue handling the updates on the
         # old object. Only at the very end we will rename whatever needs to
         # be renamed.
@@ -268,7 +265,7 @@ class MultiDBModelAdmin(admin.ModelAdmin):
   @transaction.atomic
   def change_view(self, request, object_id, form_url='', extra_context=None):
     new_extra_context = extra_context or {}
-    new_extra_context['title'] = capfirst(force_unicode(self.model._meta.verbose_name) + ' ' + unquote(object_id))
+    new_extra_context['title'] = capfirst(force_text(self.model._meta.verbose_name) + ' ' + unquote(object_id))
     return super(MultiDBModelAdmin, self).change_view(request, object_id, form_url, new_extra_context)
 
 
@@ -298,7 +295,7 @@ class MultiDBModelAdmin(admin.ModelAdmin):
     # Update the links to the related objects. A bit of a hack...
     if request.prefix:
       def replace_url(a):
-        if isinstance(a, types.ListType):
+        if isinstance(a, list):
           return [ replace_url(i) for i in a ]
         else:
           return mark_safe(a.replace('href="', 'href="%s' % request.prefix))

@@ -6,15 +6,10 @@
  *                                                                         *
  ***************************************************************************/
 
-#include "frepple/utils.h"
-
 #include <openssl/rsa.h>
 #include <openssl/evp.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
-
-using namespace frepple;
-using namespace frepple::utils;
 
 
 /** This program creates a RSA key pair and writes out the C-code to restore

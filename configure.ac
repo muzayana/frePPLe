@@ -212,19 +212,17 @@ AC_COMPILE_IFELSE([AC_LANG_SOURCE([
 # Verify installation of PYTHON
 # Edit the minimum required version to 3.0 to switch to using Python 3.
 #
-AM_PATH_PYTHON([2.6], [],
+AM_PATH_PYTHON([3.2], [],
 [AC_MSG_ERROR([
-  This package requires Python 2.6 or higher.
-  Preferred versions are 2.6 and 2.7.
-  Support for Python 3.0 and higher is experimental.
+  This package requires Python 3.2 or higher.
 ])])
-LIBS="-L/usr/lib/python$PYTHON_VERSION/config $LIBS"
-CPPFLAGS="-I/usr/include/python$PYTHON_VERSION $CPPFLAGS"
-AC_CHECK_LIB(python$PYTHON_VERSION, PyModule_GetDict, [],
-[AC_MSG_ERROR([
-  Can't link with the Python library.
-  This package requires the Python development libraries.
-])])
+AC_PATH_TOOL(PYTHON_CONFIG, "python3-config", notavailable)
+if test x$PYTHON_CONFIG = xnotavailable
+then
+  AC_MSG_ERROR([This package requires the Python development libraries.])
+fi
+LIBS="$($PYTHON_CONFIG --ldflags) $LIBS"
+CPPFLAGS="$($PYTHON_CONFIG --includes) $CPPFLAGS"
 AC_CHECK_HEADER([Python.h], [],
 [AC_MSG_ERROR([
   This package requires Python.
@@ -299,7 +297,7 @@ AC_CONFIG_FILES([ contrib/Makefile contrib/vc/Makefile contrib/django/Makefile c
 AC_CONFIG_FILES([ test/Makefile test/buffer_batch/Makefile test/cluster/Makefile test/custom_fields/Makefile test/calendar/Makefile test/constraints_combined_1/Makefile test/constraints_combined_2/Makefile test/constraints_leadtime_1/Makefile test/constraints_leadtime_2/Makefile test/constraints_material_1/Makefile test/constraints_material_2/Makefile test/constraints_material_3/Makefile test/constraints_material_4/Makefile test/datetime/Makefile test/flow_alternate_1/Makefile test/flow_alternate_2/Makefile test/flow_fixed/Makefile test/scalability_1/Makefile test/scalability_2/Makefile test/scalability_3/Makefile test/jobshop/Makefile test/xml/Makefile test/xml_remote/Makefile  test/constraints_resource_1/Makefile test/constraints_resource_2/Makefile test/constraints_resource_3/Makefile test/constraints_resource_4/Makefile test/constraints_resource_5/Makefile test/constraints_resource_6/Makefile test/criticality/Makefile test/problems/Makefile test/deletion/Makefile test/demand_policy/Makefile test/operation_alternate/Makefile test/operation_available/Makefile test/operation_effective/Makefile test/operation_pre_post/Makefile test/operation_routing/Makefile test/operation_split/Makefile test/multithreading/Makefile test/name/Makefile test/python_1/Makefile test/python_2/Makefile test/python_3/Makefile test/sample_module/Makefile test/callback/Makefile test/pegging/Makefile test/safety_stock/Makefile test/buffer_procure_1/Makefile test/flow_effective/Makefile test/load_alternate/Makefile test/load_effective/Makefile test/setup_1/Makefile test/setup_2/Makefile test/setup_3/Makefile test/skills/Makefile test/wip/Makefile ])
 
 # Define extra output make files for the Enterprise Edition
-AC_CONFIG_FILES([ modules/forecast/Makefile ])
+AC_CONFIG_FILES([ modules/forecast/Makefile modules/webserver/Makefile ])
 AC_CONFIG_FILES([ test/forecast_1/Makefile test/forecast_2/Makefile test/forecast_3/Makefile test/forecast_4/Makefile test/forecast_5/Makefile test/forecast_6/Makefile])
 
 # Generate all make files

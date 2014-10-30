@@ -10,4 +10,4 @@ SUBDIRS += forecast_1 forecast_2 forecast_3 forecast_4 forecast_5 forecast_6
 EXTRA_DIST = runtest.py
 
 check:
-	`pwd`/runtest.py ${TESTARGS}
+	$(PYTHON) runtest.py ${TESTARGS}

@@ -42,25 +42,25 @@ class OperatorDelete : public Solver
     static PyObject* solve(PyObject*, PyObject*);
 
     /** Remove all entities for excess material that can be removed. */
-    void solve(void *v = NULL);
+    DECLARE_EXPORT void solve(void *v = NULL);
 
     /** Remove an operationplan and all its upstream supply.<br>
       * The argument operationplan is invalid when this function returns!
       */
-    void solve(OperationPlan*, void* = NULL);
+    DECLARE_EXPORT void solve(OperationPlan*, void* = NULL);
 
     /** Remove excess from a buffer and all its upstream colleagues. */
-    void solve(const Buffer*, void* = NULL);
+    DECLARE_EXPORT void solve(const Buffer*, void* = NULL);
 
     /** Remove excess starting from a single demand. */
-    void solve(const Demand*, void* = NULL);
+    DECLARE_EXPORT  void solve(const Demand*, void* = NULL);
 
     /** Remove excess operations on a resource. */
-    void solve(const Resource*, void* = NULL);
+    DECLARE_EXPORT void solve(const Resource*, void* = NULL);
 
     static int initialize();
     virtual const MetaClass& getType() const {return *metadata;}
-    static const MetaClass* metadata;
+    static DECLARE_EXPORT const MetaClass* metadata;
     virtual size_t getSize() const {return sizeof(OperatorDelete);}
 
   private:
@@ -297,7 +297,10 @@ class SolverMRP : public Solver
       allowSplits(true), plantype(1), lazydelay(86400L),
       iteration_threshold(1), iteration_accuracy(0.01), iteration_max(0),
       autocommit(true), planSafetyStockFirst(false)
-    { initType(metadata); }
+    {
+      initType(metadata);
+      commands.sol = this;
+    }
 
     /** Destructor. */
     virtual DECLARE_EXPORT ~SolverMRP() {}
@@ -865,6 +868,14 @@ class SolverMRP : public Solver
       * they are not creating any excess.
       */
     DECLARE_EXPORT void scanExcess(CommandList*);
+
+  public:
+    /** Get a reference to the command list. */
+    SolverMRPdata& getCommands()
+    {
+      return commands;
+    }
+
 };
 
 

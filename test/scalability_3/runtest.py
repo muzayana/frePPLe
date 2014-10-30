@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 #
 # Copyright (C) 2007 by Johan De Taeye, frePPLe bvba
 #
@@ -8,7 +8,6 @@
 # You are not allowed to distribute the software, either in the form of source code
 # or in the form of compiled binaries.
 #
-from __future__ import print_function
 import os, sys, random
 
 runtimes = {}

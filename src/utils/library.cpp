@@ -410,10 +410,10 @@ DECLARE_EXPORT const MetaClass* MetaCategory::findClass(const hashtype h) const
 }
 
 
-DECLARE_EXPORT void MetaCategory::persist(XMLOutput *o)
+DECLARE_EXPORT void MetaCategory::persistAll(XMLOutput *o)
 {
   for (const MetaCategory *i = firstCategory; i; i = i->nextCategory)
-    if (i->writeFunction) i->writeFunction(i, o);
+    i->persist(o);
 }
 
 

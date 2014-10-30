@@ -8,7 +8,7 @@
 # source code or in the form of compiled binaries.
 #
 
-import httplib
+import http.client
 from optparse import make_option
 
 from django.core.management.base import BaseCommand, CommandError
@@ -51,13 +51,13 @@ class Command(BaseCommand):
     if 'database' in options:
       global database
       database = options['database'] or DEFAULT_DB_ALIAS
-    if not database in settings.DATABASES.keys():
+    if not database in settings.DATABASES:
       raise CommandError("No database settings known for '%s'" % database )
 
     # Connect to the url "/stop/"
     url = Parameter.getValue('quoting.service_location', database=database, default="localhost:8001")
     try:
-      conn = httplib.HTTPConnection(url)
+      conn = http.client.HTTPConnection(url)
       if force:
         conn.request("GET", '/stop/?hard=1')
       else:

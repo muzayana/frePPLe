@@ -1,0 +1,78 @@
+{% extends "admin/base_site_nav.html" %}
+{% load i18n %}
+{% block contextmenus %}
+{% include "demandcontext.html" %}
+{% include "itemcontext.html" %}
+{% include "customercontext.html" %}
+{% include "operationcontext.html" %}
+{% endblock %}
+{% block extrahead %}{{block.super}}
+<script type="text/javascript" src="{{STATIC_URL}}js/d3.min.js"></script>
+<script type="text/javascript" src="{{STATIC_URL}}planningboard/js/planningboard.js"></script>
+<script type="text/javascript">
+
+var horizonstart = new Date(2014,1-1,1);
+var horizonend = new Date(2014,7-1,1);
+var viewstart = new Date(2014,1-1,1);
+var viewend = new Date(2014,7-1,1);
+var delta = (viewend.getTime() - viewstart.getTime()) / 86400000.0;
+
+var ganttRows = [];
+var rowheight = 50;
+
+var x = d3.time.scale().domain([horizonstart, horizonend]);
+var y = d3.scale.linear().rangeRound([rowheight, 0]);
+
+var service_url = ('https:' == document.location.protocol ? 'wss://' : 'ws://') + document.location.hostname
+  + ':{{port}}/planningboard/?user={{request.user|urlencode}}&time={{time}}&token={{token}}';
+
+$(function() {
+  $(".fa-lg").tooltip({show: {effect: "fade", delay: 500}});
+  $("#ganttdiv").resizable({
+    handles:"s",
+    maxHeight: ganttRows.length * rowheight,
+    minHeight: 2 * rowheight + 10
+    });
+  $("#tabs").tabs();
+  gantt.header();
+  connect(service_url, function() {send("/get/");} );
+});
+
+</script>
+{% endblock %}
+{% block content %}
+<div style="width:100%; padding-bottom:10px">
+<span onclick="customize()" title="Customize" class="fa fa-wrench fa-lg" style="display:inline-block"></span>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id="message" type="text"/>
+<button onclick="send($('#message').val())">Send</button>
+<div id="entities" style="display: none">
+  <select name="multiselect" class="multiselect" multiple="multiple" style="width:440px; height:200px; margin:10px; padding:10px">
+    <optgroup id="resourcelist" label="{% trans "Resource" %}"></optgroup>
+    <optgroup id="bufferlist" label="{% trans "Buffer" %}"></optgroup>
+    <optgroup id="operationlist" label="{% trans "Operation" %}"></optgroup>
+  </select>
+</div>
+</div>
+<div id="ganttdiv" style="width:100%; border: 1px solid; border-radius: 10px">
+<div style="margin: 5px 1px 5px 0px; overflow-x: hide; overflow-y: scroll"><svg id="gantt"></svg></div>
+</div>
+
+<div id="tabs" style="width:100%; margin-top:10px">
+  <ul>
+    <li><a href="#unplanned">{% trans "Unplanned demand" %}</a></li>
+    <li><a href="#alerts">{% trans "Alerts" %}</a></li>
+  </ul>
+  <div id="unplanned">
+    <div style="float: right">
+    <span onclick="send('/solve/erase/')" title="{% trans 'Clear the plan'|escape %}" class="fa fa-fast-backward fa-lg"></span>
+    <span onclick="send('/solve/replan/')" title="{% trans 'Replan all demands'|escape %}" class="fa fa-fast-forward fa-lg"></span>
+    </div>
+    <div id="demandlist"></div>
+  </div>
+  <div id="alerts">
+    <p>Empty still...</p>
+  </div>
+</div>
+
+
+{% endblock %}

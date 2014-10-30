@@ -8,22 +8,23 @@
 # or in the form of compiled binaries.
 #
 
-import httplib
+import http.client
 import json
 
-from django.views.decorators.csrf import csrf_protect
-from django.contrib.auth.decorators import login_required
-from django.utils.translation import ugettext_lazy as _
 from django import forms
-from django.utils.http import urlquote
-from django.utils.encoding import iri_to_uri
-from django.http import Http404, HttpResponseServerError, HttpResponse
+from django.conf import settings
 from django.contrib.admin.widgets import ForeignKeyRawIdWidget, AdminSplitDateTime
+from django.contrib.auth.decorators import login_required
+from django.http import Http404, HttpResponseServerError, HttpResponse
+from django.utils.encoding import iri_to_uri
+from django.utils.http import urlquote
+from django.utils.translation import ugettext_lazy as _
+from django.views.decorators.csrf import csrf_protect
 
-from freppledb.input.models import Demand, Item, Customer
 from freppledb.common.models import Parameter
 from freppledb.common.report import GridReport, GridFieldDateTime, GridFieldText, GridFieldInteger
 from freppledb.common.report import GridFieldNumber, GridFieldLastModified
+from freppledb.input.models import Demand, Item, Customer
 
 import logging
 logger = logging.getLogger(__name__)
@@ -106,7 +107,7 @@ def InfoView(request, action):
     #   +: one less database query
     #   -: parameter value change only takes effect upon restart
     url = Parameter.getValue('quoting.service_location', database=request.database, default="localhost:8001")
-    conn = httplib.HTTPConnection(url)
+    conn = http.client.HTTPConnection(url)
     if action == 'info':
       data = json.loads(request.body)
       conn.request("GET", '/demand/' + iri_to_uri(urlquote(data[0], '')) + '/?plan=P')
@@ -121,21 +122,22 @@ def InfoView(request, action):
         '--' + BOUNDARY,
         'Content-Disposition: form-data; name="xmldata"',
         '',
-        request.body,
+        request.body.decode(request.encoding or settings.DEFAULT_CHARSET),
         '--' + BOUNDARY + '--',
         ''
-        ])
+        ]).encode('utf-8')
       headers = {
         "Content-type": 'multipart/form-data; boundary=%s; charset=utf-8' % BOUNDARY,
         "content-length": len(data)
         }
-      conn.request("POST", "/%s" % action.encode('ascii'), data, headers)
+      conn.request("POST", "/%s" % action, data, headers)
     else:
       raise Exception('Invalid action')
     response = conn.getresponse()
     result = response.read()
+    print ("zombie3")
     conn.close()
-    if response.status == httplib.OK:
+    if response.status == http.client.OK:
       return HttpResponse(result, mimetype="text/plain")
     else:
       return HttpResponseServerError(result, mimetype="text/plain")

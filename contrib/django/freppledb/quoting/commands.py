@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import os
 import time
 from datetime import datetime
@@ -51,10 +49,23 @@ if __name__ == "__main__":
     time.sleep(2)
 
     # Start the quoting service
-    from freppledb.quoting.service import runWebService
     print("\nOrder quoting service starting at", datetime.now().strftime("%H:%M:%S"))
     logMessage("Order quoting service active", database=db)
-    runWebService(database=db)
+    # TODO Uncomment the next section to use the OLD cherrypy web service
+    #from freppledb.quoting.service import runWebService
+    #runWebService(database=db)
+    frepple.loadmodule("mod_webserver.so")
+    frepple.runWebServer(
+      document_root = ".",
+      listening_ports = "8001",
+      num_threads = "10",
+      enable_directory_listing = "no",
+      request_timeout_ms = "7200000", # 2 hours timeout
+      access_log_file = "server_access.log",
+      error_log_file = "server_error.log",
+      max_websocket_clients = "20",
+      secret_key = settings.SECRET_KEY
+      )
     logMessage(None, status='Done', database=db)
     print("\nOrder quoting service finishing at", datetime.now().strftime("%H:%M:%S"))
   elif ok:

@@ -1,3 +1,6 @@
 /*.user
+/*.sdf
+/*ipch
+/*.opensdf
 /*/Release*
 /*/Debug*

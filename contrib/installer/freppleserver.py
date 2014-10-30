@@ -7,7 +7,6 @@
 # You are not allowed to distribute the software, either in the form of source code
 # or in the form of compiled binaries.
 #
-from __future__ import print_function
 import argparse
 from datetime import datetime
 import os
@@ -232,7 +231,7 @@ def non_string_iterable(obj):
     except TypeError:
         return False
     else:
-        return not isinstance(obj, basestring)
+        return not isinstance(obj, str)
 
 
 if __name__=='__main__':

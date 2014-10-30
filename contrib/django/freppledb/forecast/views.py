@@ -15,7 +15,7 @@ import json
 from django.db import connections, transaction
 from django.utils.translation import ugettext_lazy as _
 from django.utils.text import capfirst
-from django.utils.encoding import force_unicode
+from django.utils.encoding import force_text
 from django.http import HttpResponse, HttpResponseForbidden
 
 from freppledb.forecast.models import Forecast, ForecastDemand, ForecastPlan
@@ -109,8 +109,8 @@ class OverviewReport(GridPivot):
   def extra_context(reportclass, request, *args, **kwargs):
     if args and args[0]:
       return {
-        'title': capfirst(force_unicode(Forecast._meta.verbose_name) + " " + args[0]),
-        'post_title': ': ' + capfirst(force_unicode(_('plan'))),
+        'title': capfirst(force_text(Forecast._meta.verbose_name) + " " + args[0]),
+        'post_title': ': ' + capfirst(force_text(_('plan'))),
         }
     else:
       return {}

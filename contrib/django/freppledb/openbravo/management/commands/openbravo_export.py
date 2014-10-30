@@ -8,11 +8,10 @@
 # or in the form of compiled binaries.
 #
 
-from __future__ import print_function
 from optparse import make_option
 from datetime import datetime
 from time import time
-import httplib
+import http.client
 import urllib
 import base64
 from uuid import uuid4
@@ -159,7 +158,7 @@ class Command(BaseCommand):
 
   def get_data(self, url):
     # Send the request
-    webservice = httplib.HTTP(self.openbravo_host)
+    webservice = http.client.HTTP(self.openbravo_host)
     webservice.putrequest("GET", url)
     webservice.putheader("Host", self.openbravo_host)
     webservice.putheader("User-Agent", "frePPLe-Openbravo connector")
@@ -171,7 +170,7 @@ class Command(BaseCommand):
 
     # Get the response
     statuscode, statusmessage, header = webservice.getreply()
-    if statuscode != httplib.OK:
+    if statuscode != http.client.OK:
       raise Exception(statusmessage)
     conn = iter(iterparse(webservice.getfile(), events=('start', 'end')))
     root = conn.next()[1]
@@ -180,7 +179,7 @@ class Command(BaseCommand):
 
   def post_data(self, url, xmldoc):
     # Send the request
-    webservice = httplib.HTTP(self.openbravo_host)
+    webservice = http.client.HTTP(self.openbravo_host)
     webservice.putrequest("POST", url)
     webservice.putheader("Host", self.openbravo_host)
     webservice.putheader("User-Agent", "frePPLe-Openbravo connector")
@@ -192,7 +191,7 @@ class Command(BaseCommand):
 
     # Get the response
     statuscode, statusmessage, header = webservice.getreply()
-    if statuscode != httplib.OK:
+    if statuscode != http.client.OK:
       raise Exception(statusmessage)
     res = webservice.getfile().read()
     if self.verbosity > 2:

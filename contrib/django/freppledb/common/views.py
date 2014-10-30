@@ -19,7 +19,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.contenttypes.models import ContentType
 from django.template import RequestContext, loader, TemplateDoesNotExist
 from django import forms
-from django.utils.encoding import force_unicode
+from django.utils.encoding import force_text
 from django.utils.translation import ugettext_lazy as _
 from django.utils.text import capfirst
 from django.contrib.auth.models import Group
@@ -42,7 +42,7 @@ def handler404(request):
   '''
   messages.add_message(
     request, messages.ERROR,
-    force_unicode(_('Page not found') + ": " + request.prefix + request.get_full_path())
+    force_text(_('Page not found') + ": " + request.prefix + request.get_full_path())
     )
   return HttpResponseRedirect(request.prefix + "/admin/")
 
@@ -101,10 +101,10 @@ def preferences(request):
         if translation.get_language() != newdata['language']:
           translation.activate(newdata['language'])
           request.LANGUAGE_CODE = translation.get_language()
-        messages.add_message(request, messages.INFO, force_unicode(_('Successfully updated preferences')))
+        messages.add_message(request, messages.INFO, force_text(_('Successfully updated preferences')))
       except Exception as e:
         logger.error("Failure updating preferences: %s" % e)
-        messages.add_message(request, messages.ERROR, force_unicode(_('Failure updating preferences')))
+        messages.add_message(request, messages.ERROR, force_text(_('Failure updating preferences')))
   else:
     pref = request.user
     form = PreferencesForm({
@@ -157,7 +157,7 @@ def settings(request):
   if request.method != 'POST' or not request.is_ajax():
     raise Http404('Only ajax post requests allowed')
   try:
-    data = json.loads(request.body)
+    data = json.loads(request.body.decode(request.encoding))
     for key, value in data.items():
       request.user.setPreference(key, value)
     return HttpResponse(content="OK")
@@ -251,7 +251,7 @@ def Comments(request, app, model, object_id):
     return HttpResponseRedirect('%s/comments/%s/%s/%s/' % (request.prefix, app, model, object_id))
   else:
     return render_to_response('common/comments.html', {
-      'title': capfirst(force_unicode(modelinstance._meta.verbose_name) + " " + object_id),
+      'title': capfirst(force_text(modelinstance._meta.verbose_name) + " " + object_id),
       'model': model,
       'object_id': quote(object_id),
       'active_tab': 'comments',

@@ -6,7 +6,7 @@
  *                                                                         *
  ***************************************************************************/
 
-#define FREPPLE_CORE
+#define FREPPLE_STATIC
 #include "frepple/utils.h"
 
 #include <openssl/rsa.h>

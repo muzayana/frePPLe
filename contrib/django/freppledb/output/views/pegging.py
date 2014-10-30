@@ -228,7 +228,7 @@ class ReportByBuffer(GridReport):
   def basequeryset(reportclass, request, args, kwargs):
     # The base query uses different fields than the main query.
     query = FlowPlan.objects.all()
-    for i, j in request.GET.iteritems():
+    for i, j in request.GET.items():
       if i.startswith('thebuffer') or i.startswith('flowdate'):
         try:
           query = query.filter(**{i: unquote(j)})
@@ -309,7 +309,7 @@ class ReportByResource(GridReport):
   def basequeryset(reportclass, request, args, kwargs):
     # The base query uses different fields than the main query.
     query = LoadPlan.objects.all()
-    for i, j in request.GET.iteritems():
+    for i, j in request.GET.items():
       if i.startswith('theresource') or i.startswith('startdate') or i.startswith('enddate'):
         try:
           query = query.filter(**{i: unquote(j)})
@@ -388,7 +388,7 @@ class ReportByOperation(GridReport):
   def basequeryset(reportclass, request, args, kwargs):
     # The base query uses different fields than the main query.
     query = OperationPlan.objects.all()
-    for i, j in request.GET.iteritems():
+    for i, j in request.GET.items():
       if i.startswith('operation') or i.startswith('startdate') or i.startswith('enddate'):
         try:
           query = query.filter(**{i: unquote(j)})

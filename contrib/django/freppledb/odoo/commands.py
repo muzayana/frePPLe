@@ -7,10 +7,8 @@
 # You are not allowed to distribute the software, either in the form of source code
 # or in the form of compiled binaries.
 #
-
-from __future__ import print_function
 import base64
-import mimetools
+import email
 import os
 from datetime import datetime
 try:
@@ -134,7 +132,7 @@ def odoo_write(db=DEFAULT_DB_ALIAS):
   odoo_language = Parameter.getValue("odoo.language", db, 'en_US')
   if not ok:
     raise Exception("Odoo connector not configured correctly")
-  boundary = mimetools.choose_boundary()
+  boundary = email.generator._make_boundary()
 
   # Generator function
   # We generate output in the multipart/form-data format.

@@ -85,7 +85,7 @@ DECLARE_EXPORT void Plan::writeElement (XMLOutput *o, const Keyword& tag, mode m
   Plannable::writeElement(o, tag);
 
   // Persist all categories
-  MetaCategory::persist(o);
+  MetaCategory::persistAll(o);
 
   // Write the tail
   if (m != NOHEADTAIL && m != NOTAIL) o->EndObject(tag);

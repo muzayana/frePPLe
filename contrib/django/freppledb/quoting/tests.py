@@ -7,10 +7,9 @@
 # You are not allowed to distribute the software, either in the form of source code
 # or in the form of compiled binaries.
 #
-from __future__ import print_function
-import httplib
+import http.client
 import os
-import thread
+import _thread
 import time
 from xml.dom import minidom
 from cherrypy.process import servers
@@ -42,7 +41,7 @@ class baseTest(TestCase):
 
     # Start the service asynchronously
     os.environ['FREPPLE_TEST'] = "YES"
-    thread.start_new_thread(baseTest.runService, ())
+    _thread.start_new_thread(baseTest.runService, ())
 
     # Wait till port is occupied
     # This method waits for up to 50 seconds. Hopefully that's enough.
@@ -121,16 +120,16 @@ class apiTest(baseTest):
 
   def testReloadReplan(self):
     # Get original model
-    conn = httplib.HTTPConnection(self.url, timeout=50)
+    conn = http.client.HTTPConnection(self.url, timeout=50)
     conn.request("GET", '/problem/')
     resp = conn.getresponse()
     oldProblems = resp.read()   # Luckily the dataset is small enough...
-    self.assertEqual(resp.status, httplib.OK)
+    self.assertEqual(resp.status, http.client.OK)
     # Reload the input data
     conn.request("GET", '/reload/')
     resp = conn.getresponse()
     resp.read()
-    self.assertEqual(resp.status, httplib.SEE_OTHER)
+    self.assertEqual(resp.status, http.client.SEE_OTHER)
     conn.request("GET", '/problem/')
     resp = conn.getresponse()
     newProblems = resp.read()
@@ -139,65 +138,65 @@ class apiTest(baseTest):
     conn.request("GET", '/replan/')
     resp = conn.getresponse()
     resp.read()
-    self.assertEqual(resp.status, httplib.SEE_OTHER)
+    self.assertEqual(resp.status, http.client.SEE_OTHER)
     conn.request("GET", '/problem/')
     resp = conn.getresponse()
     newProblems = resp.read()
     self.assertEqual(newProblems, oldProblems, "Replanning doesn't give the same results")
 
   def testURLs(self):
-    conn = httplib.HTTPConnection(self.url)
+    conn = http.client.HTTPConnection(self.url)
     conn.request("GET", '/')
     resp = conn.getresponse()
-    self.assertEqual(resp.status, httplib.OK)
+    self.assertEqual(resp.status, http.client.OK)
     self.assertTrue(resp.read())
     conn.request("GET", '/main/')
     resp = conn.getresponse()
-    self.assertEqual(resp.status, httplib.OK)
+    self.assertEqual(resp.status, http.client.OK)
     self.assertTrue(resp.read())
     conn.request("GET", '/customer/')
     resp = conn.getresponse()
-    self.assertEqual(resp.status, httplib.OK)
+    self.assertEqual(resp.status, http.client.OK)
     self.assertTrue(resp.read())
     conn.request("GET", '/buffer/')
     resp = conn.getresponse()
-    self.assertEqual(resp.status, httplib.OK)
+    self.assertEqual(resp.status, http.client.OK)
     self.assertTrue(resp.read())
     conn.request("GET", '/resource/')
     resp = conn.getresponse()
-    self.assertEqual(resp.status, httplib.OK)
+    self.assertEqual(resp.status, http.client.OK)
     self.assertTrue(resp.read())
     conn.request("GET", '/location/')
     resp = conn.getresponse()
-    self.assertEqual(resp.status, httplib.OK)
+    self.assertEqual(resp.status, http.client.OK)
     self.assertTrue(resp.read())
     conn.request("GET", '/item/')
     resp = conn.getresponse()
-    self.assertEqual(resp.status, httplib.OK)
+    self.assertEqual(resp.status, http.client.OK)
     self.assertTrue(resp.read())
     conn.request("GET", '/flow/')
     resp = conn.getresponse()
-    self.assertEqual(resp.status, httplib.OK)
+    self.assertEqual(resp.status, http.client.OK)
     self.assertTrue(resp.read())
     conn.request("GET", '/load/')
     resp = conn.getresponse()
-    self.assertEqual(resp.status, httplib.OK)
+    self.assertEqual(resp.status, http.client.OK)
     self.assertTrue(resp.read())
     conn.request("GET", '/calendar/')
     resp = conn.getresponse()
-    self.assertEqual(resp.status, httplib.OK)
+    self.assertEqual(resp.status, http.client.OK)
     self.assertTrue(resp.read())
     conn.request("GET", '/operation/')
     resp = conn.getresponse()
-    self.assertEqual(resp.status, httplib.OK)
+    self.assertEqual(resp.status, http.client.OK)
     self.assertTrue(resp.read())
     conn.request("GET", '/problem/')
     resp = conn.getresponse()
-    self.assertEqual(resp.status, httplib.OK)
+    self.assertEqual(resp.status, http.client.OK)
     self.assertTrue(resp.read())
     conn.request("GET", '/setupmatrix/')
     resp = conn.getresponse()
-    self.assertEqual(resp.status, httplib.OK)
+    self.assertEqual(resp.status, http.client.OK)
     self.assertTrue(resp.read())
 
 
@@ -207,7 +206,7 @@ class quoteAndInquiry(baseTest):
 
   def testQuoteAndInquiry(self):
     # Send a first inquiry
-    conn = httplib.HTTPConnection(self.url)
+    conn = http.client.HTTPConnection(self.url)
     (msg1, headers1) = self.buildQuoteXML(
       name="test", customer="Customer near factory 1",
       quantity=100, item="product",
@@ -215,20 +214,20 @@ class quoteAndInquiry(baseTest):
       )
     conn.request("POST", "/inquiry/", msg1, headers1)
     resp = conn.getresponse()
-    self.assertEqual(resp.status, httplib.OK)
+    self.assertEqual(resp.status, http.client.OK)
     firstInquiry = self.parseQuoteResponse(resp.read())
 
     # Repeat the first inquiry
     conn.request("POST", "/inquiry/", msg1, headers1)
     resp = conn.getresponse()
-    self.assertEqual(resp.status, httplib.OK)
+    self.assertEqual(resp.status, http.client.OK)
     firstInquiryDouble = self.parseQuoteResponse(resp.read())
     self.assertEqual(firstInquiry, firstInquiryDouble, "Resending a inquiry should return the same result")
 
     # Send a first quote
     conn.request("POST", "/quote/", msg1, headers1)
     resp = conn.getresponse()
-    self.assertEqual(resp.status, httplib.OK)
+    self.assertEqual(resp.status, http.client.OK)
     firstQuote = self.parseQuoteResponse(resp.read())
     self.assertEqual(firstInquiry, firstQuote, "Inquiry and quote should return the same result")
 
@@ -240,13 +239,13 @@ class quoteAndInquiry(baseTest):
       )
     conn.request("POST", "/inquiry/", msg2, headers2)
     resp = conn.getresponse()
-    self.assertEqual(resp.status, httplib.OK)
+    self.assertEqual(resp.status, http.client.OK)
     secondInquiry = self.parseQuoteResponse(resp.read())
 
     # Send a second quote
     conn.request("POST", "/quote/", msg2, headers2)
     resp = conn.getresponse()
-    self.assertEqual(resp.status, httplib.OK)
+    self.assertEqual(resp.status, http.client.OK)
     secondQuote = self.parseQuoteResponse(resp.read())
     self.assertEqual(secondInquiry, secondQuote, "Inquiry and quote should return the same result")
     self.assertNotEqual(firstQuote, secondQuote, "Expected a different quote")
@@ -258,7 +257,7 @@ class requoteTest(baseTest):
 
   def testRequote(self):
     # Send a quote
-    conn = httplib.HTTPConnection(self.url)
+    conn = http.client.HTTPConnection(self.url)
     (msg, headers) = self.buildQuoteXML(
       name="test", customer="Customer near factory 1",
       quantity=100, item="product",
@@ -266,18 +265,18 @@ class requoteTest(baseTest):
       )
     conn.request("POST", "/quote/", msg, headers)
     resp = conn.getresponse()
-    self.assertEqual(resp.status, httplib.OK)
+    self.assertEqual(resp.status, http.client.OK)
     firstQuote = self.parseQuoteResponse(resp.read())
 
     # Cancel the quote
     conn.request("POST", '/demand/test/?action=R&persist=1', "", {"content-length": 0})
     resp = conn.getresponse()
-    self.assertEqual(resp.status, httplib.OK)
+    self.assertEqual(resp.status, http.client.OK)
     resp.read()
 
     # Resend the quote
     conn.request("POST", "/quote/", msg, headers)
     resp = conn.getresponse()
-    self.assertEqual(resp.status, httplib.OK)
+    self.assertEqual(resp.status, http.client.OK)
     secondQuote = self.parseQuoteResponse(resp.read())
     self.assertEqual(firstQuote, secondQuote, "Expecting the repeated quote to be identical to the original")

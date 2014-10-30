@@ -7,14 +7,12 @@
 # You are not allowed to distribute the software, either in the form of source code
 # or in the form of compiled binaries.
 #
-
-from __future__ import print_function
 from optparse import make_option
 import base64
 from datetime import datetime, timedelta, date
 from time import time
 from xml.etree.cElementTree import iterparse
-import httplib
+import http.client
 import urllib
 from StringIO import StringIO  # Note cStringIO doesn't handle unicode
 
@@ -201,7 +199,7 @@ class Command(BaseCommand):
 
   def get_data(self, url):
     # Send the request
-    webservice = httplib.HTTP(self.openbravo_host)
+    webservice = http.client.HTTP(self.openbravo_host)
     webservice.putrequest("GET", url)
     webservice.putheader("Host", self.openbravo_host)
     webservice.putheader("User-Agent", "frePPLe-Openbravo connector")
@@ -213,7 +211,7 @@ class Command(BaseCommand):
 
     # Get the response
     statuscode, statusmessage, header = webservice.getreply()
-    if statuscode != httplib.OK:
+    if statuscode != http.client.OK:
       raise Exception(statusmessage)
     if self.verbosity > 2:
       res = webservice.getfile().read()
@@ -337,7 +335,7 @@ class Command(BaseCommand):
         )
 
       # Delete records
-      delete = [ (i,) for i, j in unused_keys.iteritems() if j ]
+      delete = [ (i,) for i, j in unused_keys.items() if j ]
       cursor.executemany(
         'update customer set owner_id=null where owner_id=%s',
         delete
@@ -445,7 +443,7 @@ class Command(BaseCommand):
         )
 
       # Delete inactive items
-      delete = [ (i,) for i, j in unused_keys.iteritems() if j ]
+      delete = [ (i,) for i, j in unused_keys.items() if j ]
       cursor.executemany("delete from demand where item_id=%s", delete)
       cursor.executemany(
         "delete from flow \
@@ -543,7 +541,7 @@ class Command(BaseCommand):
         print ('')
 
       # Remove deleted or inactive locations
-      delete = [ (i,) for i, j in unused_keys.iteritems() if j ]
+      delete = [ (i,) for i, j in unused_keys.items() if j ]
       cursor.executemany(
         "update buffer \
         set location_id=null \
@@ -1030,19 +1028,19 @@ class Command(BaseCommand):
         "update buffer \
         set producing_id=null \
         where producing_id=%s",
-        [ (i,) for i, j in unused_keys.iteritems() if j ]
+        [ (i,) for i, j in unused_keys.items() if j ]
         )
       cursor.executemany(
         "delete from flow \
         where operation_id=%s \
         and not exists (select 1 from operationplan where operation_id=flow.operation_id)",
-        [ (i,) for i, j in unused_keys.iteritems() if j ]
+        [ (i,) for i, j in unused_keys.items() if j ]
         )
       cursor.executemany(
         "delete from operation \
         where name=%s \
         and not exists (select 1 from operationplan where operation_id=operation.name)",
-        [ (i,) for i, j in unused_keys.iteritems() if j ]
+        [ (i,) for i, j in unused_keys.items() if j ]
         )
 
       # Create or update purchasing operations
@@ -1464,7 +1462,7 @@ class Command(BaseCommand):
         "insert into flow \
           (operation_id,thebuffer_id,type,quantity,source,lastmodified) \
           values(%%s,%%s,%%s,%%s,'openbravo','%s')" % self.date,
-        [ (i[0], i[1], i[2], j) for i, j in flows.iteritems() ]
+        [ (i[0], i[1], i[2], j) for i, j in flows.items() ]
         )
 
       transaction.commit(using=self.database)
@@ -1668,7 +1666,7 @@ class Command(BaseCommand):
         "insert into flow \
           (operation_id,thebuffer_id,type,quantity,source,lastmodified) \
           values(%%s,%%s,%%s,%%s,'openbravo','%s')" % self.date,
-        [ (i[0], i[1], i[2], j) for i, j in flows.iteritems() ]
+        [ (i[0], i[1], i[2], j) for i, j in flows.items() ]
         )
       cursor.executemany(
         "insert into resourceload \

@@ -414,8 +414,7 @@ DECLARE_EXPORT PyObject* SolverMRP::solve(PyObject *self, PyObject *args)
     {
       // Incrementally plan a single demand
       sol->setAutocommit(false);
-      sol->commands.sol = sol;
-      static_cast<Demand*>(dem)->solve(*sol, &(sol->commands));
+      static_cast<Demand*>(dem)->solve(*sol, &(sol->getCommands()));
     }
   }
   catch(...)
