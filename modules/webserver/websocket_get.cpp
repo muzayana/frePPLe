@@ -167,6 +167,7 @@ int WebServer::websocket_solve(struct mg_connection *conn, int bits,
     SolverMRP solver("MRP");
     solver.setConstraints(15);
     // TODO pick up plan type arguments from the command
+    // TODO During this planning no other users should connect or use the planboard
     // Plan types:
     // - 1: Constrained plan.<br>
     // - 2: Unconstrained plan with alternate search.<br>

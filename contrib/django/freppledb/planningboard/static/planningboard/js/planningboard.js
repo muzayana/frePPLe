@@ -1,7 +1,7 @@
 
 var socket = null;
 var curState = 'closed';    // Possible states: closed, connecting, open, disconnecting
-var rowindex = 0;
+
 
 function connect(url, callback)
 {
@@ -59,12 +59,33 @@ function customize()
        buttons: [{
          text: gettext("OK"),
          click: function() {
-           ganttRows = [];
+           var new_ganttRows = {};
+           numRows = 0;
            $("#entities option:selected").each(function() {
-             send("/plan/" + this.value);
              send("/register/" + this.value);
-             ganttRows.push(this.value);
+             if (this.value in ganttRows)
+             {
+               if (ganttRows[this.value].svg !== null)
+                 // Move existing row to a new position
+                 ganttRows[this.value].svg.attr("transform", "translate(0," + (numRows*rowheight) + ")");
+               new_ganttRows[this.value] = {"index": numRows++, "svg": ganttRows[this.value].svg};
+               delete ganttRows[this.value];
+             }
+             else
+             {
+               // Ask the plan for new entities
+               new_ganttRows[this.value] = {"index": numRows++, "svg": null};
+               send("/plan/" + this.value);
+             }
            });
+           for (var i in ganttRows)
+           {
+             // Unregister unselected entities
+             send("/unregister/" + i);
+             if (ganttRows[i].svg !== null)
+               ganttRows[i].svg.remove();
+           }
+           ganttRows = new_ganttRows;
            $(this).dialog("close");
            }
          },
@@ -131,13 +152,12 @@ function displayList(xmldoc)
 function displayPlan(xmldoc)
 {
   width = $("#ganttdiv").width() - 24;
-  height = ganttRows.length * rowheight;
+  height = numRows * rowheight;
   $('#ganttdiv').resizable('option', 'maxHeight', height + 10);
   svg = d3.select("#gantt")
     .attr("width", width)
     .attr("height", height);
-  svg.selectAll("*").remove();
-  rowindex = 0;
+
   // Create a scale for the x-axis and the y-axis
   x = d3.time.scale()
     .domain([horizonstart, horizonend])
@@ -150,17 +170,17 @@ function displayPlan(xmldoc)
 
   // Display the operations
   $(xmldoc).find('operations').children().each(function() {
-    displayOperation(this, rowindex++);
+    displayOperation(this);
   });
 
   // Display the resources
   $(xmldoc).find('resources').children().each(function() {
-    displayResource(this, rowindex++);
+    displayResource(this);
   });
 
   // Display the buffers
   $(xmldoc).find('buffers').children().each(function() {
-    displayBuffer(this, rowindex++);
+    displayBuffer(this);
     });
 }
 
@@ -173,10 +193,15 @@ function dragmove(d)
 }
 
 
-function displayOperation(xml, indx)
+function displayOperation(xml)
 {
-  // Parse XML data
+  // Look up the row to display the information at
   var res = $(xml).attr('name');
+  var indx = ganttRows['operation/' + res].index;
+  if (indx === undefined)
+    return; // Operation not to be shown at all
+
+  // Parse XML data
   var data = [];
   var layer = [];
   $(xml).find('operationplan').each(function() {
@@ -202,9 +227,20 @@ function displayOperation(xml, indx)
       ]);
     });
 
+  // Find existing svg row or create a new one
+  if (ganttRows['operation/' + res].svg !== null)
+  {
+    var mysvg = ganttRows['operation/' + res].svg;
+    mysvg.selectAll("*").remove();
+  }
+  else
+  {
+    var mysvg = svg.append("g")
+      .attr("transform", "translate(0," + (indx*rowheight) + ")");
+    ganttRows['operation/' + res].svg = mysvg;
+  }
+
   // Draw Gantt chart
-  var mysvg = svg.append("g")
-    .attr("transform", "translate(0," + (indx*rowheight) + ")");
   mysvg.append("line")
     .attr("width", width)
     .attr("height", 200)
@@ -249,8 +285,13 @@ function displayOperation(xml, indx)
 
 function displayResource(xml, indx)
 {
-  // Parse XML data
+  // Look up the row to display the information at
   var res = $(xml).attr('name');
+  var indx = ganttRows['resource/' + res].index;
+  if (indx === undefined)
+    return; // Resource not to be shown at all
+
+  // Parse XML data
   var data = [];
   var layer = [];
   $(xml).find('loadplan').each(function() {
@@ -278,8 +319,20 @@ function displayResource(xml, indx)
       }
     });
 
+  // Find existing svg row or create a new one
+  if (ganttRows['resource/' + res].svg !== null)
+  {
+    var mysvg = ganttRows['resource/' + res].svg;
+    mysvg.selectAll("*").remove();
+  }
+  else
+  {
+    var mysvg = svg.append("g")
+      .attr("transform", "translate(0," + (indx*rowheight) + ")");
+    ganttRows['resource/' + res].svg = mysvg;
+  }
+
   // Draw Gantt chart
-  var mysvg = svg.append("g").attr("transform", "translate(0," + (indx*rowheight) + ")");
   mysvg.append("line")
     .attr("width", width)
     .attr("height", 200)
@@ -324,8 +377,13 @@ function displayResource(xml, indx)
 
 function displayBuffer(xml, indx)
 {
-  // Parse XML data
+  // Look up the row to display the information at
   var res = $(xml).attr('name');
+  var indx = ganttRows['buffer/' + res].index;
+  if (indx === undefined)
+    return; // Buffer not to be shown at all
+
+  // Parse XML data
   var data = [];
   var min_oh = 0;
   var max_oh = 0;
@@ -344,8 +402,20 @@ function displayBuffer(xml, indx)
       max_oh = oh;
     });
 
+  // Find existing svg row or create a new one
+  if (ganttRows['buffer/' + res].svg !== null)
+  {
+    var mysvg = ganttRows['buffer/' + res].svg;
+    mysvg.selectAll("*").remove();
+  }
+  else
+  {
+    var mysvg = svg.append("g")
+      .attr("transform", "translate(0," + (indx*rowheight) + ")");
+    ganttRows['buffer/' + res].svg = mysvg;
+  }
+
   // Draw Gantt chart
-  var mysvg = svg.append("g").attr("transform", "translate(0," + (indx*rowheight) + ")");
   mysvg.append("line")
     .attr("width", width)
     .attr("height", 200)

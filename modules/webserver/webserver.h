@@ -297,6 +297,7 @@ Publisher<Operation>;
 /** Subscription link between a web client and a publisher. */
 class Subscription : public Association<PublisherBase,WebClient,Subscription>::Node
 {
+  // TODO the subscription should store extra information, such as "row number", "format", "height", ... Or just a json-string with attributes? Or leave this to the database/python layer?
   public:
     /** Constructor. */
     Subscription(WebClient* w, PublisherBase* p, string n)

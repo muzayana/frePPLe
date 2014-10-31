@@ -17,7 +17,9 @@ var viewstart = new Date(2014,1-1,1);
 var viewend = new Date(2014,7-1,1);
 var delta = (viewend.getTime() - viewstart.getTime()) / 86400000.0;
 
-var ganttRows = [];
+var ganttRows = {}; // Rows configured to be shown.
+var numRows = 0;
+var curRows = {}; // TODO Currently displayed rows. Once configured there will be some delay between config and actual display.
 var rowheight = 50;
 
 var x = d3.time.scale().domain([horizonstart, horizonend]);
