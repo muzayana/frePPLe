@@ -28,7 +28,7 @@ bool WebServer::handleGet(CivetServer *server, struct mg_connection *conn)
     mg_printf(conn, "<plan xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n");
     XMLOutputString o;
     MetaCategory::persistAll(&o);
-    mg_printf(conn, o.getData().c_str());
+    mg_printf(conn, "%s", o.getData().c_str());
     mg_printf(conn, "</plan>\n");
     return true;
   }
@@ -55,7 +55,7 @@ bool WebServer::handleGet(CivetServer *server, struct mg_connection *conn)
     mg_printf(conn, "<plan xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n");
     XMLOutputString o;
     cat->persist(&o);
-    mg_printf(conn, o.getData().c_str());
+    mg_printf(conn, "%s", o.getData().c_str());
     mg_printf(conn, "</plan>\n");
     return true;
   }

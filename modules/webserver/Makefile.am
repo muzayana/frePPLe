@@ -2,7 +2,7 @@
 # Process this file with automake to produce Makefile.in md5.inl
 #
 
-EXTRA_DIST = CivetServer.h civetweb.h webserver.h
+EXTRA_DIST = CivetServer.h civetweb.h webserver.h md5.inl
 
 CLEANFILES = *.gcda *.gcov *.gcno
 
