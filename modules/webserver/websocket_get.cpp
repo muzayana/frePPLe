@@ -19,7 +19,6 @@ namespace module_webserver
 int WebServer::websocket_get(struct mg_connection *conn, int bits,
   char *data, size_t data_len, WebClient* clnt)
 {
-  mg_lock_connection(conn);
   XMLOutputString o;
   o.writeHeader(Tags::tag_plan, Tags::tag_category, "name");
 
@@ -65,7 +64,6 @@ int WebServer::websocket_get(struct mg_connection *conn, int bits,
   }
   o.EndObject(Tags::tag_plan);
   mg_websocket_write( conn, WEBSOCKET_OPCODE_TEXT, o.getData().c_str(), o.getData().size() );
-  mg_unlock_connection(conn);
   return 1;
 }
 
@@ -73,7 +71,6 @@ int WebServer::websocket_get(struct mg_connection *conn, int bits,
 int WebServer::websocket_plan(struct mg_connection *conn, int bits,
   char *data, size_t data_len, WebClient* clnt)
 {
-  mg_lock_connection(conn);
   XMLOutputString o;
   bool ok = true;
   o.setReferencesOnly(true);
@@ -144,7 +141,6 @@ int WebServer::websocket_plan(struct mg_connection *conn, int bits,
     o.EndObject(Tags::tag_plan);
     mg_websocket_write( conn, WEBSOCKET_OPCODE_TEXT, o.getData().c_str(), o.getData().size() );
   }
-  mg_unlock_connection(conn);
   return 1;
 }
 
@@ -152,7 +148,6 @@ int WebServer::websocket_plan(struct mg_connection *conn, int bits,
 int WebServer::websocket_solve(struct mg_connection *conn, int bits,
   char *data, size_t data_len, WebClient* clnt)
 {
-  mg_lock_connection(conn);
   if (!strncmp(data+7, "erase/", 6))
   {
     // Erase the previous plan
@@ -282,15 +277,11 @@ int WebServer::websocket_solve(struct mg_connection *conn, int bits,
       o.EndObject(Tags::tag_demands);
     if (o.getData().size())
     {
-      if (i->first != conn) mg_lock_connection(i->first);
       o.EndObject(Tags::tag_plan);
-      mg_websocket_write( conn, WEBSOCKET_OPCODE_TEXT, o.getData().c_str(), o.getData().size() );
-      if (i->first != conn) mg_unlock_connection(i->first);
+      mg_websocket_write( i->first, WEBSOCKET_OPCODE_TEXT, o.getData().c_str(), o.getData().size() );
     }
   }
   WebClient::unlock();
-
-  mg_unlock_connection(conn);
   return 1;
 }
 
