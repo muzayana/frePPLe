@@ -248,7 +248,7 @@ template <class T> class Publisher : public PublisherBase
       if (!d) return;
 
       // Find or create a publisher
-      objectmap::iterator i = objects.find(d);
+      typename objectmap::iterator i = objects.find(d);
       Publisher<T> *pub = NULL;
       if (i == objects.end())
       {
@@ -274,7 +274,7 @@ template <class T> class Publisher : public PublisherBase
       if (!d) return;
 
       // Find the publisher
-      objectmap::iterator i = objects.find(d);
+      typename objectmap::iterator i = objects.find(d);
       if (i == objects.end()) return;
 
       // Remove subscription
@@ -285,13 +285,6 @@ template <class T> class Publisher : public PublisherBase
       if (unregistrationHook) unregistrationHook.call(d);
     }
 };
-
-
-/** Instantiantiations of the above template. */
-Publisher<Resource>;
-Publisher<Buffer>;
-Publisher<Demand>;
-Publisher<Operation>;
 
 
 /** Subscription link between a web client and a publisher. */

@@ -27,10 +27,10 @@ string WebClient::secret_key;
 PythonFunction PublisherBase::registrationHook;
 PythonFunction PublisherBase::unregistrationHook;
 
-Publisher<Resource>::objectmap Publisher<Resource>::objects;
-Publisher<Buffer>::objectmap Publisher<Buffer>::objects;
-Publisher<Demand>::objectmap Publisher<Demand>::objects;
-Publisher<Operation>::objectmap Publisher<Operation>::objects;
+template<> typename Publisher<Resource>::objectmap Publisher<Resource>::objects;
+template<> typename Publisher<Buffer>::objectmap Publisher<Buffer>::objects;
+template<> typename Publisher<Demand>::objectmap Publisher<Demand>::objects;
+template<> typename Publisher<Operation>::objectmap Publisher<Operation>::objects;
 
 
 bool WebClient::authenticate(const struct mg_connection* conn)
