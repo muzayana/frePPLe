@@ -19,11 +19,7 @@ namespace module_webserver
 PythonFunction PublisherBase::registrationHook;
 PythonFunction PublisherBase::unregistrationHook;
 
-template<> typename Publisher<Resource>::objectmap Publisher<Resource>::objects;
-template<> typename Publisher<Buffer>::objectmap Publisher<Buffer>::objects;
-template<> typename Publisher<Demand>::objectmap Publisher<Demand>::objects;
-template<> typename Publisher<Operation>::objectmap Publisher<Operation>::objects;
-
+template<class T> map<T*, Publisher<T> > Publisher<T>::objects;
 
 PyObject* runWebServer (PyObject* self, PyObject* args, PyObject* kwds)
 {
