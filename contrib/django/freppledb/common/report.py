@@ -475,12 +475,15 @@ class GridReport(View):
     count = -1
     for (index, hidden, width) in rows:
       count += 1
-      result.append(u"{%s,width:%s,counter:%d%s%s%s,searchoptions:{searchhidden: true}}" % (
-         cls.rows[index], width, index,
-         count < frozencolumns and ',frozen:true' or '',
-         is_popup and ',popup:true' or '',
-         hidden and not cls.rows[index].hidden and ',hidden:true' or ''
-         ))
+      try:
+        result.append(u"{%s,width:%s,counter:%d%s%s%s,searchoptions:{searchhidden: true}}" % (
+           cls.rows[index], width, index,
+           count < frozencolumns and ',frozen:true' or '',
+           is_popup and ',popup:true' or '',
+           hidden and not cls.rows[index].hidden and ',hidden:true' or ''
+           ))
+      except IndexError:
+        logger.warning('Invalid preference value for %s: %s' % (cls.getKey(), prefs))
     return ',\n'.join(result)
 
 
@@ -494,12 +497,13 @@ class GridReport(View):
     # Choose fields to export and write the title row
     prefs = request.user.getPreference(reportclass.getKey())
     if prefs:
+      prefs = prefs.get('rows', None)
+    if prefs:
       # Customized settings
-      prefs = prefs['rows']
       fields = [
         reportclass.rows[f[0]]
         for f in prefs
-        if not f[1] and not reportclass.rows[f[0]].hidden
+        if not f[1] and f[0] < len(reportclass.rows) and not reportclass.rows[f[0]].hidden
         ]
     else:
       # Default settings
@@ -550,14 +554,30 @@ class GridReport(View):
     # Choose fields to export
     prefs = request.user.getPreference(reportclass.getKey())
     if prefs:
+      prefs = prefs.get('rows', None)
+    if prefs:
       # Customized settings
-      prefs = prefs['rows']
-      writer.writerow([ force_unicode(reportclass.rows[f[0]].title).title().encode(encoding, "ignore") for f in prefs if not f[1] and not reportclass.rows[f[0]].hidden ])
-      fields = [ reportclass.rows[f[0]].field_name for f in prefs if not f[1] and not reportclass.rows[f[0]].hidden ]
+      writer.writerow([
+        force_unicode(reportclass.rows[f[0]].title).title().encode(encoding, "ignore")
+        for f in prefs
+        if not f[1] and f[0] < len(reportclass.rows) and not reportclass.rows[f[0]].hidden
+        ])
+      fields = [
+        reportclass.rows[f[0]].field_name
+        for f in prefs
+        if not f[1] and f[0] < len(reportclass.rows) and not reportclass.rows[f[0]].hidden ]
     else:
       # Default settings
-      writer.writerow([ force_unicode(f.title).title().encode(encoding, "ignore") for f in reportclass.rows if f.title and not f.hidden ])
-      fields = [ i.field_name for i in reportclass.rows if i.field_name and not i.hidden ]
+      writer.writerow([
+        force_unicode(f.title).title().encode(encoding, "ignore")
+        for f in reportclass.rows
+        if f.title and not f.hidden
+        ])
+      fields = [
+        i.field_name
+        for i in reportclass.rows
+        if i.field_name and not i.hidden
+        ]
 
     # Write a header row
     yield sf.getvalue()
@@ -1484,10 +1504,11 @@ class GridPivot(GridReport):
 
   @classmethod
   def _render_colmodel(cls, is_popup=False, prefs=None, mode="graph"):
-    if not prefs:
-      rows = [ (i, False, cls.rows[i].width) for i in range(len(cls.rows)) ]
-    else:
+    if prefs and 'rows' in prefs:
       rows = prefs['rows']
+    else:
+      rows = [ (i, False, cls.rows[i].width) for i in range(len(cls.rows)) ]
+
     result = []
     if is_popup:
       result.append("{name:'select',label:gettext('Select'),width:75,align:'center',sortable:false,search:false,fixed:true}")
@@ -1641,7 +1662,11 @@ class GridPivot(GridReport):
     # Pick up the preferences
     prefs = request.user.getPreference(reportclass.getKey())
     if prefs and 'rows' in prefs:
-      myrows = [ reportclass.rows[f[0]] for f in prefs['rows'] if not f[1] and not reportclass.rows[f[0]].hidden ]
+      myrows = [
+        reportclass.rows[f[0]]
+        for f in prefs['rows']
+        if not f[1] and f[0] < len(reportclass.rows) and not reportclass.rows[f[0]].hidden
+        ]
     else:
       myrows = [ f for f in reportclass.rows if f.name and not f.hidden ]
     if prefs and 'crosses' in prefs:
@@ -1754,7 +1779,11 @@ class GridPivot(GridReport):
     # Pick up the preferences
     prefs = request.user.getPreference(reportclass.getKey())
     if prefs and 'rows' in prefs:
-      myrows = [ reportclass.rows[f[0]] for f in prefs['rows'] if not f[1] and not reportclass.rows[f[0]].hidden ]
+      myrows = [
+        reportclass.rows[f[0]]
+        for f in prefs['rows']
+        if not f[1] and f[0] in reportclass and not reportclass.rows[f[0]].hidden
+        ]
     else:
       myrows = [ f for f in reportclass.rows if f.name and not f.hidden ]
     if prefs and 'crosses' in prefs:
