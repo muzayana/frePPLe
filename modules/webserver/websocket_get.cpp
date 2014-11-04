@@ -155,10 +155,10 @@ int WebServer::websocket_solve(struct mg_connection *conn, int bits,
     for (Operation::iterator e=Operation::begin(); e!=Operation::end(); ++e)
       e->deleteOperationPlans();
   }
-  else if (!strncmp(data+7, "replan/", 7))
+  else if (!strncmp(data+7, "replan/backward/", 15))
   {
     // Regenerate the plan
-    logger << "Regenerating the plan" << endl;
+    logger << "Completing the plan in backward planning mode" << endl;
     SolverMRP solver("MRP");
     solver.setConstraints(15);
     // TODO pick up plan type arguments from the command
@@ -169,15 +169,57 @@ int WebServer::websocket_solve(struct mg_connection *conn, int bits,
     // - 3: Unconstrained plan without alternate search.<br>
     solver.setPlanType(1);
     solver.setLogLevel(1);
+    solver.setErasePreviousFirst(false);
     solver.solve();
   }
-  else if (!strncmp(data+7, "demand/", 7))
+  else if (!strncmp(data+7, "replan/forward/", 14))
   {
-    string name(data+14);
+    // Regenerate the plan
+    logger << "Completing the plan in backward planning mode" << endl;
+    TimePeriod delta(86400L * 3650L);
+    for (Demand::iterator it = Demand::begin(); it != Demand::end(); ++it)
+      it->setDue(it->getDue() - delta);
+    SolverMRP solver("MRP");
+    solver.setConstraints(15);
+    // TODO pick up plan type arguments from the command
+    // TODO During this planning no other users should connect or use the planboard
+    // Plan types:
+    // - 1: Constrained plan.<br>
+    // - 2: Unconstrained plan with alternate search.<br>
+    // - 3: Unconstrained plan without alternate search.<br>
+    solver.setPlanType(1);
+    solver.setLogLevel(1);
+    solver.setErasePreviousFirst(false);
+    solver.solve();
+    for (Demand::iterator it = Demand::begin(); it != Demand::end(); ++it)
+      it->setDue(it->getDue() + delta);
+  }
+  else if (!strncmp(data+7, "demand/backward/", 16))
+  {
+    string name(data+23);
     Demand *dem = Demand::find(name);
     if (dem)
     {
-      logger << "Planning demand '" << name << "'" << endl;
+      logger << "Planning demand '" << name << "' in backward mode" << endl;
+      // Remove existing plan
+      OperatorDelete unplan("Unplan");
+      unplan.solve(dem);
+      // Create new plan
+      SolverMRP solver("MRP");
+      solver.setConstraints(15);
+      solver.setPlanType(1);
+      dem->solve(solver);
+    }
+  }
+  else if (!strncmp(data+7, "demand/forward/", 15))
+  {
+    string name(data+22);
+    Demand *dem = Demand::find(name);
+    if (dem)
+    {
+      logger << "Planning demand '" << name << "' in forward mode" << endl;
+      TimePeriod delta(86400L * 3650L);
+      dem->setDue(dem->getDue() - delta);
       // Remove existing plan
       OperatorDelete unplan("Unplan");
       unplan.solve(dem);
@@ -186,6 +228,7 @@ int WebServer::websocket_solve(struct mg_connection *conn, int bits,
       solver.setConstraints(15);
       solver.setPlanType(1);
       dem->solve(solver, &solver.getCommands());
+      dem->setDue(dem->getDue() + delta);
     }
   }
   else if (!strncmp(data+7, "unplan/", 7))

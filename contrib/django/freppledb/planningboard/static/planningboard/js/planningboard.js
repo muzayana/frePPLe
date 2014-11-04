@@ -125,9 +125,11 @@ function displayList(xmldoc)
   var el = $("#demandlist");
   el.html("");
   $(xmldoc).find('demand').each(function() {
-    el.append('&nbsp;&nbsp;' + $(this).attr('name') +
-      '&nbsp;&nbsp;<span onclick="send(\'/solve/unplan/' + $(this).attr('name') + '\')" title="Unplan the demand" class="fa fa-step-backward"></span>' +
-      '&nbsp;&nbsp;<span onclick="send(\'/solve/demand/' + $(this).attr('name') + '\')" title="Plan the demand" class="fa fa-step-forward"></span><br/>'
+    el.append('&nbsp;&nbsp;' +
+      '<span onclick="send(\'/solve/unplan/' + $(this).attr('name') + '\')" title="Unplan the demand" class="fa fa-stop"></span>' +
+      '&nbsp;&nbsp;<span onclick="send(\'/solve/demand/backward/' + $(this).attr('name') + '\')" title="Plan backward from the due date" class="fa fa-backward"></span>' +
+      '&nbsp;&nbsp;<span onclick="send(\'/solve/demand/forward/' + $(this).attr('name') + '\')" title="Plan forward from the current date" class="fa fa-forward"></span>&nbsp;&nbsp;' +
+      $(this).attr('name') + '<br/>'
       );
   });
 

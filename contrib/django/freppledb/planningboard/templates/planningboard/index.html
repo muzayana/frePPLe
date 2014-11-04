@@ -7,6 +7,13 @@
 {% include "operationcontext.html" %}
 {% endblock %}
 {% block extrahead %}{{block.super}}
+<style type="text/css">
+#gantt line {
+   fill: none;
+   stroke: #000;
+   shape-rendering: crispEdges;
+ }
+</style>
 <script type="text/javascript" src="{{STATIC_URL}}js/d3.min.js"></script>
 <script type="text/javascript" src="{{STATIC_URL}}planningboard/js/planningboard.js"></script>
 <script type="text/javascript">
@@ -66,8 +73,9 @@ $(function() {
   </ul>
   <div id="unplanned">
     <div style="float: right">
-    <span onclick="send('/solve/erase/')" title="{% trans 'Clear the plan'|escape %}" class="fa fa-fast-backward fa-lg"></span>
-    <span onclick="send('/solve/replan/')" title="{% trans 'Replan all demands'|escape %}" class="fa fa-fast-forward fa-lg"></span>
+    <span onclick="send('/solve/erase/')" title="{% trans 'Clear the plan'|escape %}" class="fa fa-stop fa-lg"></span>
+    <span onclick="send('/solve/replan/backward/')" title="{% trans 'Plan unplanned demands backward from their due date'|escape %}" class="fa fa-fast-backward fa-lg"></span>
+    <span onclick="send('/solve/replan/forward/')" title="{% trans 'Plan unplanned demands forward from the current date'|escape %}" class="fa fa-fast-forward fa-lg"></span>
     </div>
     <div id="demandlist"></div>
   </div>

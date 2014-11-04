@@ -296,7 +296,7 @@ class SolverMRP : public Solver
     DECLARE_EXPORT SolverMRP(const string& n) : Solver(n), constrts(15),
       allowSplits(true), plantype(1), lazydelay(86400L),
       iteration_threshold(1), iteration_accuracy(0.01), iteration_max(0),
-      autocommit(true), planSafetyStockFirst(false)
+      autocommit(true), planSafetyStockFirst(false), erasePreviousFirst(true)
     {
       initType(metadata);
       commands.sol = this;
@@ -540,6 +540,10 @@ class SolverMRP : public Solver
 
     void setPlanSafetyStockFirst(bool b) {planSafetyStockFirst = b;}
 
+    bool getErasePreviousFirst() const {return erasePreviousFirst;}
+
+    void setErasePreviousFirst(bool b) {erasePreviousFirst= b;}
+
   private:
     typedef vector< deque<Demand*> > classified_demand;
     typedef classified_demand::iterator cluster_iterator;
@@ -626,6 +630,9 @@ class SolverMRP : public Solver
       *    stock level.
       */
     bool planSafetyStockFirst;
+
+    /** Flag to specify whether we erase the previous plan first or not. */
+    bool erasePreviousFirst;
 
   protected:
     /** @brief This class is used to store the solver status during the
