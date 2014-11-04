@@ -585,12 +585,12 @@ class GridReport(View):
       # Build the return value, encoding all output
       if hasattr(row, "__getitem__"):
         writer.writerow([
-          force_text(_localize(row[f], decimal_separator)).encode(encoding, "ignore") if row[f] is not None else ''
+          force_text(_localize(row[f], decimal_separator), encoding=encoding, errors='ignore', strings_only=True) if row[f] is not None else ''
           for f in fields
           ])
       else:
         writer.writerow([
-          force_text(_localize(getattr(row, f), decimal_separator)).encode(encoding, "ignore") if getattr(row, f) is not None else ''
+          force_text(_localize(getattr(row, f), decimal_separator), encoding=encoding, errors='ignore', strings_only=True) if getattr(row, f) is not None else ''
           for f in fields
           ])
       # Return string
@@ -1358,7 +1358,7 @@ class GridReport(View):
         op, field, data = rule['op'], rule['field'], rule['data']
         filter_fmt, exclude = reportclass._filter_map_jqgrid_django[op]
         reportrow = reportclass._getRowByName(field)
-        if data == u'' and not isinstance(reportrow, (GridFieldText, GridFieldChoice)):
+        if data == '' and not isinstance(reportrow, (GridFieldText, GridFieldChoice)):
           # Filter value specified, which makes the filter invalid
           continue
         filter_str = smart_str(filter_fmt % {'field': reportrow.field_name})
@@ -1637,17 +1637,16 @@ class GridPivot(GridReport):
 
     # Write a header row
     fields = [
-      force_text(f.title, encoding=encoding, errors="ignore").title()
+      force_text(f.title, encoding=encoding, errors='ignore').title()
       for f in reportclass.rows
       if f.name and not f.hidden
       ]
-
     if listformat:
-      fields.extend([ capfirst(force_text(_('bucket'), encoding=encoding, errors="ignore")) ])
-      fields.extend([ capfirst(force_text(_(f[1].get('title', _(f[0]))), encoding=encoding, errors="ignore")) for f in mycrosses ])
+      fields.extend([ capfirst(force_text(_('bucket'), encoding=encoding, errors='ignore')) ])
+      fields.extend([ capfirst(force_text(_(f[1].get('title', _(f[0]))), encoding=encoding, errors='ignore')) for f in mycrosses ])
     else:
-      fields.extend([ capfirst(force_text(_('data field'), encoding=encoding, errors="ignore")) ])
-      fields.extend([ force_text(b['name'], encoding=encoding, errors="ignore") for b in request.report_bucketlist])
+      fields.extend([ capfirst(force_text(_('data field'), encoding=encoding, errors='ignore')) ])
+      fields.extend([ force_text(b['name'], encoding=encoding, errors='ignore') for b in request.report_bucketlist])
     writer.writerow(fields)
     yield sf.getvalue()
 
@@ -1660,22 +1659,22 @@ class GridPivot(GridReport):
         # Data for rows
         if hasattr(row, "__getitem__"):
           fields = [
-            force_text(row[f.name]).encode(encoding, "ignore") if row[f.name] is not None else ''
+            force_text(row[f.name], encoding=encoding, errors='ignore') if row[f.name] is not None else ''
             for f in myrows
             ]
-          fields.extend([ force_text(row['bucket'], encoding=encoding, errors="ignore") ])
+          fields.extend([ force_text(row['bucket'], encoding=encoding, errors='ignore') ])
           fields.extend([
-            force_text(_localize(row[f[0]], decimal_separator)).encode(encoding, "ignore") if row[f[0]] is not None else ''
+            force_text(_localize(row[f[0]], decimal_separator), encoding=encoding, errors='ignore') if row[f[0]] is not None else ''
             for f in mycrosses
             ])
         else:
           fields = [
-            force_text(getattr(row, f.name)).encode(encoding, "ignore") if getattr(row, f.name) is not None else ''
+            force_text(getattr(row, f.name), encoding=encoding, errors='ignore') if getattr(row, f.name) is not None else ''
             for f in myrows
             ]
-          fields.extend([ force_text(getattr(row, 'bucket'), encoding=encoding, errors="ignore") ])
+          fields.extend([ force_text(getattr(row, 'bucket'), encoding=encoding, errors='ignore') ])
           fields.extend([
-            force_text(_localize(getattr(row, f[0]), decimal_separator)).encode(encoding, "ignore") if getattr(row, f[0]) is not None else ''
+            force_text(_localize(getattr(row, f[0]), decimal_separator), encoding=encoding, errors='ignore') if getattr(row, f[0]) is not None else ''
             for f in mycrosses
             ])
         # Return string
@@ -1697,12 +1696,14 @@ class GridPivot(GridReport):
             sf.seek(0)
             sf.truncate(0)
             fields = [
-              force_text(row_of_buckets[0][s.name], encoding=encoding, errors="ignore")
+              force_text(row_of_buckets[0][s.name], encoding=encoding, errors='ignore')
               for s in myrows
               ]
-            fields.extend( [ force_text('title' in cross[1] and capfirst(_(cross[1]['title'])) or capfirst(_(cross[0])), encoding=encoding, errors="ignore") ] )
             fields.extend([
-              force_text(_localize(bucket[cross[0]], decimal_separator), encoding=encoding, errors="ignore")
+              force_text('title' in cross[1] and capfirst(_(cross[1]['title'])) or capfirst(_(cross[0])), encoding=encoding, errors='ignore')
+              ])
+            fields.extend([
+              force_text(_localize(bucket[cross[0]], decimal_separator), encoding=encoding, errors='ignore')
               for bucket in row_of_buckets
               ])
             # Return string
@@ -1716,12 +1717,12 @@ class GridPivot(GridReport):
         sf.seek(0)
         sf.truncate(0)
         fields = [
-          force_text(row_of_buckets[0][s.name], encoding=encoding, errors="ignore")
+          force_text(row_of_buckets[0][s.name], encoding=encoding, errors='ignore')
           for s in myrows
           ]
-        fields.extend( [ force_text('title' in cross[1] and capfirst(_(cross[1]['title'])) or capfirst(_(cross[0])), encoding=encoding, errors="ignore")] )
+        fields.extend([ force_text('title' in cross[1] and capfirst(_(cross[1]['title'])) or capfirst(_(cross[0])), encoding=encoding, errors='ignore') ])
         fields.extend([
-          force_text(_localize(bucket[cross[0]], decimal_separator), encoding=encoding, errors="ignore")
+          force_text(_localize(bucket[cross[0]], decimal_separator), encoding=encoding, errors='ignore')
           for bucket in row_of_buckets
           ])
         # Return string
@@ -1762,7 +1763,7 @@ class GridPivot(GridReport):
     # Write a header row
     fields = [ force_text(f.title).title() for f in myrows ]
     if listformat:
-      fields.extend([ capfirst(force_unicode(_('bucket'))) ])
+      fields.extend([ capfirst(force_text(_('bucket'))) ])
       fields.extend([ capfirst(_(f[1].get('title', _(f[0])))) for f in mycrosses ])
     else:
       fields.extend( [capfirst(_('data field'))])

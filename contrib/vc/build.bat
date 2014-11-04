@@ -6,7 +6,7 @@ rem EDIT THIS SECTION TO MATCH YOUR INSTALLATION
 set PYTHON=C:\develop\python34
 set OPENSSL=C:\develop\openssl-1.0.1g\binaries
 set OPENSSL=C:\Program Files (x86)\OpenSSL-Win32\
-set XERCES=C:\develop\xerces-c-3.1.1-x86-windows-vc-9.0
+set XERCES=C:\develop\xerces-c-3.1.1-x86-windows-vc-10.0
 set DOTNET=C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319
 
 rem DETECT VISUAL STUDIO C++ 10.0

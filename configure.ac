@@ -210,24 +210,21 @@ AC_COMPILE_IFELSE([AC_LANG_SOURCE([
 
 #
 # Verify installation of PYTHON
-# Edit the minimum required version to 3.0 to switch to using Python 3.
 #
-AM_PATH_PYTHON([3.2], [],
+AM_PATH_PYTHON([3.4], [],
 [AC_MSG_ERROR([
-  This package requires Python 3.2 or higher.
+  This package requires Python 3.4 or higher.
 ])])
 AC_PATH_TOOL(PYTHON_CONFIG, "python3-config", notavailable)
 if test x$PYTHON_CONFIG = xnotavailable
 then
-  AC_MSG_ERROR([This package requires the Python development libraries.])
+  AC_MSG_ERROR([This package requires the Python 3 development libraries.])
 fi
 LIBS="$($PYTHON_CONFIG --ldflags) $LIBS"
 CPPFLAGS="$($PYTHON_CONFIG --includes) $CPPFLAGS"
 AC_CHECK_HEADER([Python.h], [],
 [AC_MSG_ERROR([
-  This package requires Python.
-  Please install this package and its development libraries.
-  Check out http://www.python.org for more information.
+  This package requires Python 3 and its development libraries.
 ])])
 
 #

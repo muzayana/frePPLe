@@ -14,7 +14,7 @@ from time import time
 from xml.etree.cElementTree import iterparse
 import http.client
 import urllib
-from StringIO import StringIO  # Note cStringIO doesn't handle unicode
+from io import StringIO
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction, connections, DEFAULT_DB_ALIAS

@@ -5,4 +5,4 @@
 EXTRA_DIST = build.bat frepple.sln README.txt model.vcxproj utils.vcxproj main.vcxproj solver.vcxproj dll.vcxproj model.vcxproj.filters utils.vcxproj.filters main.vcxproj.filters solver.vcxproj.filters dll.vcxproj.filters
 
 clean-local:
-	-rm -rf model utils main dll solver module_forecast createlicense createkey *.user *.opt *.ncb *.suo *.log *.sdf ipch
+	-rm -rf model utils main dll solver module_webserver module_forecast createlicense createkey *.user *.opt *.ncb *.suo *.log *.sdf ipch

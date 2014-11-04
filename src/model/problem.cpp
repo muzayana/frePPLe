@@ -508,7 +508,7 @@ DECLARE_EXPORT Problem::const_iterator Problem::begin(HasProblems* i, bool refre
   if (!i) return begin();
 
   // Return an iterator for a single entity
-  if (refresh && i->getEntity()->getChanged()) i->updateProblems();
+  if (refresh) i->updateProblems();
   return const_iterator(i);
 }
 
