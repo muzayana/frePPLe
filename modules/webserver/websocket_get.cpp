@@ -208,7 +208,8 @@ int WebServer::websocket_solve(struct mg_connection *conn, int bits,
       SolverMRP solver("MRP");
       solver.setConstraints(15);
       solver.setPlanType(1);
-      dem->solve(solver);
+      solver.setLogLevel(2);
+      dem->solve(solver, &solver.getCommands());
     }
   }
   else if (!strncmp(data+7, "demand/forward/", 15))
