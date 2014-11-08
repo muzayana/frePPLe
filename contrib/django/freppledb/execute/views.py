@@ -22,7 +22,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.db import DEFAULT_DB_ALIAS
 from django.contrib.admin.views.decorators import staff_member_required
 from django.views.decorators.csrf import csrf_protect
-from django.http import Http404, HttpResponseRedirect, HttpResponseServerError, HttpResponse
+from django.http import Http404, HttpResponseRedirect, HttpResponseServerError, HttpResponse, StreamingHttpResponse
 from django.contrib import messages
 from django.utils.encoding import force_unicode
 
@@ -140,7 +140,10 @@ def LaunchTask(request, action):
     if action == 'exportworkbook':
       return exportWorkbook(request)
     elif action == 'importworkbook':
-      return importWorkbook(request)
+      return StreamingHttpResponse(
+        content_type='text/plain; charset=%s' % settings.DEFAULT_CHARSET,
+        streaming_content=importWorkbook(request)
+        )
     elif action == 'frepple_stop_web_service':
       from django.core import management
       management.call_command('frepple_stop_web_service', force=True, database=request.database)
