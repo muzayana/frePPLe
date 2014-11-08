@@ -508,22 +508,6 @@ class Command(BaseCommand):
             price=str(round(random.uniform(100, 200)))
             )
 
-          if has_forecast:
-            # Forecast
-            fcst = Forecast.objects.using(database).create(
-              name='Forecast item %05d' % i,
-              calendar=weeks,
-              item=it,
-              customer=random.choice(cust),
-              maxlateness=60 * 86400,  # Forecast can only be planned 2 months late
-              priority=3,  # Low priority: prefer planning orders over forecast
-              discrete=True
-              )
-
-            # This method will take care of distributing a forecast quantity over the entire
-            # horizon, respecting the bucket weights.
-            fcst.setTotal(startdate, startdate + timedelta(365), forecast_per_item * 12)
-
           # Level 0 buffer
           buf = Buffer.objects.using(database).create(
             name='Buf %05d L00' % i,
@@ -607,6 +591,23 @@ class Command(BaseCommand):
           # Commit the current cluster
           task.status = '%d%%' % (12 + progress * (i + 1))
           task.save(using=database)
+
+      if has_forecast:
+        for i in range(cluster):
+          # Forecast
+          fcst = Forecast.objects.using(database).create(
+            name='Forecast item %05d' % i,
+            calendar=weeks,
+            item=it,
+            customer=random.choice(cust),
+            maxlateness=60 * 86400,  # Forecast can only be planned 2 months late
+            priority=3,  # Low priority: prefer planning orders over forecast
+            discrete=True
+            )
+
+          # This method will take care of distributing a forecast quantity over the entire
+          # horizon, respecting the bucket weights.
+          fcst.setTotal(startdate, startdate + timedelta(365), forecast_per_item * 12)
 
       # Task update
       task.status = 'Done'
