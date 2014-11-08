@@ -40,7 +40,7 @@ class baseTest(TestCase):
     # Check port is free
     servers.wait_for_free_port(cls.host, cls.port)
 
-    # Start the service asyncronously
+    # Start the service asynchronously
     os.environ['FREPPLE_TEST'] = "YES"
     thread.start_new_thread(baseTest.runService, ())
 
@@ -117,6 +117,8 @@ class baseTest(TestCase):
 
 class apiTest(baseTest):
 
+  fixtures = ["demo"]
+
   def testReloadReplan(self):
     # Get original model
     conn = httplib.HTTPConnection(self.url, timeout=50)
@@ -143,92 +145,56 @@ class apiTest(baseTest):
     newProblems = resp.read()
     self.assertEqual(newProblems, oldProblems, "Replanning doesn't give the same results")
 
-  def testMain(self):
-    conn = httplib.HTTPConnection(self.url)
-    conn.request("GET", '/main/')
-    resp = conn.getresponse()
-    self.assertEqual(resp.status, httplib.OK)
-    self.assertTrue(resp.read())
-
-  def testIndex(self):
+  def testURLs(self):
     conn = httplib.HTTPConnection(self.url)
     conn.request("GET", '/')
     resp = conn.getresponse()
     self.assertEqual(resp.status, httplib.OK)
     self.assertTrue(resp.read())
-
-  def testCustomer(self):
-    conn = httplib.HTTPConnection(self.url)
+    conn.request("GET", '/main/')
+    resp = conn.getresponse()
+    self.assertEqual(resp.status, httplib.OK)
+    self.assertTrue(resp.read())
     conn.request("GET", '/customer/')
     resp = conn.getresponse()
     self.assertEqual(resp.status, httplib.OK)
     self.assertTrue(resp.read())
-
-  def testBuffer(self):
-    conn = httplib.HTTPConnection(self.url)
     conn.request("GET", '/buffer/')
     resp = conn.getresponse()
     self.assertEqual(resp.status, httplib.OK)
     self.assertTrue(resp.read())
-
-  def testResource(self):
-    conn = httplib.HTTPConnection(self.url)
     conn.request("GET", '/resource/')
     resp = conn.getresponse()
     self.assertEqual(resp.status, httplib.OK)
     self.assertTrue(resp.read())
-
-  def testLocation(self):
-    conn = httplib.HTTPConnection(self.url)
     conn.request("GET", '/location/')
     resp = conn.getresponse()
     self.assertEqual(resp.status, httplib.OK)
     self.assertTrue(resp.read())
-
-  def testItem(self):
-    conn = httplib.HTTPConnection(self.url)
     conn.request("GET", '/item/')
     resp = conn.getresponse()
     self.assertEqual(resp.status, httplib.OK)
     self.assertTrue(resp.read())
-
-  def testFlow(self):
-    conn = httplib.HTTPConnection(self.url)
     conn.request("GET", '/flow/')
     resp = conn.getresponse()
     self.assertEqual(resp.status, httplib.OK)
     self.assertTrue(resp.read())
-
-  def testLoad(self):
-    conn = httplib.HTTPConnection(self.url)
     conn.request("GET", '/load/')
     resp = conn.getresponse()
     self.assertEqual(resp.status, httplib.OK)
     self.assertTrue(resp.read())
-
-  def testCalendar(self):
-    conn = httplib.HTTPConnection(self.url)
     conn.request("GET", '/calendar/')
     resp = conn.getresponse()
     self.assertEqual(resp.status, httplib.OK)
     self.assertTrue(resp.read())
-
-  def testOperation(self):
-    conn = httplib.HTTPConnection(self.url)
     conn.request("GET", '/operation/')
     resp = conn.getresponse()
     self.assertEqual(resp.status, httplib.OK)
     self.assertTrue(resp.read())
-
-  def testProblem(self):
-    conn = httplib.HTTPConnection(self.url)
     conn.request("GET", '/problem/')
     resp = conn.getresponse()
     self.assertEqual(resp.status, httplib.OK)
     self.assertTrue(resp.read())
-
-  def testSetupmatrix(self):
-    conn = httplib.HTTPConnection(self.url)
     conn.request("GET", '/setupmatrix/')
     resp = conn.getresponse()
     self.assertEqual(resp.status, httplib.OK)
@@ -236,6 +202,8 @@ class apiTest(baseTest):
 
 
 class quoteAndInquiry(baseTest):
+
+  fixtures = ["demo"]
 
   def testQuoteAndInquiry(self):
     # Send a first inquiry
@@ -285,6 +253,8 @@ class quoteAndInquiry(baseTest):
 
 
 class requoteTest(baseTest):
+
+  fixtures = ["demo"]
 
   def testRequote(self):
     # Send a quote

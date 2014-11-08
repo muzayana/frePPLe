@@ -38,7 +38,7 @@ class DataLoadTest(TestCase):
   def test_common_parameter(self):
     response = self.client.get('/admin/common/parameter/?format=json')
     for i in response.streaming_content:
-      if '"records":15,' in i:
+      if '"records":53,' in i:   # Different between Enterprise Edition and Community Edition
         return
     self.fail("Didn't find expected number of parameters")
 

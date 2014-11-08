@@ -34,11 +34,11 @@ class DataLoadTest(TestCase):
     response = self.client.get('/data/input/buffer/?format=json')
     self.assertContains(response, '"records":8,')
     response = self.client.get('/data/input/calendar/?format=json')
-    self.assertContains(response, '"records":4,')
+    self.assertContains(response, '"records":5,')  # Different between Enterprise Edition and Community Edition
     response = self.client.get('/data/input/calendarbucket/?format=json')
-    self.assertContains(response, '"records":5,')
+    self.assertContains(response, '"records":77,') # Different between Enterprise Edition and Community Edition
     response = self.client.get('/data/input/demand/?format=json')
-    self.assertContains(response, '"records":14,')
+    self.assertContains(response, '"records":38,') # Different between Enterprise Edition and Community Edition
     response = self.client.get('/data/input/item/?format=json')
     self.assertContains(response, '"records":5,')
     response = self.client.get('/data/input/load/?format=json')
