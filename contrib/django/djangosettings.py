@@ -37,7 +37,7 @@ SECRET_KEY = '%@mzit!i8b*$zc&6oev96=RANDOMSTRING'
 DATABASES = {
   'default': {
     'ENGINE': 'django.db.backends.sqlite3',
-    'NAME': 'ABB_default',
+    'NAME': 'default',
     'USER': 'frepple',
     'PASSWORD': 'frepple',
     'HOST': '',     # Set to empty string for localhost. Not used with sqlite3.
@@ -46,7 +46,7 @@ DATABASES = {
     },
   'scenario1': {
     'ENGINE': 'django.db.backends.sqlite3',
-    'NAME': 'ABB_workflow1',
+    'NAME': 'scenario1',
     'USER': 'frepple',
     'PASSWORD': 'frepple',
     'HOST': '',     # Set to empty string for localhost. Not used with sqlite3.
@@ -55,7 +55,16 @@ DATABASES = {
     },
   'scenario2': {
     'ENGINE': 'django.db.backends.sqlite3',
-    'NAME': 'ABB_workflow2',
+    'NAME': 'scenario2',
+    'USER': 'frepple',
+    'PASSWORD': 'frepple',
+    'HOST': '',     # Set to empty string for localhost. Not used with sqlite3.
+    'OPTIONS': {},  # Backend specific configuration parameters.
+    'PORT': '',     # Set to empty string for default. Not used with sqlite3.
+    },
+  'scenario3': {
+    'ENGINE': 'django.db.backends.sqlite3',
+    'NAME': 'scenario3',
     'USER': 'frepple',
     'PASSWORD': 'frepple',
     'HOST': '',     # Set to empty string for localhost. Not used with sqlite3.
