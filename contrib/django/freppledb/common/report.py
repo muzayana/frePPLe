@@ -1003,10 +1003,10 @@ class GridReport(View):
               yield returnvalue + '\n '
               errors = True
 
-        # Loop through the data records
-        has_pk_field = False
-        for row in EncodedCSVReader(request.FILES['csv_file'], delimiter=delimiter):
-          rownumber += 1
+          # Loop through the data records
+          has_pk_field = False
+          for row in EncodedCSVReader(request.FILES['csv_file'], delimiter=delimiter):
+            rownumber += 1
 
             ### Case 1: The first line is read as a header line
             if rownumber == 1:
@@ -1170,7 +1170,7 @@ class GridReport(View):
             ### Case 1: The first line is read as a header line
             if rownumber == 1:
               for col in row:
-                col = unicode(col.value).strip().strip('#').lower()
+                col = str(col.value).strip().strip('#').lower()
                 if col == "":
                   headers.append(False)
                   continue

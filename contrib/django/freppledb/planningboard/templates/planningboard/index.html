@@ -13,6 +13,10 @@
    stroke: #000;
    shape-rendering: crispEdges;
  }
+#gantt .inventoryline {
+   stroke: #888888;
+   shape-rendering: crispEdges;
+ }
 </style>
 <script type="text/javascript" src="{{STATIC_URL}}js/d3.min.js"></script>
 <script type="text/javascript" src="{{STATIC_URL}}planningboard/js/planningboard.js"></script>
@@ -28,9 +32,10 @@ var ganttRows = {}; // Rows configured to be shown.
 var numRows = 0;
 var curRows = {}; // TODO Currently displayed rows. Once configured there will be some delay between config and actual display.
 var rowheight = 50;
+var timescaleheight = 34;
 
 var x = d3.time.scale().domain([horizonstart, horizonend]);
-var y = d3.scale.linear().rangeRound([rowheight, 0]);
+var y = d3.scale.linear().rangeRound([rowheight-3, 3]);
 
 var service_url = ('https:' == document.location.protocol ? 'wss://' : 'ws://') + document.location.hostname
   + ':{{port}}/planningboard/?user={{request.user|urlencode}}&time={{time}}&token={{token}}';
@@ -43,17 +48,23 @@ $(function() {
     minHeight: 2 * rowheight + 10
     });
   $("#tabs").tabs();
-  gantt.header();
+  timeAxis = d3.select("#gantt").append("g").attr("transform", "translate(250,0)");
+  drawAxis();
   connect(service_url, function() {send("/get/");} );
 });
 
 </script>
 {% endblock %}
 {% block content %}
-<div style="width:100%; padding-bottom:10px">
+<div id="toolicons">
+<span onclick="gantt.zoom(0.5,0)" class="fa fa-search-plus fa-lg" title="{% trans 'Zoom in'|escape %}"></span>&nbsp;&nbsp;
+<span onclick="gantt.zoom(1.5,0)" class="fa fa-search-minus fa-lg" title="{% trans 'Zoom out'|escape %}"></span>&nbsp;&nbsp;
+<span onclick="gantt.zoom(1,-86400000)" class="fa fa-backward fa-lg" title="{% trans 'Move in'|escape %}"></span>&nbsp;&nbsp;
+<span onclick="gantt.zoom(1,86400000)" class="fa fa-forward fa-lg" title="{% trans 'Move out'|escape %}"></span>&nbsp;&nbsp;
+<span onclick="gantt.reset()" class="fa fa-square fa-lg" title="{% trans 'Reset'|escape %}"></span>&nbsp;&nbsp;
+<span onclick="grid.showBucket()" title="{% trans 'Configure time buckets'|escape %}" id="bucketconfig" class="fa fa-clock-o fa-lg"></span>
 <span onclick="customize()" title="Customize" class="fa fa-wrench fa-lg" style="display:inline-block"></span>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id="message" type="text"/>
-<button onclick="send($('#message').val())">Send</button>
+</div>
 <div id="entities" style="display: none">
   <select name="multiselect" class="multiselect" multiple="multiple" style="width:440px; height:200px; margin:10px; padding:10px">
     <optgroup id="resourcelist" label="{% trans "Resource" %}"></optgroup>
@@ -61,8 +72,7 @@ $(function() {
     <optgroup id="operationlist" label="{% trans "Operation" %}"></optgroup>
   </select>
 </div>
-</div>
-<div id="ganttdiv" style="width:100%; border: 1px solid; border-radius: 10px">
+<div id="content-main" style="width:100%; border: 1px solid; border-radius: 10px">
 <div style="margin: 5px 1px 5px 0px; overflow-x: hide; overflow-y: scroll"><svg id="gantt"></svg></div>
 </div>
 
@@ -82,6 +92,27 @@ $(function() {
   <div id="alerts">
     <p>Empty still...</p>
   </div>
+</div>
+
+<div id="timebuckets" style="display:none" title="{% trans 'Time buckets' %}">
+<form method="get" action="">
+{% trans 'Bucket size' %}&nbsp;&nbsp;<select name="horizonbuckets" id="horizonbuckets">
+{% for i in bucketnames %}<option value="{{i}}"{% ifequal i request.user.horizonbuckets %} selected="selected"{% endifequal %}>{% trans i %}</option>
+{% endfor %}</select><br/>
+<input type="radio" name="horizontype" value="0"{% if not request.user.horizontype %} checked{% endif %}/>&nbsp;&nbsp;
+{% trans 'from'|capfirst %}&nbsp;
+<input id="horizonstart" type="text" size="9" class="vDateField" value="{{request.user.horizonstart|date:"Y-m-d"}}"/>
+{% trans 'to' %}&nbsp;
+<input id="horizonend" type="text" size="9" class="vDateField" value="{{request.user.horizonend|date:"Y-m-d"}}"/><br/>
+<input type="radio" id="horizontype" name="horizontype" value="1"{% if request.user.horizontype %} checked{% endif %}/>&nbsp;&nbsp;
+<input id="horizonlength" name="horizonlength" type="text" size="2" value="{{request.user.horizonlength}}"/>&nbsp;
+<select name="horizonunit" id="horizonunit">
+<option value="day"{% ifequal request.user.horizonunit 'day' %} selected="selected"{% endifequal %}>{% trans 'days' %}</option>
+<option value="week"{% ifequal request.user.horizonunit 'week' %} selected="selected"{% endifequal %}>{% trans 'weeks' %}</option>
+<option value="month"{% ifequal request.user.horizonunit 'month' %} selected="selected"{% endifequal %}>{% trans 'months' %}</option>
+</select>&nbsp;{% trans 'after plan current date' %}
+<input id="horizonoriginal" type="hidden" value="{{request.user.horizonbuckets}}|{{request.user.horizonstart|date:"Y-m-d"}}|{{request.user.horizonend|date:"Y-m-d"}}|{{request.user.horizontype}}|{{request.user.horizonlength}}|{{request.user.horizonunit}}"/>
+</form>
 </div>
 
 

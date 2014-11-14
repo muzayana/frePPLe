@@ -59,7 +59,8 @@ int WebServer::websocket_get(struct mg_connection *conn, int bits,
   {
     o.BeginObject(Tags::tag_demands);
     for (Demand::iterator dm = Demand::begin(); dm != Demand::end(); ++dm)
-      o.writeElement(Tags::tag_demand, Tags::tag_name, dm->getName());
+      dm->writeElement(&o, Tags::tag_demand);
+      //o.writeElement(Tags::tag_demand, Tags::tag_name, dm->getName());
     o.EndObject(Tags::tag_demands);
   }
   o.EndObject(Tags::tag_plan);
@@ -148,12 +149,16 @@ int WebServer::websocket_plan(struct mg_connection *conn, int bits,
 int WebServer::websocket_solve(struct mg_connection *conn, int bits,
   char *data, size_t data_len, WebClient* clnt)
 {
+  Demand *changedDemand = NULL;
+  int demandChanges = 0; // 0: None, 1: single demand, 2: all
+
   if (!strncmp(data+7, "erase/", 6))
   {
     // Erase the previous plan
     logger << "Deleting the plan" << endl;
     for (Operation::iterator e=Operation::begin(); e!=Operation::end(); ++e)
       e->deleteOperationPlans();
+    demandChanges = 2;
   }
   else if (!strncmp(data+7, "replan/backward/", 15))
   {
@@ -171,6 +176,7 @@ int WebServer::websocket_solve(struct mg_connection *conn, int bits,
     solver.setLogLevel(1);
     solver.setErasePreviousFirst(false);
     solver.solve();
+    demandChanges = 2;
   }
   else if (!strncmp(data+7, "replan/forward/", 14))
   {
@@ -193,6 +199,7 @@ int WebServer::websocket_solve(struct mg_connection *conn, int bits,
     solver.solve();
     for (Demand::iterator it = Demand::begin(); it != Demand::end(); ++it)
       it->setDue(it->getDue() + delta);
+    demandChanges = 2;
   }
   else if (!strncmp(data+7, "demand/backward/", 16))
   {
@@ -210,6 +217,8 @@ int WebServer::websocket_solve(struct mg_connection *conn, int bits,
       solver.setPlanType(1);
       solver.setLogLevel(2);
       dem->solve(solver, &solver.getCommands());
+      demandChanges = 1;
+      changedDemand = dem;
     }
   }
   else if (!strncmp(data+7, "demand/forward/", 15))
@@ -230,6 +239,8 @@ int WebServer::websocket_solve(struct mg_connection *conn, int bits,
       solver.setPlanType(1);
       dem->solve(solver, &solver.getCommands());
       dem->setDue(dem->getDue() + delta);
+      demandChanges = 1;
+      changedDemand = dem;
     }
   }
   else if (!strncmp(data+7, "unplan/", 7))
@@ -242,6 +253,8 @@ int WebServer::websocket_solve(struct mg_connection *conn, int bits,
       // Remove existing plan
       OperatorDelete unplan("Unplan");
       unplan.solve(dem);
+      demandChanges = 1;
+      changedDemand = dem;
     }
   }
 
@@ -305,24 +318,53 @@ int WebServer::websocket_solve(struct mg_connection *conn, int bits,
     if (!first)
       o.EndObject(Tags::tag_operations);
     first = true;
-    for (WebClient::subscriptionlist::iterator j = i->second.getSubscriptions().begin();
-      j != i->second.getSubscriptions().end(); ++j)
+    if (demandChanges != 2)
     {
-      if (j->getPublisher()->getOwner()->getType().category != Demand::metadata)
-        continue;
-      if (first)
+      // Write planned demand (if there is one) or subscribed demands
+      for (WebClient::subscriptionlist::iterator j = i->second.getSubscriptions().begin();
+        j != i->second.getSubscriptions().end(); ++j)
       {
-        o.BeginObject(Tags::tag_demands);
-        first = false;
+        if (j->getPublisher()->getOwner()->getType().category != Demand::metadata)
+          continue;
+        if (first)
+        {
+          o.BeginObject(Tags::tag_demands);
+          first = false;
+        }
+        Demand * dm = static_cast<Demand*>(j->getPublisher()->getOwner());
+        dm->writeElement(&o, Tags::tag_demand);
+        if (changedDemand == dm)
+          changedDemand = NULL;
       }
-      static_cast<Demand*>(j->getPublisher()->getOwner())->writeElement(&o, Tags::tag_demand);
+      if (changedDemand)
+      {
+        if (first)
+        {
+          o.BeginObject(Tags::tag_demands);
+          first = false;
+        }
+        changedDemand->writeElement(&o, Tags::tag_demand);
+      }
+    }
+    else
+    {
+      // Write all demands
+      for (Demand::iterator d = Demand::begin(); d != Demand::end(); ++d)
+      {
+        if (first)
+        {
+          o.BeginObject(Tags::tag_demands);
+          first = false;
+        }
+        d->writeElement(&o, Tags::tag_demand);
+      }
     }
     if (!first)
       o.EndObject(Tags::tag_demands);
     if (o.getData().size())
     {
       o.EndObject(Tags::tag_plan);
-      mg_websocket_write( i->first, WEBSOCKET_OPCODE_TEXT, o.getData().c_str(), o.getData().size() );
+      mg_websocket_write( i->first, WEBSOCKET_OPCODE_TEXT, o.getData().c_str(), o.getData().size() );  // TODO performance check for large model
     }
   }
   WebClient::unlock();
