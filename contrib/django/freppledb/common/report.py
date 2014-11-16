@@ -593,12 +593,12 @@ class GridReport(View):
       # Build the return value, encoding all output
       if hasattr(row, "__getitem__"):
         writer.writerow([
-          row[f] is None and ' ' or unicode(_localize(row[f], decimal_separator)).encode(encoding, "ignore")
+          unicode(_localize(row[f], decimal_separator)).encode(encoding, "ignore") if row[f] is not None else ''
           for f in fields
           ])
       else:
         writer.writerow([
-          getattr(row, f) is None and ' ' or unicode(_localize(getattr(row, f), decimal_separator)).encode(encoding, "ignore")
+          unicode(_localize(getattr(row, f), decimal_separator)).encode(encoding, "ignore") if getattr(row, f) is not None else ''
           for f in fields
           ])
       # Return string
@@ -1069,7 +1069,7 @@ class GridReport(View):
                   if colnum >= len(headers):
                     break
                   if isinstance(headers[colnum], Field):
-                    d[headers[colnum].name] = col.strip()
+                    d[headers[colnum].name] = col
                   colnum += 1
 
                 # Step 2: Fill the form with data, either updating an existing
@@ -1228,10 +1228,7 @@ class GridReport(View):
                     break
                   if isinstance(headers[colnum], Field):
                     data = col.value
-                    if isinstance(headers[colnum], CharField):
-                      if data and isinstance(data, six.string_types):
-                        data = data.strip()
-                    elif isinstance(headers[colnum], (IntegerField, AutoField)):
+                    if isinstance(headers[colnum], (IntegerField, AutoField)):
                       if isinstance(data, numericTypes):
                         data = int(data)
                     d[headers[colnum].name] = data
@@ -1669,22 +1666,22 @@ class GridPivot(GridReport):
         # Data for rows
         if hasattr(row, "__getitem__"):
           fields = [
-            row[f.name] is None and ' ' or unicode(row[f.name]).encode(encoding, "ignore")
+            unicode(row[f.name]).encode(encoding, "ignore") if row[f.name] is not None else ''
             for f in myrows
             ]
           fields.extend([ row['bucket'].encode(encoding, "ignore") ])
           fields.extend([
-            row[f[0]] is None and ' ' or unicode(_localize(row[f[0]], decimal_separator)).encode(encoding, "ignore")
+            unicode(_localize(row[f[0]], decimal_separator)).encode(encoding, "ignore") if row[f[0]] is not None else ''
             for f in mycrosses
             ])
         else:
           fields = [
-            getattr(row, f.name) is None and ' ' or unicode(getattr(row, f.name)).encode(encoding, "ignore")
+            unicode(getattr(row, f.name)).encode(encoding, "ignore") if getattr(row, f.name) is not None else ''
             for f in myrows
             ]
           fields.extend([ getattr(row, 'bucket').encode(encoding, "ignore") ])
           fields.extend([
-            getattr(row, f[0]) is None and ' ' or unicode(_localize(getattr(row, f[0]), decimal_separator)).encode(encoding, "ignore")
+            unicode(_localize(getattr(row, f[0]), decimal_separator)).encode(encoding, "ignore") if getattr(row, f[0]) is not None else ''
             for f in mycrosses
             ])
         # Return string
@@ -2047,10 +2044,7 @@ def importWorkbook(request):
                 break
               if isinstance(headers[colnum], Field):
                 data = cell.value
-                if isinstance(headers[colnum], CharField):
-                  if data and isinstance(data, six.string_types):
-                    data = data.strip()
-                elif isinstance(headers[colnum], (IntegerField, AutoField)):
+                if isinstance(headers[colnum], (IntegerField, AutoField)):
                   if isinstance(data, numericTypes):
                     data = int(data)
                 d[headers[colnum].name] = data
