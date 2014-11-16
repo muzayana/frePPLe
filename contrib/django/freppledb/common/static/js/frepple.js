@@ -1414,7 +1414,7 @@ var graph = {
   {
     var el = $("#grid_graph");
     el.html("");
-    var bucketwidth = el.width() / numbuckets;
+    var bucketwidth = (el.width() - 50) / numbuckets;
     var svg = d3.select(el.get(0)).append("svg");
     svg.attr('height','15px');
     svg.attr('width', el.width());
@@ -1447,23 +1447,11 @@ var graph = {
         .attr("role", "tooltip")
         .attr("class", "ui-tooltip ui-widget ui-corner-all ui-widget-content")
         .style("position", "absolute");
+
     // Update content and display
     tt.html('<div class="ui-tooltip-content">' + txt + '</div>')
-      .style('left', (d3.event.pageX + 5) + "px")
-      .style('top', (d3.event.pageY - 28) + "px")
       .style('display', 'block');
-    /*
-    // Compute position
-    var limit = $(window).width() - $("#tooltip").width() - 15;
-    var x = d3.event.pageX + 5;
-    if (x > limit) x = limit;
-    var y = d3.event.pageY - 28;
-    limit = $(window).height() - $("#tooltip").height() - 15;
-    if (y > limit) y = limit;
-    tt.style('left', x + "px")
-      .style('top', y + "px");
-    */
-    d3.event.stopPropagation();
+    graph.moveTooltip();
   },
 
   hideTooltip: function()
@@ -1474,17 +1462,24 @@ var graph = {
 
   moveTooltip: function()
   {
-    /*
-    var limit = $(window).width() - $("#tooltip").width() - 15;
-    var x = d3.event.pageX + 5;
-    if (x > limit) x = limit;
-    var y = d3.event.pageY - 28;
-    limit = $(window).height() - $("#tooltip").height() - 15;
-    if (y > limit) y = limit;
-    */
+    var xpos = d3.event.pageX + 5;
+    var ypos = d3.event.pageY - 28;
+    var xlimit = $(window).width() - $("#tooltip").width() - 20;
+    var ylimit = $(window).height() - $("#tooltip").height() - 20;
+    if (xpos > xlimit)
+    {
+      // Display tooltip under the mouse
+      xpos = xlimit;
+      ypos = d3.event.pageY + 5;
+    }
+    if (ypos > ylimit)
+      // Display tooltip above the mouse
+      ypos = d3.event.pageY - $("#tooltip").height() - 25;
     d3.select("#tooltip")
-      .style('left', (d3.event.pageX + 5) + "px")
-      .style('top', (d3.event.pageY - 28) + "px");
+      .style({
+        'left': xpos + "px",
+        'top': ypos + "px"
+        });
     d3.event.stopPropagation();
   },
 
