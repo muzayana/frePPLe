@@ -3,6 +3,7 @@ var socket = null;
 var curState = 'closed';    // Possible states: closed, connecting, open, disconnecting
 var timeAxis = null;
 
+
 function connect(url, callback)
 {
   if (curState != "closed") return;
@@ -48,7 +49,7 @@ function disconnect()
 }
 
 
-function customize()
+function NOT_USED_customize()
 {
   $("#entities").dialog({
        title: gettext("Customize"),
@@ -119,39 +120,110 @@ function onmessage(ev)
     displayPlan(xmldoc);
 }
 
-
-function displayList(xmldoc)  // TODO escaping of the data fields!
+function demandAction (cellvalue, options, row)
 {
-  var el = $("#demandlist");
-  el.html("");
+  var esc = row['name'].replace("'", "\\'");
+  return '<span onclick="send(\'/solve/unplan/' + esc + '\')" class="fa fa-stop spacing"></span>' +
+    '<span onclick="send(\'/solve/demand/backward/' + esc + '\')" class="fa fa-fast-backward spacing"></span>' +
+    '<span onclick="send(\'/solve/demand/forward/' + esc + '\')" class="fa fa-fast-forward spacing"></span>';
+}
+
+
+function displayList(xmldoc)
+{
+  // Demand tab
+  var w = $("#demand").width() - 16;
+  $("#demandlist").jqGrid({
+    datatype: "local",
+    height: 250,
+    width: w,
+    colModel:[
+      {name:'action', width:55, formatter:demandAction, sortable:false, search:false, fixed:true},
+      {name:'name', index:'name', key:true, width:90, searchoptions:{sopt:['eq','ne','le','lt','gt','ge']}},
+      {name:'item', index:'item', width:100, searchoptions:{sopt:['eq','ne','le','lt','gt','ge']}},
+      {name:'customer', index:'customer', width:80, searchoptions:{sopt:['eq','ne','le','lt','gt','ge']}},
+      {name:'priority', index:'priority', formatter:'integer', align:'center', width:80, searchoptions:{sopt:['eq','ne','le','lt','gt','ge']}},
+      {name:'quantity', index:'quantity', formatter:'number', align:'right', width:80, searchoptions:{sopt:['eq','ne','le','lt','gt','ge']}},
+      {name:'due', index:'due', width:70, formatter:'date', formatoptions: {srcformat: "Y-m-d\\TH:i:s"}, searchoptions:{sopt:['eq','ne','le','lt','gt','ge']}},
+      {name:'planned quantity', index:'pquantity', width:150, searchoptions:{sopt:['eq','ne','le','lt','gt','ge']}},
+      {name:'planned delivery', index:'pdate', width:150, searchoptions:{sopt:['eq','ne','le','lt','gt','ge']}}
+    ],
+    multiselect: true
+  });
   $(xmldoc).find('demand').each(function() {
     var nm = $(this).attr('name');
-    var qty = parseFloat($(this).find('quantity').text());
-    var due = new Date(Date.parse($(this).find('due').text()));
-    var prio = parseFloat($(this).find('priority').text());
-    el.append('&nbsp;&nbsp;' +
-      '<span onclick="send(\'/solve/unplan/' + nm + '\')" title="Unplan the demand" class="fa fa-stop"></span>' +
-      '&nbsp;&nbsp;<span onclick="send(\'/solve/demand/backward/' + nm + '\')" title="Plan backward from the due date" class="fa fa-backward"></span>' +
-      '&nbsp;&nbsp;<span onclick="send(\'/solve/demand/forward/' + nm + '\')" title="Plan forward from the current date" class="fa fa-forward"></span>&nbsp;&nbsp;' +
-      nm + "&nbsp;&nbsp;&nbsp;&nbsp;" + due + "&nbsp;&nbsp;&nbsp;&nbsp;" + prio + "&nbsp;&nbsp;&nbsp;&nbsp;" + qty +'<br/>'
-      );
-  });
+    $("#demandlist").jqGrid('addRowData', nm, {
+      'name': nm,
+      'quantity': $(this).find('quantity').text(),
+      'due': $(this).find('due').text(),
+      'priority': $(this).find('priority').text(),
+      'item': $(this).find('item').attr('name'),
+      'customer': $(this).find('customer').attr('name')
+      });
+    });
+  $("#demandlist").jqGrid('filterToolbar',{searchOperators : true});
 
-  el = $("#resourcelist");
-  el.empty();
+  // Resource list tab
+  $("#resourcelist").jqGrid({
+    datatype: "local",
+    height: 250,
+    width: w,
+    colModel:[
+      {name:'name', index:'name', key:true, width:90, searchoptions:{sopt:['eq','ne','le','lt','gt','ge']}},
+      {name:'location', index:'location', width:100, searchoptions:{sopt:['eq','ne','le','lt','gt','ge']}}
+    ],
+    multiselect: true
+  });
   $(xmldoc).find('resource').each(function() {
-    el.append('<option value="resource/' + $(this).attr('name') + '">' + $(this).attr('name') + '</option>');
+    var d = {
+      'name': $(this).attr('name'),
+      'location': $(this).find('location').attr('name')
+      };
+    $("#resourcelist").jqGrid('addRowData', d['name'], d);
+    });
+  $("#resourcelist").jqGrid('filterToolbar',{searchOperators : true});
+
+  // Buffer list tab
+  $("#bufferlist").jqGrid({
+    datatype: "local",
+    height: 250,
+    width: w,
+    colModel:[
+      {name:'name', index:'name', key: true, width:90, searchoptions:{sopt:['eq','ne','le','lt','gt','ge']}},
+      {name:'item', index:'item', width:100, searchoptions:{sopt:['eq','ne','le','lt','gt','ge']}},
+      {name:'location', index:'location', width:100, searchoptions:{sopt:['eq','ne','le','lt','gt','ge']}}
+    ],
+    multiselect: true
   });
-  el = $("#bufferlist");
-  el.empty();
   $(xmldoc).find('buffer').each(function() {
-    el.append('<option value="buffer/' + $(this).attr('name') + '">' + $(this).attr('name') + '</option>');
+    var d = {
+      'name': $(this).attr('name'),
+      'location': $(this).find('location').attr('name')
+      };
+    $("#bufferlist").jqGrid('addRowData', d['name'], d);
+    });
+  $("#bufferlist").jqGrid('filterToolbar',{searchOperators : true});
+
+  // Operation list tab
+  $("#operationlist").jqGrid({
+    datatype: "local",
+    height: 250,
+    width: w,
+    colModel:[
+      {name:'name', index:'name', key: true, width:90, searchoptions:{sopt:['eq','ne','le','lt','gt','ge']}},
+      {name:'location', index:'location', width:100, searchoptions:{sopt:['eq','ne','le','lt','gt','ge']}}
+    ],
+    multiselect: true
   });
-  el = $("#operationlist");
-  el.empty();
   $(xmldoc).find('operation').each(function() {
-    el.append('<option value="operation/' + $(this).attr('name') + '">' + $(this).attr('name') + '</option>');
-  });
+    var d = {
+      'name': $(this).attr('name'),
+      'location': $(this).find('location').attr('name')
+      };
+    $("#operationlist").jqGrid('addRowData', d['name'], d);
+    });
+  $("#operationlist").jqGrid('filterToolbar',{searchOperators : true});
+
 }
 
 
@@ -495,25 +567,50 @@ function displayBuffer(xml, indx)
 
 function displayDemand(xml)
 {
-  // TODO Use D3 list of elements. Refresh a single one of them. Or use DC?
-
-  // Update list information
-  var res = $(xml).attr('name');
-  var qty = parseFloat($(xml).find('quantity').text());
-  var due = new Date(Date.parse($(xml).find('due').text()));
-  var prio = parseFloat($(xml).find('priority').text());
-  $("#demandlist").append('&nbsp;&nbsp;' +
-    '<span onclick="send(\'/solve/unplan/' + res + '\')" title="Unplan the demand" class="fa fa-stop"></span>' +
-    '&nbsp;&nbsp;<span onclick="send(\'/solve/demand/backward/' + res + '\')" title="Plan backward from the due date" class="fa fa-backward"></span>' +
-    '&nbsp;&nbsp;<span onclick="send(\'/solve/demand/forward/' + res + '\')" title="Plan forward from the current date" class="fa fa-forward"></span>&nbsp;&nbsp;' +
-    res + "&nbsp;&nbsp;&nbsp;&nbsp;" + due + "&nbsp;&nbsp;&nbsp;&nbsp;" + prio + "&nbsp;&nbsp;&nbsp;&nbsp;" + qty +'<br/>'
-    );
-
-  // Look up the row to display the information at
-  //var indx = ganttRows['demand/' + res].index;
-  //if (indx === undefined)
-  //  return; // Buffer not to be shown at all
+  $.jgrid.formatter.date.reformatAfterEdit = true;
+  var nm = $(xml).attr('name');
+  $("#demandlist").jqGrid('setRowData', nm, {
+    'name': nm,
+    'quantity': $(xml).find('quantity').text(),
+    'due': $(xml).find('due').text(),
+    'priority': $(xml).find('priority').text(),
+    'item': $(xml).find('item').attr('name'),
+    'customer': $(xml).find('customer').attr('name'),
+    'planned quantity': 666
+    });
 }
+
+
+function actionSelectedDemand(action1, action2)
+{
+  var grid = $("#demandlist");
+  var selected = grid.jqGrid('getGridParam','selarrrow');
+  if (selected.length == grid.jqGrid('getGridParam', 'reccount'))
+    // All rows selected
+    send(action1);
+  else
+    // Subset of rows selected
+    for (i in selected)
+      send(action2 + selected[i]);
+}
+
+
+function addSelected(entity)
+{
+   var selected = $("#" + entity + "list").jqGrid('getGridParam','selarrrow');
+   for (i in selected)
+   {
+     var key = entity + "/" + selected[i];
+     send("/register/" + key);
+     if (!(key in ganttRows))
+     {
+       // Ask the plan for new entities
+       ganttRows[key] = {"index": numRows++, "svg": null};
+       send("/plan/" + key);
+     }
+   }
+}
+
 
 function drawAxis()
 {
@@ -816,29 +913,6 @@ function drawAxis()
       bucketstart.setTime(bucketstart.getTime() + 3600000);
     }
   }
-  /*
-  $("#jqgh_grid_operationplans")
-     .html(result.join(''))
-     .unbind('mousedown')
-     .bind('mousedown', function(event) {
-        gantt.startmousemove = event.pageX;
-        $(window).bind('mouseup', function(event) {
-          $(window).unbind('mousemove');
-          $(window).unbind('mouseup');
-          event.stopPropagation();
-          })
-        $(window).bind('mousemove', function(event) {
-          var delta = event.pageX - gantt.startmousemove;
-          if (Math.abs(delta) > 3)
-          {
-            gantt.zoom(1, delta > 0 ? -86400000 : 86400000);
-            gantt.startmousemove = event.pageX;
-          }
-          event.stopPropagation();
-        });
-        event.stopPropagation();
-       });
-       */
 }
 
 

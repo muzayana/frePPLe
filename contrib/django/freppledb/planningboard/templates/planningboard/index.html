@@ -8,6 +8,10 @@
 {% endblock %}
 {% block extrahead %}{{block.super}}
 <style type="text/css">
+.spacing {
+  padding-left: 5px;
+  padding-bottom: 5px;
+}
 #gantt line {
    fill: none;
    stroke: #000;
@@ -63,34 +67,44 @@ $(function() {
 <span onclick="gantt.zoom(1,86400000)" class="fa fa-forward fa-lg" title="{% trans 'Move out'|escape %}"></span>&nbsp;&nbsp;
 <span onclick="gantt.reset()" class="fa fa-square fa-lg" title="{% trans 'Reset'|escape %}"></span>&nbsp;&nbsp;
 <span onclick="grid.showBucket()" title="{% trans 'Configure time buckets'|escape %}" id="bucketconfig" class="fa fa-clock-o fa-lg"></span>
-<span onclick="customize()" title="Customize" class="fa fa-wrench fa-lg" style="display:inline-block"></span>
-</div>
-<div id="entities" style="display: none">
-  <select name="multiselect" class="multiselect" multiple="multiple" style="width:440px; height:200px; margin:10px; padding:10px">
-    <optgroup id="resourcelist" label="{% trans "Resource" %}"></optgroup>
-    <optgroup id="bufferlist" label="{% trans "Buffer" %}"></optgroup>
-    <optgroup id="operationlist" label="{% trans "Operation" %}"></optgroup>
-  </select>
 </div>
 <div id="content-main" style="width:100%; border: 1px solid; border-radius: 10px">
-<div style="margin: 5px 1px 5px 0px; overflow-x: hide; overflow-y: scroll"><svg id="gantt"></svg></div>
+<div id="ganttdiv" style="margin: 5px 1px 5px 0px; overflow-x: hide; overflow-y: scroll"><svg id="gantt"></svg></div>
 </div>
 
 <div id="tabs" style="width:100%; margin-top:10px">
   <ul>
-    <li><a href="#unplanned">{% trans "Unplanned demand" %}</a></li>
-    <li><a href="#alerts">{% trans "Alerts" %}</a></li>
+    <li><a href="#demand">{% trans "Demand" %}</a></li>
+    <li><a href="#resource">{% trans "Resource" %}</a></li>
+    <li><a href="#buffer">{% trans "Buffer" %}</a></li>
+    <li><a href="#operation">{% trans "Operation" %}</a></li>
   </ul>
-  <div id="unplanned">
+  <div id="demand">
     <div style="float: right">
-    <span onclick="send('/solve/erase/')" title="{% trans 'Clear the plan'|escape %}" class="fa fa-stop fa-lg"></span>
-    <span onclick="send('/solve/replan/backward/')" title="{% trans 'Plan unplanned demands backward from their due date'|escape %}" class="fa fa-fast-backward fa-lg"></span>
-    <span onclick="send('/solve/replan/forward/')" title="{% trans 'Plan unplanned demands forward from the current date'|escape %}" class="fa fa-fast-forward fa-lg"></span>
+    <span onclick="actionSelectedDemand('/solve/erase/', '/solve/unplan/')" title="{% trans 'Clear the plan of selected demands'|escape %}" class="fa fa-stop fa-lg spacing"></span>
+    <span onclick="actionSelectedDemand('/solve/replan/backward/', '/solve/demand/backward/')" title="{% trans 'Plan selected demands backward from their due date'|escape %}" class="fa fa-fast-backward fa-lg spacing"></span>
+    <span onclick="actionSelectedDemand('/solve/replan/forward/', '/solve/demand/forward/')" title="{% trans 'Plan selected demands forward from the current date'|escape %}" class="fa fa-fast-forward fa-lg spacing"></span>
+    <span onclick="addSelected('demand')" title="{% trans 'Add to the graph'|escape %}" class="fa fa-tasks fa-lg"></span>
     </div>
-    <div id="demandlist"></div>
+    <div class="clear"><table id="demandlist"></table></div>
   </div>
-  <div id="alerts">
-    <p>Empty still...</p>
+  <div id="resource">
+    <div style="float: right">
+    <span onclick="addSelected('resource')" title="{% trans 'Add to the graph'|escape %}" class="fa fa-tasks fa-lg spacing"></span>
+    </div>
+    <div class="clear"><table id="resourcelist"></table></div>
+  </div>
+  <div id="buffer">
+    <div style="float: right">
+    <span onclick="addSelected('buffer')" title="{% trans 'Add to the graph'|escape %}" class="fa fa-tasks fa-lg spacing"></span>
+    </div>
+    <div class="clear"><table id="bufferlist"></table></div>
+  </div>
+  <div id="operation">
+    <div style="float: right">
+    <span onclick="addSelected('operation')" title="{% trans 'Add to the graph'|escape %}" class="fa fa-tasks fa-lg spacing"></span>
+    </div>
+    <div class="clear"><table id="operationlist"></table></div>
   </div>
 </div>
 
