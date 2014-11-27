@@ -26,6 +26,9 @@
     <ClInclude Include="..\..\modules\webserver\webserver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\modules\webserver\json.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\modules\webserver\civetweb.c">
@@ -47,6 +50,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\modules\webserver\CivetServer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\modules\webserver\json.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

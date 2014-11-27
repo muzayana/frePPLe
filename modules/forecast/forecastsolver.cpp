@@ -41,7 +41,7 @@ bool ForecastSolver::callback(Demand* l, const Signal a)
 }
 
 
-void ForecastSolver::writeElement(XMLOutput *o, const Keyword& tag, mode m) const
+void ForecastSolver::writeElement(Serializer *o, const Keyword& tag, mode m) const
 {
   // Writing a reference
   if (m == REFERENCE)
@@ -53,7 +53,7 @@ void ForecastSolver::writeElement(XMLOutput *o, const Keyword& tag, mode m) cons
 
   // Write the complete object
   if (m != NOHEAD) o->BeginObject
-    (tag, Tags::tag_name, XMLEscape(getName()), Tags::tag_type, getType().type);
+    (tag, Tags::tag_name, getName(), Tags::tag_type, getType().type);
 
   // Write the parent class
   Solver::writeElement(o, tag, NOHEAD);

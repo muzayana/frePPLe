@@ -248,7 +248,7 @@ void Forecast::setTotalQuantity(const Date d, double f, bool add)
 }
 
 
-void Forecast::writeElement(XMLOutput *o, const Keyword &tag, mode m) const
+void Forecast::writeElement(Serializer *o, const Keyword &tag, mode m) const
 {
   // Writing a reference
   if (m == REFERENCE)
@@ -260,7 +260,7 @@ void Forecast::writeElement(XMLOutput *o, const Keyword &tag, mode m) const
 
   // Write the complete object
   if (m != NOHEAD) o->BeginObject
-    (tag, Tags::tag_name, XMLEscape(getName()), Tags::tag_type, getType().type);
+    (tag, Tags::tag_name, getName(), Tags::tag_type, getType().type);
 
   o->writeElement(Tags::tag_item, &*getItem());
   o->writeElement(Tags::tag_operation, &*getOperation());
@@ -281,7 +281,7 @@ void Forecast::writeElement(XMLOutput *o, const Keyword &tag, mode m) const
   if (!getDiscrete()) o->writeElement(Tags::tag_discrete, getDiscrete());
 
   // Write all entries
-  o->BeginObject (Tags::tag_buckets);
+  o->BeginList(Tags::tag_buckets);
   for (memberIterator i = beginMember(); i != end(); ++i)
   {
     ForecastBucket* f = dynamic_cast<ForecastBucket*>(&*i);
@@ -291,7 +291,7 @@ void Forecast::writeElement(XMLOutput *o, const Keyword &tag, mode m) const
     o->writeElement(tag_consumed, f->getConsumed());
     o->EndObject(Tags::tag_bucket);
   }
-  o->EndObject(Tags::tag_buckets);
+  o->EndList(Tags::tag_buckets);
 
   o->EndObject(tag);
 }

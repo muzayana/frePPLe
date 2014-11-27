@@ -502,7 +502,7 @@ DECLARE_EXPORT void Operation::deleteOperationPlans(bool deleteLockedOpplans)
 }
 
 
-DECLARE_EXPORT void Operation::writeElement(XMLOutput *o, const Keyword& tag, mode m) const
+DECLARE_EXPORT void Operation::writeElement(Serializer* o, const Keyword& tag, mode m) const
 {
   // Note that this class is abstract and never instantiated directly. There is
   // therefore no reason to ever write a header.
@@ -530,13 +530,13 @@ DECLARE_EXPORT void Operation::writeElement(XMLOutput *o, const Keyword& tag, mo
   PythonDictionary::write(o, getDict());
 
   // Write extra plan information
-  if ((o->getContentType() == XMLOutput::PLAN
-      || o->getContentType() == XMLOutput::PLANDETAIL) && first_opplan)
+  if ((o->getContentType() == Serializer::PLAN
+      || o->getContentType() == Serializer::PLANDETAIL) && first_opplan)
   {
-    o->BeginObject(Tags::tag_operationplans);
+    o->BeginList(Tags::tag_operationplans);
     for (OperationPlan::iterator i(this); i!=OperationPlan::end(); ++i)
       o->writeElement(Tags::tag_operationplan, *i, FULL);
-    o->EndObject(Tags::tag_operationplans);
+    o->EndList(Tags::tag_operationplans);
   }
 }
 
@@ -712,7 +712,7 @@ DECLARE_EXPORT bool OperationFixedTime::extraInstantiate(OperationPlan* o)
 
 
 DECLARE_EXPORT void OperationFixedTime::writeElement
-(XMLOutput *o, const Keyword& tag, mode m) const
+(Serializer* o, const Keyword& tag, mode m) const
 {
   // Writing a reference
   if (m == REFERENCE)
@@ -724,7 +724,7 @@ DECLARE_EXPORT void OperationFixedTime::writeElement
 
   // Write the head
   if (m != NOHEAD && m != NOHEADTAIL) o->BeginObject
-    (tag, Tags::tag_name, XMLEscape(getName()), Tags::tag_type, getType().type);
+    (tag, Tags::tag_name, getName(), Tags::tag_type, getType().type);
 
   // Write the fields
   Operation::writeElement(o, tag, NOHEAD);
@@ -881,7 +881,7 @@ OperationTimePer::setOperationPlanParameters
 
 
 DECLARE_EXPORT void OperationTimePer::writeElement
-(XMLOutput *o, const Keyword& tag, mode m) const
+(Serializer *o, const Keyword& tag, mode m) const
 {
   // Writing a reference
   if (m == REFERENCE)
@@ -893,7 +893,7 @@ DECLARE_EXPORT void OperationTimePer::writeElement
 
   // Write the head
   if (m != NOHEAD && m != NOHEADTAIL) o->BeginObject
-    (tag, Tags::tag_name, XMLEscape(getName()), Tags::tag_type, getType().type);
+    (tag, Tags::tag_name, getName(), Tags::tag_type, getType().type);
 
   // Write the fields
   Operation::writeElement(o, tag, NOHEADTAIL);
@@ -922,7 +922,7 @@ DECLARE_EXPORT void OperationTimePer::endElement (XMLInput& pIn, const Attribute
 
 
 DECLARE_EXPORT void OperationRouting::writeElement
-(XMLOutput *o, const Keyword& tag, mode m) const
+(Serializer *o, const Keyword& tag, mode m) const
 {
   // Writing a reference
   if (m == REFERENCE)
@@ -934,16 +934,16 @@ DECLARE_EXPORT void OperationRouting::writeElement
 
   // Write the head
   if (m != NOHEAD && m != NOHEADTAIL) o->BeginObject
-    (tag, Tags::tag_name, XMLEscape(getName()), Tags::tag_type, getType().type);
+    (tag, Tags::tag_name, getName(), Tags::tag_type, getType().type);
 
   // Write the fields
   Operation::writeElement(o, tag, NOHEADTAIL);
   if (steps.size())
   {
-    o->BeginObject(Tags::tag_steps);
+    o->BeginList(Tags::tag_steps);
     for (Operationlist::const_iterator i = steps.begin(); i!=steps.end(); ++i)
       o->writeElement(Tags::tag_operation, *i, REFERENCE);
-    o->EndObject(Tags::tag_steps);
+    o->EndList(Tags::tag_steps);
   }
 
   // Write the tail
@@ -1159,7 +1159,7 @@ DECLARE_EXPORT void OperationAlternate::setEffective(Operation* o, DateRange dr)
 
 
 DECLARE_EXPORT void OperationAlternate::writeElement
-(XMLOutput *o, const Keyword& tag, mode m) const
+(Serializer *o, const Keyword& tag, mode m) const
 {
   // Writing a reference
   if (m == REFERENCE)
@@ -1171,7 +1171,7 @@ DECLARE_EXPORT void OperationAlternate::writeElement
 
   // Write the complete object
   if (m != NOHEAD && m != NOHEADTAIL) o->BeginObject
-    (tag, Tags::tag_name, XMLEscape(getName()), Tags::tag_type, getType().type);
+    (tag, Tags::tag_name, getName(), Tags::tag_type, getType().type);
 
   // Write the standard fields
   Operation::writeElement(o, tag, NOHEADTAIL);
@@ -1179,7 +1179,7 @@ DECLARE_EXPORT void OperationAlternate::writeElement
     o->writeElement(Tags::tag_search, search);
 
   // Write the extra fields
-  o->BeginObject(Tags::tag_alternates);
+  o->BeginList(Tags::tag_alternates);
   alternatePropertyList::const_iterator propIter = alternateProperties.begin();
   for (Operationlist::const_iterator i = alternates.begin();
       i != alternates.end(); ++i)
@@ -1194,7 +1194,7 @@ DECLARE_EXPORT void OperationAlternate::writeElement
     o->EndObject (Tags::tag_alternate);
     ++propIter;
   }
-  o->EndObject(Tags::tag_alternates);
+  o->EndList(Tags::tag_alternates);
 
   // Write the tail
   if (m != NOHEADTAIL && m != NOTAIL) o->EndObject(tag);
@@ -1385,7 +1385,7 @@ DECLARE_EXPORT void OperationSplit::setEffective(Operation* o, DateRange dr)
 
 
 DECLARE_EXPORT void OperationSplit::writeElement
-(XMLOutput *o, const Keyword& tag, mode m) const
+(Serializer *o, const Keyword& tag, mode m) const
 {
   // Writing a reference
   if (m == REFERENCE)
@@ -1397,13 +1397,13 @@ DECLARE_EXPORT void OperationSplit::writeElement
 
   // Write the complete object
   if (m != NOHEAD && m != NOHEADTAIL) o->BeginObject
-    (tag, Tags::tag_name, XMLEscape(getName()), Tags::tag_type, getType().type);
+    (tag, Tags::tag_name, getName(), Tags::tag_type, getType().type);
 
   // Write the standard fields
   Operation::writeElement(o, tag, NOHEADTAIL);
 
   // Write the extra fields
-  o->BeginObject(Tags::tag_alternates);
+  o->BeginList(Tags::tag_alternates);
   alternatePropertyList::const_iterator propIter = alternateProperties.begin();
   for (Operationlist::const_iterator i = alternates.begin();
       i != alternates.end(); ++i)
@@ -1418,7 +1418,7 @@ DECLARE_EXPORT void OperationSplit::writeElement
     o->EndObject (Tags::tag_alternate);
     ++propIter;
   }
-  o->EndObject(Tags::tag_alternates);
+  o->EndList(Tags::tag_alternates);
 
   // Write the tail
   if (m != NOHEADTAIL && m != NOTAIL) o->EndObject(tag);

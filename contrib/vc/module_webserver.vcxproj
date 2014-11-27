@@ -117,12 +117,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\modules\webserver\CivetServer.h" />
+    <ClInclude Include="..\..\modules\webserver\json.h" />
     <ClInclude Include="..\..\modules\webserver\webserver.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\modules\webserver\CivetServer.cpp" />
     <ClCompile Include="..\..\modules\webserver\civetweb.c" />
     <ClCompile Include="..\..\modules\webserver\http_get.cpp" />
+    <ClCompile Include="..\..\modules\webserver\json.cpp" />
     <ClCompile Include="..\..\modules\webserver\module.cpp" />
     <ClCompile Include="..\..\modules\webserver\webclient.cpp" />
     <ClCompile Include="..\..\modules\webserver\webserver.cpp" />

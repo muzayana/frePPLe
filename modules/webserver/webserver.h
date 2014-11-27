@@ -362,7 +362,6 @@ class WebServer : public CivetHandler
     static int websocket_unregister(struct mg_connection*, int, char*, size_t, WebClient*);
 };
 
-
 }   // End namespace
 
 #endif

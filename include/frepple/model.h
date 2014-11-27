@@ -187,7 +187,7 @@ class Calendar : public HasName<Calendar>, public HasSource
         }
 
         /** Auxilary function to write out the start of the XML. */
-        DECLARE_EXPORT void writeHeader(XMLOutput *, const Keyword&) const;
+        DECLARE_EXPORT void writeHeader(Serializer *, const Keyword&) const;
 
       public:
         /** Return the calendar to whom the bucket belongs. */
@@ -277,7 +277,7 @@ class Calendar : public HasName<Calendar>, public HasSource
         virtual bool getBool() const {return true;}
 
         virtual DECLARE_EXPORT void writeElement
-        (XMLOutput*, const Keyword&, mode=DEFAULT) const;
+        (Serializer*, const Keyword&, mode=DEFAULT) const;
 
         /** Reads the bucket information from the input. Only the fields "name"
           * and "start" are read in. Other fields as also written out but these
@@ -399,7 +399,7 @@ class Calendar : public HasName<Calendar>, public HasSource
     /** Returns an iterator to go through the list of buckets. */
     BucketIterator endBuckets() const {return BucketIterator(NULL);}
 
-    DECLARE_EXPORT void writeElement(XMLOutput*, const Keyword&, mode=DEFAULT) const;
+    DECLARE_EXPORT void writeElement(Serializer*, const Keyword&, mode=DEFAULT) const;
     DECLARE_EXPORT void endElement(XMLInput&, const Attribute&, const DataElement&);
     DECLARE_EXPORT void beginElement(XMLInput&, const Attribute&);
     virtual DECLARE_EXPORT PyObject* getattro(const Attribute&);
@@ -471,7 +471,7 @@ class CalendarDouble : public Calendar
         void setValue(const double v) {val = v;}
 
         void writeElement
-        (XMLOutput *o, const Keyword& tag, mode m = DEFAULT) const
+        (Serializer *o, const Keyword& tag, mode m = DEFAULT) const
         {
           assert(m == DEFAULT || m == FULL);
           writeHeader(o, tag);
@@ -538,7 +538,7 @@ class CalendarDouble : public Calendar
     static DECLARE_EXPORT PyObject* setPythonValue(PyObject*, PyObject*, PyObject*);
 
     void endElement(XMLInput&, const Attribute&, const DataElement&);
-    void writeElement(XMLOutput*, const Keyword&, mode m=DEFAULT) const;
+    void writeElement(Serializer*, const Keyword&, mode m=DEFAULT) const;
 
     /** Returns the value on the specified date. */
     double getValue(const Date d) const
@@ -645,9 +645,9 @@ class Problem : public NonCopyable, public Object
       */
     virtual double getWeight() const = 0;
 
-    virtual DECLARE_EXPORT void writeElement(XMLOutput*, const Keyword&, mode=DEFAULT) const;
+    virtual DECLARE_EXPORT void writeElement(Serializer*, const Keyword&, mode=DEFAULT) const;
     void endElement(XMLInput&, const Attribute&, const DataElement&) {}
-    static DECLARE_EXPORT void writer(const MetaCategory*, XMLOutput*);
+    static DECLARE_EXPORT void writer(const MetaCategory*, Serializer*);
 
     PyObject* getattro(const Attribute&);
 
@@ -850,7 +850,7 @@ class Solver : public HasName<Solver>
     /** Destructor. */
     virtual DECLARE_EXPORT ~Solver() {}
 
-    virtual DECLARE_EXPORT void writeElement(XMLOutput*, const Keyword&, mode=DEFAULT) const;
+    virtual DECLARE_EXPORT void writeElement(Serializer*, const Keyword&, mode=DEFAULT) const;
     virtual DECLARE_EXPORT void endElement(XMLInput&, const Attribute&, const DataElement&);
     virtual DECLARE_EXPORT PyObject* getattro(const Attribute&);
     virtual DECLARE_EXPORT int setattro(const Attribute&, const PythonObject&);
@@ -979,7 +979,7 @@ class Plannable : public HasProblems, public Solvable
     /** Implement the pure virtual function from the HasProblem class. */
     Plannable* getEntity() const {return const_cast<Plannable*>(this);}
 
-    virtual DECLARE_EXPORT void writeElement(XMLOutput*, const Keyword&, mode=DEFAULT) const;
+    virtual DECLARE_EXPORT void writeElement(Serializer*, const Keyword&, mode=DEFAULT) const;
     virtual DECLARE_EXPORT void endElement(XMLInput&, const Attribute&, const DataElement&);
 
   private:
@@ -1153,7 +1153,7 @@ class Location : public HasHierarchy<Location>, public HasDescription
     /** Updates the availability calendar of the location. */
     void setAvailable(CalendarDouble* b) {available = b;}
 
-    DECLARE_EXPORT void writeElement(XMLOutput*, const Keyword&, mode=DEFAULT) const;
+    DECLARE_EXPORT void writeElement(Serializer*, const Keyword&, mode=DEFAULT) const;
     DECLARE_EXPORT void beginElement(XMLInput&, const Attribute&);
     DECLARE_EXPORT void endElement(XMLInput&, const Attribute&, const DataElement&);
     virtual DECLARE_EXPORT PyObject* getattro(const Attribute&);
@@ -1193,7 +1193,7 @@ class LocationDefault : public Location
 class Customer : public HasHierarchy<Customer>, public HasDescription
 {
   public:
-    DECLARE_EXPORT void writeElement(XMLOutput*, const Keyword&, mode=DEFAULT) const;
+    DECLARE_EXPORT void writeElement(Serializer*, const Keyword&, mode=DEFAULT) const;
     DECLARE_EXPORT void beginElement(XMLInput&, const Attribute&);
     DECLARE_EXPORT void endElement(XMLInput&, const Attribute&, const DataElement&);
     virtual DECLARE_EXPORT PyObject* getattro(const Attribute&);
@@ -1230,7 +1230,7 @@ class CustomerDefault : public Customer
 class Supplier : public HasHierarchy<Supplier>, public HasDescription
 {
   public:
-    DECLARE_EXPORT void writeElement(XMLOutput*, const Keyword&, mode=DEFAULT) const;
+    DECLARE_EXPORT void writeElement(Serializer*, const Keyword&, mode=DEFAULT) const;
     DECLARE_EXPORT void beginElement(XMLInput&, const Attribute&);
     DECLARE_EXPORT void endElement(XMLInput&, const Attribute&, const DataElement&);
     virtual DECLARE_EXPORT PyObject* getattro(const Attribute&);
@@ -1509,7 +1509,7 @@ class Operation : public HasName<Operation>,
       );
 
     DECLARE_EXPORT void beginElement(XMLInput&, const Attribute&);
-    virtual DECLARE_EXPORT void writeElement(XMLOutput*, const Keyword&, mode=DEFAULT) const;
+    virtual DECLARE_EXPORT void writeElement(Serializer*, const Keyword&, mode=DEFAULT) const;
     DECLARE_EXPORT void endElement(XMLInput&, const Attribute&, const DataElement&);
     virtual DECLARE_EXPORT PyObject* getattro(const Attribute&);
     virtual DECLARE_EXPORT int setattro(const Attribute&, const PythonObject&);
@@ -2042,7 +2042,7 @@ class OperationPlan
       */
     virtual DECLARE_EXPORT void setStart(Date);
 
-    virtual DECLARE_EXPORT void writeElement(XMLOutput*, const Keyword&, mode=DEFAULT) const;
+    virtual DECLARE_EXPORT void writeElement(Serializer*, const Keyword&, mode=DEFAULT) const;
     DECLARE_EXPORT void beginElement(XMLInput&, const Attribute&);
     DECLARE_EXPORT void endElement(XMLInput&, const Attribute&, const DataElement&);
     virtual DECLARE_EXPORT PyObject* getattro(const Attribute&);
@@ -2145,7 +2145,7 @@ class OperationPlan
     {return sizeof(OperationPlan) + getSource().size();}
 
     /** Handles the persistence of operationplan objects. */
-    static DECLARE_EXPORT void writer(const MetaCategory*, XMLOutput*);
+    static DECLARE_EXPORT void writer(const MetaCategory*, Serializer*);
 
     /** Comparison of 2 OperationPlans.
       * To garantuee that the problems are sorted in a consistent and stable
@@ -2364,7 +2364,7 @@ class OperationFixedTime : public Operation
       duration = t;
     }
 
-    DECLARE_EXPORT void writeElement(XMLOutput*, const Keyword&, mode=DEFAULT) const;
+    DECLARE_EXPORT void writeElement(Serializer*, const Keyword&, mode=DEFAULT) const;
     DECLARE_EXPORT void endElement(XMLInput&, const Attribute&, const DataElement&);
     virtual DECLARE_EXPORT PyObject* getattro(const Attribute&);
     virtual DECLARE_EXPORT int setattro(const Attribute&, const PythonObject&);
@@ -2410,7 +2410,7 @@ class OperationSetup : public Operation
     explicit OperationSetup(const string& s) : Operation(s) {initType(metadata);}
 
     // Never write the setup operation
-    DECLARE_EXPORT void writeElement(XMLOutput*, const Keyword&, mode=DEFAULT) const {}
+    DECLARE_EXPORT void writeElement(Serializer*, const Keyword&, mode=DEFAULT) const {}
     static int initialize();
 
     virtual void solve(Solver &s, void* v = NULL) const {s.solve(this,v);}
@@ -2480,7 +2480,7 @@ class OperationTimePer : public Operation
     DECLARE_EXPORT OperationPlanState setOperationPlanParameters
     (OperationPlan*, double, Date, Date, bool=true, bool=true) const;
 
-    DECLARE_EXPORT void writeElement(XMLOutput*, const Keyword&, mode=DEFAULT) const;
+    DECLARE_EXPORT void writeElement(Serializer*, const Keyword&, mode=DEFAULT) const;
     DECLARE_EXPORT void endElement(XMLInput&, const Attribute&, const DataElement&);
     virtual DECLARE_EXPORT PyObject* getattro(const Attribute&);
     virtual DECLARE_EXPORT int setattro(const Attribute&, const PythonObject&);
@@ -2579,7 +2579,7 @@ class OperationRouting : public Operation
       );
 
     DECLARE_EXPORT void beginElement(XMLInput&, const Attribute&);
-    virtual DECLARE_EXPORT void writeElement(XMLOutput*, const Keyword&, mode=DEFAULT) const;
+    virtual DECLARE_EXPORT void writeElement(Serializer*, const Keyword&, mode=DEFAULT) const;
     DECLARE_EXPORT void endElement(XMLInput&, const Attribute&, const DataElement&);
     virtual DECLARE_EXPORT PyObject* getattro(const Attribute&);
     static int initialize();
@@ -2712,7 +2712,7 @@ class OperationSplit : public Operation
       );
 
     DECLARE_EXPORT void beginElement(XMLInput&, const Attribute&);
-    DECLARE_EXPORT void writeElement(XMLOutput*, const Keyword&, mode=DEFAULT) const;
+    DECLARE_EXPORT void writeElement(Serializer*, const Keyword&, mode=DEFAULT) const;
     DECLARE_EXPORT void endElement(XMLInput&, const Attribute&, const DataElement&);
     virtual DECLARE_EXPORT PyObject* getattro(const Attribute&);
     virtual void solve(Solver &s, void* v = NULL) const {s.solve(this,v);}
@@ -2824,7 +2824,7 @@ class OperationAlternate : public Operation
       );
 
     DECLARE_EXPORT void beginElement(XMLInput&, const Attribute&);
-    DECLARE_EXPORT void writeElement(XMLOutput*, const Keyword&, mode=DEFAULT) const;
+    DECLARE_EXPORT void writeElement(Serializer*, const Keyword&, mode=DEFAULT) const;
     DECLARE_EXPORT void endElement(XMLInput&, const Attribute&, const DataElement&);
     virtual DECLARE_EXPORT PyObject* getattro(const Attribute&);
     virtual DECLARE_EXPORT int setattro(const Attribute&, const PythonObject&);
@@ -2917,7 +2917,7 @@ class Item : public HasHierarchy<Item>, public HasDescription
       else throw DataException("Item price must be positive");
     }
 
-    virtual DECLARE_EXPORT void writeElement(XMLOutput*, const Keyword&, mode=DEFAULT) const;
+    virtual DECLARE_EXPORT void writeElement(Serializer*, const Keyword&, mode=DEFAULT) const;
     DECLARE_EXPORT void endElement(XMLInput&, const Attribute&, const DataElement&);
     DECLARE_EXPORT void beginElement(XMLInput&, const Attribute&);
     virtual DECLARE_EXPORT PyObject* getattro(const Attribute&);
@@ -3042,7 +3042,7 @@ class Buffer : public HasHierarchy<Buffer>, public HasLevel,
     }
 
     DECLARE_EXPORT virtual void beginElement(XMLInput&, const Attribute&);
-    DECLARE_EXPORT virtual void writeElement(XMLOutput*, const Keyword&, mode=DEFAULT) const;
+    DECLARE_EXPORT virtual void writeElement(Serializer*, const Keyword&, mode=DEFAULT) const;
     DECLARE_EXPORT virtual void endElement(XMLInput&, const Attribute&, const DataElement&);
     virtual DECLARE_EXPORT PyObject* getattro(const Attribute&);
     virtual DECLARE_EXPORT int setattro(const Attribute&, const PythonObject&);
@@ -3229,7 +3229,7 @@ class BufferInfinite : public Buffer
 {
   public:
     virtual void solve(Solver &s, void* v = NULL) const {s.solve(this,v);}
-    virtual DECLARE_EXPORT void writeElement(XMLOutput*, const Keyword&, mode=DEFAULT) const;
+    virtual DECLARE_EXPORT void writeElement(Serializer*, const Keyword&, mode=DEFAULT) const;
     virtual const MetaClass& getType() const {return *metadata;}
     virtual size_t getSize() const
     {return sizeof(BufferInfinite) + Buffer::extrasize();}
@@ -3296,7 +3296,7 @@ class BufferProcure : public Buffer
   public:
     virtual void solve(Solver &s, void* v = NULL) const {s.solve(this,v);}
     virtual DECLARE_EXPORT void endElement(XMLInput&, const Attribute&, const DataElement&);
-    virtual DECLARE_EXPORT void writeElement(XMLOutput*, const Keyword&, mode=DEFAULT) const;
+    virtual DECLARE_EXPORT void writeElement(Serializer*, const Keyword&, mode=DEFAULT) const;
     virtual const MetaClass& getType() const {return *metadata;}
     virtual size_t getSize() const
     {return sizeof(BufferProcure) + Buffer::extrasize();}
@@ -3588,11 +3588,11 @@ class Flow : public Object, public Association<Operation,Buffer,Flow>::Node,
     /** This method holds the logic the compute the quantity of a flowplan. */
     virtual double getFlowplanQuantity(const FlowPlan*) const;
 
-    virtual DECLARE_EXPORT void writeElement(XMLOutput*, const Keyword&, mode=DEFAULT) const;
+    virtual DECLARE_EXPORT void writeElement(Serializer*, const Keyword&, mode=DEFAULT) const;
     DECLARE_EXPORT void beginElement(XMLInput&, const Attribute&);
     DECLARE_EXPORT void endElement(XMLInput&, const Attribute&, const DataElement&);
     static int initialize();
-    static void writer(const MetaCategory*, XMLOutput*);
+    static void writer(const MetaCategory*, Serializer*);
 
     virtual void solve(Solver &s, void* v = NULL) const {s.solve(this,v);}
 
@@ -3671,7 +3671,7 @@ class FlowEnd : public Flow
     /** This method holds the logic the compute the date of a flowplan. */
     virtual Date getFlowplanDate(const FlowPlan* fl) const;
 
-    virtual DECLARE_EXPORT void writeElement(XMLOutput*, const Keyword&, mode=DEFAULT) const;
+    virtual DECLARE_EXPORT void writeElement(Serializer*, const Keyword&, mode=DEFAULT) const;
 
     virtual void solve(Solver &s, void* v = NULL) const {s.solve(this,v);}
 
@@ -3790,7 +3790,7 @@ class FlowPlan : public TimeLine<FlowPlan>::EventChangeOnhand, public PythonExte
       * Object at all.
       */
     void DECLARE_EXPORT writeElement
-    (XMLOutput*, const Keyword&, mode=DEFAULT) const;
+    (Serializer*, const Keyword&, mode=DEFAULT) const;
 
     /** Updates the quantity of the flowplan by changing the quantity of the
       * operationplan owning this flowplan.<br>
@@ -3891,7 +3891,7 @@ class SetupMatrix : public HasName<SetupMatrix>, public HasSource
         /** Destructor. */
         DECLARE_EXPORT ~Rule();
 
-        virtual DECLARE_EXPORT void writeElement(XMLOutput*, const Keyword&, mode=DEFAULT) const;
+        virtual DECLARE_EXPORT void writeElement(Serializer*, const Keyword&, mode=DEFAULT) const;
         DECLARE_EXPORT void endElement(XMLInput&, const Attribute&, const DataElement&);
         virtual DECLARE_EXPORT PyObject* getattro(const Attribute&);
         virtual DECLARE_EXPORT int setattro(const Attribute&, const PythonObject&);
@@ -4006,7 +4006,7 @@ class SetupMatrix : public HasName<SetupMatrix>, public HasSource
       */
     DECLARE_EXPORT Rule* createRule(const AttributeList&);
 
-    virtual DECLARE_EXPORT void writeElement(XMLOutput*, const Keyword&, mode=DEFAULT) const;
+    virtual DECLARE_EXPORT void writeElement(Serializer*, const Keyword&, mode=DEFAULT) const;
     DECLARE_EXPORT void beginElement(XMLInput&, const Attribute&);
     DECLARE_EXPORT void endElement(XMLInput&, const Attribute&, const DataElement&);
     virtual DECLARE_EXPORT PyObject* getattro(const Attribute&);
@@ -4101,7 +4101,7 @@ class Skill : public HasName<Skill>, public HasSource
     /** Python interface to add a new resource. */
     static DECLARE_EXPORT PyObject* addPythonResource(PyObject*, PyObject*);
 
-    virtual DECLARE_EXPORT void writeElement(XMLOutput*, const Keyword&, mode=DEFAULT) const;
+    virtual DECLARE_EXPORT void writeElement(Serializer*, const Keyword&, mode=DEFAULT) const;
     DECLARE_EXPORT void beginElement(XMLInput&, const Attribute&);
     DECLARE_EXPORT void endElement(XMLInput&, const Attribute&, const DataElement&);
     virtual DECLARE_EXPORT PyObject* getattro(const Attribute&);
@@ -4215,7 +4215,7 @@ class Resource : public HasHierarchy<Resource>,
     Load* findLoad(const Operation* o, Date d) const
     {return loads.find(o,d);}
 
-    virtual DECLARE_EXPORT void writeElement(XMLOutput*, const Keyword&, mode=DEFAULT) const;
+    virtual DECLARE_EXPORT void writeElement(Serializer*, const Keyword&, mode=DEFAULT) const;
     DECLARE_EXPORT void endElement(XMLInput&, const Attribute&, const DataElement&);
     DECLARE_EXPORT void beginElement(XMLInput&, const Attribute&);
     virtual DECLARE_EXPORT PyObject* getattro(const Attribute&);
@@ -4402,7 +4402,7 @@ class ResourceInfinite : public Resource
 {
   public:
     virtual void solve(Solver &s, void* v = NULL) const {s.solve(this,v);}
-    virtual DECLARE_EXPORT void writeElement(XMLOutput*, const Keyword&, mode=DEFAULT) const;
+    virtual DECLARE_EXPORT void writeElement(Serializer*, const Keyword&, mode=DEFAULT) const;
     virtual const MetaClass& getType() const {return *metadata;}
     explicit ResourceInfinite(const string& c) : Resource(c)
     {setDetectProblems(false); initType(metadata);}
@@ -4419,7 +4419,7 @@ class ResourceBuckets : public Resource
 {
   public:
     virtual void solve(Solver &s, void* v = NULL) const {s.solve(this,v);}
-    virtual DECLARE_EXPORT void writeElement(XMLOutput*, const Keyword&, mode=DEFAULT) const;
+    virtual DECLARE_EXPORT void writeElement(Serializer*, const Keyword&, mode=DEFAULT) const;
     virtual const MetaClass& getType() const {return *metadata;}
     explicit ResourceBuckets(const string& c) : Resource(c)
     {initType(metadata);}
@@ -4452,8 +4452,8 @@ class ResourceSkill : public Object,
 
     /** Initialize the class. */
     static int initialize();
-    static void writer(const MetaCategory*, XMLOutput*);
-    virtual DECLARE_EXPORT void writeElement(XMLOutput*, const Keyword&, mode=DEFAULT) const;
+    static void writer(const MetaCategory*, Serializer*);
+    virtual DECLARE_EXPORT void writeElement(Serializer*, const Keyword&, mode=DEFAULT) const;
     DECLARE_EXPORT void beginElement(XMLInput&, const Attribute&);
     DECLARE_EXPORT void endElement(XMLInput&, const Attribute&, const DataElement&);
     DECLARE_EXPORT PyObject* getattro(const Attribute&);
@@ -4594,13 +4594,13 @@ class Load
     /** This method holds the logic the compute the quantity of a loadplan. */
     virtual double getLoadplanQuantity(const LoadPlan*) const;
 
-    virtual DECLARE_EXPORT void writeElement(XMLOutput*, const Keyword&, mode=DEFAULT) const;
+    virtual DECLARE_EXPORT void writeElement(Serializer*, const Keyword&, mode=DEFAULT) const;
     DECLARE_EXPORT void beginElement(XMLInput&, const Attribute&);
     DECLARE_EXPORT void endElement(XMLInput&, const Attribute&, const DataElement&);
     DECLARE_EXPORT PyObject* getattro(const Attribute&);
     DECLARE_EXPORT int setattro(const Attribute&, const PythonObject&);
     static int initialize();
-    static void writer(const MetaCategory*, XMLOutput*);
+    static void writer(const MetaCategory*, Serializer*);
 
     bool getHidden() const
     {
@@ -4724,7 +4724,7 @@ class Plan : public Plannable, public Object
       * the XMLOutput object a complete model is written, or only the
       * dynamic plan information.
       */
-    virtual DECLARE_EXPORT void writeElement(XMLOutput*, const Keyword&, mode=DEFAULT) const;
+    virtual DECLARE_EXPORT void writeElement(Serializer*, const Keyword&, mode=DEFAULT) const;
     DECLARE_EXPORT void endElement(XMLInput&, const Attribute&, const DataElement&);
     DECLARE_EXPORT void beginElement(XMLInput&, const Attribute&);
     DECLARE_EXPORT PyObject* getattro(const Attribute&);
@@ -4860,7 +4860,7 @@ class Demand
     /** Returns the total amount that has been planned. */
     DECLARE_EXPORT double getPlannedQuantity() const;
 
-    virtual DECLARE_EXPORT void writeElement(XMLOutput*, const Keyword&, mode=DEFAULT) const;
+    virtual DECLARE_EXPORT void writeElement(Serializer*, const Keyword&, mode=DEFAULT) const;
     virtual DECLARE_EXPORT void endElement(XMLInput&, const Attribute&, const DataElement&);
     virtual DECLARE_EXPORT void beginElement(XMLInput&, const Attribute&);
     virtual DECLARE_EXPORT PyObject* getattro(const Attribute&);

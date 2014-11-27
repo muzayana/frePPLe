@@ -861,7 +861,7 @@ class Forecast : public Demand
       */
     static PyObject* setPythonTotalQuantity(PyObject*, PyObject*);
 
-    void writeElement(XMLOutput*, const Keyword&, mode=DEFAULT) const;
+    void writeElement(Serializer*, const Keyword&, mode=DEFAULT) const;
     void endElement(XMLInput& pIn, const Attribute& pAttr, const DataElement& pElement);
     void beginElement(XMLInput& pIn, const Attribute& pAttr);
     static int initialize();
@@ -1255,7 +1255,7 @@ class ForecastSolver : public Solver
     virtual const MetaClass& getType() const {return *metadata;}
     static const MetaClass *metadata;
     virtual size_t getSize() const {return sizeof(ForecastSolver);}
-    void writeElement(XMLOutput*, const Keyword&, mode=DEFAULT) const;
+    void writeElement(Serializer*, const Keyword&, mode=DEFAULT) const;
     static int initialize();
 
     /** Generates a baseline forecast. */
