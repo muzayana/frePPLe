@@ -107,17 +107,17 @@ function NOT_USED_customize()
 
 function onmessage(ev)
 {
-  xmldoc = $.parseXML(ev.data);
-  type = $(xmldoc).find('plan').attr('category');
-
   // Debugging message
-  //console.log(ev.data);
+  console.log(ev.data);
 
   // Dispatch the message to a handler function
+  jsondoc = jQuery.parseJSON(ev.data);
+  type = jsondoc.category;
+  console.log("ppp");
   if (type == "name")
-    displayList(xmldoc);
+    displayList(jsondoc);
   else if (type=="plan")
-    displayPlan(xmldoc);
+    displayPlan(jsondoc);
 }
 
 function demandAction (cellvalue, options, row)
@@ -129,7 +129,7 @@ function demandAction (cellvalue, options, row)
 }
 
 
-function displayList(xmldoc)
+function displayList(jsondoc)
 {
   // Demand tab
   var w = $("#demand").width() - 16;
@@ -150,15 +150,14 @@ function displayList(xmldoc)
     ],
     multiselect: true
   });
-  $(xmldoc).find('demand').each(function() {
-    var nm = $(this).attr('name');
-    $("#demandlist").jqGrid('addRowData', nm, {
-      'name': nm,
-      'quantity': $(this).find('quantity').text(),
-      'due': $(this).find('due').text(),
-      'priority': $(this).find('priority').text(),
-      'item': $(this).find('item').attr('name'),
-      'customer': $(this).find('customer').attr('name')
+  $(jsondoc.demands).each(function() {
+    $("#demandlist").jqGrid('addRowData', this.name, {
+      'name': this.name,
+      'quantity': this.quantity,
+      'due': this.due,
+      'priority': this.priority,
+      'item': this.item,
+      'customer': this.customer
       });
     });
   $("#demandlist").jqGrid('filterToolbar',{searchOperators : true});
@@ -174,12 +173,11 @@ function displayList(xmldoc)
     ],
     multiselect: true
   });
-  $(xmldoc).find('resource').each(function() {
-    var d = {
-      'name': $(this).attr('name'),
-      'location': $(this).find('location').attr('name')
-      };
-    $("#resourcelist").jqGrid('addRowData', d['name'], d);
+  $(jsondoc.resources).each(function() {
+    $("#resourcelist").jqGrid('addRowData', this.name, {
+      'name': this.name,
+      'location': this.location
+      });
     });
   $("#resourcelist").jqGrid('filterToolbar',{searchOperators : true});
 
@@ -195,12 +193,12 @@ function displayList(xmldoc)
     ],
     multiselect: true
   });
-  $(xmldoc).find('buffer').each(function() {
-    var d = {
-      'name': $(this).attr('name'),
-      'location': $(this).find('location').attr('name')
-      };
-    $("#bufferlist").jqGrid('addRowData', d['name'], d);
+  $(jsondoc.buffers).each(function() {
+    $("#bufferlist").jqGrid('addRowData', this.name, {
+      'name': this.name,
+      'item': this.item,
+      'location': this.location
+      });
     });
   $("#bufferlist").jqGrid('filterToolbar',{searchOperators : true});
 
@@ -215,19 +213,17 @@ function displayList(xmldoc)
     ],
     multiselect: true
   });
-  $(xmldoc).find('operation').each(function() {
-    var d = {
-      'name': $(this).attr('name'),
-      'location': $(this).find('location').attr('name')
-      };
-    $("#operationlist").jqGrid('addRowData', d['name'], d);
+  $(jsondoc.operations).each(function() {
+    $("#operationlist").jqGrid('addRowData', this.name, {
+      'name': this.name,
+      'location': this.location
+      });
     });
   $("#operationlist").jqGrid('filterToolbar',{searchOperators : true});
-
 }
 
 
-function displayPlan(xmldoc)
+function displayPlan(jsondoc)
 {
   width = $("#content-main").width() - 24;
   height = numRows * rowheight + timescaleheight;
@@ -246,25 +242,11 @@ function displayPlan(xmldoc)
     .origin(function(d) { return d; })
     .on("drag", dragmove);
 
-  // Display the operations
-  $(xmldoc).find('operations').children().each(function() {
-    displayOperation(this);
-  });
-
-  // Display the resources
-  $(xmldoc).find('resources').children().each(function() {
-    displayResource(this);
-  });
-
-  // Display the buffers
-  $(xmldoc).find('buffers').children().each(function() {
-    displayBuffer(this);
-    });
-
-  // Display the demands
-  $(xmldoc).find('demands').children().each(function() {
-    displayDemand(this);
-    });
+  // Display the objects
+  $(jsondoc.operations).each(displayOperation);
+  $(jsondoc.resources).each(displayResource);
+  $(jsondoc.buffers).each(displayBuffer);
+  $(jsondoc.demands).each(displayDemand);
 }
 
 
@@ -277,21 +259,21 @@ function dragmove(d)
 }
 
 
-function displayOperation(xml)
+function displayOperation()
 {
   // Look up the row to display the information at
-  var res = $(xml).attr('name');
+  var res = this.name;
   var indx = ganttRows['operation/' + res].index;
   if (indx === undefined)
     return; // Operation not to be shown at all
 
-  // Parse XML data
+  // Preprocess JSON data
   var data = [];
   var layer = [];
-  $(xml).find('operationplan').each(function() {
+  $(this.operationplans).each(function() {
     var row = 0;
-    var strt = new Date(Date.parse($(this).find('start').text()));
-    var nd = new Date(Date.parse($(this).find('end').text()))
+    var strt = new Date(Date.parse(this.start));
+    var nd = new Date(Date.parse(this.end))
     for (; row < layer.length; ++row)
     {
       if (strt >= layer[row])
@@ -306,7 +288,7 @@ function displayOperation(xml)
       res,
       strt,
       nd,
-      parseFloat($(this).find('quantity').text()),
+      this.quantity,
       row
       ]);
     });
@@ -367,22 +349,22 @@ function displayOperation(xml)
 }
 
 
-function displayResource(xml, indx)
+function displayResource()
 {
   // Look up the row to display the information at
-  var res = $(xml).attr('name');
+  var res = this.name;
   var indx = ganttRows['resource/' + res].index;
   if (indx === undefined)
     return; // Resource not to be shown at all
 
-  // Parse XML data
+  // Parse JSON data
   var data = [];
   var layer = [];
-  $(xml).find('loadplan').each(function() {
-    if ($(this).find('quantity').text().indexOf("-") < 0) {
+  $(this.loadplans).each(function() {
+    if (this.quantity > 0) {
       var row = 0;
-      var strt = new Date(Date.parse($(this).find('start').text()));
-      var nd = new Date(Date.parse($(this).find('end').text()))
+      var strt = new Date(Date.parse(this.operationplan.start));
+      var nd = new Date(Date.parse(this.operationplan.end));
       for (; row < layer.length; ++row)
       {
         if (strt >= layer[row])
@@ -394,10 +376,10 @@ function displayResource(xml, indx)
       if (row >= layer.length)
         layer.push(nd);
       data.push([
-        $(xml).find('operationplan').attr('operation'),
+        this.operationplan.operation,
         strt,
         nd,
-        parseFloat($(this).find('quantity').text()),
+        this.quantity,
         row
         ]);
       }
@@ -459,26 +441,26 @@ function displayResource(xml, indx)
 }
 
 
-function displayBuffer(xml, indx)
+function displayBuffer()
 {
   // Look up the row to display the information at
-  var res = $(xml).attr('name');
+  var res = this.name;
   var indx = ganttRows['buffer/' + res].index;
   if (indx === undefined)
     return; // Buffer not to be shown at all
 
-  // Parse XML data
+  // Parse JSON data
   var data = [];
   var min_oh = 0;
   var max_oh = 0;
-  $(xml).find('flowplan').each(function() {
-    var oh = parseFloat($(this).find('onhand').text());
+  $(this.flowplans).each(function() {
+    var oh = this.onhand;
     data.push([
-      new Date(Date.parse($(this).find('date').text())),
-      parseFloat($(this).find('quantity').text()),
+      new Date(Date.parse(this.date)),
+      this.quantity,
       oh,
-      parseFloat($(this).find('minimum').text()),
-      parseFloat($(this).find('maximum').text())
+      this.minimum,
+      this.maximum
       ]);
     if (oh < min_oh)
       min_oh = oh;
@@ -565,17 +547,17 @@ function displayBuffer(xml, indx)
 }
 
 
-function displayDemand(xml)
+function displayDemand()
 {
   $.jgrid.formatter.date.reformatAfterEdit = true;
-  var nm = $(xml).attr('name');
+  var nm = this.name;
   $("#demandlist").jqGrid('setRowData', nm, {
     'name': nm,
-    'quantity': $(xml).find('quantity').text(),
-    'due': $(xml).find('due').text(),
-    'priority': $(xml).find('priority').text(),
-    'item': $(xml).find('item').attr('name'),
-    'customer': $(xml).find('customer').attr('name'),
+    'quantity': this.quantity,
+    'due': this.due,
+    'priority': this.priority,
+    'item': this.item,
+    'customer': this.customer,
     'planned quantity': 666
     });
 }
