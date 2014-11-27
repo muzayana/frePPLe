@@ -1090,7 +1090,7 @@ class GridReport(View):
                         user_id=request.user.pk,
                         content_type_id=content_type_id,
                         object_id=obj.pk,
-                        object_repr=force_unicode(obj),
+                        object_repr=force_text(obj),
                         action_flag=it and CHANGE or ADDITION,
                         change_message=_('Changed %s.') % get_text_list(form.changed_data, _('and'))
                       ).save(using=request.database)
@@ -1192,7 +1192,7 @@ class GridReport(View):
               if not has_pk_field and not isinstance(reportclass.model._meta.pk, AutoField):
                 # The primary key is not an auto-generated id and it is not mapped in the input...
                 errors = True
-                yield force_unicode(_('Missing primary key field %(key)s') % {'key': reportclass.model._meta.pk.name}) + '\n '
+                yield force_text(_('Missing primary key field %(key)s') % {'key': reportclass.model._meta.pk.name}) + '\n '
               # Abort when there are errors
               if errors > 0:
                 break
