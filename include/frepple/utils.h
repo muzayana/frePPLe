@@ -623,7 +623,8 @@ class Keyword : public NonCopyable
 
     /** Store different preprocessed variations of the name of the tag.
       * These are all stored in memory for improved performance. */
-    string strName, strStartElement, strEndElement, strElement, strAttribute;
+    string strName, strStartElement, strEndElement, strElement,
+      strAttribute, strQuoted;
 
     /** Name of the string transcoded to its Xerces-internal representation. */
     XMLCh* xmlname;
@@ -654,6 +655,9 @@ class Keyword : public NonCopyable
 
     /** Returns the name of the tag. */
     const string& getName() const {return strName;}
+
+    /** Returns the quoted name of the tag: "TAG": */
+    const string& getQuoted() const {return strQuoted;}
 
     /** Returns a pointer to an array of XML characters. This format is used
       * by Xerces for the internal representation of character strings. */
@@ -2475,10 +2479,7 @@ class SerializerXML : public Serializer
         const Keyword& t2, const string& val2)
     {
       if(val1.empty())
-      {
-        logger << "WARNING: WEIRD" << endl;
         *m_fp << indentstring << u.stringStartElement() << "/>\n";
-      }
       else
       {
         *m_fp << indentstring << u.stringStartElement() << t1.stringAttribute();

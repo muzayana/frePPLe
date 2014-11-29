@@ -26,5 +26,8 @@ frepple.loadmodule("mod_forecast.so",
   Net_NetLate="P4W",
   DueAtEndOfBucket=True)
 
+
+# Web server module
+frepple.loadmodule("mod_webserver.so");
 ?>
 </plan>

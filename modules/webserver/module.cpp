@@ -11,6 +11,7 @@
  *                                                                         *
  ***************************************************************************/
 
+#include "json.h"
 #include "webserver.h"
 
 namespace module_webserver
@@ -40,6 +41,9 @@ MODULE_EXPORT const char* initialize(const Environment::ParameterList& z)
     PythonInterpreter::registerGlobalMethod(
       "runWebServer", runWebServer, METH_VARARGS,
       "Runs the embedded web server.");
+    PythonInterpreter::registerGlobalMethod(
+      "saveJSONfile", saveJSONfile, METH_VARARGS,
+      "Save the model to a JSON-file.");
     PyGILState_Release(state);
   }
   catch (const exception &e)

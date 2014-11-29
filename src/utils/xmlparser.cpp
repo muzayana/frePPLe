@@ -737,6 +737,7 @@ DECLARE_EXPORT Keyword::Keyword(const string& name) : strName(name)
   strEndElement = string("</") + name + ">\n";
   strElement = string("<") + name + ">";
   strAttribute = string(" ") + name + "=\"";
+  strQuoted = string("\"") + name + "\":";
 
   // Compute the hash value
   dw = hash(name.c_str());
@@ -764,6 +765,7 @@ DECLARE_EXPORT Keyword::Keyword(const string& name, const string& nspace)
   strEndElement = string("</") + nspace + ":" + name + ">\n";
   strElement = string("<") + nspace + ":" + name + ">";
   strAttribute = string(" ") + nspace + ":" + name + "=\"";
+  strQuoted = string("\"") + name + "\":";
 
   // Compute the hash value
   dw = hash(name);

@@ -41,14 +41,23 @@ class SerializerJSON : public Serializer
     /** Default constructor. */
     SerializerJSON() : first(true) {}
 
+    /** Tweak to toggle between the dictionary and array modes. */
+    void setMode(bool f)
+    {
+      if (mode.empty())
+        mode.push(f);
+      else
+        mode.top() = f;
+    }
+
     /** Start writing a new object. This method will open a new tag.<br>
       * Output: "TAG" : {
       */
     void BeginList(const Keyword& t)
     {
       if (!first)
-        *m_fp << ", ";
-      *m_fp << "\"" << t.getName() << "\": [";
+        *m_fp << ",";
+      *m_fp << t.getQuoted() << "[";
       first = true;
       mode.push(true);
     }
@@ -59,11 +68,11 @@ class SerializerJSON : public Serializer
     void BeginObject(const Keyword& t)
     {
       if (!first)
-        *m_fp << ", ";
-      if (mode.top())
+        *m_fp << ",";
+      if (mode.empty() || mode.top())
         *m_fp << "{";
       else
-        *m_fp << "\"" << t.getName() << "\": {";
+        *m_fp << t.getQuoted() << "{";
       first = true;
       mode.push(false);
     }
@@ -74,9 +83,8 @@ class SerializerJSON : public Serializer
     void BeginObject(const Keyword& t, const string& atts)
     {
       if (!first)
-        *m_fp << ", ";
-      logger << "WARNING: Didn't expect you to call this method. A" << endl;
-      *m_fp << "\"" << t.getName() << "\": {";
+        *m_fp << ",";
+      *m_fp << t.getQuoted() << "{";
       first = true;
       mode.push(false);
     }
@@ -88,12 +96,11 @@ class SerializerJSON : public Serializer
     void BeginObject(const Keyword& t, const Keyword& attr1, const string& val1)
     {
       if (!first)
-        *m_fp << ", ";
+        *m_fp << ",";
       if (!mode.top())
-        *m_fp << "\"" << t.getName() << "\": ";
-      *m_fp << "{\"" << attr1.getName() << "\": \"";
+        *m_fp << t.getQuoted();
+      *m_fp << "{" << attr1.getQuoted();
       escape(val1);
-      *m_fp << "\"";
       first = false;
       mode.push(false);
     }
@@ -105,69 +112,67 @@ class SerializerJSON : public Serializer
     void BeginObject(const Keyword& t, const Keyword& attr1, const int val1)
     {
       if (!first)
-        *m_fp << ", ";
+        *m_fp << ",";
       if (!mode.top())
-        *m_fp << "\"" << t.getName() << "\": ";
-      *m_fp << "{\"" << attr1.getName() << "\": " << val1;
+        *m_fp << t.getQuoted();
+      *m_fp << "{" << attr1.getQuoted() << val1;
       first = false;
       mode.push(false);
     }
-      
+
     /** Start writing a new object. This method will open a new tag.<br>
-      * Output: "TAG" : {"TAG1": "VAL1", "TAG2": "VAL2" (dictionary mode)
-      *         {"TAG1": "VAL1", "TAG2": "VAL2"         (array mode)
+      * Output: "TAG":{"TAG1":"VAL1","TAG2":"VAL2" (dictionary mode)
+      *         {"TAG1":"VAL1","TAG2":"VAL2"         (array mode)
       */
     void BeginObject(const Keyword& t, const Keyword& attr1, const string& val1,
       const Keyword& attr2, const string& val2)
     {
       if (!first)
-        *m_fp << ", ";
+        *m_fp << ",";
       if (!mode.top())
-        *m_fp << "\"" << t.getName() << "\": ";
-      *m_fp << "{\"" << attr1.getName() << "\": \"";
+        *m_fp << t.getQuoted();
+      *m_fp << "{" << attr1.getQuoted();
       escape(val1);
-      *m_fp << "\", \"" << attr2.getName() << "\": \"";
+      *m_fp << "," << attr2.getQuoted();
       escape(val2);
-      *m_fp << "\"";
       first = false;
       mode.push(false);
     }
 
     /** Start writing a new object. This method will open a new tag.<br>
-      * Output: "TAG" : {"TAG1": "VAL1", "TAG2": "VAL2" (dictionary mode)
-      *         {"TAG1": "VAL1", "TAG2": "VAL2"         (array mode)
+      * Output: "TAG":{"TAG1":"VAL1","TAG2":"VAL2" (dictionary mode)
+      *         {"TAG1":"VAL1","TAG2":"VAL2"         (array mode)
       */
     void BeginObject(const Keyword& t, const Keyword& attr1, const unsigned long& val1,
       const Keyword& attr2, const string& val2)
     {
-      if (!first)       
-        *m_fp << ", ";
+      if (!first)
+        *m_fp << ",";
       if (!mode.top())
-        *m_fp << "\"" << t.getName() << "\": ";
-      *m_fp << "{\"" << attr1.getName() << "\": " 
-        << val1 << ", \"" << attr2.getName() << "\": \"";
+        *m_fp << t.getQuoted();
+      *m_fp << "{" << attr1.getQuoted()
+        << val1 << "," << attr2.getQuoted();
       escape(val2);
-      *m_fp << "\"";
       first = false;
       mode.push(false);
     }
 
     /** Start writing a new object. This method will open a new tag.<br>
-      * Output: "TAG" : {"TAG1": "VAL1", "TAG2": "VAL2" (dictionary mode)
-      *         {"TAG1": "VAL1", "TAG2": "VAL2"         (array mode)
+      * Output: "TAG":{"TAG1":"VAL1","TAG2":"VAL2" (dictionary mode)
+      *         {"TAG1":"VAL1","TAG2":"VAL2"         (array mode)
       */
     void BeginObject(const Keyword& t, const Keyword& attr1, const int& val1,
-      const Keyword& attr2, const Date val2, 
+      const Keyword& attr2, const Date val2,
       const Keyword& attr3, const Date val3)
     {
       if (!first)
-        *m_fp << ", ";
+        *m_fp << ",";
       if (!mode.top())
-        *m_fp << "\"" << t.getName() << "\": ";
-      *m_fp << "{\"" 
-        << attr1.getName() << "\": " << val1 << "\", \"" 
-        << attr2.getName() << "\": \"" << val2 << "\", \""  
-        << attr2.getName() << "\": \"" << val3 << "\"";
+        *m_fp << t.getQuoted();
+      *m_fp << "{"
+        << attr1.getQuoted() << val1 << ","
+        << attr2.getQuoted() << "\"" << val2 << "\","
+        << attr3.getQuoted() << "\"" << val3 << "\"";
       first = false;
       mode.push(false);
     }
@@ -191,7 +196,7 @@ class SerializerJSON : public Serializer
     }
 
     /** Write the string to the output. This method is used for passing text
-      * straight into the output file. 
+      * straight into the output file.
       */
     void writeString(const string& c)
     {
@@ -199,39 +204,39 @@ class SerializerJSON : public Serializer
     }
 
     /** Write an unsigned long value enclosed opening and closing tags.<br>
-      * Output: , "TAG": uint 
+      * Output: , "TAG": uint
       */
     void writeElement(const Keyword& t, const long unsigned int val)
     {
       if (first)
         first = false;
       else
-        *m_fp << ", ";
-      *m_fp << "\"" << t.getName() << "\": " << val;
+        *m_fp << ",";
+      *m_fp << t.getQuoted() << val;
     }
 
     /** Write an integer value enclosed opening and closing tags.<br>
-      * Output: , "TAG": int 
+      * Output: ,"TAG": int
       */
     void writeElement(const Keyword& t, const int val)
     {
       if (first)
         first = false;
       else
-        *m_fp << ", ";
-      *m_fp << "\"" << t.getName() << "\": " << val;
+        *m_fp << ",";
+      *m_fp << t.getQuoted() << val;
     }
 
     /** Write a double value enclosed opening and closing tags.<br>
-      * Output: , "TAG": double 
+      * Output: ,"TAG": double
       */
     void writeElement(const Keyword& t, const double val)
     {
       if (first)
         first = false;
       else
-        *m_fp << ", ";
-      *m_fp << "\"" << t.getName() << "\": " << val;
+        *m_fp << ",";
+      *m_fp << t.getQuoted() << val;
     }
 
     /** Write a boolean value enclosed opening and closing tags. The boolean
@@ -243,8 +248,8 @@ class SerializerJSON : public Serializer
       if (first)
         first = false;
       else
-        *m_fp << ", ";
-      *m_fp << "\"" << t.getName() << "\": " << (val ? "true" : "false");
+        *m_fp << ",";
+      *m_fp << t.getQuoted() << (val ? "true" : "false");
     }
 
     /** Write a string value enclosed opening and closing tags.<br>
@@ -256,14 +261,13 @@ class SerializerJSON : public Serializer
       if (first)
         first = false;
       else
-        *m_fp << ", ";
-      *m_fp << "\"" << t.getName() << "\": \"";        
+        *m_fp << ",";
+      *m_fp << t.getQuoted();
       escape(val);
-      *m_fp << "\"";
     }
 
     /** Writes an element with a string attribute.<br>
-      * Output: 
+      * Output:
       *   "TAG_U": {"TAG_T": "string"}    (dictionary mode)
       *   {"TAG_T": "string"}             (array mode)
       */
@@ -276,8 +280,8 @@ class SerializerJSON : public Serializer
           if (first)
             first = false;
           else
-            *m_fp << ", ";
-          *m_fp << "\"" << u.getName() << "\": {}";
+            *m_fp << ",";
+          *m_fp << u.getQuoted() << "{}";
         }
       }
       else
@@ -285,27 +289,27 @@ class SerializerJSON : public Serializer
         if (first)
           first = false;
         else
-          *m_fp << ", ";
+          *m_fp << ",";
         if (!mode.top())
-          *m_fp << "\"" << u.getName() << "\": ";
-        *m_fp << "{\"" << t.getName() << "\": \"";
+          *m_fp << u.getQuoted();
+        *m_fp << "{" << t.getQuoted();
         escape(val);
-        *m_fp << "\"}";
+        *m_fp << "}";
       }
     }
 
     /** Writes an element with a long attribute.<br>
-      * Output: "TAG_U": {"TAG_T": long} 
+      * Output: "TAG_U": {"TAG_T": long}
       */
     void writeElement(const Keyword& u, const Keyword& t, const long val)
     {
       if (first)
         first = false;
       else
-        *m_fp << ", ";
+        *m_fp << ",";
       if (!mode.top())
-        *m_fp << "\"" << u.getName() << "\": ";
-      *m_fp << "{\"" << t.getName() << "\": " << val << "}";
+        *m_fp << u.getQuoted();
+      *m_fp << "{" << t.getQuoted() << val << "}";
     }
 
     /** Writes an element with a date attribute.<br>
@@ -316,14 +320,14 @@ class SerializerJSON : public Serializer
       if (first)
         first = false;
       else
-        *m_fp << ", ";
+        *m_fp << ",";
       if (!mode.top())
-        *m_fp << "\"" << u.getName() << "\": ";
-      *m_fp << "{\"" << t.getName() << "\": " << val << "}";
+        *m_fp << u.getQuoted();
+      *m_fp << "{" << t.getQuoted() << val << "}";
     }
 
     /** Writes an element with 2 string attributes.<br>
-      * Output: "TAG_U": {"TAG_T1": "val1", "TAGT2": "val2"}
+      * Output: "TAG_U":{"TAG_T1":"val1","TAGT2":"val2"}
       */
     void writeElement(const Keyword& u, const Keyword& t1, const string& val1,
         const Keyword& t2, const string& val2)
@@ -335,8 +339,8 @@ class SerializerJSON : public Serializer
           if (first)
             first = false;
           else
-            *m_fp << ", ";
-          *m_fp << "\"" << u.getName() << "\": {}";
+            *m_fp << ",";
+          *m_fp << u.getQuoted() << "{}";
         }
       }
       else
@@ -344,19 +348,19 @@ class SerializerJSON : public Serializer
         if (first)
           first = false;
         else
-          *m_fp << ", ";
+          *m_fp << ",";
         if (!mode.top())
-          *m_fp << "\"" << u.getName() << "\": ";
-        *m_fp << "{\"" << t1.getName() << "\": \"";
+          *m_fp << u.getQuoted();
+        *m_fp << "{" << t1.getQuoted();
         escape(val1);
-        *m_fp << "\", \"" << t2.getName() << "\": \"";
+        *m_fp << "," << t2.getQuoted();
         escape(val2);
-        *m_fp << "\"}";
+        *m_fp << "}";
       }
     }
 
     /** Writes an element with a string and an unsigned long attribute.<br>
-      * Output: "TAG_U": {"TAG_T1": "val1", "TAGT2": "val2"}
+      * Output: "TAG_U": {"TAG_T1": "val1","TAGT2": "val2"}
       */
     void writeElement(const Keyword& u, const Keyword& t1, unsigned long val1,
         const Keyword& t2, const string& val2)
@@ -364,17 +368,17 @@ class SerializerJSON : public Serializer
       if (first)
         first = false;
       else
-        *m_fp << ", ";
+        *m_fp << ",";
       if (!mode.top())
-        *m_fp << "\"" << u.getName() << "\": ";
-      *m_fp << "{\"" << t1.getName() << "\": " << val1
-        << ", \"" << t2.getName() << "\": \"";
+        *m_fp << u.getQuoted();
+      *m_fp << "{" << t1.getQuoted() << val1
+        << "," << t2.getQuoted();
       escape(val2);
-      *m_fp << "\"}";
+      *m_fp << "}";
     }
 
     /** Writes an element with a short, an unsigned long and a double attribute.<br>
-      * Output: "TAG_U": {"TAG_T1": val1, "TAGT2": val2, "TAGT3": val3}
+      * Output: "TAG_U": {"TAG_T1":val1,"TAGT2":val2,"TAGT3":val3}
       */
     void writeElement(const Keyword& u, const Keyword& t1, short val1,
         const Keyword& t2, unsigned long val2, const Keyword& t3, double val3)
@@ -382,17 +386,17 @@ class SerializerJSON : public Serializer
       if (first)
         first = false;
       else
-        *m_fp << ", ";
+        *m_fp << ",";
       if (!mode.top())
-        *m_fp << "\"" << u.getName() << "\": ";
-      *m_fp << "{\"" << t1.getName() << "\": " << val1
-        << ", \"" << t2.getName() << "\": " << val2
-        << ", \"" << t3.getName() << "\": " << val3
+        *m_fp << u.getQuoted();
+      *m_fp << "{" << t1.getQuoted() << val1
+        << "," << t2.getQuoted() << val2
+        << "," << t3.getQuoted() << val3
         << "}";
     }
 
     /** Writes a C-type character string.<br>
-      * Output: "TAG_T": "val" 
+      * Output: "TAG_T": "val"
       */
     void writeElement(const Keyword& t, const char* val)
     {
@@ -400,22 +404,21 @@ class SerializerJSON : public Serializer
       if (first)
         first = false;
       else
-        *m_fp << ", ";
-      *m_fp << "\"" << t.getName() << "\": \"";
+        *m_fp << ",";
+      *m_fp << t.getQuoted();
       escape(val);
-      *m_fp << "\"";
     }
 
     /** Writes an timeperiod element.<br>
-      * Output: "TAG_T": "val" 
+      * Output: "TAG_T": "val"
       */
     void writeElement(const Keyword& t, const TimePeriod d)
     {
       if (first)
         first = false;
       else
-        *m_fp << ", ";
-      *m_fp << "\"" << t.getName() << "\": \"" << d << "\"";
+        *m_fp << ",";
+      *m_fp << t.getQuoted() << "\"" << d << "\"";
     }
 
     /** Writes an date element.<br>
@@ -425,8 +428,8 @@ class SerializerJSON : public Serializer
       if (first)
         first = false;
       else
-        *m_fp << ", ";
-      *m_fp << "\"" << t.getName() << "\": \"" << d << "\"";
+        *m_fp << ",";
+      *m_fp << t.getQuoted() << "\"" << d << "\"";
     }
 
     /** Writes an daterange element.<br>
@@ -436,17 +439,17 @@ class SerializerJSON : public Serializer
       if (first)
         first = false;
       else
-        *m_fp << ", ";
-      *m_fp << "\"" << t.getName() << "\": \"" << d << "\"";
+        *m_fp << ",";
+      *m_fp << t.getQuoted() << "\"" << d << "\"";
     }
 
   private:
     /** Write the argument to the output stream, while escaping any
       * special characters.
-      * From the JSON specification http://www.ietf.org/rfc/rfc4627.txt: 
-      *   All Unicode characters may be placed within the quotation marks 
-      *   except for the characters that must be escaped: quotation mark, 
-      *   reverse solidus, and the control characters (U+0000 through 
+      * From the JSON specification http://www.ietf.org/rfc/rfc4627.txt:
+      *   All Unicode characters may be placed within the quotation marks
+      *   except for the characters that must be escaped: quotation mark,
+      *   reverse solidus, and the control characters (U+0000 through
       *   U+001F).
       * For convenience we also escape the forward slash.
       *
@@ -460,7 +463,7 @@ class SerializerJSON : public Serializer
     bool first;
 
     /** Stack to keep track of the current output mode: dictionary (true)
-      * or array (true). 
+      * or array (true).
       */
     stack<bool> mode;
 };
@@ -514,6 +517,21 @@ class SerializerJSONString : public SerializerJSON
   private:
     ostringstream os;
 };
+
+
+/** @brief This python function writes the complete model to a JSON-file.
+  *
+  * Both the static model (i.e. items, locations, buffers, resources,
+  * calendars, etc...) and the dynamic data (i.e. the actual plan including
+  * the operationplans, demand, problems, etc...).<br>
+  * The format is such that the output file can be re-read to restore the
+  * very same model.<br>
+  * The function takes the following arguments:
+  *   - Name of the output file
+  *   - Type of output desired: STANDARD, PLAN or PLANDETAIL.
+  *     The default value is STANDARD.
+  */
+PyObject* saveJSONfile(PyObject* self, PyObject* args);
 
 }   // End namespace
 
