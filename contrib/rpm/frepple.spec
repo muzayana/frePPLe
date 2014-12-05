@@ -14,10 +14,7 @@ Summary: Free Production PLanning
 Name: frepple
 Version: 2.2.beta
 Release: 1%{?dist}
-# Note on the license: frePPle is released with the AGPL license, version 3 or higher.
-# The optional plugin module mod_lpsolver depends on the GLPK package which is
-# licensed under GPL. That module is therefore disabled in this build.
-License: AGPLv3+
+License: Proprietary
 Group: Applications/Productivity
 URL: http://www.frepple.com
 Source: http://downloads.sourceforge.net/%{name}/%{name}-%{version}.tar.gz
@@ -66,8 +63,7 @@ usermod -a -G frepple apache
 %configure \
   --disable-static \
   --disable-dependency-tracking \
-  --disable-doc \
-  --disable-lp_solver
+  --disable-doc
 # Remove rpath from libtool
 sed -i 's|^hardcode_libdir_flag_spec=.*|hardcode_libdir_flag_spec=""|g' libtool
 sed -i 's|^runpath_var=LD_RUN_PATH|runpath_var=DIE_RPATH_DIE|g' libtool

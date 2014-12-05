@@ -6,7 +6,6 @@ rem EDIT THIS SECTION TO MATCH YOUR INSTALLATION
 set PYTHON=C:\develop\python27_64bit
 set OPENSSL=C:\develop\OpenSSL-Win64
 set XERCES=C:\develop\xerces-c-3.1.1-x86_64-windows-vc-9.0
-set GLPK=C:\develop\glpk-4.47
 set DOTNET=C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319
 
 rem DETECT VISUAL STUDIO C++ 9.0
@@ -30,7 +29,7 @@ if "%1"=="-d" (set conf=Debug) & shift & goto CheckOpts
 
 rem BUILD THE PROJECT
 call "%VC%\bin\amd64\vcvarsamd64"
-set INCLUDE=%PYTHON%\include;%XERCES%\include;%GLPK%\src;%OPENSSL%\include;%INCLUDE%
-set LIB=%PYTHON%\libs;%XERCES%\lib;%GLPK%\w64;%OPENSSL%\lib\VC\static;%LIB%
+set INCLUDE=%PYTHON%\include;%XERCES%\include;%OPENSSL%\include;%INCLUDE%
+set LIB=%PYTHON%\libs;%XERCES%\lib;%OPENSSL%\lib\VC\static;%LIB%
 
 "%VC%\vcpackages\vcbuild.exe" %build%  /useenv /showenv frepple.sln "%conf%|x64"

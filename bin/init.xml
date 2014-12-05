@@ -17,9 +17,6 @@
   If the contents of this file has validation errors, the execution is
   aborted.
   -->
-  <!--
-  <logfile>frepple.log</logfile>
-  -->
 <?python
 # Forecasting module
 frepple.loadmodule("mod_forecast.so",
@@ -29,7 +26,5 @@ frepple.loadmodule("mod_forecast.so",
   Net_NetLate="P4W",
   DueAtEndOfBucket=True)
 
-## Linear Programming solver module
-#frepple.loadmodule("mod_lpsolver.so")
 ?>
 </plan>
