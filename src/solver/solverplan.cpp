@@ -22,6 +22,7 @@ const Keyword tag_iterationaccuracy("iterationaccuracy");
 const Keyword tag_lazydelay("lazydelay");
 const Keyword tag_allowsplits("allowsplits");
 const Keyword tag_planSafetyStockFirst("plansafetystockfirst");
+const Keyword tag_iterationmax("iterationmax");
 
 
 void LibrarySolver::initialize()
@@ -103,6 +104,7 @@ DECLARE_EXPORT void SolverMRP::SolverMRPdata::commit()
     for (deque<Demand*>::const_iterator i = demands->begin();
         i != demands->end(); ++i)
     {
+      iteration_count = 0;
       try
       {
         // Plan the demand
@@ -182,6 +184,7 @@ void SolverMRP::SolverMRPdata::solveSafetyStock(SolverMRP* solver)
       state->motive = *b;
       state->curOwnerOpplan = NULL;
       // Call the buffer solver
+      iteration_count = 0;
       (*b)->solve(*solver, this);
       // Check for excess
       if ((*b)->getType() != *BufferProcure::metadata)
@@ -336,6 +339,8 @@ DECLARE_EXPORT PyObject* SolverMRP::getattro(const Attribute& attr)
     return PythonObject(getLazyDelay());
   if (attr.isA(tag_planSafetyStockFirst))
     return PythonObject(getPlanSafetyStockFirst());
+  if (attr.isA(tag_iterationmax))
+    return PythonObject(getIterationMax());
   // Default parameters
   return Solver::getattro(attr);
 }
@@ -370,6 +375,8 @@ DECLARE_EXPORT int SolverMRP::setattro(const Attribute& attr, const PythonObject
     setAllowSplits(field.getBool());
   else if (attr.isA(tag_planSafetyStockFirst))
     setPlanSafetyStockFirst(field.getBool());
+  else if (attr.isA(tag_iterationmax))
+    setIterationMax(field.getUnsignedLong());
   // Default parameters
   else
     return Solver::setattro(attr, field);

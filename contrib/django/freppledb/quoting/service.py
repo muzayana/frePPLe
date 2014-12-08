@@ -128,10 +128,13 @@ class Interface:
   def __init__(self, database=DEFAULT_DB_ALIAS):
     loglevel = int(Parameter.getValue('plan.loglevel', database, 0))
     self.solver_create = frepple.solver_mrp(
-      name="MRP", constraints=15,
-      plantype=1, loglevel=loglevel,
+      name="MRP",
+      constraints=15,
+      plantype=1,
+      loglevel=loglevel,
       lazydelay=int(Parameter.getValue('lazydelay', database, '86400')),
-      allowsplits=(Parameter.getValue('allowsplits', database, 'true') == "true")
+      allowsplits=(Parameter.getValue('allowsplits', database, 'true') == "true"),
+      iterationmax=int(Parameter.getValue('plan.iterationmax', database, '0') == "false")
       )
     self.solver_delete = frepple.solver_delete(
       name="clean inventory", loglevel=loglevel
