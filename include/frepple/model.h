@@ -3281,8 +3281,9 @@ class BufferProcure : public Buffer
     {
       if (p<0L)
         throw DataException("Procurement buffer can't have a negative lead time");
+      if (!getProducingOperation())
+        static_cast<OperationFixedTime*>(getOperation())->setDuration(p);
       leadtime = p;
-      static_cast<OperationFixedTime*>(getOperation())->setDuration(leadtime);
     }
 
     /** Return the release time fence. */
@@ -3291,8 +3292,9 @@ class BufferProcure : public Buffer
     /** Update the release time fence. */
     void setFence(TimePeriod p)
     {
+      if (!getProducingOperation())
+        getOperation()->setFence(p);
       fence = p;
-      getOperation()->setFence(p);
     }
 
     /** Return the inventory level that will trigger creation of a
@@ -3360,7 +3362,8 @@ class BufferProcure : public Buffer
       if (f<0)
         throw DataException("Procurement buffer can't have a negative minimum size");
       size_minimum = f;
-      getOperation()->setSizeMinimum(f);
+      if (!getProducingOperation())
+        getOperation()->setSizeMinimum(f);
       // minimum is increased over the maximum: auto-increase the maximum
       if (size_maximum < size_minimum) size_maximum = size_minimum;
     }
@@ -3374,7 +3377,8 @@ class BufferProcure : public Buffer
       if (f<0)
         throw DataException("Procurement buffer can't have a negative maximum size");
       size_maximum = f;
-      getOperation()->setSizeMaximum(f);
+      if (!getProducingOperation())
+        getOperation()->setSizeMaximum(f);
       // maximum is lowered below the minimum: auto-decrease the minimum
       if (size_maximum < size_minimum) size_minimum = size_maximum;
     }
@@ -3388,7 +3392,8 @@ class BufferProcure : public Buffer
       if (f<0)
         throw DataException("Procurement buffer can't have a negative multiple size");
       size_multiple = f;
-      getOperation()->setSizeMultiple(f);
+      if (!getProducingOperation())
+        getOperation()->setSizeMultiple(f);
     }
 
     /** Returns the operation that is automatically created to represent the
@@ -3399,26 +3404,31 @@ class BufferProcure : public Buffer
   private:
     /** Purchasing leadtime.<br>
       * Within this leadtime fence no additional purchase orders can be generated.
+      * TODO The lead time should be a property of the operation, not the buffer.
       */
     TimePeriod leadtime;
 
     /** Time window from the current date in which all procurements are expected
       * to be released.
+      * TODO The fence should be a property of the operation, not the buffer.
       */
     TimePeriod fence;
 
     /** Minimum purchasing quantity.<br>
       * The default value is 0, meaning no minimum.
+      * TODO The fence should be a property of the operation, not the buffer.
       */
     double size_minimum;
 
     /** Maximum purchasing quantity.<br>
       * The default value is 0, meaning no maximum limit.
+      * TODO The fence should be a property of the operation, not the buffer.
       */
     double size_maximum;
 
     /** Purchases are always rounded up to a multiple of this quantity.<br>
       * The default value is 0, meaning no multiple needs to be applied.
+      * TODO The fence should be a property of the operation, not the buffer.
       */
     double size_multiple;
 
