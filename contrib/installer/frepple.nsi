@@ -24,7 +24,7 @@
 
 ; Main definitions
 !define PRODUCT_NAME "frePPLe"
-!define PRODUCT_VERSION "2.2.beta"
+!define PRODUCT_VERSION "2.2"
 !define PRODUCT_PUBLISHER "frePPLe"
 !define PRODUCT_WEB_SITE "http://frepple.com"
 !define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\frepple.exe"
@@ -212,7 +212,7 @@ Section "Application" SecAppl
   File "..\bin\frepple.exp"
 
   ; Copy modules
-  File "..\bin\mod_*.so"
+  File /nonfatal "..\bin\mod_*.so"
 
    ; Copy configuration files
   File "..\bin\*.xsd"
@@ -482,7 +482,7 @@ Section "Documentation" SecDoc
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
   CreateDirectory "$SMPROGRAMS\${PRODUCT_NAME} ${PRODUCT_VERSION}"
-  CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME} ${PRODUCT_VERSION}\Documentation.lnk" "$INSTDIR\doc\output\index.html"
+  CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME} ${PRODUCT_VERSION}\Documentation.lnk" "$INSTDIR\doc\_build\html\index.html"
   File /r "doc"
 SectionEnd
 
