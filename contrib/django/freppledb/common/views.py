@@ -26,6 +26,7 @@ from django.contrib.auth.models import Group
 from django.utils import translation
 from django.conf import settings
 from django.http import Http404, HttpResponseRedirect, HttpResponse, HttpResponseServerError
+
 from freppledb.common.models import User, Parameter, Comment, Bucket, BucketDetail
 from freppledb.common.report import GridReport, GridFieldLastModified, GridFieldText
 from freppledb.common.report import GridFieldBool, GridFieldDateTime, GridFieldInteger

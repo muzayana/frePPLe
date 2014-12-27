@@ -278,18 +278,9 @@ def wrapTask(request, action):
     task = Task(name='Openbravo import', submitted=now, status='Waiting', user=request.user)
     task.arguments = "--delta=%s" % request.POST['delta']
     task.save(using=request.database)
-  # L
+  # I
   elif action == 'openbravo_export' and 'freppledb.openbravo' in settings.INSTALLED_APPS:
     task = Task(name='Openbravo export', submitted=now, status='Waiting', user=request.user)
-    task.save(using=request.database)
-  # M
-  elif action == 'odoo_import' and 'freppledb.odoo' in settings.INSTALLED_APPS:
-    task = Task(name='Odoo import', submitted=now, status='Waiting', user=request.user)
-    task.arguments = "--delta=%s" % request.POST['delta']
-    task.save(using=request.database)
-  # N
-  elif action == 'odoo_export' and 'freppledb.odoo' in settings.INSTALLED_APPS:
-    task = Task(name='Odoo export', submitted=now, status='Waiting', user=request.user)
     task.save(using=request.database)
   else:
     # Task not recognized
