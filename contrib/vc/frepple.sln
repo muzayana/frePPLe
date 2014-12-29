@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual C++ Express 2010
+# Visual Studio 2010
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "utils", "utils.vcxproj", "{6F0FA2F1-4B47-46A3-9D41-85CFF808F5F4}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "model", "model.vcxproj", "{D4D9FB66-1740-418C-9562-C80BB3616201}"
@@ -25,8 +25,6 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "createlicense", "createlicense.vcxproj", "{94899905-1C41-48C2-A3B7-FF35F918454E}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "module_forecast", "module_forecast.vcxproj", "{31D68A35-3351-4F55-AC8A-DB8B9E71B33C}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "module_lp_solver", "module_lp_solver.vcxproj", "{310824DC-B85D-4729-9F60-4C93237E5494}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "module_webserver", "module_webserver.vcxproj", "{27BD6E1A-2532-4798-B131-E7C77735C44D}"
 EndProject
@@ -68,10 +66,6 @@ Global
 		{31D68A35-3351-4F55-AC8A-DB8B9E71B33C}.Debug|Win32.Build.0 = Debug|Win32
 		{31D68A35-3351-4F55-AC8A-DB8B9E71B33C}.Release|Win32.ActiveCfg = Release|Win32
 		{31D68A35-3351-4F55-AC8A-DB8B9E71B33C}.Release|Win32.Build.0 = Release|Win32
-		{310824DC-B85D-4729-9F60-4C93237E5494}.Debug|Win32.ActiveCfg = Debug|Win32
-		{310824DC-B85D-4729-9F60-4C93237E5494}.Debug|Win32.Build.0 = Debug|Win32
-		{310824DC-B85D-4729-9F60-4C93237E5494}.Release|Win32.ActiveCfg = Release|Win32
-		{310824DC-B85D-4729-9F60-4C93237E5494}.Release|Win32.Build.0 = Release|Win32
 		{27BD6E1A-2532-4798-B131-E7C77735C44D}.Debug|Win32.ActiveCfg = Debug|Win32
 		{27BD6E1A-2532-4798-B131-E7C77735C44D}.Debug|Win32.Build.0 = Debug|Win32
 		{27BD6E1A-2532-4798-B131-E7C77735C44D}.Release|Win32.ActiveCfg = Release|Win32
