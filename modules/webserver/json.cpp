@@ -73,10 +73,8 @@ void SerializerJSON::escape(const string& x)
       case '\r': *m_fp << "\\r"; break;
       default:
         if (*p < ' ')
-        {
           // Control characters
           *m_fp << "\\u" << setw(4) << static_cast<int>(*p);
-        }
         else
           *m_fp << *p;
     }
