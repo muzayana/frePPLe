@@ -9,7 +9,7 @@ workspaces to build the package. This document contains instructions on how to
 use these workspaces and some notes specific to the use of this compiler.
 
 Using more recent versions of Visual Studio will NOT work: Python and its
-extension modules are all compiled with Visual C++ 2010, and the frePPle
+extension modules are all compiled with Visual C++ 2010, and frePPle
 needs to use the same compiler and C runtime libraries.
 
 
