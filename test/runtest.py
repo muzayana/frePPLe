@@ -118,7 +118,9 @@ def runTestSuite():
         # THE HARD_CODED TESTS LISTED HERE ARE SKIPPED WHEN RUNNING A REGRESSION TEST.
         # These test verify other aspects of the application.
         excluded = ["xml_remote", "scalability_1", "scalability_2", "scalability_3",
-                    "forecast_6", "jobshop", "multithreading", ]
+                    "jobshop", "multithreading", ]
+        # Extra excluded in the Enterprise Edition
+        excluded.append("forecast_6")
         break
     for o, a in opts:
       if o in ("-d", "--debug"):

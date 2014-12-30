@@ -18,7 +18,7 @@ endif
 
 # The local target builds the main executables first, and then copies the
 # output to the bin directory
-all-local:
+all-local: frepple$(EXEEXT)
 	if test -f .libs/frepple$(EXEEXT); then cp .libs/frepple$(EXEEXT) ../bin; fi
 	if test -f .libs/cygfrepple*.dll; then cp .libs/cygfrepple*.dll ../bin; fi
 	if test -f .libs/libfrepple.so; then cp .libs/libfrepple*.so* ../bin; fi
@@ -35,7 +35,7 @@ libfrepple_la_LDFLAGS += -Wl,--export-all-symbols
 endif
 libfrepple_la_LIBADD = ./solver/libsolver.la ./model/libmodel.la ./utils/libutils.la
 
-# Dynamically linked executables
+# Dynamically linked executable
 frepple_SOURCES = main.cpp
 frepple_LDFLAGS = -dynamic -export-dynamic
 frepple_LDADD = libfrepple.la
