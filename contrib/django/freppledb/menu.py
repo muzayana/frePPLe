@@ -8,8 +8,9 @@
 # or in the form of compiled binaries.
 #
 
+from importlib import import_module
+
 from django.conf import settings
-from django.utils.importlib import import_module
 from django.utils.translation import ugettext_lazy as _
 
 from freppledb.common.menus import Menu

@@ -8,11 +8,12 @@
 # or in the form of compiled binaries.
 #
 
+from importlib import import_module
+
 from django.conf import settings
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.http import HttpResponseNotAllowed, HttpResponseForbidden, Http404
-from django.utils.importlib import import_module
 
 
 class Dashboard:
