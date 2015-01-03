@@ -39,7 +39,7 @@ class Command(BaseCommand):
   )
   args = 'XMLfile(s)'
 
-  requires_model_validation = False
+  requires_system_checks = False
 
   def get_version(self):
     return VERSION
