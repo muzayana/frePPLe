@@ -4,7 +4,7 @@ setlocal
 
 rem EDIT THIS SECTION TO MATCH YOUR INSTALLATION
 set PYTHON=C:\develop\python34_64bit
-set OPENSSL=C:\develop\OpenSSL-Win64
+set OPENSSL=C:\develop\openssl-1.0.1j-vs2010
 set XERCES=C:\develop\xerces-c-3.1.1-x86_64-windows-vc-10.0
 set DOTNET=C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319
 
@@ -30,6 +30,6 @@ if "%1"=="-d" (set conf=Debug) & shift & goto CheckOpts
 rem BUILD THE PROJECT
 call "%VC%\bin\amd64\vcvarsamd64"
 set INCLUDE=%PYTHON%\include;%XERCES%\include;%OPENSSL%\include;%INCLUDE%
-set LIB=%PYTHON%\libs;%XERCES%\lib;%OPENSSL%\lib\VC\static;%LIB%
+set LIB=%PYTHON%\libs;%XERCES%\lib;%OPENSSL%\lib64;%LIB%
 
 "%DOTNET%\msbuild.exe" %build%  /p:useenv=true /p:showenv=true frepple.sln "/p:Configuration=%conf%" /p:Platform="x64"
