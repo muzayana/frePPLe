@@ -2015,9 +2015,9 @@ def importWorkbook(request):
                   model._meta.verbose_name, ': ', _('Incorrect field %(column)s') % {'column': value}
                   )) + '\n'
                 numerrors += 1
-              if value == model._meta.pk.name.lower() or \
-                 value == model._meta.pk.verbose_name.lower():
-                has_pk_field = True
+              if value == model._meta.pk.name.lower() \
+                or value == model._meta.pk.verbose_name.lower():
+                  has_pk_field = True
             if not has_pk_field and not isinstance(model._meta.pk, AutoField):
               # The primary key is not an auto-generated id and it is not mapped in the input...
               header_ok = False

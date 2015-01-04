@@ -10,16 +10,16 @@
 
 from django.conf import settings
 from django.test import TestCase
+from django.test.utils import override_settings
 
 
+@override_settings(INSTALLED_APPS=settings.INSTALLED_APPS + ('django.contrib.sessions',))
 class ForecastTest(TestCase):
 
   fixtures = ["demo"]
 
   def setUp(self):
     # Login
-    if not 'django.contrib.sessions' in settings.INSTALLED_APPS:
-      settings.INSTALLED_APPS += ('django.contrib.sessions',)
     self.client.login(username='admin', password='admin')
 
   def test_input_forecast(self):
