@@ -12,6 +12,9 @@ sphinx:
 	-rm -rf _build
 	@SPHINXBUILD@ -a -E -b html -d _build/doctrees . _build/html
 
+website:
+	@SPHINXBUILD@ -a -E -b html -d _build/doctrees -D html_theme=frepple_website . _build/html
+
 doxygen:
 	export PACKAGE_VERSION=$(PACKAGE_VERSION) HAVE_DOT=${HAVE_DOT}; @DOXYGEN@ frepple.doxyfile
 
