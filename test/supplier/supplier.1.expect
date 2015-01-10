@@ -20,4 +20,14 @@
 			<price>1</price>
 		</item>
 	</items>
+	<supplieritems>
+		<supplieritem>
+			<supplier name="Supplier A"/>
+			<item name="Component A"/>
+		</supplieritem>
+		<supplieritem>
+			<supplier name="Supplier B"/>
+			<item name="Component B"/>
+		</supplieritem>
+	</supplieritems>
 </plan>

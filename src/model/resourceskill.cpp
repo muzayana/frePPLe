@@ -76,6 +76,14 @@ DECLARE_EXPORT ResourceSkill::ResourceSkill(Skill* s, Resource* r, int u, DateRa
 }
 
 
+DECLARE_EXPORT ResourceSkill::~ResourceSkill()
+{
+  // Delete the associated from the related objects
+  if (getResource()) getResource()->skills.erase(this);
+  if (getSkill()) getSkill()->resources.erase(this);
+}
+
+
 void ResourceSkill::writer(const MetaCategory* c, Serializer* o)
 {
   bool first = true;
@@ -87,7 +95,7 @@ void ResourceSkill::writer(const MetaCategory* c, Serializer* o)
         o->BeginList(Tags::tag_resourceskills);
         first = false;
       }
-      // We use the FULL mode, to force the flows being written regardless
+      // We use the FULL mode, to force the resource skills being written regardless
       // of the depth in the XML tree.
       o->writeElement(Tags::tag_resourceskill, &*j, FULL);
     }

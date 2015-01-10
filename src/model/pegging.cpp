@@ -53,8 +53,8 @@ DECLARE_EXPORT PeggingIterator::PeggingIterator(const Demand* d)
 DECLARE_EXPORT PeggingIterator::PeggingIterator(const OperationPlan* opplan, bool b)
   : downstream(b), firstIteration(true), first(false)
 {
-  if (!opplan) return;
   initType(metadata);
+  if (!opplan) return;
   if (opplan->getTopOwner()->getOperation()->getType() == *OperationSplit::metadata)
     updateStack(
       opplan,
@@ -75,8 +75,8 @@ DECLARE_EXPORT PeggingIterator::PeggingIterator(const OperationPlan* opplan, boo
 DECLARE_EXPORT PeggingIterator::PeggingIterator(const FlowPlan* fp, bool b)
   : downstream(b), firstIteration(true), first(false)
 {
-  if (!fp) return;
   initType(metadata);
+  if (!fp) return;
   updateStack(
     fp->getOperationPlan()->getTopOwner(),
     fp->getOperationPlan()->getQuantity(),
@@ -89,8 +89,8 @@ DECLARE_EXPORT PeggingIterator::PeggingIterator(const FlowPlan* fp, bool b)
 DECLARE_EXPORT PeggingIterator::PeggingIterator(const LoadPlan* lp, bool b)
   : downstream(b), firstIteration(true), first(false)
 {
-  if (!lp) return;
   initType(metadata);
+  if (!lp) return;
   updateStack(
     lp->getOperationPlan()->getTopOwner(),
     lp->getOperationPlan()->getQuantity(),
