@@ -55,5 +55,8 @@
     <ClCompile Include="..\..\modules\webserver\json.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\modules\webserver\websocket_chat.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

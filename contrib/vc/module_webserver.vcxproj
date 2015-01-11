@@ -220,6 +220,7 @@
     <ClCompile Include="..\..\modules\webserver\module.cpp" />
     <ClCompile Include="..\..\modules\webserver\webclient.cpp" />
     <ClCompile Include="..\..\modules\webserver\webserver.cpp" />
+    <ClCompile Include="..\..\modules\webserver\websocket_chat.cpp" />
     <ClCompile Include="..\..\modules\webserver\websocket_get.cpp" />
   </ItemGroup>
   <ItemGroup>

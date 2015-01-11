@@ -349,6 +349,9 @@ class WebServer : public CivetHandler
     /** Dispatcher for websocket data in the form: /get/ */
     static int websocket_get(struct mg_connection*, int, char*, size_t, WebClient*);
 
+    /** Dispatcher for websocket data in the form: /chat/ */
+    static int websocket_chat(struct mg_connection*, int, char*, size_t, WebClient*);
+
     /** Dispatcher for websocket data in the form: /plan/ */
     static int websocket_plan(struct mg_connection*, int, char*, size_t, WebClient*);
 

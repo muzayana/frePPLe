@@ -52,6 +52,7 @@ $(function() {
     minHeight: 2 * rowheight + 10
     });
   $("#tabs").tabs();
+  $("#chatsend").button();
   timeAxis = d3.select("#gantt").append("g").attr("transform", "translate(250,0)");
   drawAxis();
   connect(service_url, function() {send("/get/");} );
@@ -78,6 +79,8 @@ $(function() {
     <li><a href="#resource">{% trans "Resource" %}</a></li>
     <li><a href="#buffer">{% trans "Buffer" %}</a></li>
     <li><a href="#operation">{% trans "Operation" %}</a></li>
+    <li><a href="#supplier">{% trans "Supplier" %}</a></li>
+    <li><a href="#chat">{% trans "Chat" %}</a></li>
   </ul>
   <div id="demand">
     <div style="float: right">
@@ -105,6 +108,17 @@ $(function() {
     <span onclick="addSelected('operation')" title="{% trans 'Add to the graph'|escape %}" class="fa fa-tasks fa-lg spacing"></span>
     </div>
     <div class="clear"><table id="operationlist"></table></div>
+  </div>
+  <div id="supplier">
+    <div style="float: right">
+    <span onclick="addSelected('supplier')" title="{% trans 'Add to the graph'|escape %}" class="fa fa-tasks fa-lg spacing"></span>
+    </div>
+    <div class="clear"><table id="supplierlist"></table></div>
+  </div>
+  <div id="chat">
+    <div style="width: 100%; height: 200px; overflow-y: scroll"><table id="chathistory"></table></div>
+    <input id="chatsend" onclick="sendChat()" type="button" value="{% trans "Send" %}">
+    <input id="chatmsg" type="text">
   </div>
 </div>
 

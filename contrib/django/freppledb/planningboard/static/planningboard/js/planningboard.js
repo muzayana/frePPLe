@@ -113,12 +113,14 @@ function onmessage(ev)
   // Dispatch the message to a handler function
   jsondoc = jQuery.parseJSON(ev.data);
   type = jsondoc.category;
-  console.log("ppp");
   if (type == "name")
     displayList(jsondoc);
   else if (type=="plan")
     displayPlan(jsondoc);
+  else if (type == "chat")
+    displayChat(jsondoc);
 }
+
 
 function demandAction (cellvalue, options, row)
 {
@@ -549,17 +551,105 @@ function displayBuffer()
 
 function displayDemand()
 {
+  // Update the demand grid
   $.jgrid.formatter.date.reformatAfterEdit = true;
-  var nm = this.name;
-  $("#demandlist").jqGrid('setRowData', nm, {
-    'name': nm,
+  var dmd = this.name;
+  $("#demandlist").jqGrid('setRowData', dmd, {
+    'name': dmd,
     'quantity': this.quantity,
     'due': this.due,
     'priority': this.priority,
-    'item': this.item,
-    'customer': this.customer,
+    'item': this.item.name,
+    'customer': this.customer.name,
     'planned quantity': 666
     });
+
+  // Look up the row to display the information at
+  var indx = ganttRows['demand/' + dmd].index;
+  if (indx === undefined)
+    return; // Demand not to be shown at all
+
+  // Parse JSON data
+  var data = [];
+  var layer = [];
+  $(this.operationplans).each(function() {
+    if (this.quantity > 0) {
+      var row = 0;
+      var strt = new Date(Date.parse(this.start));
+      var nd = new Date(Date.parse(this.end));
+      for (; row < layer.length; ++row)
+      {
+        if (nd <= layer[row])
+        {
+           layer[row] = strt;
+           break;
+        }
+      };
+      if (row >= layer.length)
+        layer.push(strt);
+      data.push([
+        this.operation,
+        strt,
+        nd,
+        this.quantity,
+        row
+        ]);
+      }
+    });
+
+  // Find existing svg row or create a new one
+  if (ganttRows['demand/' + dmd].svg !== null)
+  {
+    var mysvg = ganttRows['demand/' + dmd].svg;
+    mysvg.selectAll("*").remove();
+  }
+  else
+  {
+    var mysvg = svg.append("g")
+      .attr("transform", "translate(0," + (indx*rowheight + timescaleheight) + ")");
+    ganttRows['demand/' + dmd].svg = mysvg;
+  }
+
+  // Draw Gantt chart
+  mysvg.append("line")
+    .attr("width", width)
+    .attr("height", 200)
+    .attr("x1", 0)
+    .attr("x2", width)
+    .attr("y1", rowheight)
+    .attr("y2", rowheight)
+    .style("stroke-width", "1")
+    .style("stroke", "rgb(0,0,0)")
+    .style("fill", "none");
+  mysvg.append("text")
+    .attr("x", "5")
+    .attr("y", rowheight/2)
+    .attr("dy", ".35em")
+    .text(res)
+    .attr('class', 'ganttlabel');
+  var h = (rowheight - layer.length * 2 - 2) / Math.max(1, layer.length);
+  mysvg.append("g")
+    .attr("transform", "translate(250,0)")
+    .selectAll("rect")
+    .data(data)
+    .enter()
+    .append("rect")
+    .attr("width", function(d) {return x(d[2]) - x(d[1]);})
+    .attr("height", h)
+    .attr("x", function(d) {return x(d[1]);})
+    .attr("y", function(d) {return 2 + d[4] * (h+2);})
+    .style("fill","#2B95EC")
+    .on("mouseenter", function(d) {
+      graph.showTooltip(
+        d[0] + '<br/>'
+        + $.datepicker.formatDate("yy/mm/dd", d[1]) + " " + d[1].getHours() + ":" + d[1].getMinutes() + ":" + d[1].getSeconds() + ' - '
+        + $.datepicker.formatDate("yy/mm/dd", d[2]) + " " + d[2].getHours() + ":" + d[2].getMinutes() + ":" + d[2].getSeconds() + '<br/>'
+        + d[3]
+        )
+      })
+    .on("mouseleave", graph.hideTooltip)
+    .on("mousemove", graph.moveTooltip)
+    .call(drag);
 }
 
 
@@ -898,4 +988,26 @@ function drawAxis()
 }
 
 
-// Encode a string in UTF-8: unescape(encodeURIComponent(s))
+function sendChat()
+{
+  var chatmsg = $("#chatmsg");
+  if (chatmsg.val() == "") return;
+  send('/chat/' + chatmsg.val());
+  chatmsg.val("");
+}
+
+
+function displayChat()
+{
+  var chatdiv = $("#chathistory");
+  $(jsondoc.messages).each(function() {
+    chatdiv.append($('<tr>')
+      .append($('<td>').text(this.date))
+      .append($('<td>').text(this.name))
+      .append($('<td>').text(this.value))
+      );
+  });
+  chatdiv = chatdiv.parent();
+  chatdiv.scrollTop(chatdiv.prop('scrollHeight'));
+}
+

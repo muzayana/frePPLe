@@ -201,6 +201,10 @@ int WebServer::data_callback(struct mg_connection *conn, int bits,
     // - /solve/erase/ /solve/replan/ /solve/demand/x
     //   Plan generation functions
     return websocket_solve(conn, bits, data, data_len, clnt);
+  else if (!strncmp(data, "/chat/", 6))
+    // - /chat/
+    //   Sending and receiving chat messages
+    return websocket_chat(conn, bits, data, data_len, clnt);
   else if (!strncmp(data, "/register/", 10))
     // - /reg/demand/x /reg/resource/x /reg/buffer/x /reg/operation/x /reg/item/x
     //   Register an entity, return its plan  

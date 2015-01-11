@@ -183,6 +183,7 @@ class SerializerJSON : public Serializer
     void EndObject(const Keyword& t)
     {
       *m_fp << "}";
+      first = false;
       mode.pop();
     }
 
@@ -192,6 +193,7 @@ class SerializerJSON : public Serializer
     void EndList(const Keyword& t)
     {
       *m_fp << "]";
+      first = false;
       mode.pop();
     }
 

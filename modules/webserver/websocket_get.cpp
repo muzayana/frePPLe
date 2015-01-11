@@ -23,14 +23,14 @@ int WebServer::websocket_get(struct mg_connection *conn, int bits,
 {
   SerializerJSONString o;
   o.setContentType(Serializer::STANDARD);
-  o.writeString("{\"category\": \"name\", ");
+  o.writeString("{\"category\": \"name\",");
 
   // Item
   if (data_len == 5 || !strncmp(data+5, "item/", 5))
   {
     o.BeginList(Tags::tag_items);
     for (Item::iterator it = Item::begin(); it != Item::end(); ++it)
-      o.writeElement(Tags::tag_item, Tags::tag_name, it->getName());   // TODO delegate reply to the classes themselves!
+      o.writeElement(Tags::tag_item, Tags::tag_name, it->getName());
     o.EndList(Tags::tag_items);
   }
   // Resources
@@ -61,6 +61,7 @@ int WebServer::websocket_get(struct mg_connection *conn, int bits,
   if (data_len == 5 || !strncmp(data+5, "demand/", 7))
   {
     o.BeginList(Tags::tag_demands);
+    bool first = true;
     for (Demand::iterator dm = Demand::begin(); dm != Demand::end(); ++dm)
     {
       //dm->writeElement(&o, Tags::tag_demand);
@@ -282,7 +283,7 @@ int WebServer::websocket_solve(struct mg_connection *conn, int bits,
     SerializerJSONString o;
     bool ok = true;
     o.setReferencesOnly(true);
-    o.setContentType(Serializer::PLAN);
+    o.setContentType(Serializer::PLANDETAIL);
     o.writeString("{\"category\": \"plan\", ");
     bool first = true;
     for (WebClient::subscriptionlist::iterator j = i->second.getSubscriptions().begin();
