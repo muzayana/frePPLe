@@ -166,13 +166,24 @@ def odoo_write(db=DEFAULT_DB_ALIAS):
       for j in i.flowplans:
         if j.quantity > 0:
           b = j.flow.buffer
-      if not b or b.source != 'odoo' or i.locked:
+      if not b or b.source != 'odoo' or j.operation.name.startswith("Inventory"):
         continue
-      yield '<operationplan id="%s" operation=%s start="%s" end="%s" quantity="%s" location=%s item=%s criticality="%d"/>' % (
+
+      # Find all pegged demands
+      dmds = {}
+      for j in i.pegging_downstream:
+        if j.operationplan.demand:
+          n = j.operationplan.demand.name
+          dmds[n] = dmds.get(n, 0.0) + j.quantity
+
+      # Write the operationplan
+      yield '<operationplan id="%s" operation=%s start="%s" end="%s" quantity="%s" location=%s item=%s criticality="%d" locked="%s" pegging="%s"/>' % (
         i.id, quoteattr(i.operation.name),
         i.start, i.end, i.quantity,
         quoteattr(b.location.subcategory), quoteattr(b.item.subcategory),
-        int(i.criticality)
+        int(i.criticality),
+        i.locked and 'true' or 'false',
+        ', '.join(['%s %.0f' % (k, l) for k, l in dmds.items()]) or ''
         )
     yield '</operationplans>'
     yield '</plan>'
