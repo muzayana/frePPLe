@@ -23,7 +23,7 @@ BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-XXXXXX)
 Requires: xerces-c, openssl, httpd, mod_wsgi, python, python-cherrypy
 Requires(pre): shadow-utils
 BuildRequires: python-devel, automake, autoconf, libtool, xerces-c-devel
-BuildRequires: graphviz, doxygen, python-sphinx
+BuildRequires: python-sphinx, postgres-devel
 
 %description
 FrePPLe stands for "Free Production PLanning". It is an application for

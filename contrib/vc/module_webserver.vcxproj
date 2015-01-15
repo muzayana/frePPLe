@@ -117,7 +117,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>libeay32MT.lib;ssleay32MT.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libeay32MT.lib;ssleay32MT.lib;libpq.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>LIBCMT</IgnoreSpecificDefaultLibraries>
       <EnableCOMDATFolding>false</EnableCOMDATFolding>
     </Link>
@@ -142,7 +142,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>libeay32MT.lib;ssleay32MT.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libeay32MT.lib;ssleay32MT.lib;libpq.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>LIBCMT</IgnoreSpecificDefaultLibraries>
       <EnableCOMDATFolding>false</EnableCOMDATFolding>
     </Link>
@@ -190,7 +190,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>libeay32MT.lib;ssleay32MT.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libeay32MT.lib;ssleay32MT.lib;libpq.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(TargetPath)" ..\..\bin</Command>
@@ -209,12 +209,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\modules\webserver\CivetServer.h" />
+    <ClInclude Include="..\..\modules\webserver\database.h" />
     <ClInclude Include="..\..\modules\webserver\json.h" />
     <ClInclude Include="..\..\modules\webserver\webserver.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\modules\webserver\CivetServer.cpp" />
     <ClCompile Include="..\..\modules\webserver\civetweb.c" />
+    <ClCompile Include="..\..\modules\webserver\database.cpp" />
     <ClCompile Include="..\..\modules\webserver\http_get.cpp" />
     <ClCompile Include="..\..\modules\webserver\json.cpp" />
     <ClCompile Include="..\..\modules\webserver\module.cpp" />

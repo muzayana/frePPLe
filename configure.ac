@@ -180,6 +180,27 @@ AC_CHECK_LIB([crypto], [RSA_generate_key], [],
 ])])
 
 #
+# Verify installation of LIPQ PostgreSQL C client library
+#
+AC_PATH_TOOL(PG_CONFIG, "pg_config", notavailable)
+if test x$PG_CONFIG = xnotavailable
+then
+  AC_MSG_ERROR([This package requires the PostgreSQL development libraries...])
+fi
+LIBS="-L$($PG_CONFIG --libdir) $LIBS"
+CPPFLAGS="-I$($PG_CONFIG --includedir) $CPPFLAGS"
+AC_CHECK_HEADER([libpq-fe.h], [],
+[AC_MSG_ERROR([
+  This package requires the LIBPQ package...
+  Please install this package and its development libraries.
+])])
+AC_CHECK_LIB([pq], [PQconnectdb], [],
+[AC_MSG_ERROR([
+  This package requires the LIBPQ package...
+  Please install this package and its development libraries.
+])])
+
+#
 # Verify installation of XERCES-C
 #
 AC_CHECK_HEADER([xercesc/util/XercesDefs.hpp], [],

@@ -29,6 +29,9 @@
     <ClInclude Include="..\..\modules\webserver\json.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\modules\webserver\database.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\modules\webserver\civetweb.c">
@@ -56,6 +59,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\modules\webserver\websocket_chat.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\modules\webserver\database.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

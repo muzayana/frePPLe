@@ -3752,6 +3752,7 @@ class ScopeMutexLock: public NonCopyable
   *
   * Currently Pthreads and Windows threads are supported as the implementation
   * of the multithreading.
+  * TODO Replace with C++11 threads when these are available in mainstream gcc
   */
 class ThreadGroup : public NonCopyable
 {

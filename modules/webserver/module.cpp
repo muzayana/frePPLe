@@ -12,13 +12,14 @@
  ***************************************************************************/
 
 #include "json.h"
+#include "database.h"
 #include "webserver.h"
 
 namespace module_webserver
 {
 
 
-MODULE_EXPORT const char* initialize(const Environment::ParameterList& z)
+MODULE_EXPORT const char* initialize(const Environment::ParameterList& params)
 {
   // Initialize only once
   static bool init = false;
@@ -56,6 +57,24 @@ MODULE_EXPORT const char* initialize(const Environment::ParameterList& z)
     PyGILState_Release(state);
     logger << "Error: unknown exception" << endl;
   }
+
+  // Start the database writer thread
+  Environment::ParameterList::const_iterator con = params.find("database");
+  if (con != params.end())
+    try
+    {
+      //string c = con->second.getString(); //;
+      DatabaseWriter::initialize("dbname=frepple_enterprise user=frepple password=frepple");
+      logger << "Initialized database writer" << endl;
+    }
+    catch (const exception &e)
+    {
+      logger << "Error initializing database writer: " << e.what() << endl;
+    }
+    catch(...)
+    {
+      logger << "Error initializing database writer: unknown exception" << endl;
+    }
 
   // Return the name of the module
   return name;
