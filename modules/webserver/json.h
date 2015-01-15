@@ -121,6 +121,21 @@ class SerializerJSON : public Serializer
     }
 
     /** Start writing a new object. This method will open a new tag.<br>
+      * Output: "TAG" : {"TAG1": VAL1    (dictionary mode)
+      *         {"TAG1": VAL1            (array mode)
+      */
+    void BeginObject(const Keyword& t, const Keyword& attr1, const Date val1)
+    {
+      if (!first)
+        *m_fp << ",";
+      if (!mode.top())
+        *m_fp << t.getQuoted();
+      *m_fp << "{" << attr1.getQuoted() << val1;
+      first = false;
+      mode.push(false);
+    }
+
+    /** Start writing a new object. This method will open a new tag.<br>
       * Output: "TAG":{"TAG1":"VAL1","TAG2":"VAL2" (dictionary mode)
       *         {"TAG1":"VAL1","TAG2":"VAL2"         (array mode)
       */
