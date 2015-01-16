@@ -63,6 +63,12 @@
 #ifndef WEBSERVER_H
 #define WEBSERVER_H
 
+#ifdef POSTGRESQL_LIBPQ_FE_H
+#include <postgresql/libpq-fe.h>
+#else
+#include <libpq-fe.h>
+#endif
+
 #include "frepple.h"
 using namespace frepple;
 
@@ -78,10 +84,53 @@ MODULE_EXPORT const char* initialize(const Environment::ParameterList&);
 /** @brief This Python function runs the embedded HTTP web server. */
 PyObject* runWebServer(PyObject*, PyObject*, PyObject*);
 
+
+/** @brief This Python function runs a thread to persist data into a PostgreSQL database. */
+PyObject* runDatabaseThread(PyObject*, PyObject*, PyObject*);
+
+
 // Forward definitions
 class Subscription;
 class WebClient;
 class PublisherBase;
+
+
+/** @brief This class implements a queue that is writing results
+  * into a PostgreSQL database.
+  */
+class DatabaseWriter
+{
+  friend PyObject* runDatabaseThread(PyObject*, PyObject*, PyObject*);
+  public:
+    /** Add a new statement to the queue. */
+    static void pushStatement(string);
+
+  private:
+    /** Constructor. */
+    DatabaseWriter();
+
+    /** This functions runs a loop that executes all statements. */
+#if defined(HAVE_PTHREAD_H)
+    static void* writethread(void *arg);
+#else
+    static unsigned __stdcall writethread(void *);
+#endif
+
+    /** Queue of statements. */
+    deque<string> statements;
+
+    /** Lock to assure the queue is manipulated only from a single thread. */
+    Mutex lock;
+
+    /** Pop a statement from the queue. */
+    string popStatement();
+
+    /** Database connection string. */
+    static string connectionstring;
+
+    /** Singleton instance of this class. */
+    static DatabaseWriter* writeSingleton;
+};
 
 
 /** A class to store information about a websocket connection. */

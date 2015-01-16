@@ -29,9 +29,6 @@
     <ClInclude Include="..\..\modules\webserver\json.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\modules\webserver\database.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\modules\webserver\civetweb.c">

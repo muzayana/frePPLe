@@ -11,10 +11,8 @@
  *                                                                         *
  ***************************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
-
-#include "database.h"
+#include "webserver.h"
+#include <deque>
 
 namespace module_webserver
 {
@@ -25,10 +23,19 @@ DatabaseWriter* DatabaseWriter::writeSingleton = NULL;
 string DatabaseWriter::connectionstring;
 
 
-void DatabaseWriter::initialize(const string& c)
+PyObject* runDatabaseThread (PyObject* self, PyObject* args, PyObject* kwds)
 {
-  connectionstring = c;
-  writeSingleton = new DatabaseWriter();
+  // Pick up arguments
+  const char *con = "";
+  int ok = PyArg_ParseTuple(args, "|s:runDatabaseThread", &con);
+  if (!ok) return NULL;
+
+  // Create a new thread
+  DatabaseWriter::connectionstring = con;
+  DatabaseWriter::writeSingleton = new DatabaseWriter();
+
+  // Return. The database writer is now running in a seperate thread from now onwards.
+  return Py_BuildValue("");
 }
 
 
@@ -84,7 +91,6 @@ string DatabaseWriter::popStatement()
 }
 
 
-
 #if defined(HAVE_PTHREAD_H)
 void* DatabaseWriter::writethread(void *arg)
 #else
@@ -92,48 +98,41 @@ unsigned __stdcall DatabaseWriter::writethread(void *arg)
 #endif
 {
   // Each OS-level thread needs to initialize a Python thread state.
-  PythonInterpreter::addThread();
+  // But we won't be executing Python code from this thread...
+  //PythonInterpreter::addThread();
 
   // Connect to the database
   DatabaseWriter* writer = static_cast<DatabaseWriter*>(arg);
   PGconn *conn = PQconnectdb(writer->connectionstring.c_str());
   if (PQstatus(conn) != CONNECTION_OK)
   {
-    logger << "Error: Connection to database failed: " << PQerrorMessage(conn) << endl;
+    logger << "Database thread error: Connection failed: " << PQerrorMessage(conn) << endl;
     PQfinish(conn);
-    PythonInterpreter::deleteThread();
+    //PythonInterpreter::deleteThread();
     return 0;
   }
 
   // Switch to autocommit
-  PGresult* res = PQexec(conn, "set autocommit = on");
+  PGresult* res = PQexec(conn, "SET AUTOCOMMIT = ON");
   if (PQresultStatus(res) != PGRES_COMMAND_OK)
   {
-    logger << "Error: Database autocommit failed: " << PQerrorMessage(conn) << endl;
+    logger << "Database thread error: Autocommit failed: " << PQerrorMessage(conn) << endl;
     PQfinish(conn);
-    PythonInterpreter::deleteThread();
+    //PythonInterpreter::deleteThread();
     return 0;
   }
   PQclear(res);
 
-
-      for (int i = 0; i < 1000; ++i)
-      {
-
-        DatabaseWriter::pushStatement("Insert into writer (message) values ('message')");
-      }
-      logger << "added" << endl;
+  // Message
+  logger << "Initialized database writer thread" << endl;
 
   // Endless loop
   while (true)
   {
-    // Wait for first message in the queue
-    //Sleep(1000);  // TODO Windows only, sleep 10 seconds
+    // Sleep for a second
+    Environment::sleep(1000); // milliseconds
 
     // Loop while we have commands in the queue
-    string stmt;
-    logger << "START processing" << endl;
-    clock_t begin = clock();
     while (true)
     {
 #if defined(HAVE_PTHREAD_H)
@@ -141,28 +140,25 @@ unsigned __stdcall DatabaseWriter::writethread(void *arg)
       pthread_testcancel();
 #endif
       // Pick up a statement
-      stmt = writer->popStatement();
+      string stmt = writer->popStatement();
       if (stmt.empty()) break; // Queue is empty
 
       // Execute the statement
       PGresult* res = PQexec(conn, stmt.c_str());
       if (PQresultStatus(res) != PGRES_COMMAND_OK)
       {
-        logger << "Error: Database statement failed: " << PQerrorMessage(conn) << endl;
+        logger << "Database thread error: statement failed: " << PQerrorMessage(conn) << endl;
         logger << "  Statement: " << stmt << endl;
+        // TODO Catch dropped connections PGRES_FATAL_ERROR and then call PQreset(conn) to reconnect automatically
       }
       PQclear(res);
     }    // While queue not empty
-
-    clock_t end = clock();
-    double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
-    logger << "END processing " << end << "   " << begin << "  " << elapsed_secs << endl;
-  };  // Infinite loop till thread is cancelled
+  };  // Infinite loop till program ends
 
   // Finalize
   PQfinish(conn);
-  PythonInterpreter::deleteThread();
-  writeSingleton = NULL;
+  //PythonInterpreter::deleteThread();
+  logger << "Finished database writer thread" << endl;
   return 0;
 }
 

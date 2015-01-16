@@ -12,7 +12,6 @@
  ***************************************************************************/
 
 #include "json.h"
-#include "database.h"
 #include "webserver.h"
 
 namespace module_webserver
@@ -45,6 +44,9 @@ MODULE_EXPORT const char* initialize(const Environment::ParameterList& params)
     PythonInterpreter::registerGlobalMethod(
       "saveJSONfile", saveJSONfile, METH_VARARGS,
       "Save the model to a JSON-file.");
+    PythonInterpreter::registerGlobalMethod(
+      "runDatabaseThread", runDatabaseThread, METH_VARARGS,
+      "Start a thread to persist data in a PostgreSQL database.");
     PyGILState_Release(state);
   }
   catch (const exception &e)
@@ -57,24 +59,6 @@ MODULE_EXPORT const char* initialize(const Environment::ParameterList& params)
     PyGILState_Release(state);
     logger << "Error: unknown exception" << endl;
   }
-
-  // Start the database writer thread
-  Environment::ParameterList::const_iterator con = params.find("database");
-  if (con != params.end())
-    try
-    {
-      //string c = con->second.getString(); //;
-      DatabaseWriter::initialize("dbname=frepple_enterprise user=frepple password=frepple");
-      logger << "Initialized database writer" << endl;
-    }
-    catch (const exception &e)
-    {
-      logger << "Error initializing database writer: " << e.what() << endl;
-    }
-    catch(...)
-    {
-      logger << "Error initializing database writer: unknown exception" << endl;
-    }
 
   // Return the name of the module
   return name;
