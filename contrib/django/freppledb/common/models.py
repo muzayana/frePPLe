@@ -146,7 +146,7 @@ class AuditModel(models.Model):
   '''
   # Database fields
   source = models.CharField(_('source'), db_index=True, max_length=settings.CATEGORYSIZE, null=True, blank=True)
-  lastmodified = models.DateTimeField(_('last modified'), editable=False, db_index=True, default=datetime.now())
+  lastmodified = models.DateTimeField(_('last modified'), editable=False, db_index=True, auto_now=True, null=True)
 
   objects = MultiDBManager()  # The default manager.
 
@@ -265,7 +265,7 @@ class Comment(models.Model):
   content_object = GenericForeignKey(ct_field="content_type", fk_field="object_pk")
   comment = models.TextField(_('comment'), max_length=settings.COMMENT_MAX_LENGTH)
   user = models.ForeignKey(User, verbose_name=_('user'), blank=True, null=True, editable=False)
-  lastmodified = models.DateTimeField(_('last modified'), default=datetime.now(), editable=False)
+  lastmodified = models.DateTimeField(_('last modified'), auto_now=True, null=True, editable=False)
 
   class Meta:
       db_table = "common_comment"
