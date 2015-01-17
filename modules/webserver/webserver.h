@@ -104,6 +104,10 @@ class DatabaseWriter
   public:
     /** Add a new statement to the queue. */
     static void pushStatement(string);
+    static void pushStatement(string, string);
+    static void pushStatement(string, string, string);
+    static void pushStatement(string, string, string, string);
+    static void pushStatement(string, string, string, string, string);
 
   private:
     /** Constructor. */
@@ -116,14 +120,36 @@ class DatabaseWriter
     static unsigned __stdcall writethread(void *);
 #endif
 
+    typedef struct DatabaseStatement
+    {
+      DatabaseStatement(string s)
+        : args(0), sql(s) {};
+
+      DatabaseStatement(string s, string a1)
+        : args(1), sql(s), arg1(a1) {};
+
+      DatabaseStatement(string s, string a1, string a2)
+        : args(2), sql(s), arg1(a1), arg2(a2) {};
+
+      DatabaseStatement(string s, string a1, string a2, string a3)
+        : args(3), sql(s), arg1(a1), arg2(a2), arg3(a3) {};
+
+      DatabaseStatement(string s, string a1, string a2, string a3, string a4)
+        : args(4), sql(s), arg1(a1), arg2(a2), arg3(a3), arg4(a4) {};
+
+      short int args;
+      string sql;
+      string arg1;
+      string arg2;
+      string arg3;
+      string arg4;
+    };
+
     /** Queue of statements. */
-    deque<string> statements;
+    deque<DatabaseStatement> statements;
 
     /** Lock to assure the queue is manipulated only from a single thread. */
     Mutex lock;
-
-    /** Pop a statement from the queue. */
-    string popStatement();
 
     /** Database connection string. */
     static string connectionstring;
@@ -157,6 +183,9 @@ class WebClient : public Association<PublisherBase,WebClient,Subscription>::List
 
     /** Return the username. */
     string getUsername() const {return username;}
+
+    /** Return the userid. */
+    string getUserId() const {return userid;}
 
     /** Return the expiration date of the connection. */
     Date getExpires() const {return expires;}
@@ -236,6 +265,9 @@ class WebClient : public Association<PublisherBase,WebClient,Subscription>::List
 
     /** User name of this connection. */
     string username;
+
+    /** User id of this connection. */
+    string userid;
 
     /** Expiration date of this connection. */
     Date expires;

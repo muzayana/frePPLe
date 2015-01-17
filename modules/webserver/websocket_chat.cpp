@@ -26,11 +26,15 @@ int WebServer::websocket_chat(struct mg_connection *conn, int bits,
   SerializerJSONString o;
   o.writeString("{\"category\": \"chat\", \"messages\": [{");
   o.writeElement(Tags::tag_name, clnt->getUsername());
-  o.writeElement(Tags::tag_value, data + 6); 
+  o.writeElement(Tags::tag_value, data + 6);
   o.writeElement(Tags::tag_date, now);
   o.writeString("}]}");
 
-  // TODO Store the chat message in the database
+  // Store the chat message in the database
+  stringstream sql;
+  sql << "INSERT INTO planningboard_chat (user_id, message, lastmodified) VALUES ("
+    << clnt->getUserId() << ", $1, now())";
+  DatabaseWriter::pushStatement(sql.str(), data+6);
 
   // Broadcast the message to all clients
   WebClient::lock();

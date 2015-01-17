@@ -36,17 +36,19 @@ bool WebClient::authenticate(const struct mg_connection* conn)
 
   // Verify the token
   string username;
+  string userid;
   string token;
   string timestamp;
-  if (!CivetServer::getParam(const_cast<struct mg_connection*>(conn), "user", username, 0)
-    || !CivetServer::getParam(const_cast<struct mg_connection*>(conn), "token", token, 0)
-    || !CivetServer::getParam(const_cast<struct mg_connection*>(conn), "time", timestamp, 0))
+  if (!CivetServer::getParam(const_cast<struct mg_connection*>(conn), "username", username)
+    || !CivetServer::getParam(const_cast<struct mg_connection*>(conn), "userid", userid)
+    || !CivetServer::getParam(const_cast<struct mg_connection*>(conn), "token", token)
+    || !CivetServer::getParam(const_cast<struct mg_connection*>(conn), "time", timestamp))
     // We're missing at least one of the query string parameters
     return false;
   else
   {
     // Compute expected token
-    string data = username + timestamp + WebClient::getSecretKey();
+    string data = username + userid + timestamp + WebClient::getSecretKey();
     unsigned char hash[SHA256_DIGEST_LENGTH];
     SHA256_CTX sha256;
     SHA256_Init(&sha256);
@@ -82,11 +84,14 @@ void WebClient::addClient(struct mg_connection* conn)
   clients[conn] = WebClient(conn); // Note: we copy a client object here
 
   // Pick up the user name from the URI
-  CivetServer::getParam(conn, "user", clients[conn].username, 0);
+  CivetServer::getParam(conn, "username", clients[conn].username);
+
+  // Pick up the user id from the URI
+  CivetServer::getParam(conn, "userid", clients[conn].userid);
 
   // Pick up the timestamp from the URI
   string timestamp;
-  CivetServer::getParam(conn, "time", timestamp, 0);
+  CivetServer::getParam(conn, "time", timestamp);
   clients[conn].expires = atol(timestamp.c_str());
 }
 

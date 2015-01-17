@@ -76,19 +76,45 @@ void DatabaseWriter::pushStatement(string sql)
   if (!writeSingleton)
     throw LogicException("Database writer not initialized");
   ScopeMutexLock l(writeSingleton->lock);
-  writeSingleton->statements.push_back(sql);
+  writeSingleton->statements.push_back(DatabaseStatement(sql));
 }
 
 
-string DatabaseWriter::popStatement()
+void DatabaseWriter::pushStatement(string sql, string arg1)
 {
-  ScopeMutexLock l(lock);
-  if (statements.empty())
-    return "";
-  string c = statements.front();
-  statements.pop_front();
-  return c;
+  if (!writeSingleton)
+    throw LogicException("Database writer not initialized");
+  ScopeMutexLock l(writeSingleton->lock);
+  writeSingleton->statements.push_back(DatabaseStatement(sql, arg1));
 }
+
+
+void DatabaseWriter::pushStatement(string sql, string arg1, string arg2)
+{
+  if (!writeSingleton)
+    throw LogicException("Database writer not initialized");
+  ScopeMutexLock l(writeSingleton->lock);
+  writeSingleton->statements.push_back(DatabaseStatement(sql, arg1, arg2));
+}
+
+
+void DatabaseWriter::pushStatement(string sql, string arg1, string arg2, string arg3)
+{
+  if (!writeSingleton)
+    throw LogicException("Database writer not initialized");
+  ScopeMutexLock l(writeSingleton->lock);
+  writeSingleton->statements.push_back(DatabaseStatement(sql, arg1, arg2, arg3));
+}
+
+
+void DatabaseWriter::pushStatement(string sql, string arg1, string arg2, string arg3, string arg4)
+{
+  if (!writeSingleton)
+    throw LogicException("Database writer not initialized");
+  ScopeMutexLock l(writeSingleton->lock);
+  writeSingleton->statements.push_back(DatabaseStatement(sql, arg1, arg2, arg3, arg4));
+}
+
 
 
 #if defined(HAVE_PTHREAD_H)
@@ -100,6 +126,9 @@ unsigned __stdcall DatabaseWriter::writethread(void *arg)
   // Each OS-level thread needs to initialize a Python thread state.
   // But we won't be executing Python code from this thread...
   //PythonInterpreter::addThread();
+
+  // Local variables
+  const char* paramValues[4];
 
   // Connect to the database
   DatabaseWriter* writer = static_cast<DatabaseWriter*>(arg);
@@ -140,15 +169,53 @@ unsigned __stdcall DatabaseWriter::writethread(void *arg)
       pthread_testcancel();
 #endif
       // Pick up a statement
-      string stmt = writer->popStatement();
-      if (stmt.empty()) break; // Queue is empty
+      // To be reviewed: we remote the statement, regardless whether execution failed or not. We may loose some changes if eg the connection was dropped.
+      writer->lock.lock();
+      if (writer->statements.empty())
+      {
+        writer->lock.unlock();
+        break; // Queue is empty
+      }
+      const DatabaseStatement stmt = writer->statements.front();
+      writer->statements.pop_front();
+      writer->lock.unlock();
 
       // Execute the statement
-      PGresult* res = PQexec(conn, stmt.c_str());
+      switch(stmt.args)
+      {
+        case 0:
+          res = PQexec(conn, stmt.sql.c_str());
+          break;
+        case 1:
+          paramValues[0] = stmt.arg1.c_str();
+          res = PQexecParams(conn, stmt.sql.c_str(), 1, NULL, paramValues, NULL, NULL, 0);
+          break;
+        case 2:
+          paramValues[0] = stmt.arg1.c_str();
+          paramValues[1] = stmt.arg2.c_str();
+          res = PQexecParams(conn, stmt.sql.c_str(), 2, NULL, paramValues, NULL, NULL, 0);
+          break;
+        case 3:
+          paramValues[0] = stmt.arg1.c_str();
+          paramValues[1] = stmt.arg2.c_str();
+          paramValues[2] = stmt.arg3.c_str();
+          res = PQexecParams(conn, stmt.sql.c_str(), 3, NULL, paramValues, NULL, NULL, 0);
+          break;
+        case 4:
+          paramValues[0] = stmt.arg1.c_str();
+          paramValues[1] = stmt.arg2.c_str();
+          paramValues[2] = stmt.arg3.c_str();
+          paramValues[3] = stmt.arg4.c_str();
+          res = PQexecParams(conn, stmt.sql.c_str(), 4, NULL, paramValues, NULL, NULL, 0);
+          break;
+        default:
+          logger << "Database thread error: more than 4 arguments passed" << endl;
+
+      }
       if (PQresultStatus(res) != PGRES_COMMAND_OK)
       {
         logger << "Database thread error: statement failed: " << PQerrorMessage(conn) << endl;
-        logger << "  Statement: " << stmt << endl;
+        logger << "  Statement: " << stmt.sql << endl;
         // TODO Catch dropped connections PGRES_FATAL_ERROR and then call PQreset(conn) to reconnect automatically
       }
       PQclear(res);

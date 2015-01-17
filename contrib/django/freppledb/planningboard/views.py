@@ -29,7 +29,7 @@ PLANBOARD_SESSION_DURATION = 3600
 @never_cache
 def Board(request):
   t = round(time.time()) + PLANBOARD_SESSION_DURATION
-  message = "%s%s%s" % (request.user.username, t, settings.SECRET_KEY)
+  message = "%s%s%s%s" % (request.user.username, request.user.id, t, settings.SECRET_KEY)
   return render(request, 'planningboard/index.html', {
     "time": t,
     "token": hashlib.sha256(message.encode('utf-8')).hexdigest(),
