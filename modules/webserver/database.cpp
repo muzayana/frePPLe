@@ -23,6 +23,85 @@ DatabaseWriter* DatabaseWriter::writeSingleton = NULL;
 string DatabaseWriter::connectionstring;
 
 
+PGresult *DatabaseStatement::execute(PGconn* conn) const
+{
+  const char* paramValues[4];
+  switch(args)
+  {
+    case 0:
+      return PQexec(conn, sql.c_str());
+    case 1:
+      paramValues[0] = arg1.c_str();
+      return PQexecParams(conn, sql.c_str(), 1, NULL, paramValues, NULL, NULL, 0);
+    case 2:
+      paramValues[0] = arg1.c_str();
+      paramValues[1] = arg2.c_str();
+      return PQexecParams(conn, sql.c_str(), 2, NULL, paramValues, NULL, NULL, 0);
+    case 3:
+      paramValues[0] = arg1.c_str();
+      paramValues[1] = arg2.c_str();
+      paramValues[2] = arg3.c_str();
+      return PQexecParams(conn, sql.c_str(), 3, NULL, paramValues, NULL, NULL, 0);
+    case 4:
+      paramValues[0] = arg1.c_str();
+      paramValues[1] = arg2.c_str();
+      paramValues[2] = arg3.c_str();
+      paramValues[3] = arg4.c_str();
+      return PQexecParams(conn, sql.c_str(), 4, NULL, paramValues, NULL, NULL, 0);
+    default:
+      throw DataException("Database statement gets more than 4 arguments passed");
+  }
+}
+
+
+DatabaseReader::DatabaseReader(string c) : connectionstring(c)
+{
+  PGconn *conn = PQconnectdb(connectionstring.c_str());
+  if (PQstatus(conn) != CONNECTION_OK)
+  {
+    stringstream o;
+    o << "Database error: Connection failed: " << PQerrorMessage(conn) << endl;
+    PQfinish(conn);
+    conn = NULL;
+    throw RuntimeException(o.str());
+  }
+}
+
+
+DatabaseReader::~DatabaseReader()
+{
+  if (conn) PQfinish(conn);
+}
+
+
+void DatabaseReader::executeSQL(DatabaseStatement& stmt)
+{
+  PGresult *res = stmt.execute(conn);
+  if (PQresultStatus(res) != PGRES_COMMAND_OK)
+  {
+    stringstream o;
+    o << "Database error: statement: " << PQerrorMessage(conn) << endl;
+    PQclear(res);
+    throw RuntimeException(o.str());
+  }
+  PQclear(res);
+}
+
+
+DatabaseReader::DatabaseResult DatabaseReader::fetchSQL(DatabaseStatement& stmt)
+{
+  PGresult *res = stmt.execute(conn);
+  if (PQresultStatus(res) != PGRES_TUPLES_OK)
+  {
+    stringstream o;
+    o << "Database error: statement: " << PQerrorMessage(conn) << endl;
+    PQclear(res);
+    throw RuntimeException(o.str());
+  }
+  return DatabaseResult(res);
+}
+
+
 PyObject* runDatabaseThread (PyObject* self, PyObject* args, PyObject* kwds)
 {
   // Pick up arguments
@@ -127,9 +206,6 @@ unsigned __stdcall DatabaseWriter::writethread(void *arg)
   // But we won't be executing Python code from this thread...
   //PythonInterpreter::addThread();
 
-  // Local variables
-  const char* paramValues[4];
-
   // Connect to the database
   DatabaseWriter* writer = static_cast<DatabaseWriter*>(arg);
   PGconn *conn = PQconnectdb(writer->connectionstring.c_str());
@@ -181,41 +257,11 @@ unsigned __stdcall DatabaseWriter::writethread(void *arg)
       writer->lock.unlock();
 
       // Execute the statement
-      switch(stmt.args)
-      {
-        case 0:
-          res = PQexec(conn, stmt.sql.c_str());
-          break;
-        case 1:
-          paramValues[0] = stmt.arg1.c_str();
-          res = PQexecParams(conn, stmt.sql.c_str(), 1, NULL, paramValues, NULL, NULL, 0);
-          break;
-        case 2:
-          paramValues[0] = stmt.arg1.c_str();
-          paramValues[1] = stmt.arg2.c_str();
-          res = PQexecParams(conn, stmt.sql.c_str(), 2, NULL, paramValues, NULL, NULL, 0);
-          break;
-        case 3:
-          paramValues[0] = stmt.arg1.c_str();
-          paramValues[1] = stmt.arg2.c_str();
-          paramValues[2] = stmt.arg3.c_str();
-          res = PQexecParams(conn, stmt.sql.c_str(), 3, NULL, paramValues, NULL, NULL, 0);
-          break;
-        case 4:
-          paramValues[0] = stmt.arg1.c_str();
-          paramValues[1] = stmt.arg2.c_str();
-          paramValues[2] = stmt.arg3.c_str();
-          paramValues[3] = stmt.arg4.c_str();
-          res = PQexecParams(conn, stmt.sql.c_str(), 4, NULL, paramValues, NULL, NULL, 0);
-          break;
-        default:
-          logger << "Database thread error: more than 4 arguments passed" << endl;
-
-      }
+      res = stmt.execute(conn);
       if (PQresultStatus(res) != PGRES_COMMAND_OK)
       {
         logger << "Database thread error: statement failed: " << PQerrorMessage(conn) << endl;
-        logger << "  Statement: " << stmt.sql << endl;
+        logger << "  Statement: " << stmt << endl;
         // TODO Catch dropped connections PGRES_FATAL_ERROR and then call PQreset(conn) to reconnect automatically
       }
       PQclear(res);

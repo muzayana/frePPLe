@@ -95,10 +95,146 @@ class WebClient;
 class PublisherBase;
 
 
-/** @brief This class implements a queue that is writing results
-  * into a PostgreSQL database.
+/** @brief A simple wrapper around an SQL statement with arguments.
+  *
+  * TODO: make this class more lightweight to copy and create?
   */
-class DatabaseWriter
+class DatabaseStatement
+{
+  friend ostream& operator<<(ostream &, const DatabaseStatement&);
+  public:
+    /** Constructor. */
+    DatabaseStatement(string s)
+      : args(0), sql(s) {};
+
+    /** Constructor. */
+    DatabaseStatement(string s, string a1)
+      : args(1), sql(s), arg1(a1) {};
+
+    /** Constructor. */
+    DatabaseStatement(string s, string a1, string a2)
+      : args(2), sql(s), arg1(a1), arg2(a2) {};
+
+    /** Constructor. */
+    DatabaseStatement(string s, string a1, string a2, string a3)
+      : args(3), sql(s), arg1(a1), arg2(a2), arg3(a3) {};
+
+    /** Constructor. */
+    DatabaseStatement(string s, string a1, string a2, string a3, string a4)
+      : args(4), sql(s), arg1(a1), arg2(a2), arg3(a3), arg4(a4) {};
+
+    /** Execute the statement on a database connection. */
+    PGresult *execute(PGconn*) const;
+
+  private:
+    string sql;
+    short int args;
+    string arg1;
+    string arg2;
+    string arg3;
+    string arg4;
+};
+
+
+inline ostream& operator<<(ostream &os, const DatabaseStatement& stmt)
+{
+  os << stmt.sql;
+  if (stmt.args > 0)
+    os << " with arguments " << stmt.arg1;
+  if (stmt.args > 1)
+    os << ", " << stmt.arg2;
+  if (stmt.args > 2)
+    os << ", " << stmt.arg3;
+  if (stmt.args > 3)
+    os << ", " << stmt.arg4;
+  return os;
+}
+
+
+/** @brief This class implements a database connection to execute
+  * SQL statements on the database.
+  *
+  * The connection should only be used by one thread at a time.
+  */
+class DatabaseReader : public NonCopyable
+{
+  public:
+    /** A wrapper around the PGresult class.
+      * Its sole purpose is to assure the PQclear method is called
+      * correctly to avoid memory leaks.
+      */
+    class DatabaseResult : public NonCopyable
+    {
+      public:
+        /** Constructor. */
+        DatabaseResult(PGresult *r) : res(r) {}
+
+        /** Destructor. */
+        ~DatabaseResult() {PQclear(res);}
+
+        /** Count the rows. */
+        int countRows() const { return PQntuples(res); }
+
+        /** Count the fields. */
+        int countFields() const { return PQnfields(res); }
+
+        /** Get a field name. */
+        string getFieldName(int i) { return PQfname(res, i); }
+
+        /** Get a field value converted to a date. */
+        Date getValueDate(int i, int j) const {return Date(PQgetvalue(res, i, j)); }
+
+        /** Get a field value converted to a string. */
+        string getValueString(int i, int j) const {return PQgetvalue(res, i, j); }
+
+        /** Get a field value converted to a double. */
+        double getValueDouble(int i, int j) const {return atof(PQgetvalue(res, i, j)); }
+
+        /** Get a field value converted to an integer. */
+        int getValueInt(int i, int j) const {return atoi(PQgetvalue(res, i, j)); }
+
+        /** Get a field value converted to a long. */
+        long getValueLong(int i, int j) const {return atol(PQgetvalue(res, i, j)); }
+
+        /** Get a field value converted to a bool. */
+        bool getValueBool(int i, int j) const
+        {
+          const char* r = PQgetvalue(res, i, j);
+          if (!r || !r[0] || r[0] == 'f' || r[0] == 'F' || r[0] == '0')
+            return false;
+          else
+            return true;
+        }
+
+      private:
+        PGresult *res;
+    };
+
+    /** Constructor - opens the connection. */
+    DatabaseReader(string);
+
+    /** Destructor - closes the connection. */
+    ~DatabaseReader();
+
+    /** Execute a command query that doesn't return a result. */
+    void executeSQL(DatabaseStatement&);
+
+    /** Execute a command query that returns a result set. */
+    DatabaseResult fetchSQL(DatabaseStatement&);
+
+  private:
+    /** Connection arguments. */
+    string connectionstring;
+
+    /** Pointer to the connection. */
+    PGconn *conn;
+};
+
+
+/** @brief This class implements a queue that is writing results
+  * asynchroneously into a PostgreSQL database.
+  */
+class DatabaseWriter : public NonCopyable
 {
   friend PyObject* runDatabaseThread(PyObject*, PyObject*, PyObject*);
   public:
@@ -119,31 +255,6 @@ class DatabaseWriter
 #else
     static unsigned __stdcall writethread(void *);
 #endif
-
-    typedef struct DatabaseStatement
-    {
-      DatabaseStatement(string s)
-        : args(0), sql(s) {};
-
-      DatabaseStatement(string s, string a1)
-        : args(1), sql(s), arg1(a1) {};
-
-      DatabaseStatement(string s, string a1, string a2)
-        : args(2), sql(s), arg1(a1), arg2(a2) {};
-
-      DatabaseStatement(string s, string a1, string a2, string a3)
-        : args(3), sql(s), arg1(a1), arg2(a2), arg3(a3) {};
-
-      DatabaseStatement(string s, string a1, string a2, string a3, string a4)
-        : args(4), sql(s), arg1(a1), arg2(a2), arg3(a3), arg4(a4) {};
-
-      short int args;
-      string sql;
-      string arg1;
-      string arg2;
-      string arg3;
-      string arg4;
-    };
 
     /** Queue of statements. */
     deque<DatabaseStatement> statements;
@@ -423,6 +534,8 @@ class WebServer : public CivetHandler
     /** Callback function when a websocket client is disconnecting. */
     static void close_callback(struct mg_connection *conn);
 
+    static void loadChatHistory(string);
+
   private:
     /** Flag to trigger shutting down the server. */
     bool *exitNow;
@@ -444,6 +557,9 @@ class WebServer : public CivetHandler
 
     /** Dispatcher for websocket data in the form: /unregister/ */
     static int websocket_unregister(struct mg_connection*, int, char*, size_t, WebClient*);
+
+    /** Recent chat messages kept in memory. */
+    static list<string> history;
 };
 
 }   // End namespace

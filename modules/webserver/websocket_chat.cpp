@@ -14,32 +14,62 @@
 #include "json.h"
 #include "webserver.h"
 
-
 namespace module_webserver
 {
+
+list<string> WebServer::history;
+
+void WebServer::loadChatHistory(string c)
+{
+  DatabaseReader db(c);
+  DatabaseReader::DatabaseResult res = db.fetchSQL(DatabaseStatement(
+    "select username, message, planningboard_chat.lastmodified "
+    "from planningboard_chat "
+    "inner join common_user on planningboard_chat.user_id = common_user.id "
+    "order by planningboard_chat.id desc "
+    "limit 100"));
+  for (int i = res.countRows()-1; i >= 0; --i)
+  {
+    SerializerJSONString o("{");
+    o.writeElement(Tags::tag_name, res.getValueString(i, 0));
+    o.writeElement(Tags::tag_value, res.getValueString(i, 1));
+    o.writeElement(Tags::tag_date, res.getValueDate(i, 2));
+    o.writeString("}");
+    history.push_front(o.getData().c_str());
+  }
+}
+
 
 int WebServer::websocket_chat(struct mg_connection *conn, int bits,
   char *data, size_t data_len, WebClient* clnt)
 {
-  // Receive the chat message
+  // Receive and serialize the chat message
   Date now = Date::now();
-  SerializerJSONString o;
-  o.writeString("{\"category\": \"chat\", \"messages\": [{");
-  o.writeElement(Tags::tag_name, clnt->getUsername());
-  o.writeElement(Tags::tag_value, data + 6);
-  o.writeElement(Tags::tag_date, now);
-  o.writeString("}]}");
+  SerializerJSONString o1("{");
+  o1.writeElement(Tags::tag_name, clnt->getUsername());
+  o1.writeElement(Tags::tag_value, data + 6);
+  o1.writeElement(Tags::tag_date, now);
+  o1.writeString("}");
+  stringstream o2;
+  o2 << "{\"category\": \"chat\", \"messages\": [" << o1.getData() << "]}";
+
+  // Append to the chat history in memory
+  history.push_back(o1.getData());
+  while (history.size() > 100)
+    history.pop_front();
 
   // Store the chat message in the database
-  stringstream sql;
-  sql << "INSERT INTO planningboard_chat (user_id, message, lastmodified) VALUES ("
-    << clnt->getUserId() << ", $1, now())";
-  DatabaseWriter::pushStatement(sql.str(), data+6);
+  DatabaseWriter::pushStatement(
+    "INSERT INTO planningboard_chat "
+      "(user_id, message, lastmodified) "
+      "VALUES ($1, $2, now())",
+    clnt->getUserId(),
+    data+6);
 
   // Broadcast the message to all clients
   WebClient::lock();
   for (WebClient::clientmap::iterator i = WebClient::getClients().begin(); i != WebClient::getClients().end(); ++i)
-    mg_websocket_write( i->first, WEBSOCKET_OPCODE_TEXT, o.getData().c_str(), o.getData().size() );
+    mg_websocket_write( i->first, WEBSOCKET_OPCODE_TEXT, o2.str().c_str(), o2.str().size() );
   WebClient::unlock();
   return 1;
 }
