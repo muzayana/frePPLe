@@ -80,8 +80,8 @@ void DatabaseReader::executeSQL(DatabaseStatement& stmt)
   if (PQresultStatus(res) != PGRES_COMMAND_OK)
   {
     stringstream o;
-    o << "Database error: " << PQerrorMessage(conn) << endl;
-    o << "   statement: " << stmt << endl;
+    o << "Database error: " << PQerrorMessage(conn) << endl
+      << "   statement: " << stmt << endl;
     PQclear(res);
     throw RuntimeException(o.str());
   }
@@ -95,8 +95,8 @@ DatabaseReader::DatabaseResult DatabaseReader::fetchSQL(DatabaseStatement& stmt)
   if (PQresultStatus(res) != PGRES_TUPLES_OK)
   {
     stringstream o;
-    o << "Database error: " << PQerrorMessage(conn) << endl;
-    o << "   statement: " << stmt << endl;
+    o << "Database error: " << PQerrorMessage(conn) << endl
+      << "   statement: " << stmt << endl;
     PQclear(res);
     throw RuntimeException(o.str());
   }

@@ -222,6 +222,9 @@ function displayList(jsondoc)
       });
     });
   $("#operationlist").jqGrid('filterToolbar',{searchOperators : true});
+
+  // Chat history
+  displayChat();
 }
 
 

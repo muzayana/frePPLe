@@ -39,8 +39,6 @@ void WebServer::loadChatHistory(const string& c)
     o.writeString("}");
     history.push_back(o.getData().c_str());
   }
-  for (list<string>::const_iterator j = history.begin(); j != history.end(); ++j)
-    logger << "chat " << *j << endl;
 }
 
 

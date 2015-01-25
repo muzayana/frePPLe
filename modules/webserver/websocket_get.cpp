@@ -21,6 +21,7 @@ namespace module_webserver
 int WebServer::websocket_get(struct mg_connection *conn, int bits,
   char *data, size_t data_len, WebClient* clnt)
 {
+  static Keyword tag_messages("messages");
   SerializerJSONString o;
   o.setContentType(Serializer::STANDARD);
   o.writeString("{\"category\": \"name\",");
@@ -33,6 +34,7 @@ int WebServer::websocket_get(struct mg_connection *conn, int bits,
       o.writeElement(Tags::tag_item, Tags::tag_name, it->getName());
     o.EndList(Tags::tag_items);
   }
+
   // Resources
   if (data_len == 5 || !strncmp(data+5, "resource/", 9))
   {
@@ -41,6 +43,7 @@ int WebServer::websocket_get(struct mg_connection *conn, int bits,
       o.writeElement(Tags::tag_resource, Tags::tag_name, res->getName());
     o.EndList(Tags::tag_resources);
   }
+
   // Buffer
   if (data_len == 5 || !strncmp(data+5, "buffer/", 7))
   {
@@ -49,6 +52,7 @@ int WebServer::websocket_get(struct mg_connection *conn, int bits,
       o.writeElement(Tags::tag_buffer, Tags::tag_name, bf->getName());
     o.EndList(Tags::tag_buffers);
   }
+
   // Operation
   if (data_len == 5 || !strncmp(data+5, "operation/", 10))
   {
@@ -57,11 +61,11 @@ int WebServer::websocket_get(struct mg_connection *conn, int bits,
       o.writeElement(Tags::tag_operation, Tags::tag_name, op->getName());
     o.EndList(Tags::tag_operations);
   }
+
   // Demand
   if (data_len == 5 || !strncmp(data+5, "demand/", 7))
   {
     o.BeginList(Tags::tag_demands);
-    bool first = true;
     for (Demand::iterator dm = Demand::begin(); dm != Demand::end(); ++dm)
     {
       //dm->writeElement(&o, Tags::tag_demand);
@@ -76,6 +80,24 @@ int WebServer::websocket_get(struct mg_connection *conn, int bits,
     }
     o.EndList(Tags::tag_demands);
   }
+
+  // Chat history
+  if (data_len == 5 && !WebServer::history.empty())
+  {
+    o.BeginList(tag_messages);
+    bool first = true;
+    for (list<string>::const_iterator j = history.begin(); j != history.end(); ++j)
+    {
+      if (first)
+        first = false;
+      else
+        o.writeString(",");
+      o.writeString(*j);
+    }
+    o.EndList(tag_messages);
+  }
+
+  // Send the result
   o.writeString("}");
   mg_websocket_write( conn, WEBSOCKET_OPCODE_TEXT, o.getData().c_str(), o.getData().size() );
   return 1;
