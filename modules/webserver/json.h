@@ -522,9 +522,6 @@ class SerializerJSONFile : public SerializerJSON
 class SerializerJSONString : public SerializerJSON
 {
   public:
-    /** Constructor with a starting string as argument. */
-    SerializerJSONString(const string& str) : os(str) {setOutput(os);}
-
     /** Default constructor. */
     SerializerJSONString() {setOutput(os);}
 

@@ -20,7 +20,7 @@ namespace module_webserver
 
 DatabaseWriter* DatabaseWriter::writeSingleton = NULL;
 
-string DatabaseWriter::connectionstring;
+string DatabaseWriter::defaultconnectionstring;
 
 
 PGresult *DatabaseStatement::execute(PGconn* conn) const
@@ -54,9 +54,9 @@ PGresult *DatabaseStatement::execute(PGconn* conn) const
 }
 
 
-DatabaseReader::DatabaseReader(string c) : connectionstring(c)
+DatabaseReader::DatabaseReader(const string& c) : connectionstring(c)
 {
-  PGconn *conn = PQconnectdb(connectionstring.c_str());
+  conn = PQconnectdb(connectionstring.c_str());
   if (PQstatus(conn) != CONNECTION_OK)
   {
     stringstream o;
@@ -80,7 +80,8 @@ void DatabaseReader::executeSQL(DatabaseStatement& stmt)
   if (PQresultStatus(res) != PGRES_COMMAND_OK)
   {
     stringstream o;
-    o << "Database error: statement: " << PQerrorMessage(conn) << endl;
+    o << "Database error: " << PQerrorMessage(conn) << endl;
+    o << "   statement: " << stmt << endl;
     PQclear(res);
     throw RuntimeException(o.str());
   }
@@ -94,7 +95,8 @@ DatabaseReader::DatabaseResult DatabaseReader::fetchSQL(DatabaseStatement& stmt)
   if (PQresultStatus(res) != PGRES_TUPLES_OK)
   {
     stringstream o;
-    o << "Database error: statement: " << PQerrorMessage(conn) << endl;
+    o << "Database error: " << PQerrorMessage(conn) << endl;
+    o << "   statement: " << stmt << endl;
     PQclear(res);
     throw RuntimeException(o.str());
   }
@@ -110,15 +112,22 @@ PyObject* runDatabaseThread (PyObject* self, PyObject* args, PyObject* kwds)
   if (!ok) return NULL;
 
   // Create a new thread
-  DatabaseWriter::connectionstring = con;
-  DatabaseWriter::writeSingleton = new DatabaseWriter();
+  DatabaseWriter::launchWriter(con);
 
   // Return. The database writer is now running in a seperate thread from now onwards.
   return Py_BuildValue("");
 }
 
 
-DatabaseWriter::DatabaseWriter()
+void DatabaseWriter::launchWriter(const string& c)
+{
+  if (writeSingleton)
+    throw RuntimeException("Database writer already running");
+  writeSingleton = new DatabaseWriter(c);
+}
+
+
+DatabaseWriter::DatabaseWriter(const string& c) : connectionstring(c)
 {
 #ifdef HAVE_PTHREAD_H
   pthread_t writer;
@@ -150,7 +159,7 @@ DatabaseWriter::DatabaseWriter()
 }
 
 
-void DatabaseWriter::pushStatement(string sql)
+void DatabaseWriter::pushStatement(const string& sql)
 {
   if (!writeSingleton)
     throw LogicException("Database writer not initialized");
@@ -159,7 +168,7 @@ void DatabaseWriter::pushStatement(string sql)
 }
 
 
-void DatabaseWriter::pushStatement(string sql, string arg1)
+void DatabaseWriter::pushStatement(const string& sql, const string& arg1)
 {
   if (!writeSingleton)
     throw LogicException("Database writer not initialized");
@@ -168,7 +177,9 @@ void DatabaseWriter::pushStatement(string sql, string arg1)
 }
 
 
-void DatabaseWriter::pushStatement(string sql, string arg1, string arg2)
+void DatabaseWriter::pushStatement(
+  const string& sql, const string& arg1, const string& arg2
+  )
 {
   if (!writeSingleton)
     throw LogicException("Database writer not initialized");
@@ -177,7 +188,9 @@ void DatabaseWriter::pushStatement(string sql, string arg1, string arg2)
 }
 
 
-void DatabaseWriter::pushStatement(string sql, string arg1, string arg2, string arg3)
+void DatabaseWriter::pushStatement(
+  const string& sql, const string& arg1, const string& arg2, const string& arg3
+  )
 {
   if (!writeSingleton)
     throw LogicException("Database writer not initialized");
@@ -186,7 +199,9 @@ void DatabaseWriter::pushStatement(string sql, string arg1, string arg2, string 
 }
 
 
-void DatabaseWriter::pushStatement(string sql, string arg1, string arg2, string arg3, string arg4)
+void DatabaseWriter::pushStatement(
+  const string& sql, const string& arg1, const string& arg2, const string& arg3, const string& arg4
+  )
 {
   if (!writeSingleton)
     throw LogicException("Database writer not initialized");

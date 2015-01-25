@@ -51,6 +51,7 @@ PyObject* runWebServer (PyObject* self, PyObject* args, PyObject* kwds)
   string ssl_certificate;
   string access_log_file;
   string error_log_file;
+  string database_connection;
   PyObject* pyobj = PyDict_GetItemString(kwds,"document_root");
   if (pyobj)
   {
@@ -127,6 +128,22 @@ PyObject* runWebServer (PyObject* self, PyObject* args, PyObject* kwds)
   {
     PyErr_SetString(PythonDataException, "Required argument 'secret_key' missing");
     return NULL;
+  }
+
+  // Start a database connection, if a connection string is provided
+  pyobj = PyDict_GetItemString(kwds,"database_connection");
+  if (pyobj)
+  {
+    PythonObject d(pyobj);
+    database_connection = d.getString();
+    if (!database_connection.empty())
+    {
+      DatabaseWriter::setConnectionString(database_connection);
+      // Launch writer
+      DatabaseWriter::launchWriter(database_connection);
+      // Load chat history
+      WebServer::loadChatHistory(database_connection);
+    }
   }
 
   // Start server

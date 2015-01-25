@@ -19,24 +19,28 @@ namespace module_webserver
 
 list<string> WebServer::history;
 
-void WebServer::loadChatHistory(string c)
+
+void WebServer::loadChatHistory(const string& c)
 {
   DatabaseReader db(c);
   DatabaseReader::DatabaseResult res = db.fetchSQL(DatabaseStatement(
-    "select username, message, planningboard_chat.lastmodified "
+    "select username, message, planningboard_chat.lastmodified::timestamp without time zone "
     "from planningboard_chat "
     "inner join common_user on planningboard_chat.user_id = common_user.id "
     "order by planningboard_chat.id desc "
     "limit 100"));
   for (int i = res.countRows()-1; i >= 0; --i)
   {
-    SerializerJSONString o("{");
+    SerializerJSONString o;
+    o.writeString("{");
     o.writeElement(Tags::tag_name, res.getValueString(i, 0));
     o.writeElement(Tags::tag_value, res.getValueString(i, 1));
     o.writeElement(Tags::tag_date, res.getValueDate(i, 2));
     o.writeString("}");
-    history.push_front(o.getData().c_str());
+    history.push_back(o.getData().c_str());
   }
+  for (list<string>::const_iterator j = history.begin(); j != history.end(); ++j)
+    logger << "chat " << *j << endl;
 }
 
 
@@ -45,7 +49,8 @@ int WebServer::websocket_chat(struct mg_connection *conn, int bits,
 {
   // Receive and serialize the chat message
   Date now = Date::now();
-  SerializerJSONString o1("{");
+  SerializerJSONString o1;
+  o1.writeString("{");
   o1.writeElement(Tags::tag_name, clnt->getUsername());
   o1.writeElement(Tags::tag_value, data + 6);
   o1.writeElement(Tags::tag_date, now);

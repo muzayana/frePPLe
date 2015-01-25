@@ -9,6 +9,29 @@ from django.core import management
 from freppledb.execute.commands import logMessage
 
 
+def getConnection(dbname):
+  '''
+  Returns a PostgreSQL connection string used by the core engine to
+  connect to the database.
+  http://www.postgresql.org/docs/9.3/static/libpq-connect.html#LIBPQ-PARAMKEYWORDS
+  '''
+  res = [
+    "client_encoding=utf-8",
+    "connect_timeout=10"
+    ]
+  if settings.DATABASES[db]['NAME']:
+    res.append("dbname=%s" % settings.DATABASES[db]['NAME'])
+  if settings.DATABASES[db]['USER']:
+    res.append("user=%s" % settings.DATABASES[db]['USER'])
+  if settings.DATABASES[db]['PASSWORD']:
+    res.append("password=%s" % settings.DATABASES[db]['PASSWORD'])
+  if settings.DATABASES[db]['HOST']:
+    res.append("host=%s" % settings.DATABASES[db]['HOST'])
+  if settings.DATABASES[db]['PORT']:
+    res.append("port=%s" % settings.DATABASES[db]['PORT'])
+  return " ".join(res)
+
+
 if __name__ == "__main__":
   # Select database
   try:
@@ -48,7 +71,6 @@ if __name__ == "__main__":
     # TODO Uncomment the next section to use the OLD cherrypy web service
     #from freppledb.quoting.service import runWebService
     #runWebService(database=db)
-    frepple.loadmodule("mod_webserver.so")
     frepple.runWebServer(
       document_root = ".",
       listening_ports = "8001",
@@ -58,7 +80,8 @@ if __name__ == "__main__":
       access_log_file = "server_access.log",
       error_log_file = "server_error.log",
       max_websocket_clients = "20",
-      secret_key = settings.SECRET_KEY
+      secret_key = settings.SECRET_KEY,
+      database_connection=getConnection(db)
       )
     logMessage(None, status='Done', database=db)
     print("\nOrder quoting service finishing at", datetime.now().strftime("%H:%M:%S"))

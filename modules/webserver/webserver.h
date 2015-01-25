@@ -58,6 +58,9 @@
   *
   *   - secret_key<br>
   *     Secret string used to validate login tokens.
+  *
+  *   - database_connection<br>
+  *     Connection string to the PostgreSQL database.
   */
 
 #ifndef WEBSERVER_H
@@ -182,7 +185,7 @@ class DatabaseReader : public NonCopyable
         string getFieldName(int i) { return PQfname(res, i); }
 
         /** Get a field value converted to a date. */
-        Date getValueDate(int i, int j) const {return Date(PQgetvalue(res, i, j)); }
+        Date getValueDate(int i, int j) const {return Date(PQgetvalue(res, i, j), "%Y-%m-%d %H:%M:%S"); }
 
         /** Get a field value converted to a string. */
         string getValueString(int i, int j) const {return PQgetvalue(res, i, j); }
@@ -211,7 +214,7 @@ class DatabaseReader : public NonCopyable
     };
 
     /** Constructor - opens the connection. */
-    DatabaseReader(string);
+    DatabaseReader(const string&);
 
     /** Destructor - closes the connection. */
     ~DatabaseReader();
@@ -236,18 +239,32 @@ class DatabaseReader : public NonCopyable
   */
 class DatabaseWriter : public NonCopyable
 {
-  friend PyObject* runDatabaseThread(PyObject*, PyObject*, PyObject*);
   public:
     /** Add a new statement to the queue. */
-    static void pushStatement(string);
-    static void pushStatement(string, string);
-    static void pushStatement(string, string, string);
-    static void pushStatement(string, string, string, string);
-    static void pushStatement(string, string, string, string, string);
+    static void pushStatement(const string&);
+    static void pushStatement(const string&, const string&);
+    static void pushStatement(const string&, const string&, const string&);
+    static void pushStatement(const string&, const string&, const string&, const string&);
+    static void pushStatement(const string&, const string&, const string&, const string&, const string&);
+
+    /** Method to launch a singleton database writer.
+      * An exception is thrown if the writer is already launched.
+      */
+    static void launchWriter(const string& = defaultconnectionstring);
+
+    static void setConnectionString(const string& c)
+    {
+      defaultconnectionstring = c;
+    }
+
+    static string getConnectionString()
+    {
+      return defaultconnectionstring;
+    }
 
   private:
     /** Constructor. */
-    DatabaseWriter();
+    DatabaseWriter(const string& con = defaultconnectionstring);
 
     /** This functions runs a loop that executes all statements. */
 #if defined(HAVE_PTHREAD_H)
@@ -262,8 +279,11 @@ class DatabaseWriter : public NonCopyable
     /** Lock to assure the queue is manipulated only from a single thread. */
     Mutex lock;
 
+    /** Default database connection string. */
+    static string defaultconnectionstring;
+
     /** Database connection string. */
-    static string connectionstring;
+    string connectionstring;
 
     /** Singleton instance of this class. */
     static DatabaseWriter* writeSingleton;
@@ -518,23 +538,24 @@ class WebServer : public CivetHandler
     WebServer(bool* e) : exitNow(e) {}
 
     /** Main dispatcher for HTTP GET. */
-    bool handleGet(CivetServer *server, struct mg_connection *conn);
+    bool handleGet(CivetServer*, struct mg_connection*);
 
     /** Main dispatcher for all incoming websocket data. */
     static int data_callback(struct mg_connection*, int, char*, size_t);
 
     /** Callback function when a websocket client is connecting. */
-    static int connect_callback(const struct mg_connection *conn);
+    static int connect_callback(const struct mg_connection*);
 
     /** Callback function when the handshaking with a websocket client is
       * succesfully completed.
       */
-    static void ready_callback(struct mg_connection *conn);
+    static void ready_callback(struct mg_connection*);
 
     /** Callback function when a websocket client is disconnecting. */
-    static void close_callback(struct mg_connection *conn);
+    static void close_callback(struct mg_connection*);
 
-    static void loadChatHistory(string);
+    /** Load the recent chat history from the database into a memory buffer. */
+    static void loadChatHistory(const string&);
 
   private:
     /** Flag to trigger shutting down the server. */
