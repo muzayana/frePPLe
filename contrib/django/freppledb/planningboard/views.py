@@ -30,9 +30,13 @@ PLANBOARD_SESSION_DURATION = 3600
 def Board(request):
   t = round(time.time()) + PLANBOARD_SESSION_DURATION
   message = "%s%s%s%s" % (request.user.username, request.user.id, t, settings.SECRET_KEY)
+  prefs = request.user.getPreference("freppledb.planningboard")
+  if prefs:
+    prefs = prefs.get("rows")
   return render(request, 'planningboard/index.html', {
     "time": t,
     "token": hashlib.sha256(message.encode('utf-8')).hexdigest(),
     "port": int(Parameter.getValue("planningboard.port", request.database, 8001)),
     "title": _("Planning board"),
+    "preferences": prefs
     })

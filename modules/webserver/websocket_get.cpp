@@ -305,7 +305,7 @@ int WebServer::websocket_solve(struct mg_connection *conn, int bits,
     SerializerJSONString o;
     bool ok = true;
     o.setReferencesOnly(true);
-    o.setContentType(Serializer::PLANDETAIL);
+    o.setContentType(Serializer::PLAN);
     o.writeString("{\"category\": \"plan\", ");
     bool first = true;
     for (WebClient::subscriptionlist::iterator j = i->second.getSubscriptions().begin();

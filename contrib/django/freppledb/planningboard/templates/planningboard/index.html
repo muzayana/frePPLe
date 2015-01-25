@@ -34,7 +34,6 @@ var delta = (viewend.getTime() - viewstart.getTime()) / 86400000.0;
 
 var ganttRows = {}; // Rows configured to be shown.
 var numRows = 0;
-var curRows = {}; // TODO Currently displayed rows. Once configured there will be some delay between config and actual display.
 var rowheight = 50;
 var timescaleheight = 34;
 
@@ -55,7 +54,20 @@ $(function() {
   $("#chatsend").button();
   timeAxis = d3.select("#gantt").append("g").attr("transform", "translate(250,0)");
   drawAxis();
-  connect(service_url, function() {send("/get/");} );
+  connect(service_url, function() {
+    send("/get/");
+    var initialrows = {{preferences|safe}};
+    for (var idx = 0; idx < initialrows.length; idx++)
+      send("/register/" + initialrows[idx]);
+    for (var idx = 0; idx < initialrows.length; idx++)
+    {
+      if (!(initialrows[idx] in ganttRows))
+      {
+        ganttRows[initialrows[idx]] = {"index": numRows++, "svg": null};
+        send("/plan/" + initialrows[idx]);
+      }
+    }
+  });
 });
 
 </script>

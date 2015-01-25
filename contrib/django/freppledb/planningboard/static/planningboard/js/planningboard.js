@@ -49,62 +49,6 @@ function disconnect()
 }
 
 
-function NOT_USED_customize()
-{
-  $("#entities").dialog({
-       title: gettext("Customize"),
-       width: 465,
-       height: 'auto',
-       autoOpen: true,
-       resizable: false,
-       buttons: [{
-         text: gettext("OK"),
-         click: function() {
-           var new_ganttRows = {};
-           numRows = 0;
-           $("#entities option:selected").each(function() {
-             send("/register/" + this.value);
-             if (this.value in ganttRows)
-             {
-               if (ganttRows[this.value].svg !== null)
-                 // Move existing row to a new position
-                 ganttRows[this.value].svg.attr("transform", "translate(0," + (numRows*rowheight + timescaleheight) + ")");
-               new_ganttRows[this.value] = {"index": numRows++, "svg": ganttRows[this.value].svg};
-               delete ganttRows[this.value];
-             }
-             else
-             {
-               // Ask the plan for new entities
-               new_ganttRows[this.value] = {"index": numRows++, "svg": null};
-               send("/plan/" + this.value);
-             }
-           });
-           for (var i in ganttRows)
-           {
-             // Unregister unselected entities
-             send("/unregister/" + i);
-             if (ganttRows[i].svg !== null)
-               ganttRows[i].svg.remove();
-           }
-           ganttRows = new_ganttRows;
-           $(this).dialog("close");
-           }
-         },
-         {
-         text: gettext("Cancel"),
-         click: function() { $(this).dialog("close"); }
-         }]
-       });
-    $("#entities").children().first().multiselect({
-      collapsableGroups: false,
-      sortable: true,
-      showEmptyGroups: true,
-      locale: $("html")[0].lang,
-      searchField: false
-      });
-}
-
-
 function onmessage(ev)
 {
   // Debugging message
@@ -268,8 +212,8 @@ function displayOperation()
 {
   // Look up the row to display the information at
   var res = this.name;
-  var indx = ganttRows['operation/' + res].index;
-  if (indx === undefined)
+  var thisrow = ganttRows['operation/' + res];
+  if (thisrow === undefined)
     return; // Operation not to be shown at all
 
   // Preprocess JSON data
@@ -307,7 +251,7 @@ function displayOperation()
   else
   {
     var mysvg = svg.append("g")
-      .attr("transform", "translate(0," + (indx*rowheight + timescaleheight) + ")");
+      .attr("transform", "translate(0," + (thisrow.index*rowheight + timescaleheight) + ")");
     ganttRows['operation/' + res].svg = mysvg;
   }
 
@@ -358,8 +302,8 @@ function displayResource()
 {
   // Look up the row to display the information at
   var res = this.name;
-  var indx = ganttRows['resource/' + res].index;
-  if (indx === undefined)
+  var thisrow = ganttRows['resource/' + res];
+  if (thisrow === undefined)
     return; // Resource not to be shown at all
 
   // Parse JSON data
@@ -399,7 +343,7 @@ function displayResource()
   else
   {
     var mysvg = svg.append("g")
-      .attr("transform", "translate(0," + (indx*rowheight + timescaleheight) + ")");
+      .attr("transform", "translate(0," + (thisrow.index*rowheight + timescaleheight) + ")");
     ganttRows['resource/' + res].svg = mysvg;
   }
 
@@ -450,8 +394,8 @@ function displayBuffer()
 {
   // Look up the row to display the information at
   var res = this.name;
-  var indx = ganttRows['buffer/' + res].index;
-  if (indx === undefined)
+  var thisrow = ganttRows['buffer/' + res];
+  if (thisrow === undefined)
     return; // Buffer not to be shown at all
 
   // Parse JSON data
@@ -482,7 +426,7 @@ function displayBuffer()
   else
   {
     var mysvg = svg.append("g")
-      .attr("transform", "translate(0," + (indx*rowheight + timescaleheight) + ")");
+      .attr("transform", "translate(0," + (thisrow.index*rowheight + timescaleheight) + ")");
     ganttRows['buffer/' + res].svg = mysvg;
   }
 
@@ -568,8 +512,8 @@ function displayDemand()
     });
 
   // Look up the row to display the information at
-  var indx = ganttRows['demand/' + dmd].index;
-  if (indx === undefined)
+  var thisrow = ganttRows['demand/' + dmd];
+  if (thisrow === undefined)
     return; // Demand not to be shown at all
 
   // Parse JSON data
@@ -609,7 +553,7 @@ function displayDemand()
   else
   {
     var mysvg = svg.append("g")
-      .attr("transform", "translate(0," + (indx*rowheight + timescaleheight) + ")");
+      .attr("transform", "translate(0," + (thisrow.index*rowheight + timescaleheight) + ")");
     ganttRows['demand/' + dmd].svg = mysvg;
   }
 
@@ -628,7 +572,7 @@ function displayDemand()
     .attr("x", "5")
     .attr("y", rowheight/2)
     .attr("dy", ".35em")
-    .text(res)
+    .text(dmd)
     .attr('class', 'ganttlabel');
   var h = (rowheight - layer.length * 2 - 2) / Math.max(1, layer.length);
   mysvg.append("g")
@@ -684,6 +628,27 @@ function addSelected(entity)
        send("/plan/" + key);
      }
    }
+
+   // Save the preferences on the server
+   var r = [];
+   for (var k in ganttRows)
+     r[ganttRows[k]["index"]] = k;
+   $.ajax({
+     url: '/settings/',
+     type: 'POST',
+     contentType: 'application/json; charset=utf-8',
+     data: JSON.stringify({"freppledb.planningboard": {"rows": r}}),
+     error: function (result, stat, errorThrown) {
+       $('#popup').html(result.responseText)
+         .dialog({
+           title: gettext("Error saving report settings"),
+           autoOpen: true,
+           resizable: false,
+           width: 'auto',
+           height: 'auto'
+         });
+       }
+     });
 }
 
 
