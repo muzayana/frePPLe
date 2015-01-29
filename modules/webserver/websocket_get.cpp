@@ -110,7 +110,7 @@ int WebServer::websocket_plan(struct mg_connection *conn, int bits,
   SerializerJSONString o;
   bool ok = true;
   o.setReferencesOnly(true);
-  o.setContentType(Serializer::PLAN);
+  o.setContentType(Serializer::PLANDETAIL);
   o.writeString("{\"category\": \"plan\", ");
 
   if (!strncmp(data+6, "demand/", 7))
@@ -305,7 +305,7 @@ int WebServer::websocket_solve(struct mg_connection *conn, int bits,
     SerializerJSONString o;
     bool ok = true;
     o.setReferencesOnly(true);
-    o.setContentType(Serializer::PLAN);
+    o.setContentType(Serializer::PLANDETAIL);
     o.writeString("{\"category\": \"plan\", ");
     bool first = true;
     for (WebClient::subscriptionlist::iterator j = i->second.getSubscriptions().begin();

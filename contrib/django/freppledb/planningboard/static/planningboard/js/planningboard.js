@@ -238,7 +238,8 @@ function displayOperation()
       strt,
       nd,
       this.quantity,
-      row
+      row,
+      this.criticality
       ]);
     });
 
@@ -273,7 +274,7 @@ function displayOperation()
     .text(res)
     .attr('class', 'ganttlabel');
   var h = (rowheight - layer.length * 2 - 2) / Math.max(1, layer.length);
-  mysvg.append("g")
+  thisrow.data = mysvg.append("g")
     .attr("transform", "translate(250,0)")
     .selectAll("rect")
     .data(data)
@@ -283,7 +284,7 @@ function displayOperation()
     .attr("height", h)
     .attr("x", function(d) {return x(d[1]);})
     .attr("y", function(d) {return 2 + d[4] * (h+2);})
-    .style("fill","#2B95EC")
+    .style("fill", function(d) {return colorCode(d[5]);})
     .on("mouseenter", function(d) {
       graph.showTooltip(
         d[0] + '<br/>'
@@ -329,7 +330,8 @@ function displayResource()
         strt,
         nd,
         this.quantity,
-        row
+        row,
+        this.operationplan.criticality
         ]);
       }
     });
@@ -365,28 +367,28 @@ function displayResource()
     .text(res)
     .attr('class', 'ganttlabel');
   var h = (rowheight - layer.length * 2 - 2) / Math.max(1, layer.length);
-  mysvg.append("g")
-  .attr("transform", "translate(250,0)")
-  .selectAll("rect")
-  .data(data)
-  .enter()
-  .append("rect")
-  .attr("width", function(d) {return x(d[2]) - x(d[1]);})
-  .attr("height", h)
-  .attr("x", function(d) {return x(d[1]);})
-  .attr("y", function(d) {return 2 + d[4] * (h+2);})
-  .style("fill","#2B95EC")
-  .on("mouseenter", function(d) {
-    graph.showTooltip(
-      d[0] + '<br/>'
-      + $.datepicker.formatDate("yy/mm/dd", d[1]) + " " + d[1].getHours() + ":" + d[1].getMinutes() + ":" + d[1].getSeconds() + ' - '
-      + $.datepicker.formatDate("yy/mm/dd", d[2]) + " " + d[2].getHours() + ":" + d[2].getMinutes() + ":" + d[2].getSeconds() + '<br/>'
-      + d[3]
-      )
-    })
-  .on("mouseleave", graph.hideTooltip)
-  .on("mousemove", graph.moveTooltip)
-  .call(drag);
+  thisrow.data = mysvg.append("g")
+    .attr("transform", "translate(250,0)")
+    .selectAll("rect")
+    .data(data)
+    .enter()
+    .append("rect")
+    .attr("width", function(d) {return x(d[2]) - x(d[1]);})
+    .attr("height", h)
+    .attr("x", function(d) {return x(d[1]);})
+    .attr("y", function(d) {return 2 + d[4] * (h+2);})
+    .style("fill", function(d) {return colorCode(d[5]);})
+    .on("mouseenter", function(d) {
+      graph.showTooltip(
+        d[0] + '<br/>'
+        + $.datepicker.formatDate("yy/mm/dd", d[1]) + " " + d[1].getHours() + ":" + d[1].getMinutes() + ":" + d[1].getSeconds() + ' - '
+        + $.datepicker.formatDate("yy/mm/dd", d[2]) + " " + d[2].getHours() + ":" + d[2].getMinutes() + ":" + d[2].getSeconds() + '<br/>'
+        + d[3]
+        )
+      })
+    .on("mouseleave", graph.hideTooltip)
+    .on("mousemove", graph.moveTooltip)
+    .call(drag);
 }
 
 
@@ -450,13 +452,13 @@ function displayBuffer()
   y.domain([min_oh, max_oh]);
 
   // Draw the inventory profile
-  mysvg.append("g")
-  .attr("transform", "translate(250,0)")
-  .selectAll("g")
-  .data(data)
-  .enter()
-  .append("g")
-  .each(function(d, i) {
+  thisrow.data = mysvg.append("g")
+    .attr("transform", "translate(250,0)")
+    .selectAll("g")
+    .data(data)
+    .enter()
+    .append("g")
+    .each(function(d, i) {
       var nd = d3.select(this);
       var xpos = x(d[0]);
       if (i > 0)
@@ -508,7 +510,7 @@ function displayDemand()
     'priority': this.priority,
     'item': this.item.name,
     'customer': this.customer.name,
-    'planned quantity': 666
+    'planned quantity': 666 // TODO
     });
 
   // Look up the row to display the information at
@@ -539,7 +541,9 @@ function displayDemand()
         strt,
         nd,
         this.quantity,
-        row
+        row,
+        this.pegging,
+        this.criticality
         ]);
       }
     });
@@ -575,7 +579,7 @@ function displayDemand()
     .text(dmd)
     .attr('class', 'ganttlabel');
   var h = (rowheight - layer.length * 2 - 2) / Math.max(1, layer.length);
-  mysvg.append("g")
+  thisrow.data = mysvg.append("g")
     .attr("transform", "translate(250,0)")
     .selectAll("rect")
     .data(data)
@@ -585,13 +589,13 @@ function displayDemand()
     .attr("height", h)
     .attr("x", function(d) {return x(d[1]);})
     .attr("y", function(d) {return 2 + d[4] * (h+2);})
-    .style("fill","#2B95EC")
+    .style("fill", function(d) {return colorCode(d[6]);})
     .on("mouseenter", function(d) {
       graph.showTooltip(
         d[0] + '<br/>'
         + $.datepicker.formatDate("yy/mm/dd", d[1]) + " " + d[1].getHours() + ":" + d[1].getMinutes() + ":" + d[1].getSeconds() + ' - '
         + $.datepicker.formatDate("yy/mm/dd", d[2]) + " " + d[2].getHours() + ":" + d[2].getMinutes() + ":" + d[2].getSeconds() + '<br/>'
-        + d[3]
+        + interpolate(gettext("%s allocated out of %s"), [d[5], d[3]])
         )
       })
     .on("mouseleave", graph.hideTooltip)
@@ -624,7 +628,7 @@ function addSelected(entity)
      if (!(key in ganttRows))
      {
        // Ask the plan for new entities
-       ganttRows[key] = {"index": numRows++, "svg": null};
+       ganttRows[key] = {"index": numRows++, "svg": null, "data": null, "type": entity};
        send("/plan/" + key);
      }
    }
@@ -632,7 +636,7 @@ function addSelected(entity)
    // Save the preferences on the server
    var r = [];
    for (var k in ganttRows)
-     r[ganttRows[k]["index"]] = k;
+     r[ganttRows[k].index] = k;
    $.ajax({
      url: '/settings/',
      type: 'POST',
@@ -956,6 +960,85 @@ function drawAxis()
 }
 
 
+function colorCode(d)
+{
+  // Default color
+  if (colorStyle == 'default')
+    return "#2B95EC";
+
+  // Color by criticality
+  var red = 255;
+  var green = 0;
+  if (d > critical_green)
+    red = 0;
+  else if (d > critical_yellow)
+    red = 255 * (d - critical_yellow) / (critical_green - critical_yellow);
+  if (d > critical_yellow)
+    green = 255;
+  else if (d > critical_red)
+    green = 255 * (d - critical_red) / (critical_yellow - critical_red);
+  return 'rgb(' + Math.floor(red) + ',' + Math.floor(green) + ',0)';
+}
+
+
+function colorBoard(type)
+{
+  // Pick up the user input
+  colorStyle = type;
+  var tmp = parseInt($("#color_critical_red").val());
+  if (tmp <= critical_green)
+    critical_red = tmp;
+  else
+    $("#critical_red").val(critical_green);
+  tmp = parseInt($("#color_critical_green").val());
+  if (tmp >= critical_red)
+    critical_green = tmp;
+  else
+    $("#color_critical_green").val(critical_red);
+  critical_yellow = (critical_red + critical_green) / 2;
+
+  // Update the graph
+  if (type == 'criticality')
+    $("#color_criticality").prop("checked", true);
+  for (var row in ganttRows)
+  {
+    if (ganttRows[row].data == null)
+       continue;
+    else if (ganttRows[row].type == 'resource')
+      ganttRows[row].data.style('fill', function(d) {return colorCode(d[5]);})
+    else if (ganttRows[row].type == 'demand')
+      ganttRows[row].data.style('fill', function(d) {return colorCode(d[6]);})
+    else if (ganttRows[row].type == 'operation')
+      ganttRows[row].data.style('fill', function(d) {return colorCode(d[5]);})
+  }
+}
+
+
+function resetBoard()
+{
+  gantt.reset();
+  ganttRows = {};
+  numRows = 0;
+  d3.select("#gantt").selectAll("*").remove();
+  $.ajax({
+    url: '/settings/',
+    type: 'POST',
+    contentType: 'application/json; charset=utf-8',
+    data: JSON.stringify({"freppledb.planningboard": {"rows": []}}),
+    error: function (result, stat, errorThrown) {
+      $('#popup').html(result.responseText)
+        .dialog({
+          title: gettext("Error saving report settings"),
+          autoOpen: true,
+          resizable: false,
+          width: 'auto',
+          height: 'auto'
+        });
+      }
+    });
+}
+
+
 function sendChat()
 {
   var chatmsg = $("#chatmsg");
@@ -970,7 +1053,7 @@ function displayChat()
   var chatdiv = $("#chathistory");
   $(jsondoc.messages).each(function() {
     chatdiv.append($('<tr>')
-      .append($('<td>').text(this.date))
+      .append($('<td>').text(this.date.replace("T", " ")))
       .append($('<td>').text(this.name))
       .append($('<td>').text(this.value))
       );
