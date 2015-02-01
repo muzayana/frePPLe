@@ -10,7 +10,8 @@
 
 from decimal import Decimal
 
-from django.db import models
+from django.db import models, DEFAULT_DB_ALIAS
+from django.db.models import F, Q
 from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
 
@@ -63,8 +64,21 @@ class Forecast(AuditModel):
     _('discrete'), default=True,
     help_text=_('Round forecast numbers to integers')
     )
+  planned = models.BooleanField(
+    _('planned'), default=True,
+    help_text=_('Use this forecast for planning')
+    )
+  computed = models.BooleanField(
+    _('computed'), default=True,
+    help_text=_('Compute a baseline forecast')
+    )
 
-  # Convenience methods
+  class Meta(AuditModel.Meta):
+    db_table = 'forecast'
+    verbose_name = _('forecast')
+    verbose_name_plural = _('forecasts')
+    ordering = ['name']
+
   def __unicode__(self):
     return self.name
 
@@ -203,11 +217,38 @@ class Forecast(AuditModel):
           i.quantity = str(i.quantity)
           i.save()
 
-  class Meta(AuditModel.Meta):
-    db_table = 'forecast'
-    verbose_name = _('forecast')
-    verbose_name_plural = _('forecasts')
-    ordering = ['name']
+
+  @classmethod
+  def rebuildAllRelations(cls, database=DEFAULT_DB_ALIAS):
+    # Loop over all forecasts that (potentially) have child forecasts
+    for fcst in Forecast.objects.using(database).filter(~Q(item__rght=F('item__lft') + 1) | ~Q(customer__rght=F('customer__lft') + 1)):
+      fcst.rebuildRelations(database)
+    # Delete relations of leaf forecasts, which can never have children
+    ForecastRelation.objects.using(database) \
+      .filter(parent__item__rght=F('parent__item__lft') + 1) \
+      .filter(parent__customer__rght=F('parent__customer__lft') + 1) \
+      .delete()
+
+
+  def rebuildRelations(self, database=DEFAULT_DB_ALIAS):
+    # Pick up all existing relations
+    existing = {}
+    for cur in self.children.all():
+      existing[cur.child] = cur
+
+    # Find all children
+    query = Forecast.objects.using(database) \
+      .filter(item__lft__range=(self.item.lft, self.item.rght)) \
+      .filter(customer__lft__range=(self.customer.lft, self.customer.rght))
+    for p in query:
+      if self.name == p.name:
+        continue
+      elif p in existing:
+        del existing[p]
+      else:
+        ForecastRelation(parent=self, child=p).save(using=database)
+    for x in existing:
+      existing[x].delete()
 
 
 class ForecastDemand(AuditModel):
@@ -218,7 +259,6 @@ class ForecastDemand(AuditModel):
   enddate = models.DateField(_('end date'), null=False)
   quantity = models.DecimalField(_('quantity'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default=0)
 
-  # Convenience methods
   def __unicode__(self):
     return self.forecast.name + " " + str(self.startdate) + " - " + str(self.enddate)
 
@@ -226,6 +266,23 @@ class ForecastDemand(AuditModel):
     db_table = 'forecastdemand'
     verbose_name = _('forecast demand')
     verbose_name_plural = _('forecast demands')
+
+
+class ForecastRelation(models.Model):
+  '''
+  This table stores the parent-child relations between forecasts.
+  '''
+  # Database fields
+  id = models.AutoField(primary_key=True)
+  parent = models.ForeignKey(Forecast, db_index=True, related_name='children')
+  child = models.ForeignKey(Forecast, db_index=True, related_name='parents')
+
+  def __unicode__(self):
+    return self.parent.name + " - " + self.child.name
+
+  class Meta(AuditModel.Meta):
+    db_table = 'forecastrelation'
+    unique_together = (('parent', 'child'),)
 
 
 class ForecastPlan(models.Model):
@@ -245,6 +302,16 @@ class ForecastPlan(models.Model):
   forecastnet = models.DecimalField(_('forecast net'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
   forecastconsumed = models.DecimalField(_('forecast consumed'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
   forecastplanned = models.DecimalField(_('planned forecast'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
+  orderstotalvalue = models.DecimalField(_('total orders'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
+  ordersadjustmentvalue = models.DecimalField(_('orders adjustment'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
+  ordersopenvalue = models.DecimalField(_('open orders'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
+  ordersplannedvalue = models.DecimalField(_('planned orders'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
+  forecastbaselinevalue = models.DecimalField(_('forecast baseline'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
+  forecastadjustmentvalue = models.DecimalField(_('forecast adjustment'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
+  forecasttotalvalue = models.DecimalField(_('forecast total'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
+  forecastnetvalue = models.DecimalField(_('forecast net'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
+  forecastconsumedvalue = models.DecimalField(_('forecast consumed'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
+  forecastplannedvalue = models.DecimalField(_('planned forecast'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
 
   def __unicode__(self):
     return "%s - %s" % (self.forecast.name, str(self.startdate))
