@@ -78,7 +78,7 @@ class DurationFormField(fields.RegexField):
 
     # Parse the input string to a decimal number, representing the number of seconds
     try:
-      t = value.split(":")
+      t = value.strip().split(":")
       tl = len(t)
       if tl <= 1:
         # Seconds only
