@@ -21,4 +21,5 @@ urlpatterns = patterns(
   (r'^data/forecast/forecast/$', freppledb.forecast.views.ForecastList.as_view()),
   (r'^forecast/(.+)/$', freppledb.forecast.views.OverviewReport.as_view()),
   (r'^forecast/$', freppledb.forecast.views.OverviewReport.as_view()),
+  (r'^supplypath/forecast/(.+)/$', freppledb.forecast.views.UpstreamForecastPath.as_view()),
   )

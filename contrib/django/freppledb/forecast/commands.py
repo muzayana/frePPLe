@@ -58,7 +58,9 @@ def aggregateDemand(cursor):
       select forecast.name as forecast, calendarbucket.startdate as startdate,
         fcustomer.lft as customer, fitem.lft as item,
         sum(demand.quantity) as orderstotal,
-        sum(case when demand.status is null or demand.status = 'open' then demand.quantity else 0 end) as ordersopen
+        sum(case when demand.status is null or demand.status = 'open' then demand.quantity else 0 end) as ordersopen,
+        sum(demand.quantity*ditem.price) as orderstotalvalue,
+        sum(case when demand.status is null or demand.status = 'open' then (demand.quantity*ditem.price) else 0 end) as ordersopenvalue
       from demand
       inner join item as ditem on demand.item_id = ditem.name
       inner join customer as dcustomer on demand.customer_id = dcustomer.name
@@ -81,10 +83,15 @@ def aggregateDemand(cursor):
     insert into forecastplan (
       forecast_id, customerlvl, itemlvl, startdate, orderstotal, ordersopen,
       forecastbaseline, forecastadjustment, forecasttotal, forecastnet, forecastconsumed,
-      ordersadjustment, ordersplanned, forecastplanned
+      ordersadjustment, ordersplanned, forecastplanned, orderstotalvalue, ordersadjustmentvalue,
+      ordersopenvalue, ordersplannedvalue, forecastbaselinevalue, forecastadjustmentvalue,
+      forecasttotalvalue, forecastnetvalue, forecastconsumedvalue, forecastplannedvalue
       )
-    select demand_history.forecast, demand_history.customer, demand_history.item,
-       demand_history.startdate, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    select
+       demand_history.forecast, demand_history.customer,
+       demand_history.item, demand_history.startdate,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0
     from demand_history
     left outer join forecastplan
       on demand_history.forecast = forecastplan.forecast_id
@@ -96,13 +103,16 @@ def aggregateDemand(cursor):
   # Merge aggregate demand history into the forecastplan table
   starttime = time()
   cursor.execute('''update forecastplan
-    set orderstotal=demand_history.orderstotal, ordersopen=demand_history.ordersopen
+    set orderstotal=demand_history.orderstotal, orderstotalvalue=demand_history.orderstotalvalue,
+      ordersopen=demand_history.ordersopen, ordersopenvalue=demand_history.ordersopenvalue
     from demand_history
     where forecastplan.forecast_id = demand_history.forecast
       and forecastplan.startdate = demand_history.startdate
       and (
         forecastplan.orderstotal <> demand_history.orderstotal
         or forecastplan.ordersopen <> demand_history.ordersopen
+        or forecastplan.orderstotalvalue <> demand_history.orderstotalvalue
+        or forecastplan.ordersopenvalue <> demand_history.ordersopenvalue
         )
     ''')
   transaction.commit(using=cursor.db.alias)
@@ -116,9 +126,14 @@ def aggregateDemand(cursor):
     insert into forecastplan (
         forecast_id, customerlvl, itemlvl, startdate, orderstotal, ordersopen,
         forecastbaseline, forecastadjustment, forecasttotal, forecastnet, forecastconsumed,
-        ordersadjustment, ordersplanned, forecastplanned
+        ordersadjustment, ordersplanned, forecastplanned, orderstotalvalue, ordersadjustmentvalue,
+        ordersopenvalue, ordersplannedvalue, forecastbaselinevalue, forecastadjustmentvalue,
+        forecasttotalvalue, forecastnetvalue, forecastconsumedvalue, forecastplannedvalue
         )
-      select forecast.name, customer.lft, item.lft, calendarbucket.startdate, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+      select
+        forecast.name, customer.lft, item.lft, calendarbucket.startdate,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0
       from forecast
       inner join item on forecast.item_id = item.name
       inner join customer on forecast.customer_id = customer.name
@@ -213,16 +228,18 @@ def generateBaseline(solver_fcst, cursor):
   print("Exporting baseline forecast...")
   cursor.execute('''
     update forecastplan
-    set forecastbaseline=0
-    where startdate>'%s' and forecastbaseline<>0
+    set forecastbaseline=0, forecastbaselinevalue=0
+    where startdate>'%s'
+      and (forecastbaseline<>0 or forecastbaselinevalue<>0)
     ''' % frepple.settings.current)
   cursor.executemany('''
     update forecastplan
-    set forecastbaseline=%s
+    set forecastbaseline=%s, forecastbaselinevalue=%s
     where forecast_id = %s and startdate=%s
     ''', [
       (
         round(i.total, settings.DECIMAL_PLACES),
+        round(i.total*i.item.price, settings.DECIMAL_PLACES),
         i.owner.name, str(i.startdate)
       )
       for i in frepple.demands()
@@ -285,12 +302,16 @@ def exportForecast(cursor):
   starttime = time()
   cursor.executemany(
     '''update forecastplan
-     set forecasttotal=%s, forecastnet=%s, forecastconsumed=%s
+     set forecasttotal=%s, forecastnet=%s, forecastconsumed=%s,
+       forecasttotalvalue=%s, forecastnetvalue=%s, forecastconsumedvalue=%s
      where forecast_id=%s and startdate=%s''', [
       (
         round(i.total, settings.DECIMAL_PLACES),
         round(i.quantity, settings.DECIMAL_PLACES),
         round(i.consumed, settings.DECIMAL_PLACES),
+        round(i.total*i.item.price, settings.DECIMAL_PLACES),
+        round(i.quantity*i.item.price, settings.DECIMAL_PLACES),
+        round(i.consumed*i.item.price, settings.DECIMAL_PLACES),
         i.owner.name, str(i.startdate)
       )
       for i in generator(cursor) if i.total != 0.0 or i.quantity != 0 or i.consumed != 0
@@ -302,12 +323,16 @@ def exportForecast(cursor):
   cursor.execute('''
     update forecastplan
       set ordersplanned=plannedquantities.planneddemand,
-          forecastplanned=plannedquantities.plannedforecast
+          forecastplanned=plannedquantities.plannedforecast,
+          ordersplannedvalue=plannedquantities.planneddemandvalue,
+          forecastplannedvalue=plannedquantities.plannedforecastvalue
       from (
         select
            forecast.name as forecast, calendarbucket.startdate as startdate,
            sum(case when demand.name is not null then planquantity else 0 end) as planneddemand,
-           sum(case when demand.name is null then planquantity else 0 end) as plannedforecast
+           sum(case when demand.name is null then planquantity else 0 end) as plannedforecast,
+           sum(case when demand.name is not null then (planquantity*item.price) else 0 end) as planneddemandvalue,
+           sum(case when demand.name is null then (planquantity*item.price) else 0 end) as plannedforecastvalue
         from out_demand
         inner join item
           on out_demand.item = item.name
@@ -333,6 +358,8 @@ def exportForecast(cursor):
         and (
           forecastplan.ordersplanned <> plannedquantities.planneddemand
           or forecastplan.forecastplanned <> plannedquantities.plannedforecast
+          or forecastplan.ordersplannedvalue <> plannedquantities.planneddemandvalue
+          or forecastplan.forecastplannedvalue <> plannedquantities.plannedforecastvalue
           )
     ''')
   transaction.commit(using=cursor.db.alias)
@@ -481,4 +508,8 @@ def generate_plan():
 
 
 if __name__ == "__main__":
-  generate_plan()
+  try:
+    generate_plan()
+  except Exception as e:
+    print("Error during planning: ", e)
+    raise

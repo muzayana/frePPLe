@@ -16,13 +16,14 @@ from django.db import connections, transaction
 from django.utils.translation import ugettext_lazy as _
 from django.utils.text import capfirst
 from django.utils.encoding import force_unicode
-from django.http import HttpResponse, HttpResponseForbidden
+from django.http import HttpResponse, HttpResponseForbidden, Http404
 
 from freppledb.forecast.models import Forecast, ForecastDemand, ForecastPlan
 from freppledb.common.db import python_date
 from freppledb.common.report import GridPivot, GridFieldText, GridFieldInteger, GridFieldDate
 from freppledb.common.report import GridReport, GridFieldBool, GridFieldLastModified
 from freppledb.common.report import GridFieldChoice, GridFieldNumber
+from freppledb.input.views import PathReport
 
 
 class ForecastList(GridReport):
@@ -130,19 +131,26 @@ class OverviewReport(GridPivot):
     except:
       currentdate = datetime.now().date()
 
+    # Value or units
+    prefs = request.user.getPreference(OverviewReport.getKey())
+    if prefs and prefs.get('units', 'unit') == 'value':
+      suffix = 'value'
+    else:
+      suffix = ''
+
     query = '''
         select fcst.name as row1, fcst.item_id as row2, fcst.customer_id as row3,
            d.bucket as col1, d.startdate as col2, d.enddate as col3,
-           coalesce(sum(forecastplan.orderstotal),0) as orderstotal,
-           coalesce(sum(forecastplan.ordersopen),0) as ordersopen,
-           coalesce(sum(forecastplan.ordersadjustment),0) as ordersadjustment,
-           coalesce(sum(forecastplan.forecastbaseline),0) as forecastbaseline,
-           coalesce(sum(forecastplan.forecastadjustment),0) as forecastadjustment,
-           coalesce(sum(forecastplan.forecasttotal),0) as forecasttotal,
-           coalesce(sum(forecastplan.forecastnet),0) as forecastnet,
-           coalesce(sum(forecastplan.forecastconsumed),0) as forecastconsumed,
-           coalesce(sum(forecastplan.ordersplanned),0) as ordersplanned,
-           coalesce(sum(forecastplan.forecastplanned),0) as forecastplanned
+           coalesce(sum(forecastplan.orderstotal%s),0) as orderstotal,
+           coalesce(sum(forecastplan.ordersopen%s),0) as ordersopen,
+           coalesce(sum(forecastplan.ordersadjustment%s),0) as ordersadjustment,
+           coalesce(sum(forecastplan.forecastbaseline%s),0) as forecastbaseline,
+           coalesce(sum(forecastplan.forecastadjustment%s),0) as forecastadjustment,
+           coalesce(sum(forecastplan.forecasttotal%s),0) as forecasttotal,
+           coalesce(sum(forecastplan.forecastnet%s),0) as forecastnet,
+           coalesce(sum(forecastplan.forecastconsumed%s),0) as forecastconsumed,
+           coalesce(sum(forecastplan.ordersplanned%s),0) as ordersplanned,
+           coalesce(sum(forecastplan.forecastplanned%s),0) as forecastplanned
         from (%s) fcst
         -- Multiply with buckets
         cross join (
@@ -159,7 +167,11 @@ class OverviewReport(GridPivot):
         group by fcst.name, fcst.item_id, fcst.customer_id,
                d.bucket, d.startdate, d.enddate
         order by %s, d.startdate
-        ''' % (basesql, request.report_bucket, request.report_startdate, request.report_enddate, sortsql)
+        ''' % (
+          suffix, suffix, suffix, suffix, suffix, suffix, suffix, suffix, suffix, suffix,
+          basesql, request.report_bucket, request.report_startdate, request.report_enddate,
+          sortsql
+          )
     cursor.execute(query, baseparams)
 
     # Build the python result
@@ -260,3 +272,22 @@ class OverviewReport(GridPivot):
       resp.write("OK")
     resp.status_code = ok and 200 or 403
     return resp
+
+
+class UpstreamForecastPath(PathReport):
+  downstream = False
+  objecttype = Forecast
+
+  @classmethod
+  def getRoot(reportclass, request, entity):
+    from django.core.exceptions import ObjectDoesNotExist
+    try:
+      fcst = Forecast.objects.using(request.database).get(name=entity)
+      if fcst.operation:
+        return [ (0, None, fcst.operation, 1, 0, None, 0, False) ]
+      elif fcst.item.operation:
+        return [ (0, None, fcst.item.operation, 1, 0, None, 0, False) ]
+      else:
+        raise Http404("No supply path defined for forecast %s" % entity)
+    except ObjectDoesNotExist:
+      raise Http404("forecast %s doesn't exist" % entity)
