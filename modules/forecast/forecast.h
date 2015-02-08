@@ -50,7 +50,7 @@
   *         constant demands .
   *       - <b>Double exponential smoothing</b>, which is applicable for
   *         trended demands.
-  *       - <b>Holt-Winter's exponential smoothing with mutiplicative
+  *       - <b>Holt-Winter's exponential smoothing with multiplicative
   *         seasonality</b>, which is applicable for seasonal demands.
   *       - <b>Croston's method</b>, which is applicable for intermittent
   *         demand (i.e. demand patterns with a lot of zero demand buckets).
