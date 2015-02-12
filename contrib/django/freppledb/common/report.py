@@ -1751,7 +1751,7 @@ class GridPivot(GridReport):
       myrows = [
         reportclass.rows[f[0]]
         for f in prefs['rows']
-        if not f[1] and f[0] in reportclass and not reportclass.rows[f[0]].hidden
+        if not f[1] and f[0] < len(reportclass.rows) and not reportclass.rows[f[0]].hidden
         ]
     else:
       myrows = [ f for f in reportclass.rows if f.name and not f.hidden ]
