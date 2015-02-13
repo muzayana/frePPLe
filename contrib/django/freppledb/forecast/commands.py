@@ -277,7 +277,7 @@ def applyForecastAdjustments(cursor):
        and forecastplan.forecastadjustment > 0
      order by forecast.name, calendarbucket.startdate''' % (frepple.settings.current, frepple.settings.current + timedelta(days=horizon_future)))
   for fcstname, start, qty in cursor.fetchall():
-    frepple.demand(name=fcstname).setQuantity(qty, start, start, True)
+    frepple.demand(name=fcstname).setQuantity(qty, start, start, False)
 
 
 def createSolver(cursor):
