@@ -39,7 +39,13 @@
 {% include "itemcontext.html" %}
 {% include "forecastcontext.html" %}
 {% include "customercontext.html" %}
-<div id="detailcontext" class="ContextMenu"><ul class="ui-menu ui-widget ui-widget-content ui-corner-all ui-state-default">
+<div id="detail0context" class="ContextMenu"><ul class="ui-menu ui-widget ui-widget-content ui-corner-all ui-state-default">
+<li class="ui-menu-item"><a id="{{request.prefix}}/forecast/demand/?forecast={value}&amp;o=5a&amp;due__gte={startdate}&amp;due__lt={enddate}">{% trans 'Detail' %}</a></li>
+</ul></div>
+<div id="detail1context" class="ContextMenu"><ul class="ui-menu ui-widget ui-widget-content ui-corner-all ui-state-default">
+<li class="ui-menu-item"><a id="{{request.prefix}}/forecast/demand/?forecast={value}&amp;o=5a&amp;due__gte={startdate}&amp;due__lt={enddate}&amp;status=open">{% trans 'Detail' %}</a></li>
+</ul></div>
+<div id="detail9context" class="ContextMenu"><ul class="ui-menu ui-widget ui-widget-content ui-corner-all ui-state-default">
 <li class="ui-menu-item"><a id="{{request.prefix}}/demandplan/?demand__startswith={value}&amp;o=5a&amp;plandate__gte={startdate}&amp;plandate__lt={enddate}">{% trans 'Detail' %}</a></li>
 </ul></div>
 {% if mode == "graph" %}<div id="tooltip" role="tooltip" class="ui-tooltip ui-widget ui-corner-all ui-widget-content" style="display: none; position: absolute;"/>
@@ -153,7 +159,7 @@ function drawGraphs(jsondata)
           if (d3.event.defaultPrevented || (d['produced'] == 0 && d['consumed'] == 0))
             return;
           d3.select("#tooltip").style('display', 'none');
-          contextMenu = $("#detail2context");
+          contextMenu = $("#detailorderscontext");
           contextMenu.find('a').each( function() {
               $(this).attr(
                 'href',
@@ -342,9 +348,14 @@ function crosses (cellvalue, options, rowdata)
     switch(cross_idx[i])
     {
       case 0: // Total orders
+        if (cellvalue[cross_idx[i]] != 0.0)
+          result += cellvalue[cross_idx[i]] + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail0'></span></br>";
+        else
+          result += '0.0</br>';
+        break;
       case 1: // Open orders
         if (cellvalue[cross_idx[i]] != 0.0)
-          result += cellvalue[cross_idx[i]] + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail'></span></br>";
+          result += cellvalue[cross_idx[i]] + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail1'></span></br>";
         else
           result += '0.0</br>';
         break;
@@ -386,7 +397,7 @@ function crosses (cellvalue, options, rowdata)
         if (cellvalue[11] == 1)
         {
           if (cellvalue[cross_idx[i]] != 0.0)
-            result += (Math.round(cellvalue[cross_idx[i]]*10)/10) + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail'></span><br/>";
+            result += (Math.round(cellvalue[cross_idx[i]]*10)/10) + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail9'></span><br/>";
           else
             result += '0<br/>';
         }
