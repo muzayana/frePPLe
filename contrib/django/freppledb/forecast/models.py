@@ -27,6 +27,7 @@ class Forecast(AuditModel):
     ('trend', _('Trend')),
     ('seasonal', _('Seasonal')),
     ('intermittent', _('Intermittent')),
+    ('moving average', _('Moving average')),
     ('manual', _('Manual')),
   )
 

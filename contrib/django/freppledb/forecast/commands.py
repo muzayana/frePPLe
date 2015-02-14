@@ -20,7 +20,7 @@ def loadForecast(cursor):
   starttime = time()
   cursor.execute('''SELECT name, customer_id, item_id, priority,
     operation_id, minshipment, calendar_id, discrete, maxlateness,
-    category,subcategory
+    category, subcategory, method, planned
     FROM forecast''')
   for i in cursor.fetchall():
     cnt += 1
@@ -36,9 +36,25 @@ def loadForecast(cursor):
     if i[6]:
       fcst.calendar = frepple.calendar(name=i[6])
     if not i[7]:
-      fcst.discrete = False
+      fcst.discrete = False  # null value -> False
     if i[8] is not None:
       fcst.maxlateness = i[8]
+    if i[11]:
+      if i[11] == 'constant':
+        fcst.methods = 1
+      elif i[11] == 'trend':
+        print ("yes", fcst.name)
+        fcst.methods = 2
+      elif i[11] == 'seasonal':
+        fcst.methods = 4
+      elif i[11] == 'intermittent':
+        fcst.methods = 8
+      elif i[11] == 'moving average':
+        fcst.methods = 16
+      elif i[11] == 'manual':
+        fcst.methods = 0
+    if i[12] is not None and not i[12]:
+      fcst.planned = False  # null value -> True
   print('Loaded %d forecasts in %.2f seconds' % (cnt, time() - starttime))
 
 
@@ -430,7 +446,10 @@ def generate_plan():
   if with_forecasting:
     # Load forecast data
     print("\nStart loading forecast data from the database at", datetime.now().strftime("%H:%M:%S"))
-    loadForecast(cursor)
+    try:
+      loadForecast(cursor)
+    except Exception as e:
+      print(e)
 
     # Intialize the solver
     solver_fcst = createSolver(cursor)

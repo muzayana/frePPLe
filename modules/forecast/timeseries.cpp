@@ -27,6 +27,10 @@ void Forecast::generateFutureValues(
   const Date buckets[], unsigned int bucketcount,
   ForecastSolver* solver)
 {
+  if (!methods)
+    // No computation here
+    return;
+
   // Validate the input
   if (!history || !buckets)
     throw RuntimeException("Null argument to forecast function");
@@ -49,14 +53,18 @@ void Forecast::generateFutureValues(
   SingleExponential single_exp;
   DoubleExponential double_exp;
   Seasonal seasonal;
-  int numberOfMethods = 4;
-  ForecastMethod* methods[4];
+  int numberOfMethods = 0;
+  ForecastMethod* qualifiedmethods[5];
 
   // Rules to determine which forecast methods can be applied
-  methods[0] = &moving_avg;
+  if (methods & METHOD_MOVINGAVERAGE)
+    qualifiedmethods[numberOfMethods++] = &moving_avg;
   if (historycount < getForecastSkip() + 5)
-    // Too little history: only use moving average
-    numberOfMethods = 1;
+  {
+    // if there is too little history, only use moving average and the forced methods
+    if (methods & METHOD_CROSTON)
+      qualifiedmethods[numberOfMethods++] = &croston;
+  }
   else
   {
     unsigned int zero = 0;
@@ -65,16 +73,37 @@ void Forecast::generateFutureValues(
     if (zero > Croston::getMinIntermittence() * historycount)
     {
       // If there are too many zeros: use croston or moving average.
-      numberOfMethods = 2;
-      methods[1] = &croston;
+      if (methods & METHOD_CROSTON)
+        qualifiedmethods[numberOfMethods++] = &croston;
     }
     else
     {
       // The most common case: enough values and not intermittent
-      methods[1] = &single_exp;
-      methods[2] = &double_exp;
-      methods[3] = &seasonal;
+      if (methods & METHOD_CONSTANT)
+        qualifiedmethods[numberOfMethods++] = &single_exp;
+      if (methods & METHOD_TREND)
+        qualifiedmethods[numberOfMethods++] = &double_exp;
+      if (methods & METHOD_SEASONAL)
+        qualifiedmethods[numberOfMethods++] = &seasonal;
     }
+  }
+
+  // Special case: no method qualifies at all based on our criteria
+  // We will take only the enforced methods.
+  if (numberOfMethods == 0)
+  {
+    if (solver->getLogLevel()>0)
+      logger << getName() << ": Warning: The specified forecast methods are potentially not suitable!" << endl;
+    if (methods & METHOD_MOVINGAVERAGE)
+      qualifiedmethods[numberOfMethods++] = &moving_avg;
+    if (methods & METHOD_CROSTON)
+      qualifiedmethods[numberOfMethods++] = &croston;
+    if (methods & METHOD_CONSTANT)
+      qualifiedmethods[numberOfMethods++] = &single_exp;
+    if (methods & METHOD_TREND)
+      qualifiedmethods[numberOfMethods++] = &double_exp;
+    if (methods & METHOD_SEASONAL)
+      qualifiedmethods[numberOfMethods++] = &seasonal;
   }
 
   // Initialize a vector with the smape weights
@@ -91,7 +120,7 @@ void Forecast::generateFutureValues(
   {
     for (int i=0; i<numberOfMethods; ++i)
     {
-      error = methods[i]->generateForecast(this, history, historycount, weight, solver);
+      error = qualifiedmethods[i]->generateForecast(this, history, historycount, weight, solver);
       if (error<best_error)
       {
         best_error = error;
@@ -110,8 +139,8 @@ void Forecast::generateFutureValues(
   if (best_method >= 0)
   {
     if (solver->getLogLevel()>0)
-      logger << getName() << ": chosen method: " << methods[best_method]->getName() << endl;
-    methods[best_method]->applyForecast(this, buckets, bucketcount);
+      logger << getName() << ": chosen method: " << qualifiedmethods[best_method]->getName() << endl;
+    qualifiedmethods[best_method]->applyForecast(this, buckets, bucketcount);
   }
 }
 

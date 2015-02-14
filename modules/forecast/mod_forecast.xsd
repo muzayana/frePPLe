@@ -10,6 +10,8 @@
         <xsd:choice minOccurs="0" maxOccurs="unbounded">
           <xsd:element name="calendar" type="calendar" />
           <xsd:element name="discrete" type="xsd:boolean" />
+          <xsd:element name="planned" type="xsd:boolean" />
+          <xsd:element name="methods" type="xsd:unsignedLong" />
           <xsd:element name="buckets">
             <xsd:complexType>
               <xsd:choice minOccurs="0" maxOccurs="unbounded">
@@ -39,6 +41,8 @@
           </xsd:element>
         </xsd:choice>
         <xsd:attribute name="discrete" type="xsd:boolean" />
+        <xsd:attribute name="planned" type="xsd:boolean" />
+        <xsd:attribute name="methods" type="xsd:unsignedLong" />
       </xsd:extension>
     </xsd:complexContent>
   </xsd:complexType>
