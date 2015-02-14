@@ -19,6 +19,8 @@ namespace module_forecast
 const Keyword Forecast::tag_total("total");
 const Keyword Forecast::tag_net("net");
 const Keyword Forecast::tag_consumed("consumed");
+const Keyword Forecast::tag_planned("planned");
+const Keyword Forecast::tag_methods("methods");
 const MetaClass *Forecast::metadata;
 const MetaClass *ForecastBucket::metadata;
 bool ForecastBucket::DueAtEndOfBucket = false;
@@ -278,7 +280,12 @@ void Forecast::writeElement(Serializer *o, const Keyword &tag, mode m) const
   PythonDictionary::write(o, getDict());
 
   // Write fields specific to the forecast model
-  if (!getDiscrete()) o->writeElement(Tags::tag_discrete, getDiscrete());
+  if (!getDiscrete())
+    o->writeElement(Tags::tag_discrete, false);
+  if (getMethods() != METHOD_ALL)
+    o->writeElement(Forecast::tag_methods, getMethods());
+  if (!getPlanned())
+    o->writeElement(Forecast::tag_planned, false);
 
   // Write all entries
   o->BeginList(Tags::tag_buckets);
@@ -310,6 +317,10 @@ void Forecast::endElement(XMLInput& pIn, const Attribute& pAttr, const DataEleme
   }
   else if (pAttr.isA(Tags::tag_discrete))
     setDiscrete(pElement.getBool());
+  else if (pAttr.isA(Forecast::tag_planned))
+    setPlanned(pElement.getBool());
+  else if (pAttr.isA(Forecast::tag_methods))
+    setMethods(pElement.getUnsignedLong());
   else if (pAttr.isA(Tags::tag_bucket))
   {
     pair<DateRange,double> *d =

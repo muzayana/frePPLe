@@ -285,6 +285,16 @@ class Forecast : public Demand
     static const Keyword tag_total;
     static const Keyword tag_net;
     static const Keyword tag_consumed;
+    static const Keyword tag_methods;
+    static const Keyword tag_planned;
+
+    /** Constants for each forecast method. */
+    static const unsigned long METHOD_CONSTANT = 1;
+    static const unsigned long METHOD_TREND = 2;
+    static const unsigned long METHOD_SEASONAL = 4;
+    static const unsigned long METHOD_CROSTON = 8;
+    static const unsigned long METHOD_MOVINGAVERAGE = 16;
+    static const unsigned long METHOD_ALL = 31;
 
     /** @brief Abstract base class for all forecasting methods. */
     class ForecastMethod
@@ -823,7 +833,10 @@ class Forecast : public Demand
   public:
     /** Constructor. */
     explicit Forecast(const string& nm)
-      : Demand(nm), calptr(NULL), discrete(true) {initType(metadata);}
+      : Demand(nm), calptr(NULL), discrete(true), planned(true), methods(METHOD_ALL)
+    {
+      initType(metadata);
+    }
 
     /** Destructor. */
     ~Forecast();
@@ -865,6 +878,32 @@ class Forecast : public Demand
     void endElement(XMLInput& pIn, const Attribute& pAttr, const DataElement& pElement);
     void beginElement(XMLInput& pIn, const Attribute& pAttr);
     static int initialize();
+
+    /** Returns which statistical forecast methods are allowed.<br>
+      * The following bit values can be added to enable forecasting methods:
+      *   - 1: Constant forecast, single exponential
+      *   - 2: Trending forecast, double exponential
+      *   - 4: Seasonal forecast, holt-winter's multiplicative
+      *   - 8: Intermittent demand, croston
+      *   - 16: moving average
+      * If no flag is set (ie value is 0), then no statistical forecast will be
+      * computed at all.<br>
+      * If multiple flags are set, the algorithm automatically selects the
+      * forecast method which returns the lowest forecast error.<br>
+      * The default value is 31, which enables all forecast methods.
+      */
+    unsigned long getMethods() const {return methods;}
+
+    /** Updates computed flag. */
+    void setMethods(unsigned long b) {methods = b & METHOD_ALL; logger << "koko " << b << "   "<< methods << endl;} // TODO generate/erase baseline when set to 0
+
+    /** Returns whether we generate forecast demands at this level.<br>
+      * The default is true.
+      */
+    bool getPlanned() const {return planned;}
+
+    /** Updates planned flag. */
+    void setPlanned(const bool b) {planned = b;}  // TODO erase/create demands
 
     /** Returns whether fractional forecasts are allowed or not.<br>
       * The default is true.
@@ -1034,6 +1073,12 @@ class Forecast : public Demand
 
     /** Flags whether fractional forecasts are allowed. */
     bool discrete;
+
+    /** Flags whether this level is planned or not. */
+    bool planned;
+
+    /** Allowed forecasting methods. */
+    unsigned int methods;
 
     /** A dictionary of all forecasts. */
     static MapOfForecasts ForecastDictionary;

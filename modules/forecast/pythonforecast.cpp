@@ -23,6 +23,10 @@ PyObject* Forecast::getattro(const Attribute& attr)
     return PythonObject(getCalendar());
   else if (attr.isA(Tags::tag_discrete))
     return PythonObject(getDiscrete());
+  else if (attr.isA(Forecast::tag_planned))
+    return PythonObject(getPlanned());
+  else if (attr.isA(Forecast::tag_methods))
+    return PythonObject(getMethods());
   return Demand::getattro(attr);
 }
 
@@ -41,6 +45,10 @@ int Forecast::setattro(const Attribute& attr, const PythonObject& field)
   }
   else if (attr.isA(Tags::tag_discrete))
     setDiscrete(field.getBool());
+  else if (attr.isA(Forecast::tag_planned))
+    setPlanned(field.getBool());
+  else if (attr.isA(Forecast::tag_methods))
+    setMethods(field.getUnsignedLong());
   else
     return Demand::setattro(attr, field);
   return 0; // OK
