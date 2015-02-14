@@ -61,7 +61,7 @@ void Forecast::generateFutureValues(
     qualifiedmethods[numberOfMethods++] = &moving_avg;
   if (historycount < getForecastSkip() + 5)
   {
-    // if there is too little history, only use moving average and the forced methods
+    // If there is too little history, only use moving average and the forced methods
     if (methods & METHOD_CROSTON)
       qualifiedmethods[numberOfMethods++] = &croston;
   }
@@ -126,6 +126,14 @@ void Forecast::generateFutureValues(
         best_error = error;
         best_method = i;
       }
+    }
+    if (methods==METHOD_SEASONAL && best_error == DBL_MAX)
+    {
+      // Special case: the only allowed forecast method is seasonal and we
+      // couldn't detect any cycles. We fall back to the trend method.
+      qualifiedmethods[0] = &double_exp;
+      best_method = 0;
+      best_error = double_exp.generateForecast(this, history, historycount, weight, solver);
     }
   }
   catch (...)
