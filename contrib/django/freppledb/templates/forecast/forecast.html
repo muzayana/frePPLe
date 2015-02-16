@@ -328,9 +328,31 @@ function getDirtyData()
     var curRow = $(this).closest("tr").attr('id');
     var colmodel = jQuery("#grid").jqGrid ('getGridParam', 'colModel')[curCol];
     if ($(this).hasClass('adjhistory'))
-      changes.push({'id': curRow, 'startdate': colmodel['startdate'], 'enddate': colmodel['enddate'], 'adjHistory': $(this).val()});
+    {
+      if (units == 'value')
+        changes.push({
+          'id': curRow, 'startdate': colmodel['startdate'], 'enddate': colmodel['enddate'],
+          'adjHistoryValue': $(this).val()
+          });
+      else
+        changes.push({
+          'id': curRow, 'startdate': colmodel['startdate'], 'enddate': colmodel['enddate'],
+          'adjHistory': $(this).val()
+          });
+    }
     else
-      changes.push({'id': curRow, 'startdate': colmodel['startdate'], 'enddate': colmodel['enddate'], 'adjForecast': $(this).val()});
+    {
+      if (units == 'value')
+        changes.push({
+          'id': curRow, 'startdate': colmodel['startdate'], 'enddate': colmodel['enddate'],
+          'adjForecastValue': $(this).val()
+          });
+      else
+        changes.push({
+          'id': curRow, 'startdate': colmodel['startdate'], 'enddate': colmodel['enddate'],
+          'adjForecast': $(this).val()
+          });
+    }
     });
   return changes;
 }

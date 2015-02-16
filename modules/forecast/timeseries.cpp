@@ -57,13 +57,11 @@ void Forecast::generateFutureValues(
   ForecastMethod* qualifiedmethods[5];
 
   // Rules to determine which forecast methods can be applied
-  if (methods & METHOD_MOVINGAVERAGE)
-    qualifiedmethods[numberOfMethods++] = &moving_avg;
-  if (historycount < getForecastSkip() + 5)
+  if (historycount <= getForecastSkip() + 5)
   {
-    // If there is too little history, only use moving average and the forced methods
-    if (methods & METHOD_CROSTON)
-      qualifiedmethods[numberOfMethods++] = &croston;
+    // If there is too little history, only use moving average or the forced methods
+    if (methods & METHOD_MOVINGAVERAGE)
+      qualifiedmethods[numberOfMethods++] = &moving_avg;
   }
   else
   {
@@ -79,6 +77,8 @@ void Forecast::generateFutureValues(
     else
     {
       // The most common case: enough values and not intermittent
+      if (methods & METHOD_MOVINGAVERAGE)
+        qualifiedmethods[numberOfMethods++] = &moving_avg;
       if (methods & METHOD_CONSTANT)
         qualifiedmethods[numberOfMethods++] = &single_exp;
       if (methods & METHOD_TREND)
@@ -703,7 +703,7 @@ void Forecast::Seasonal::detectCycle(const double history[], unsigned int count)
 }
 
 
-double Forecast::Seasonal::generateForecast
+double Forecast::Seasonal::generateForecast  // TODO No outlier detection in this method
 (Forecast* fcst, const double history[], unsigned int count, const double weight[], ForecastSolver* solver)
 {
   // Check for seasonal cycles
@@ -724,12 +724,13 @@ double Forecast::Seasonal::generateForecast
   double sum11, sum12, sum13, sum22, sum23;
   double best_error = DBL_MAX, best_smape = 0, best_alfa = initial_alfa,
          best_beta = initial_beta, best_standarddeviation = 0.0;
+  double initial_S_i[24];
   double best_S_i[24], best_L_i, best_T_i;
 
   // Compute initialization values for the timeseries and seasonal index.
   // L_i = average over first cycle
   // T_i = average delta measured in second cycle
-  // S_i[index] = actual divided by average in first cycle
+  // S_i[index] = seasonality index, measured over all complete cycles
   double L_i_initial = 0.0;
   for (unsigned long i = 0; i < period; ++i)
     L_i_initial += history[i];
@@ -738,9 +739,21 @@ double Forecast::Seasonal::generateForecast
   for (unsigned long i = 0; i < period; ++i)
   {
     T_i_initial += history[i+period] - history[i];
-    S_i[i] = history[i] / L_i;
+    initial_S_i[i] = 0.0;
   }
   T_i_initial /= period * period;
+  unsigned long cyclecount = 0;
+  for (unsigned long i = 0; i + period <= count; i += period)
+  {
+    ++cyclecount;
+    double cyclesum = 0.0;
+    for (short j = 0; j < period; ++j)
+      cyclesum += history[i+j];
+    for (short j = 0; j < period; ++j)
+      initial_S_i[j] += history[i+j] / cyclesum;
+  }
+  for (unsigned long i = 0; i < period; ++i)
+    initial_S_i[i] /= cyclecount;
 
   // Iterations
   double L_i_prev;
@@ -755,7 +768,7 @@ double Forecast::Seasonal::generateForecast
     T_i = T_i_initial;
     for (unsigned long i = 0; i < period; ++i)
     {
-      S_i[i] = history[i] / L_i;
+      S_i[i] = initial_S_i[i];
       d_S_d_alfa[i] = 0.0;
       d_S_d_beta[i] = 0.0;
     }
@@ -781,16 +794,33 @@ double Forecast::Seasonal::generateForecast
       d_T_d_beta_prev = d_T_d_beta;
       d_S_d_alfa_prev = d_S_d_alfa[cycleindex];
       d_S_d_beta_prev = d_S_d_beta[cycleindex];
-      d_L_d_alfa = history[i-1] / S_i[cycleindex]
-         - alfa * history[i-1] / S_i[cycleindex] /  S_i[cycleindex] * d_S_d_alfa_prev
-         - (L_i + T_i)
-         + (1 - alfa) * (d_L_d_alfa_prev + d_T_d_alfa_prev);
-      d_L_d_beta = - alfa * history[i-1] / S_i[cycleindex] /  S_i[cycleindex] * d_S_d_beta_prev
-        + (1 - alfa) * (d_L_d_beta_prev + d_T_d_beta_prev);
-      d_S_d_alfa[cycleindex] = - gamma * history[i-1] / L_i / L_i * d_L_d_alfa_prev
-        + (1 - gamma) * d_S_d_alfa_prev;
-      d_S_d_beta[cycleindex] = - gamma * history[i-1] / L_i / L_i * d_L_d_beta_prev
-        + (1 - gamma) * d_S_d_beta_prev;
+      if (S_i[cycleindex] > ROUNDING_ERROR)
+      {
+        d_L_d_alfa = history[i-1] / S_i[cycleindex]
+           - alfa * history[i-1] / S_i[cycleindex] /  S_i[cycleindex] * d_S_d_alfa_prev
+           - (L_i + T_i)
+           + (1 - alfa) * (d_L_d_alfa_prev + d_T_d_alfa_prev);
+        d_L_d_beta = - alfa * history[i-1] / S_i[cycleindex] /  S_i[cycleindex] * d_S_d_beta_prev
+          + (1 - alfa) * (d_L_d_beta_prev + d_T_d_beta_prev);
+      }
+      else
+      {
+        d_L_d_alfa = - (L_i + T_i)
+           + (1 - alfa) * (d_L_d_alfa_prev + d_T_d_alfa_prev);
+        d_L_d_beta = (1 - alfa) * (d_L_d_beta_prev + d_T_d_beta_prev);
+      }
+      if (L_i > ROUNDING_ERROR)
+      {
+        d_S_d_alfa[cycleindex] = - gamma * history[i-1] / L_i / L_i * d_L_d_alfa_prev
+          + (1 - gamma) * d_S_d_alfa_prev;
+        d_S_d_beta[cycleindex] = - gamma * history[i-1] / L_i / L_i * d_L_d_beta_prev
+          + (1 - gamma) * d_S_d_beta_prev;
+      }
+      else
+      {
+        d_S_d_alfa[cycleindex] = (1 - gamma) * d_S_d_alfa_prev;
+        d_S_d_beta[cycleindex] = (1 - gamma) * d_S_d_beta_prev;
+      }
       d_T_d_alfa = beta * (d_L_d_alfa - d_L_d_alfa_prev)
         + (1 - beta) * d_T_d_alfa_prev;
       d_T_d_beta = (L_i - L_i_prev)
@@ -949,15 +979,16 @@ double Forecast::Croston::min_intermittence = 0.33;
 double Forecast::Croston::generateForecast
 (Forecast* fcst, const double history[], unsigned int count, const double weight[], ForecastSolver* solver)
 {
-  unsigned int iteration = 1;
-  bool upperboundarytested = false;
-  bool lowerboundarytested = false;
-  double error = 0.0, error_smape = 0.0, best_smape = 0.0, delta;
-  double q_i, p_i, d_p_i, d_q_i, d_f_i, sum1, sum2;
-  double best_error = DBL_MAX, best_alfa = initial_alfa, best_f_i = 0.0;
+  unsigned int iteration = 0;
+  double error_smape = 0.0, best_smape = 0.0;
+  double q_i, p_i;
+  double best_error = DBL_MAX, best_alfa = min_alfa, best_f_i = 0.0;
   double best_standarddeviation = 0.0;
   unsigned int between_demands = 1;
-  for (; iteration <= Forecast::getForecastIterations(); ++iteration)
+  alfa = min_alfa;
+  double delta = (max_alfa - min_alfa) / (Forecast::getForecastIterations()-1);
+  bool withoutOutliers = false;
+  for (; iteration < Forecast::getForecastIterations(); ++iteration)
   {
     // Loop over the outliers 'scan'/0 and 'filter'/1 modes
     double standarddeviation = 0.0;
@@ -965,16 +996,13 @@ double Forecast::Croston::generateForecast
     for (short outliers = 0; outliers<=1; outliers++)
     {
       // Initialize variables
-      error_smape = error = d_p_i = d_q_i = d_f_i = sum1 = sum2 = 0.0;
-
-      // Initialize the iteration.
+      error_smape = 0.0;
       q_i = f_i = history[0];
-      p_i = 0;
+      p_i = 1 / Croston::getMinIntermittence();
 
       // Calculate the forecast and forecast error.
-      // We also compute the sums required for the Marquardt optimization.
       double history_i = history[0];
-      double history_i_min_1 = history[0];
+      double history_i_min_1 = history[0];  // Note: if the very first point is an outlier, we never detect it as such
       for (unsigned long i = 1; i <= count; ++i)
       {
         history_i_min_1 = history_i;
@@ -982,12 +1010,9 @@ double Forecast::Croston::generateForecast
         if (history_i_min_1)
         {
           // Non-zero bucket
-          d_p_i = between_demands - p_i + (1 - alfa) * d_p_i;
-          d_q_i = history_i_min_1 - q_i + (1 - alfa) * d_q_i;
           q_i = alfa * history_i_min_1 + (1 - alfa) * q_i;
-          p_i = alfa * between_demands + (1 - alfa) * q_i;
-          f_i = q_i / p_i;
-          d_f_i = (d_q_i - d_p_i * q_i / p_i) / p_i;
+          p_i = alfa * between_demands + (1 - alfa) * p_i;
+          f_i = (1 - alfa / 2) * q_i / p_i;
           between_demands = 1;
         }
         else
@@ -998,8 +1023,8 @@ double Forecast::Croston::generateForecast
           // Scan outliers by computing the standard deviation
           // and keeping track of the difference between actuals and forecast
           standarddeviation += (f_i - history[i]) * (f_i - history[i]);
-          if (history[i] - f_i  > maxdeviation)
-            maxdeviation = f_i - history[i];
+          if (fabs(history[i] - f_i)  > maxdeviation)
+            maxdeviation = fabs(f_i - history[i]);
         }
         else
         {
@@ -1008,11 +1033,8 @@ double Forecast::Croston::generateForecast
           if (history_i > f_i + Forecast::Forecast_maxDeviation * standarddeviation)
             history_i = f_i + Forecast::Forecast_maxDeviation * standarddeviation;
         }
-        sum1 += weight[i] * d_f_i * (history_i - f_i);
-        sum2 += weight[i] * d_f_i * d_f_i;
-        if (i >= fcst->getForecastSkip() && p_i > 0)
+        if (i >= fcst->getForecastSkip() && p_i > 0) // Don't measure during the warmup period
         {
-          error += (f_i - history_i) * (f_i - history_i) * weight[i];
           if (f_i + history[i] > ROUNDING_ERROR)
             error_smape += fabs(f_i - history_i) / (f_i + history_i) * weight[i];
         }
@@ -1029,22 +1051,13 @@ double Forecast::Croston::generateForecast
     } // End loop: 'scan' or 'filter' mode for outliers
 
     // Better than earlier iterations?
-    if (error < best_error)
+    if (error_smape < best_error)
     {
-      best_error = error;
-      best_smape = error_smape;
+      best_error = error_smape;
       best_alfa = alfa;
       best_f_i = f_i;
       best_standarddeviation = standarddeviation;
     }
-
-    // Add Levenberg - Marquardt damping factor
-    if (fabs(sum2 + error / iteration) > ROUNDING_ERROR)
-      sum2 += error / iteration;
-
-    // Calculate a delta for the alfa parameter
-    if (fabs(sum2) < ROUNDING_ERROR) break;
-    delta = sum1 / sum2;
 
     // Debugging info on the iteration
     if (solver->getLogLevel()>5)
@@ -1053,26 +1066,11 @@ double Forecast::Croston::generateForecast
         << ": alfa " << alfa
         << ", smape " << error_smape << endl;
 
-    // Stop when we are close enough and have tried hard enough
-    if (fabs(delta) < ACCURACY && iteration > 3) break;
-
     // New alfa
-    alfa += delta;
-
-    // Stop when we repeatedly bounce against the limits.
-    // Testing a limits once is allowed.
-    if (alfa > max_alfa)
-    {
-      alfa = max_alfa;
-      if (upperboundarytested) break;
-      upperboundarytested = true;
-    }
-    else if (alfa < min_alfa)
-    {
-      alfa = min_alfa;
-      if (lowerboundarytested) break;
-      lowerboundarytested = true;
-    }
+    if (delta)
+      alfa += delta;
+    else
+      break; // min_alfa == max_alfa, and no loop is required
   }
 
   // Keep the best result
