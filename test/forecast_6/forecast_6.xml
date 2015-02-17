@@ -5,9 +5,10 @@
   The M3-competition benchmark test for time series forecasts is run to compare
   the results with industry standard solutions.
   Dataset:
-     See http://forecastingprinciples.com/files/xls/M3C.xls
+     http://forecastingprinciples.com/files/xls/M3C.xls
   Results:
-     See http://forecastingprinciples.com/files/Makridakia-The%20M3%20Competition.pdf
+     http://forecastingprinciples.com/files/Makridakia-The%20M3%20Competition.pdf
+     http://forecasters.org/resources/time-series-data/m3-competition/
   </description>
   <current>2009-01-01T00:00:00</current>
 
@@ -94,7 +95,7 @@ for row in csv.reader(open("M3data.csv", "rt")):
   if row[0].startswith('#'): continue
 
   # Intro
-  print(row[0], row[3], row[1], row[2])
+  print("\n%s\t%s\t%s\t%s" % (row[0], row[3], row[1], row[2]))
 
   # Generate forecast
   data = [ float(i) for i in row[6:6+int(row[1])-int(row[2])] ]
@@ -109,7 +110,9 @@ for row in csv.reader(open("M3data.csv", "rt")):
       fcstdmd.append(i)
   smape = 0
   cnt = 0
+  results = ['frePPLe', row[0], row[2]]
   for i in test:
+    results.append("%.2f" % fcstdmd[cnt].quantity)
     localsmape = abs(i - fcstdmd[cnt].quantity) / (i + fcstdmd[cnt].quantity) * 200
     cnt += 1
     totalsmape['total'] += localsmape
@@ -159,7 +162,9 @@ for row in csv.reader(open("M3data.csv", "rt")):
     if cnt <= 15:
       totalsmape['1-15'] += localsmape
       countsmape['1-15'] += 1
-
+  print("\t".join(["Actuals", row[0], row[2]] + ["%.2f" % x for x in test]))
+  print("\t".join(results))
+  
 # Print the results
 print("smape 1:", totalsmape['1'] / countsmape['1'])
 print("smape 2:", totalsmape['2'] / countsmape['2'])

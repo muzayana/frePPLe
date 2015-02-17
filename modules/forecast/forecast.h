@@ -895,7 +895,7 @@ class Forecast : public Demand
     unsigned long getMethods() const {return methods;}
 
     /** Updates computed flag. */
-    void setMethods(unsigned long b) {methods = b & METHOD_ALL; logger << "koko " << b << "   "<< methods << endl;} // TODO generate/erase baseline when set to 0
+    void setMethods(unsigned long b) {methods = b & METHOD_ALL;} // TODO generate/erase baseline when set to 0
 
     /** Returns whether we generate forecast demands at this level.<br>
       * The default is true.
