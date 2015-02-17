@@ -74,8 +74,8 @@ def aggregateDemand(cursor):
         fcustomer.lft as customer, fitem.lft as item,
         sum(demand.quantity) as orderstotal,
         sum(case when demand.status is null or demand.status = 'open' then demand.quantity else 0 end) as ordersopen,
-        sum(demand.quantity*ditem.price) as orderstotalvalue,
-        sum(case when demand.status is null or demand.status = 'open' then (demand.quantity*ditem.price) else 0 end) as ordersopenvalue
+        coalesce(sum(demand.quantity*ditem.price), 0) as orderstotalvalue,
+        coalesce(sum(case when demand.status is null or demand.status = 'open' then (demand.quantity*ditem.price) else 0 end), 0) as ordersopenvalue
       from demand
       inner join item as ditem on demand.item_id = ditem.name
       inner join customer as dcustomer on demand.customer_id = dcustomer.name
