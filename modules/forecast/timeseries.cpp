@@ -680,6 +680,8 @@ void Forecast::Seasonal::detectCycle(const double history[], unsigned int count)
   variance /= count;
 
   // Compute autocorrelation for different periods
+  unsigned short best_period = 0;
+  double best_autocorrelation = 0.3; // Minimum required correlation!
   double prev = 10.0;
   double prevprev = 10.0;
   for (unsigned short p = min_period; p <= max_period && p < count/2; ++p)
@@ -692,14 +694,19 @@ void Forecast::Seasonal::detectCycle(const double history[], unsigned int count)
     correlation /= variance;
     // Detect cycles if we find a period with a big autocorrelation which
     // is significantly larger than the adjacent periods.
-    if ((p > min_period + 1 && prev > prevprev*1.1) && prev > correlation*1.1 && prev > 0.3)
+    if (p > min_period + 1
+      && prev > prevprev * 1.1
+      && prev > correlation * 1.1
+      && prev > best_autocorrelation
+      )
     {
-      period = p - 1;
-      return;
+        best_autocorrelation = prev;
+        best_period = p - 1;
     }
     prevprev = prev;
     prev = correlation;
   }
+  period = best_period;
 }
 
 

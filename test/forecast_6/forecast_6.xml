@@ -53,7 +53,7 @@ import csv
 
 solver = frepple.solver_forecast(
   name="forecasting",
-  loglevel = 2,
+  loglevel = 6,
   SmapeAlfa=0.95,
   Iterations=15,
   Skip=5,
