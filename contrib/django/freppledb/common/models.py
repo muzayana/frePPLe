@@ -146,7 +146,7 @@ class AuditModel(models.Model):
   '''
   # Database fields
   source = models.CharField(_('source'), db_index=True, max_length=settings.CATEGORYSIZE, null=True, blank=True)
-  lastmodified = models.DateTimeField(_('last modified'), editable=False, db_index=True, auto_now=True, null=True)
+  lastmodified = models.DateTimeField(_('last modified'), editable=False, db_index=True, default=datetime.now)
 
   objects = MultiDBManager()  # The default manager.
 
