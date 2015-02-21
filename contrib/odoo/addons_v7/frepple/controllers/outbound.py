@@ -696,14 +696,14 @@ class exporter(object):
             quoteattr(operation), quoteattr(buf), quoteattr(item['name']), quoteattr(location)
             )
           self.purchase_operations.add(operation)
-        dd.append( (quoteattr(operation), due, due, qty) )
+        dd.append( (quoteattr(operation), due, due, qty, 1000000 + i['id']) )
     yield '</operations>\n'
 
     # Create purchasing operationplans
     yield '<!-- open purchase order lines -->\n'
     yield '<operationplans>\n'
     for i in dd:
-      yield '<operationplan operation=%s start="%sT00:00:00" end="%sT00:00:00" quantity="%f" locked="true"/>\n' % i
+      yield '<operationplan operation=%s start="%sT00:00:00" end="%sT00:00:00" quantity="%f" locked="true" id="%s"/>\n' % i
     yield '</operationplans>\n'
 
 
@@ -738,8 +738,8 @@ class exporter(object):
         if not location or not operation in self.operations:
           continue
         qty = self.convert_qty_uom(i['product_qty'], i['product_uom'][0], i['product_id'][0])
-        yield '<operationplan operation=%s start="%s" end="%s" quantity="%s" locked="true"/>\n' % (
-          quoteattr(operation), startdate, startdate, qty
+        yield '<operationplan operation=%s start="%s" end="%s" quantity="%s" locked="true" id="%s"/>\n' % (
+          quoteattr(operation), startdate, startdate, qty, i['id']
           )
     yield '</operationplans>\n'
 

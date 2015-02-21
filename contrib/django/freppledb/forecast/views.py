@@ -52,6 +52,8 @@ class ForecastList(GridReport):
     GridFieldNumber('maxlateness', title=_('maximum lateness')),
     GridFieldNumber('minshipment', title=_('minimum shipment')),
     GridFieldBool('discrete', title=_('discrete')),
+    GridFieldBool('planned', title=_('planned')),
+    GridFieldBool('computed', title=_('computed')),
     GridFieldText('source', title=_('source')),
     GridFieldLastModified('lastmodified'),
     )

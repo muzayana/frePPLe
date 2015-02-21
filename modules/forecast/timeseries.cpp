@@ -986,6 +986,16 @@ double Forecast::Croston::min_intermittence = 0.33;
 double Forecast::Croston::generateForecast
 (Forecast* fcst, const double history[], unsigned int count, const double weight[], ForecastSolver* solver)
 {
+  // Count non-zero buckets
+  double nonzero = 0.0;
+  double totalsum = 0.0;
+  for (unsigned long i = 0; i < count; ++i)
+    if (history[i])
+    {
+      ++nonzero;
+      totalsum += history[i];
+    }
+
   unsigned int iteration = 0;
   double error_smape = 0.0, best_smape = 0.0;
   double q_i, p_i;
@@ -1002,10 +1012,13 @@ double Forecast::Croston::generateForecast
     double maxdeviation = 0.0;
     for (short outliers = 0; outliers<=1; outliers++)
     {
-      // Initialize variables
+      // Initialize variables.
+      // We initialize to the overall average, since we potentially have
+      // very few data points to adjust the forecast.
       error_smape = 0.0;
-      q_i = f_i = history[0];
-      p_i = 1 / Croston::getMinIntermittence();
+      q_i = totalsum / nonzero;
+      p_i = count / nonzero;
+      f_i = (1 - alfa / 2) * q_i / p_i;
 
       // Calculate the forecast and forecast error.
       double history_i = history[0];

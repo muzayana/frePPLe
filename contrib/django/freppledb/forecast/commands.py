@@ -448,9 +448,11 @@ def generate_plan():
     solver_fcst = createSolver(cursor)
 
     # Assure the hierarchies are up to date
+    from freppledb.forecast.models import Forecast
     print("\nStart building hierarchies at", datetime.now().strftime("%H:%M:%S"))
     Item.rebuildHierarchy(database=db)
     Customer.rebuildHierarchy(database=db)
+    Forecast.rebuildAllRelations(database=db)
     logProgress(33, db)
 
     print("\nStart aggregating demand at", datetime.now().strftime("%H:%M:%S"))

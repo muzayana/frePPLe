@@ -58,16 +58,19 @@ class importer(object):
     # Cancel previous draft purchase quotations
     m = self.req.session.model('purchase.order')
     ids = m.search(
-      [('state', '=', 'draft'), ('origin', '=', 'frePPLe')],
+      [('state', '=', 'draft'), ('origin', 'like', 'frePPLe%')],
       context=self.req.session.context
       )
     m.unlink(ids, self.req.session.context)
     msg.append("Removed %s old draft purchase quotations" % len(ids))
 
+    # PO line model
+    # purchase_order_line = self.req.session.model('purchase.order.line')
+
     # Cancel previous draft procurement orders
     proc_order = self.req.session.model('procurement.order')
     ids = proc_order.search(
-      ['|', ('state', '=', 'draft'), ('state', '=', 'cancel'), ('origin', '=', 'frePPLe')],
+      ['|', ('state', '=', 'draft'), ('state', '=', 'cancel'), ('origin', 'like', 'frePPLe%')],
       context=self.req.session.context
       )
     proc_order.unlink(ids, self.req.session.context)
@@ -76,7 +79,7 @@ class importer(object):
     # Cancel previous draft manufacturing orders
     mfg_order = self.req.session.model('mrp.production')
     ids = mfg_order.search(
-      ['|', ('state', '=', 'draft'), ('state', '=', 'cancel'), ('origin', '=', 'frePPLe')],
+      ['|', ('state', '=', 'draft'), ('state', '=', 'cancel'), ('origin', 'like', 'frePPLe%')],
       context=self.req.session.context
       )
     mfg_order.unlink(ids, self.req.session.context)
@@ -90,40 +93,55 @@ class importer(object):
         uom_id, item_id = elem.get('item').split(',')
         n = elem.get('operation')
         try:
-          if n.startswith('Purchase'):
-            # Create purchase quotation
-            x = proc_order.create({
-              'name': n,
-              'product_qty': elem.get("quantity"),
-              'date_planned': elem.get("end"),
-              'product_id': int(item_id),
-              'company_id': company_id,
-              'product_uom': int(uom_id),
-              'location_id': int(elem.get('location')),
-              'procure_method': 'make_to_order',
-              # : elem.get('criticality'),
-              'origin': 'frePPLe'
-              })
-            proc_order.action_confirm([x], context=self.req.session.context)
-            proc_order.action_po_assign([x], context=self.req.session.context)
-            countproc += 1
+          if elem.get("locked") == "true":
+            if n.startswith('Purchase'):
+              # Update any existing PO line - no origin field on the PO lines
+              #purchase_order_line.write(
+              # [int(elem.get['id'])-1000000],
+              # {'origin': 'frePPLe: %' % elem.get("pegging")}
+              # )
+              pass
+            else:
+              # Update existing MO
+              mfg_order.write(
+                [int(elem.get['id'])],
+                {'origin': 'frePPLe: %' % elem.get("pegging")}
+                )
           else:
-            # Create manufacturing order
-            x = mfg_order.create({
-              'product_qty': elem.get("quantity"),
-              'date_planned': elem.get("end"),
-              'product_id': int(item_id),
-              'company_id': company_id,
-              'product_uom': int(uom_id),
-              'location_src_id': int(elem.get('location')),
-              'product_uos_qty': False,
-              'product_uos': False,
-              'bom_id': False,
-              # : elem.get('criticality'),
-              'origin': 'frePPLe'
-              })
-            mfg_order.action_compute([x], context=self.req.session.context)
-            countmfg += 1
+            if n.startswith('Purchase'):
+              # Create purchase quotation
+              x = proc_order.create({
+                'name': n,
+                'product_qty': elem.get("quantity"),
+                'date_planned': elem.get("end"),
+                'product_id': int(item_id),
+                'company_id': company_id,
+                'product_uom': int(uom_id),
+                'location_id': int(elem.get('location')),
+                'procure_method': 'make_to_order',
+                # : elem.get('criticality'),   # No standard field in Odoo to write this info
+                'origin': 'frePPLe: %s' % elem.get("pegging")
+                })
+              proc_order.action_confirm([x], context=self.req.session.context)
+              proc_order.action_po_assign([x], context=self.req.session.context)
+              countproc += 1
+            else:
+              # Create manufacturing order
+              x = mfg_order.create({
+                'product_qty': elem.get("quantity"),
+                'date_planned': elem.get("end"),
+                'product_id': int(item_id),
+                'company_id': company_id,
+                'product_uom': int(uom_id),
+                'location_src_id': int(elem.get('location')),
+                'product_uos_qty': False,
+                'product_uos': False,
+                'bom_id': False,
+                # : elem.get('criticality'),   # No standard field in Odoo to write this info
+                'origin': 'frePPLe: %s' % elem.get("pegging")
+                })
+              mfg_order.action_compute([x], context=self.req.session.context)
+              countmfg += 1
         except Exception as e:
           msg.append(str(e))
         # Remove the element now to keep the DOM tree small
