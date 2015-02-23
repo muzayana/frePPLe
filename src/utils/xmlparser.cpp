@@ -280,7 +280,7 @@ DECLARE_EXPORT void XMLInput::endElement(const XMLCh* const uri,
         try
         {
           getCurrentObject()->endElement(*this, pElement->first, pElement->second);
-          if (userexit) userexit.call(getCurrentObject());
+          if (getUserExit()) getUserExit().call(getCurrentObject());
         }
         catch (const DataException& e)
         {
@@ -394,10 +394,10 @@ DECLARE_EXPORT void XMLInput::readto(Object * pPI)
     states.push(READOBJECT);
 
     // Update the source field of the new object
-    if (!source.empty())
+    if (!getSource().empty())
     {
       HasSource *x = dynamic_cast<HasSource*>(pPI);
-      if (x) x->setSource(source);
+      if (x) x->setSource(getSource());
     }
   }
   else
@@ -438,7 +438,7 @@ void XMLInput::shutdown()
     try
     {
       getCurrentObject()->endElement(*this, m_EStack[numElements].first, m_EStack[numElements].second);
-      if (userexit) userexit.call(getCurrentObject());
+      if (getUserExit()) getUserExit().call(getCurrentObject());
     }
     catch (const DataException& e)
     {
@@ -473,7 +473,7 @@ DECLARE_EXPORT void XMLInput::reset()
       try
       {
         getCurrentObject()->endElement(*this, m_EStack[numElements].first, m_EStack[numElements].second);
-        if (userexit) userexit.call(getCurrentObject());
+        if (getUserExit()) getUserExit().call(getCurrentObject());
       }
       catch (const DataException& e)
       {
