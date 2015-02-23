@@ -2417,7 +2417,6 @@
 print("CREATING PLAN")
 frepple.solver_mrp(name="MRP", plantype=2, constraints=15, loglevel=0).solve()
 
-
 import os
 import timeit
 tm = timeit.timeit(
@@ -2436,6 +2435,19 @@ tm = timeit.timeit(
 print("EXPORT IN XML FORMAT: %d bytes in %f seconds" %
   (os.stat('output.2.xml').st_size, tm)
   )
+
+print("READING JSON STRING")
+frepple.readJSONdata('''
+  {"demands":[
+  {"name":"Extra order","quantity":5000,"item":{"name":"product 05"},"due":"2012-01-01T00:00:00","priority":1,"minshipment":500}
+  ]}
+  ''')
+frepple.saveJSONfile("output.3.xml")
+
+print("READING JSON FILE AND REPLANNING")
+frepple.erase(True)
+frepple.readJSONfile("output.1.xml")
+frepple.saveJSONfile("output.4.xml")
 ?>
 
 </plan>

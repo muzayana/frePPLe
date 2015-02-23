@@ -42,8 +42,14 @@ MODULE_EXPORT const char* initialize(const Environment::ParameterList& params)
       "runWebServer", runWebServer, METH_VARARGS,
       "Runs the embedded web server.");
     PythonInterpreter::registerGlobalMethod(
+      "readJSONdata", readJSONdata, METH_VARARGS,
+      "Processes a JSON string passed as argument.");
+    PythonInterpreter::registerGlobalMethod(
+      "readJSONfile", readJSONfile, METH_VARARGS,
+      "Read a JSON file.");
+    PythonInterpreter::registerGlobalMethod(
       "saveJSONfile", saveJSONfile, METH_VARARGS,
-      "Save the model to a JSON-file.");
+      "Save the model to a JSON file.");
     PythonInterpreter::registerGlobalMethod(
       "runDatabaseThread", runDatabaseThread, METH_VARARGS,
       "Start a thread to persist data in a PostgreSQL database.");

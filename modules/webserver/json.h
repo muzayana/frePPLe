@@ -1,6 +1,6 @@
 /***************************************************************************
  *                                                                         *
- * Copyright (C) 2014 by Johan De Taeye, frePPLe bvba                      *
+ * Copyright (C) 2014-2015 by Johan De Taeye, frePPLe bvba                 *
  *                                                                         *
  * All information contained herein is, and remains the property of        *
  * frePPLe.                                                                *
@@ -19,6 +19,13 @@
 
 #ifndef JSON_H
 #define JSON_H
+
+#if defined(HAVE_STDINT)
+#include <stdint.h>
+#else
+typedef unsigned __int64 uint64_t;
+typedef __int64   int64_t;
+#endif
 
 #include "frepple.h"
 using namespace frepple;
@@ -546,6 +553,302 @@ class SerializerJSONString : public SerializerJSON
   *     The default value is STANDARD.
   */
 PyObject* saveJSONfile(PyObject* self, PyObject* args);
+
+
+/** @brief A fast JSON parser.
+  *
+  * The parser only supports UTF-8 data.
+  *
+  * The code is inspired on gason https://github.com/vivkin/gason, which
+  * is released under the MIT license.
+  */
+class JSONInput : public NonCopyable
+{
+  public:
+    struct JsonNode;
+  private:
+    enum JsonTag
+    {
+      JSON_NUMBER = 0,
+      JSON_STRING,
+      JSON_ARRAY,
+      JSON_OBJECT,
+      JSON_TRUE,
+      JSON_FALSE,
+      JSON_NULL = 0xF
+    };
+
+    #define JSON_VALUE_PAYLOAD_MASK 0x00007FFFFFFFFFFFULL
+    #define JSON_VALUE_NAN_MASK 0x7FF8000000000000ULL
+    #define JSON_VALUE_TAG_MASK 0xF
+    #define JSON_VALUE_TAG_SHIFT 47
+
+    union JsonValue
+    {
+      uint64_t ival;
+      double fval;
+
+      JsonValue(double x) : fval(x) { }
+
+      JsonValue(JsonTag tag = JSON_NULL, void *payload = NULL)
+      {
+        assert((uint64_t)payload <= JSON_VALUE_PAYLOAD_MASK);
+        ival = JSON_VALUE_NAN_MASK | ((uint64_t)tag << JSON_VALUE_TAG_SHIFT) | (uint64_t)payload;
+      }
+
+      bool isDouble() const
+      {
+        return (int64_t)ival <= (int64_t)JSON_VALUE_NAN_MASK;
+      }
+
+      JsonTag getTag() const
+      {
+        return isDouble() ? JSON_NUMBER : JsonTag((ival >> JSON_VALUE_TAG_SHIFT) & JSON_VALUE_TAG_MASK);
+      }
+
+      uint64_t getPayload() const
+      {
+        assert(!isDouble());
+        return ival & JSON_VALUE_PAYLOAD_MASK;
+      }
+
+      double toNumber() const
+      {
+          assert(getTag() == JSON_NUMBER);
+          return fval;
+      }
+
+      char *toString() const
+      {
+          assert(getTag() == JSON_STRING);
+          return (char*)getPayload();
+      }
+
+      JsonNode *toNode() const
+      {
+          assert(getTag() == JSON_ARRAY || getTag() == JSON_OBJECT);
+          return (JsonNode*)getPayload();
+      }
+    };
+
+  public:
+    /** Node in the document. */
+    struct JsonNode
+    {
+      JsonValue value;
+      JsonNode *next;
+      char *key;
+    };
+
+    /** Iterator. */
+    class JsonIterator
+    {
+      public:
+        JsonNode *p;
+
+        JsonIterator(JsonNode* o) : p(o) {}
+
+        void operator++() { p = p->next; }
+
+        bool operator!=(const JsonIterator &x) const { return p != x.p; }
+
+        JsonNode *operator*() const { return p; }
+
+        JsonNode *operator->() const { return p; }
+    };
+
+    inline JsonIterator begin(JsonValue o) { return o.toNode(); }
+
+    inline JsonIterator end() { return NULL; }
+
+  private:
+    class JsonAllocator
+    {
+      private:
+        struct Zone
+        {
+          Zone *next;
+          size_t used;
+        } *head;
+
+      public:
+        JsonAllocator() : head(NULL) {}
+        /*TODO
+        JsonAllocator(const JsonAllocator &) = delete;
+        JsonAllocator &operator=(const JsonAllocator &) = delete;
+        JsonAllocator(JsonAllocator &&x) : head(x.head) {
+            x.head = NULL;
+        }
+        JsonAllocator &operator=(JsonAllocator &&x) {
+            head = x.head;
+            x.head = nullptr;
+            return *this;
+        }
+        */
+        ~JsonAllocator() { deallocate(); }
+        void *allocate(size_t size);
+        void deallocate();
+    };
+
+    static inline bool isspace(char c)
+    {
+        return c == ' ' || (c >= '\t' && c <= '\r');
+    }
+
+    static inline bool isdelim(char c)
+    {
+        return c == ',' || c == ':' || c == ']' || c == '}' || isspace(c) || !c;
+    }
+
+    static inline bool isdigit(char c)
+    {
+        return c >= '0' && c <= '9';
+    }
+
+    static inline bool isxdigit(char c)
+    {
+        return (c >= '0' && c <= '9') || ((c & ~' ') >= 'A' && (c & ~' ') <= 'F');
+    }
+
+    static inline int char2int(char c)
+    {
+        if (c <= '9')
+            return c - '0';
+        return (c & ~' ') - 'A' + 10;
+    }
+
+    static double string2double(char *s, char **endptr);
+
+    static inline JsonNode *insertAfter(JsonNode *tail, JsonNode *node)
+    {
+      if (!tail) return node->next = node;
+      node->next = tail->next;
+      tail->next = node;
+      return node;
+    }
+
+    static inline JsonValue listToValue(JsonTag tag, JsonNode *tail)
+    {
+      if (tail)
+      {
+          auto head = tail->next;
+          tail->next = nullptr;
+          return JsonValue(tag, head);
+      }
+      return JsonValue(tag, nullptr);
+    }
+
+    /** Parsing routine. */
+    void parse(char *str, JsonValue *value, JsonAllocator &allocator);
+
+    /** Visitor function. */
+    void visit(Object*, JsonValue);
+
+  protected:
+    void parse(Object*, char*);
+};
+
+
+class JSONAttributeList : public AttributeList
+{
+  private:
+    JSONInput::JsonNode *node;
+  public:
+    virtual const DataElement* get(const Keyword&) const;
+};
+
+
+class JSONElement : public DataElement
+{
+  public:
+    virtual operator bool() const;
+
+    /** Destructor. */
+    virtual ~JSONElement() {}
+
+    virtual long getLong() const;
+
+    virtual unsigned long getUnsignedLong() const;
+
+    virtual TimePeriod getTimeperiod() const;
+
+    virtual int getInt() const;
+
+    virtual double getDouble() const;
+
+    virtual Date getDate() const;
+
+    virtual string getString() const;
+
+    virtual bool getBool() const;
+};
+
+
+/** @brief This class reads JSON data from a string. */
+class JSONInputString : public JSONInput
+{
+  public:
+    /** Default constructor. */
+    JSONInputString(char* s) : data(s) {};
+
+    /** Parse the specified string. */
+    void parse(Object* pRoot) { JSONInput::parse(pRoot, data); }
+
+  private:
+    /** String containing the data to be parsed. Note that NO local copy of the
+      * data is made, only a reference is stored. The class relies on the code
+      * calling the command to correctly create and destroy the string being
+      * used.
+      */
+    char* data;
+};
+
+
+/** @brief This class reads JSON data from a file system.
+  *
+  * The filename argument can be the name of a file or a directory.
+  * If a directory is passed, all files with the extension ".json"
+  * will be read from it. Subdirectories are not recursed.
+  */
+class JSONInputFile : public JSONInput
+{
+  public:
+    /** Constructor. The argument passed is the name of a
+      * file or a directory. */
+    JSONInputFile(const string& s) : filename(s) {};
+
+    /** Default constructor. */
+    JSONInputFile() {};
+
+    /** Update the name of the file to be processed. */
+    void setFileName(const string& s) {filename = s;}
+
+    /** Returns the name of the file or directory to process. */
+    string getFileName() {return filename;}
+
+    /** Parse the specified file.
+      * When a directory was passed as the argument a failure is
+      * flagged as soon as a single file returned a failure. All
+      * files in an directory are processed however, regardless of
+      * failure with one of the files.
+      * @exception RuntimeException Generated in the following conditions:
+      *    - no input file or directory has been specified.
+      *    - read access to the input file is not available
+      *    - the program doesn't support reading directories on your platform
+      */
+    void parse(Object*);
+
+  private:
+    /** Name of the file or directory to be opened. */
+    string filename;
+};
+
+
+PyObject* readJSONdata(PyObject*, PyObject*);
+
+
+PyObject* readJSONfile(PyObject*, PyObject*);
+
 
 }   // End namespace
 

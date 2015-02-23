@@ -77,7 +77,7 @@ unsigned char* Decryptor::unbase64(string input)
 }
 
 
-void LicenseValidator::endElement(XMLInput& pIn, const Attribute& pAttr, const DataElement& pElement)
+void LicenseValidator::endElement(DataInput& pIn, const Attribute& pAttr, const DataElement& pElement)
 {
   static const Keyword tag_customer("customer");
   static const Keyword tag_email("email");

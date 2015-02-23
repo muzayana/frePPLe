@@ -304,7 +304,7 @@ void Forecast::writeElement(Serializer *o, const Keyword &tag, mode m) const
 }
 
 
-void Forecast::endElement(XMLInput& pIn, const Attribute& pAttr, const DataElement& pElement)
+void Forecast::endElement(DataInput& pIn, const Attribute& pAttr, const DataElement& pElement)
 {
   // While reading forecast buckets, we use the userarea field on the input
   // to cache the data. The temporary object is deleted when the bucket
@@ -335,7 +335,7 @@ void Forecast::endElement(XMLInput& pIn, const Attribute& pAttr, const DataEleme
       d->second = 0;
     }
   }
-  else if (pIn.getParentElement().first.isA(Tags::tag_bucket))
+  else if (pIn.getParentElement().isA(Tags::tag_bucket))
   {
     pair<DateRange,double> *d =
       static_cast< pair<DateRange,double>* >(pIn.getUserArea());
@@ -379,7 +379,7 @@ void Forecast::endElement(XMLInput& pIn, const Attribute& pAttr, const DataEleme
 }
 
 
-void Forecast::beginElement(XMLInput& pIn, const Attribute& pAttr)
+void Forecast::beginElement(DataInput& pIn, const Attribute& pAttr)
 {
   if (pAttr.isA(Tags::tag_calendar))
     pIn.readto( Calendar::reader(Calendar::metadata, pIn.getAttributes()) );

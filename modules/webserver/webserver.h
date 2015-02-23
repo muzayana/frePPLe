@@ -537,10 +537,22 @@ class WebServer : public CivetHandler
     /** Constructor. */
     WebServer(bool* e) : exitNow(e) {}
 
-    /** Main dispatcher for HTTP GET. */
+    /** Dispatcher for HTTP GET. */
     bool handleGet(CivetServer*, struct mg_connection*);
 
-    /** Main dispatcher for all incoming websocket data. */
+    /** Dispatcher for HTTP POST. */
+    bool handlePost(CivetServer*, struct mg_connection*);
+
+    /** Dispatcher for HTTP POST. */
+    bool handlePut(CivetServer* s, struct mg_connection* c)
+    {
+      return handlePost(s, c);
+    }
+
+    /** Dispatcher for HTTP DELETE. */
+    bool handleDelete(CivetServer*, struct mg_connection*);
+
+    /** Dispatcher for all incoming websocket data. */
     static int data_callback(struct mg_connection*, int, char*, size_t);
 
     /** Callback function when a websocket client is connecting. */
@@ -581,6 +593,9 @@ class WebServer : public CivetHandler
 
     /** Recent chat messages kept in memory. */
     static list<string> history;
+
+    /** Builds the main index page. */
+    static void buildIndex(string&);
 };
 
 }   // End namespace

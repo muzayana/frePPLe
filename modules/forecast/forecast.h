@@ -875,8 +875,8 @@ class Forecast : public Demand
     static PyObject* setPythonTotalQuantity(PyObject*, PyObject*);
 
     void writeElement(Serializer*, const Keyword&, mode=DEFAULT) const;
-    void endElement(XMLInput& pIn, const Attribute& pAttr, const DataElement& pElement);
-    void beginElement(XMLInput& pIn, const Attribute& pAttr);
+    void endElement(DataInput& pIn, const Attribute& pAttr, const DataElement& pElement);
+    void beginElement(DataInput& pIn, const Attribute& pAttr);
     static int initialize();
 
     /** Returns which statistical forecast methods are allowed.<br>
