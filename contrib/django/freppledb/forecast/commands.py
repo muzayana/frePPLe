@@ -337,10 +337,10 @@ def exportForecast(cursor):
   transaction.commit(using=cursor.db.alias)
   cursor.execute('''
     update forecastplan
-      set ordersplanned=plannedquantities.planneddemand,
-          forecastplanned=plannedquantities.plannedforecast,
-          ordersplannedvalue=plannedquantities.planneddemandvalue,
-          forecastplannedvalue=plannedquantities.plannedforecastvalue
+      set ordersplanned=coalesce(plannedquantities.planneddemand,0),
+          forecastplanned=coalesce(plannedquantities.plannedforecast,0),
+          ordersplannedvalue=coalesce(plannedquantities.planneddemandvalue,0),
+          forecastplannedvalue=coalesce(plannedquantities.plannedforecastvalue,0)
       from (
         select
            forecast.name as forecast, calendarbucket.startdate as startdate,
