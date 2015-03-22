@@ -563,11 +563,18 @@ var grid = {
         skipped++;
     }
     var result = {};
-    result[reportkey] = {
-      "rows": colArray,
-      "page": page,
-      "filter": $('#grid').getGridParam("postData").filters
-      };
+    var filter = $('#grid').getGridParam("postData").filters;
+    if (typeof filter !== 'undefined' && filter.rules != [])
+      result[reportkey] = {
+        "rows": colArray,
+        "page": page,
+        "filter": filter
+        };
+    else
+      result[reportkey] = {
+        "rows": colArray,
+        "page": page,
+        };
     var sidx = $('#grid').getGridParam('sortname');
     if (sidx !== '')
     {
@@ -877,15 +884,93 @@ var grid = {
       sopt: ['eq','ne','lt','le','gt','ge','bw','bn','in','ni','ew','en','cn','nc'],
       onSearch : function() {
         grid.saveColumnConfiguration();
-        var s = jQuery("#fbox_grid").jqFilter('toSQLString');
-        if (s) $('#curfilter').html(gettext("Filtered where") + " " + s);
-        else $('#curfilter').html("");
+        var s = grid.getFilterGroup(jQuery("#fbox_grid").jqFilter('filterData'), true);
+        $('#curfilter').html( s ? gettext("Filtered where") + " " + s : "" );
         },
       onReset : function() {
-        if (initialfilter != '') $('#curfilter').html(gettext("Filtered where") + " " + jQuery("#fbox_grid").jqFilter('toSQLString'));
-        else $('#curfilter').html("");
+        if (typeof initialfilter !== 'undefined' )
+        {
+          $("#grid").jqGrid('getGridParam','postData').filters = JSON.stringify(initialfilter);
+          $('#curfilter').html(gettext("Filtered where") + " " + grid.getFilterGroup(initialfilter, true) );
+        }
+        else
+          $('#curfilter').html("");
+        grid.saveColumnConfiguration();
+        return true;
         }
       });
+  },
+
+  getFilterRule: function (rule)
+  {
+    // Find the column
+    var val, i, col, oper;
+    var columns = jQuery("#grid").jqGrid ('getGridParam', 'colModel');
+    for (i = 0; i < columns.length; i++)
+    {
+      if(columns[i].name === rule.field)
+      {
+        col = columns[i];
+        break;
+      }
+    }
+    if (col == undefined) return "";
+
+    // Find operator
+    var operands = $.jgrid.search.odata;
+    for (i = 0; i < operands.length; i++)
+      if (operands[i].oper == rule.op)
+      {
+        oper = operands[i].text;
+        break;
+      }
+    if (oper == undefined) oper = rule.op;
+
+    // Final result
+    return col.label + ' ' + oper + ' "' + rule.data + '"';
+  },
+
+  getFilterGroup: function(group, first)
+  {
+    var s = "", index;
+
+    if (!first) s = "(";
+
+    if (group.groups !== undefined)
+    {
+      for (index = 0; index < group.groups.length; index++)
+      {
+        if (s.length > 1)
+        {
+          if (group.groupOp === "OR")
+            s += " || ";
+          else
+            s += " && ";
+        }
+        s += grid.getFilterGroup(group.groups[index], false);
+      }
+    }
+
+    if (group.rules !== undefined)
+    {
+      for (index = 0; index < group.rules.length; index++)
+      {
+        if (s.length > 1)
+        {
+          if (group.groupOp === "OR")
+            s += " || ";
+          else
+            s += " && ";
+        }
+        s += grid.getFilterRule(group.rules[index]);
+      }
+    }
+
+    if (!first) s += ")";
+
+    if (s === "()")
+      return ""; // ignore groups that don't have rules
+    return s;
   },
 
   markSelectedRow: function(id)
