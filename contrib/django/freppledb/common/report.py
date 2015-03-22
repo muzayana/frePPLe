@@ -1390,28 +1390,27 @@ class GridReport(View):
 
   @classmethod
   def filter_items(reportclass, request, items, plus_django_style=True):
-
+    # Jqgrid-style advanced filtering
     filters = None
-
-    # Jqgrid-style filtering
-    if request.GET.get('_search') == 'true':
+    _filters = request.GET.get('filters')
+    if _filters:
       # Validate complex search JSON data
-      _filters = request.GET.get('filters')
       try:
         filters = _filters and json.loads(_filters)
       except ValueError:
         filters = None
 
-      # Single field searching, which is currently not used
-      if filters is None:
-        field = request.GET.get('searchField')
-        op = request.GET.get('searchOper')
-        data = request.GET.get('searchString')
-        if all([field, op, data]):
-          filters = {
-              'groupOp': 'AND',
-              'rules': [{ 'op': op, 'field': field, 'data': data }]
-          }
+    # Single field searching, which is currently not used
+    if request.GET.get('_search') == 'true' and not filters:
+      field = request.GET.get('searchField')
+      op = request.GET.get('searchOper')
+      data = request.GET.get('searchString')
+      if all([field, op, data]):
+        filters = {
+            'groupOp': 'AND',
+            'rules': [{ 'op': op, 'field': field, 'data': data }]
+        }
+
     if filters:
       z = reportclass._get_q_filter(filters)
       if z:
