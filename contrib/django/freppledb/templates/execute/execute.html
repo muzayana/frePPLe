@@ -247,10 +247,13 @@ and create a plan in frePPLe...<br/>
 and export results.<br/>
 <br/>
 <b>Plan type</b><br/>{% endblocktrans %}
-<input type="radio" name="plantype" {% ifnotequal request.session.plantype '2' %}checked {% endifnotequal %}value="1"/>
+{% if forecastModule %}
+<input type="checkbox" name="planForecast" {% if planForecast == 1 %}checked {% endif %}value="1" id="planForecast"/><label for="ws">&nbsp;&nbsp;{% trans "Compute statistical forecast" %}</label><br/>
+<input type="checkbox" name="planProduction" {% if planProduction == 1 %}checked {% endif %}value="1" id="planProduction"/><label for="ws">&nbsp;&nbsp;{% trans "Generate production plan" %}</label><br/>{% endif %}
+{% if forecastModule %}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{% endif %}<input type="radio" name="plantype" {% ifnotequal request.session.plantype '2' %}checked {% endifnotequal %}value="1"/>
 {% blocktrans %}<span title="This plan respects the constraints enabled below.<br/>In case of shortages the demand is planned late or short.">Constrained plan</span>{% endblocktrans %}
 <span class="fa fa-question-circle" style="display:inline-block;"></span><br/>
-<input type="radio" name="plantype" {% ifequal  request.session.plantype '2' %}checked {% endifequal %}value="2"/>
+{% if forecastModule %}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{% endif %}<input type="radio" name="plantype" {% ifequal  request.session.plantype '2' %}checked {% endifequal %}value="2"/>
 {% blocktrans %}<span title="This plan shows material, capacity and operation problems that prevent the demand from being planned in time.<br/>The demand is always met completely and on time.">Unconstrained plan</span>{% endblocktrans %}
 <span class="fa fa-question-circle" style="display:inline-block;"></span><br/>
 <br/>

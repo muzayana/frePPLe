@@ -61,7 +61,11 @@ def loadForecast(cursor):
 def aggregateDemand(cursor):
   # Aggregate demand history
   starttime = time()
-  cursor.execute('update forecastplan set orderstotal = 0, ordersopen = 0')
+  cursor.execute('''
+     update forecastplan
+     set orderstotal = 0, ordersopen = 0
+     where orderstotal <> 0 or ordersopen <> 0
+     ''')
   transaction.commit(using=cursor.db.alias)
   print('Aggregate - reset records in %.2f seconds' % (time() - starttime))
 
@@ -281,6 +285,24 @@ def applyForecastAdjustments(cursor):
     frepple.demand(name=fcstname).setQuantity(qty, start, start, False)
 
 
+def loadForecastValues(cursor):
+  horizon_future = int(Parameter.getValue('forecast.Horizon_future', cursor.db.alias, 365))
+  cursor.execute('''select forecast.name, calendarbucket.startdate,
+       forecastplan.forecasttotal
+     from forecast
+     inner join calendarbucket
+       on calendarbucket.calendar_id = forecast.calendar_id
+     left outer join forecastplan
+       on forecastplan.forecast_id = forecast.name
+       and calendarbucket.startdate = forecastplan.startdate
+     where calendarbucket.enddate >= '%s'
+       and calendarbucket.startdate < '%s'
+       and forecastplan.forecasttotal > 0
+     order by forecast.name, calendarbucket.startdate''' % (frepple.settings.current, frepple.settings.current + timedelta(days=horizon_future)))
+  for fcstname, start, qty in cursor.fetchall():
+    frepple.demand(name=fcstname).setQuantity(qty, start, start, False)
+
+
 def createSolver(cursor):
   # Initialize the solver
   kw = {'name': "Netting orders from forecast"}
@@ -301,7 +323,7 @@ def createSolver(cursor):
   return frepple.solver_forecast(**kw)
 
 
-def exportForecast(cursor):
+def exportForecastFull(cursor):
   def generator(cursor):
     for i in frepple.demands():
       if isinstance(i, frepple.demand_forecastbucket):
@@ -310,9 +332,9 @@ def exportForecast(cursor):
   print("Exporting forecast...")
   starttime = time()
   cursor.execute('''update forecastplan
-    set forecasttotal=0, forecastnet=0, forecastconsumed=0
+    set forecasttotal=0, forecastnet=0, forecastconsumed=0, ordersplanned = 0, forecastplanned = 0
     where startdate > '%s'
-      and (forecasttotal<>0 or forecastnet<>0 or forecastconsumed<>0)
+      and (forecasttotal<>0 or forecastnet<>0 or forecastconsumed<>0 or ordersplanned <> 0 or forecastplanned <> 0)
     ''' % frepple.settings.current)
   print('Export set to 0 in %.2f seconds' % (time() - starttime))
   starttime = time()
@@ -332,9 +354,6 @@ def exportForecast(cursor):
       )
       for i in generator(cursor) if i.total != 0.0 or i.quantity != 0 or i.consumed != 0
     ])
-  transaction.commit(using=cursor.db.alias)
-  print('Exported forecast in %.2f seconds' % (time() - starttime))  # TODO use fast export for forecast
-  cursor.execute('update forecastplan set ordersplanned = 0, forecastplanned = 0')
   transaction.commit(using=cursor.db.alias)
   cursor.execute('''
     update forecastplan
@@ -380,6 +399,112 @@ def exportForecast(cursor):
     ''')
   transaction.commit(using=cursor.db.alias)
   print('Updated planned quantity fields in %.2f seconds' % (time() - starttime))
+
+
+def exportForecastPlanned(cursor):
+  def generator(cursor):
+    for i in frepple.demands():
+      if isinstance(i, frepple.demand_forecastbucket):
+        yield i
+
+  print("Exporting forecast...")
+  starttime = time()
+  cursor.execute('''update forecastplan
+    set forecastnet=0, forecastconsumed=0, ordersplanned = 0, forecastplanned = 0
+    where startdate > '%s'
+      and (forecastnet<>0 or forecastconsumed<>0 or ordersplanned <> 0 or forecastplanned <> 0)
+    ''' % frepple.settings.current)
+  print('Export set to 0 in %.2f seconds' % (time() - starttime))
+  starttime = time()
+  cursor.executemany(
+    '''update forecastplan
+     set forecastnet=%s, forecastconsumed=%s,
+       forecastnetvalue=%s, forecastconsumedvalue=%s
+     where forecast_id=%s and startdate=%s''', [
+      (
+        round(i.quantity, settings.DECIMAL_PLACES),
+        round(i.consumed, settings.DECIMAL_PLACES),
+        round(i.quantity*i.item.price, settings.DECIMAL_PLACES),
+        round(i.consumed*i.item.price, settings.DECIMAL_PLACES),
+        i.owner.name, str(i.startdate)
+      )
+      for i in generator(cursor) if i.quantity != 0 or i.consumed != 0
+    ])
+  transaction.commit(using=cursor.db.alias)
+  cursor.execute('''
+    update forecastplan
+      set ordersplanned=coalesce(plannedquantities.planneddemand,0),
+          forecastplanned=coalesce(plannedquantities.plannedforecast,0),
+          ordersplannedvalue=coalesce(plannedquantities.planneddemandvalue,0),
+          forecastplannedvalue=coalesce(plannedquantities.plannedforecastvalue,0)
+      from (
+        select
+           forecast.name as forecast, calendarbucket.startdate as startdate,
+           sum(case when demand.name is not null then planquantity else 0 end) as planneddemand,
+           sum(case when demand.name is null then planquantity else 0 end) as plannedforecast,
+           sum(case when demand.name is not null then (planquantity*item.price) else 0 end) as planneddemandvalue,
+           sum(case when demand.name is null then (planquantity*item.price) else 0 end) as plannedforecastvalue
+        from out_demand
+        inner join item
+          on out_demand.item = item.name
+        inner join customer
+          on out_demand.customer = customer.name
+        left outer join demand
+          on out_demand.demand = demand.name
+        inner join item as fitem
+          on item.lft between fitem.lft and fitem.rght
+        inner join customer as fcustomer
+          on customer.lft between fcustomer.lft and fcustomer.rght
+        inner join forecast
+          on fitem.name = forecast.item_id
+          and fcustomer.name = forecast.customer_id
+        inner join calendarbucket
+          on calendarbucket.calendar_id = forecast.calendar_id
+          and out_demand.plandate >= calendarbucket.startdate
+          and out_demand.plandate < calendarbucket.enddate
+        group by forecast.name, calendarbucket.startdate
+        ) plannedquantities
+      where forecastplan.forecast_id = plannedquantities.forecast
+        and forecastplan.startdate = plannedquantities.startdate
+        and (
+          forecastplan.ordersplanned <> plannedquantities.planneddemand
+          or forecastplan.forecastplanned <> plannedquantities.plannedforecast
+          or forecastplan.ordersplannedvalue <> plannedquantities.planneddemandvalue
+          or forecastplan.forecastplannedvalue <> plannedquantities.plannedforecastvalue
+          )
+    ''')
+  transaction.commit(using=cursor.db.alias)
+  print('Updated planned quantity fields in %.2f seconds' % (time() - starttime))
+
+
+def exportForecastValues(cursor):
+  def generator(cursor):
+    for i in frepple.demands():
+      if isinstance(i, frepple.demand_forecastbucket):
+        yield i
+
+  print("Exporting forecast...")
+  starttime = time()
+  cursor.execute('''update forecastplan
+    set forecasttotal=0
+    where startdate > '%s'
+      and forecasttotal<>0
+    ''' % frepple.settings.current)
+  print('Export set to 0 in %.2f seconds' % (time() - starttime))
+  starttime = time()
+  cursor.executemany(
+    '''update forecastplan
+     set forecasttotal=%s,
+       forecasttotalvalue=%s
+     where forecast_id=%s and startdate=%s''', [
+      (
+        round(i.total, settings.DECIMAL_PLACES),
+        round(i.total*i.item.price, settings.DECIMAL_PLACES),
+        i.owner.name, str(i.startdate)
+      )
+      for i in generator(cursor) if i.total != 0.0
+    ])
+  transaction.commit(using=cursor.db.alias)
 
 
 def generate_plan():
@@ -444,16 +569,13 @@ def generate_plan():
     with_forecasting = False
 
   if with_forecasting:
-    # Load forecast data
     print("\nStart loading forecast data from the database at", datetime.now().strftime("%H:%M:%S"))
     try:
       loadForecast(cursor)
     except Exception as e:
       print(e)
 
-    # Intialize the solver
     solver_fcst = createSolver(cursor)
-
     # Assure the hierarchies are up to date
     from freppledb.forecast.models import Forecast
     print("\nStart building hierarchies at", datetime.now().strftime("%H:%M:%S"))
@@ -466,37 +588,60 @@ def generate_plan():
     aggregateDemand(cursor)
     logProgress(50, db)
 
-    print("\nStart processing forecastdemand records at", datetime.now().strftime("%H:%M:%S"))
-    processForecastDemand(cursor)
-    logProgress(58, db)
+    if 'noforecast' in os.environ:
+      # Option A: Just load the forecast values previously computed
+      if not 'noproduction' in os.environ:
+        print("\nLoading total forecast values at", datetime.now().strftime("%H:%M:%S"))
+        loadForecastValues(cursor)
+        logProgress(66, db)
+    else:
+      # Option B: Recompute the statistical forecast
+      print("\nStart processing forecastdemand records at", datetime.now().strftime("%H:%M:%S"))
+      processForecastDemand(cursor)
+      logProgress(58, db)
 
-    print("\nStart generation of baseline forecast at", datetime.now().strftime("%H:%M:%S"))
-    generateBaseline(solver_fcst, cursor)
-    logProgress(66, db)
+      print("\nStart generation of baseline forecast at", datetime.now().strftime("%H:%M:%S"))
+      generateBaseline(solver_fcst, cursor)
+      logProgress(66, db)
 
-    print("\nStart applying forecast adjustments at", datetime.now().strftime("%H:%M:%S"))
-    applyForecastAdjustments(cursor)
-    logProgress(75, db)
+      print("\nStart applying forecast adjustments at", datetime.now().strftime("%H:%M:%S"))
+      applyForecastAdjustments(cursor)
+      logProgress(75, db)
 
-    print("\nStart forecast netting at", datetime.now().strftime("%H:%M:%S"))
-    solver_fcst.solve()
+    if not 'noproduction' in os.environ:
+      print("\nStart forecast netting at", datetime.now().strftime("%H:%M:%S"))
+      solver_fcst.solve()
+      frepple.printsize()
+      logProgress(83, db)
+
+  if not 'noproduction' in os.environ:
+    print("\nStart plan generation at", datetime.now().strftime("%H:%M:%S"))
+    createPlan(db)
     frepple.printsize()
-    logProgress(83, db)
-
-  print("\nStart plan generation at", datetime.now().strftime("%H:%M:%S"))
-  createPlan(db)
-  frepple.printsize()
-  logProgress(94, db)
+    logProgress(94, db)
 
   if 'odoo_read' in os.environ:
     print("\nStart exporting static model to the database with filter \"source = 'odoo'\" at", datetime.now().strftime("%H:%M:%S"))
     from freppledb.execute.export_database_static import exportStaticModel
     exportStaticModel(database=db, source='odoo').run()
 
-  print("\nStart exporting plan to the database at", datetime.now().strftime("%H:%M:%S"))
-  exportPlan(db)
+  if not 'noproduction' in os.environ:
+    print("\nStart exporting plan to the database at", datetime.now().strftime("%H:%M:%S"))
+    exportPlan(db)
   if with_forecasting:
-    exportForecast(cursor)
+    if 'noproduction' in os.environ:
+      if not 'noforecast' in os.environ:
+        # Export only the base forecast
+        exportForecastValues(cursor)
+      #else:
+        # Export nothing to the fcst table
+    else:
+      if 'noforecast' in os.environ:
+        # Export only planned quantities to the forecast plan table
+        exportForecastPlanned(cursor)
+      else:
+        # Export both the computed forecast and the planned quantities
+        exportForecastFull(cursor)
 
   if 'odoo_write' in os.environ:
     from freppledb.odoo.commands import odoo_write
