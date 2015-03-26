@@ -186,11 +186,11 @@ function drawGraphs(jsondata)
            + '</td></tr><tr><td>{{_('open orders')|capfirst}}</td><td style="text-align:right">'
            + (Math.round(d['ordersopen']*10)/10)
            + '</td></tr><tr><td>{{_('orders adjustment')|capfirst}}</td><td style="text-align:right">'
-           + (Math.round(d['ordersadjustment']*10)/10)
+           + ((d['ordersadjustment'] === null) ? '' : Math.round((d['ordersadjustment'])*10)/10)
            + '</td></tr><tr><td>{{_('forecast baseline')|capfirst}}</td><td style="text-align:right">'
            + (Math.round((d['forecastbaseline'])*10)/10)
            + '</td></tr><tr><td>{{_('forecast adjustment')|capfirst}}</td><td style="text-align:right">'
-           + (Math.round((d['forecastadjustment'])*10)/10)
+           + ((d['forecastadjustment'] === null) ? '' : Math.round((d['forecastadjustment'])*10)/10)
            + '</td></tr><tr><td>{{_('forecast total')|capfirst}}</td><td style="text-align:right">'
            + (Math.round((d['forecasttotal'])*10)/10)
            + '</td></tr><tr><td>{{_('forecast net')|capfirst}}</td><td style="text-align:right">'
@@ -383,7 +383,7 @@ function crosses (cellvalue, options, rowdata)
         break;
       case 2: // Orders adjustment{% if perms.forecast.change_forecastdemand %}
         if (cellvalue[10] == 1)
-          result += '<input type="text" class="smallpadding adjhistory" value="' + Math.round(cellvalue[2]) + '" size="5" onchange="onChange(event)" onclick="$(this).select();"/><br/>';
+          result += '<input type="text" class="smallpadding adjhistory" value="' + ((cellvalue[2] === null) ? '' : Math.round(cellvalue[2])) + '" size="5" onchange="onChange(event)" onclick="$(this).select();"/><br/>';
         else
           result += '<br/>';
         {% else %}
@@ -397,7 +397,7 @@ function crosses (cellvalue, options, rowdata)
         break;
       case 4: // Forecast adjustment{% if perms.forecast.change_forecastdemand %}
         if (cellvalue[11] == 1)
-          result += '<input type="text" class="smallpadding adjforecast" value="' + (Math.round(cellvalue[4]*10)/10) + '" size="5" onchange="onChange(event)" onclick="$(this).select();"/><br/>';
+          result += '<input type="text" class="smallpadding adjforecast" value="' + ((cellvalue[4] === null) ? '' : (Math.round(cellvalue[4]*10)/10)) + '" size="5" onchange="onChange(event)" onclick="$(this).select();"/><br/>';
         else
           result += '<br/>';
         {% else %}
