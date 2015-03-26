@@ -384,7 +384,10 @@ var grid = {
     for (i in cross_idx)
     {
       if (result != '') result += '<br/>';
-      result += cross[cross_idx[i]]['name'];
+      if (cross[cross_idx[i]]['editable'])
+        result += '<span class="editablepivotcol">' + cross[cross_idx[i]]['name'] + '</span>';
+      else
+        result += cross[cross_idx[i]]['name'];
     }
     return result;
   },
