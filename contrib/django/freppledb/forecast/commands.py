@@ -266,7 +266,7 @@ def generateBaseline(solver_fcst, cursor):
         i.owner.name, str(i.startdate)
       )
       for i in frepple.demands()
-      if isinstance(i, frepple.demand_forecastbucket) and i.total != 0.0
+      if isinstance(i, frepple.demand_forecastbucket) and i.owner.methods != 0 and i.total != 0.0
     ])
 
 
@@ -329,13 +329,13 @@ def createSolver(cursor):
 def exportForecastFull(cursor):
   def generator(cursor):
     for i in frepple.demands():
-      if isinstance(i, frepple.demand_forecastbucket):
+      if isinstance(i, frepple.demand_forecastbucket) and (i.total != 0.0 or i.quantity != 0 or i.consumed != 0):
         yield i
 
   print("Exporting forecast...")
   starttime = time()
   cursor.execute('''update forecastplan
-    set forecasttotal=0, forecastnet=0, forecastconsumed=0, ordersplanned = 0, forecastplanned = 0
+    set forecasttotal=0, forecastnet=0, forecastconsumed=0, ordersplanned=0, forecastplanned=0
     where startdate >= '%s'
       and (forecasttotal<>0 or forecastnet<>0 or forecastconsumed<>0 or ordersplanned <> 0 or forecastplanned <> 0)
     ''' % frepple.settings.current)
@@ -355,7 +355,7 @@ def exportForecastFull(cursor):
         round(i.consumed*i.item.price, settings.DECIMAL_PLACES),
         i.owner.name, str(i.startdate)
       )
-      for i in generator(cursor) if i.total != 0.0 or i.quantity != 0 or i.consumed != 0
+      for i in generator(cursor)
     ])
   transaction.commit(using=cursor.db.alias)
   cursor.execute('''
@@ -407,7 +407,7 @@ def exportForecastFull(cursor):
 def exportForecastPlanned(cursor):
   def generator(cursor):
     for i in frepple.demands():
-      if isinstance(i, frepple.demand_forecastbucket):
+      if isinstance(i, frepple.demand_forecastbucket) and (i.quantity != 0 or i.consumed != 0):
         yield i
 
   print("Exporting forecast...")
@@ -431,7 +431,7 @@ def exportForecastPlanned(cursor):
         round(i.consumed*i.item.price, settings.DECIMAL_PLACES),
         i.owner.name, str(i.startdate)
       )
-      for i in generator(cursor) if i.quantity != 0 or i.consumed != 0
+      for i in generator(cursor)
     ])
   transaction.commit(using=cursor.db.alias)
   cursor.execute('''
@@ -483,7 +483,7 @@ def exportForecastPlanned(cursor):
 def exportForecastValues(cursor):
   def generator(cursor):
     for i in frepple.demands():
-      if isinstance(i, frepple.demand_forecastbucket):
+      if isinstance(i, frepple.demand_forecastbucket) and i.total != 0.0:
         yield i
 
   print("Exporting forecast...")
@@ -505,7 +505,7 @@ def exportForecastValues(cursor):
         round(i.total*i.item.price, settings.DECIMAL_PLACES),
         i.owner.name, str(i.startdate)
       )
-      for i in generator(cursor) if i.total != 0.0
+      for i in generator(cursor)
     ])
   transaction.commit(using=cursor.db.alias)
 
