@@ -53,7 +53,6 @@ class ForecastList(GridReport):
     GridFieldNumber('minshipment', title=_('minimum shipment')),
     GridFieldBool('discrete', title=_('discrete')),
     GridFieldBool('planned', title=_('planned')),
-    GridFieldBool('computed', title=_('computed')),
     GridFieldText('source', title=_('source')),
     GridFieldLastModified('lastmodified'),
     )
@@ -145,9 +144,9 @@ class OverviewReport(GridPivot):
            d.bucket as col1, d.startdate as col2, d.enddate as col3,
            coalesce(sum(forecastplan.orderstotal%s),0) as orderstotal,
            coalesce(sum(forecastplan.ordersopen%s),0) as ordersopen,
-           coalesce(sum(forecastplan.ordersadjustment%s),0) as ordersadjustment,
+           sum(forecastplan.ordersadjustment%s) as ordersadjustment,
            coalesce(sum(forecastplan.forecastbaseline%s),0) as forecastbaseline,
-           coalesce(sum(forecastplan.forecastadjustment%s),0) as forecastadjustment,
+           sum(forecastplan.forecastadjustment%s) as forecastadjustment,
            coalesce(sum(forecastplan.forecasttotal%s),0) as forecasttotal,
            coalesce(sum(forecastplan.forecastnet%s),0) as forecastnet,
            coalesce(sum(forecastplan.forecastconsumed%s),0) as forecastconsumed,
@@ -216,43 +215,59 @@ class OverviewReport(GridPivot):
           # Find the forecastplan records that are affected
           start = datetime.strptime(rec['startdate'], '%Y-%m-%d').date()
           end = datetime.strptime(rec['enddate'], '%Y-%m-%d').date()
-          fcsts = [ i for i in ForecastPlan.objects.all().using(request.database).filter(forecast__name=rec['id'], startdate__gte=start, startdate__lt=end).only('ordersadjustment', 'forecastadjustment')]
+          fcsts = [ i for i in ForecastPlan.objects.all().using(request.database).filter(forecast__name=rec['id'], startdate__gte=start, startdate__lt=end).only('ordersadjustment', 'forecastadjustment', 'ordersadjustmentvalue', 'forecastadjustmentvalue')]
+          units = rec.get('units', 'units')
+
+          # Find the forecast and item
+          fcst = Forecast.objects.all().using(request.database).get(name=rec['id'])
+          price = fcst.item.price
 
           # Which field to update
           if 'adjHistory' in rec:
             field = 'ordersadjustment'
-            value = rec['adjHistory']
+            value = Decimal(rec['adjHistory']) if (rec['adjHistory'] != '') else None
+          elif 'adjHistoryValue' in rec:
+            field = 'ordersadjustment'
+            value = (Decimal(rec['adjHistory'])/ price) if (rec['adjHistoryValue'] != '') else None
           elif 'adjForecast' in rec:
             field = 'forecastadjustment'
-            value = rec['adjForecast']
+            value = Decimal(rec['adjForecast']) if (rec['adjForecast'] != '') else None
+          elif 'adjForecastValue' in rec:
+            field = 'forecastadjustment'
+            value = (Decimal(rec['adjForecastValue'])/ price) if (rec['adjForecastValue'] != '') else None
           else:
             raise Exception('Posting invalid field')
 
           # Sum up existing values
           tot = Decimal(0.0)
           cnt = 0
-          for i in fcsts:
-            tot += getattr(i, field)
-            cnt += 1
+          if value != None:
+            for i in fcsts:
+              if getattr(i, field):
+                tot += getattr(i, field)
+              cnt += 1
 
           # Adjust forecastplan entries
-          if tot > 0:
-            # Existing non-zero records are proportionally scaled
-            factor = Decimal(value) / tot
+          if value == None:
             for i in fcsts:
-              setattr(i, field, getattr(i, field) * factor)
+              setattr(i, field, None)
+          elif tot > 0:
+            # Existing non-zero records are proportionally scaled
+            factor = value / tot
+            for i in fcsts:
+              if getattr(i, field):
+                setattr(i, field, getattr(i, field) * factor)
           elif cnt > 0:
             # All entries are 0 and we initialize them to the average
-            eql = Decimal(value) / cnt
+            eql = value / cnt
             for i in fcsts:
               setattr(i, field, eql)
           else:
             # Not a single active record exists, so we try to create
-            fcst = Forecast.objects.all().using(request.database).get(name=rec['id'])
             fcstplan = [ ForecastPlan(forecast=fcst, startdate=j.startdate) for j in fcst.calendar.buckets.filter(startdate__gte=start, enddate__lte=end) ]
             cnt = len(fcstplan)
             if cnt > 0:
-              eql = Decimal(value) / cnt
+              eql = value / cnt
               for i in fcstplan:
                 setattr(i, field, eql)
                 i.save(using=request.database)

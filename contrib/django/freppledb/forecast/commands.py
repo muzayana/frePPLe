@@ -101,16 +101,15 @@ def aggregateDemand(cursor):
   cursor.execute('''
     insert into forecastplan (
       forecast_id, customerlvl, itemlvl, startdate, orderstotal, ordersopen,
-      forecastbaseline, forecastadjustment, forecasttotal, forecastnet, forecastconsumed,
-      ordersadjustment, ordersplanned, forecastplanned, orderstotalvalue, ordersadjustmentvalue,
-      ordersopenvalue, ordersplannedvalue, forecastbaselinevalue, forecastadjustmentvalue,
+      forecastbaseline, forecasttotal, forecastnet, forecastconsumed,
+      ordersplanned, forecastplanned, orderstotalvalue,
+      ordersopenvalue, ordersplannedvalue, forecastbaselinevalue,
       forecasttotalvalue, forecastnetvalue, forecastconsumedvalue, forecastplannedvalue
       )
     select
        demand_history.forecast, demand_history.customer,
        demand_history.item, demand_history.startdate,
-       0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-       0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
     from demand_history
     left outer join forecastplan
       on demand_history.forecast = forecastplan.forecast_id
@@ -144,15 +143,14 @@ def aggregateDemand(cursor):
   cursor.execute('''
     insert into forecastplan (
         forecast_id, customerlvl, itemlvl, startdate, orderstotal, ordersopen,
-        forecastbaseline, forecastadjustment, forecasttotal, forecastnet, forecastconsumed,
-        ordersadjustment, ordersplanned, forecastplanned, orderstotalvalue, ordersadjustmentvalue,
-        ordersopenvalue, ordersplannedvalue, forecastbaselinevalue, forecastadjustmentvalue,
-        forecasttotalvalue, forecastnetvalue, forecastconsumedvalue, forecastplannedvalue
+        forecastbaseline, forecasttotal, forecastnet, forecastconsumed, ordersplanned,
+        forecastplanned, orderstotalvalue, ordersopenvalue, ordersplannedvalue,
+        forecastbaselinevalue, forecasttotalvalue, forecastnetvalue, forecastconsumedvalue,
+        forecastplannedvalue
         )
       select
         forecast.name, customer.lft, item.lft, calendarbucket.startdate,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
       from forecast
       inner join item on forecast.item_id = item.name
       inner join customer on forecast.customer_id = customer.name
@@ -245,10 +243,16 @@ def generateBaseline(solver_fcst, cursor):
     solver_fcst.timeseries(curfcst, data, thebuckets[fcst.calendar.name])
 
   print("Exporting baseline forecast...")
+  print ('''
+    update forecastplan
+    set forecastbaseline=0, forecastbaselinevalue=0
+    where startdate>='%s'
+      and (forecastbaseline<>0 or forecastbaselinevalue<>0)
+    ''' % frepple.settings.current)
   cursor.execute('''
     update forecastplan
     set forecastbaseline=0, forecastbaselinevalue=0
-    where startdate>'%s'
+    where startdate>='%s'
       and (forecastbaseline<>0 or forecastbaselinevalue<>0)
     ''' % frepple.settings.current)
   cursor.executemany('''
@@ -268,8 +272,8 @@ def generateBaseline(solver_fcst, cursor):
 
 def applyForecastAdjustments(cursor):
   horizon_future = int(Parameter.getValue('forecast.Horizon_future', cursor.db.alias, 365))
-  cursor.execute('''select forecast.name, calendarbucket.startdate,
-       forecastplan.forecastadjustment
+  cursor.execute('''select
+       forecast.name, calendarbucket.startdate, forecastplan.forecastadjustment
      from forecast
      inner join calendarbucket
        on calendarbucket.calendar_id = forecast.calendar_id
@@ -278,7 +282,7 @@ def applyForecastAdjustments(cursor):
        and calendarbucket.startdate = forecastplan.startdate
      where calendarbucket.enddate >= '%s'
        and calendarbucket.startdate < '%s'
-       and forecastplan.forecastadjustment > 0
+       and forecastplan.forecastadjustment is not null
      order by forecast.name, calendarbucket.startdate''' % (frepple.settings.current, frepple.settings.current + timedelta(days=horizon_future)))
   for fcstname, start, qty in cursor.fetchall():
     frepple.demand(name=fcstname).setQuantity(qty, start, start, False)
@@ -332,7 +336,7 @@ def exportForecastFull(cursor):
   starttime = time()
   cursor.execute('''update forecastplan
     set forecasttotal=0, forecastnet=0, forecastconsumed=0, ordersplanned = 0, forecastplanned = 0
-    where startdate > '%s'
+    where startdate >= '%s'
       and (forecasttotal<>0 or forecastnet<>0 or forecastconsumed<>0 or ordersplanned <> 0 or forecastplanned <> 0)
     ''' % frepple.settings.current)
   print('Export set to 0 in %.2f seconds' % (time() - starttime))
@@ -410,7 +414,7 @@ def exportForecastPlanned(cursor):
   starttime = time()
   cursor.execute('''update forecastplan
     set forecastnet=0, forecastconsumed=0, ordersplanned = 0, forecastplanned = 0
-    where startdate > '%s'
+    where startdate >= '%s'
       and (forecastnet<>0 or forecastconsumed<>0 or ordersplanned <> 0 or forecastplanned <> 0)
     ''' % frepple.settings.current)
   print('Export set to 0 in %.2f seconds' % (time() - starttime))
@@ -486,7 +490,7 @@ def exportForecastValues(cursor):
   starttime = time()
   cursor.execute('''update forecastplan
     set forecasttotal=0
-    where startdate > '%s'
+    where startdate >= '%s'
       and forecasttotal<>0
     ''' % frepple.settings.current)
   print('Export set to 0 in %.2f seconds' % (time() - starttime))
