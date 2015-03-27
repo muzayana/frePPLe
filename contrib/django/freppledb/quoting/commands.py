@@ -51,6 +51,7 @@ if __name__ == "__main__":
   except Exception as e:
     logMessage(str(e), status='Failed', database=db)
     ok = False
+    raise
 
   if 'webservice' in os.environ and ok:
     # Shut down the previous quoting server
