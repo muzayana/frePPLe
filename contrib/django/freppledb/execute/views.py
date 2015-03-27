@@ -83,9 +83,8 @@ class TaskReport(GridReport):
     # Check if forecast module is activated
     forecastModule = 'freppledb.forecast' in settings.INSTALLED_APPS
     if forecastModule:
-      print (request.session)
-      planForecast = request.session.get('planForecast', '0') == '1' and 1 or -1
-      planProduction = request.session.get('planProduction', '0') == '1' and 1 or -1
+      planForecast = request.session.get('planForecast', '1') == '1' and 1 or -1
+      planProduction = request.session.get('planProduction', '1') == '1' and 1 or -1
     else:
       planForecast = 0
       planProduction = 1
@@ -204,7 +203,6 @@ def wrapTask(request, action):
     task = Task(name='generate plan', submitted=now, status='Waiting', user=request.user)
     task.arguments = "--constraint=%s --plantype=%s" % (constraint, request.POST.get('plantype'))
     env = []
-    print(request.POST)
     if request.POST.get('webservice', '0') == u'1':
       env.append("webservice")
       task.arguments += " --background"
