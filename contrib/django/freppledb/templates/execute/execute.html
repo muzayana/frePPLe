@@ -248,7 +248,7 @@ and export results.<br/>
 <br/>
 <b>Plan type</b><br/>{% endblocktrans %}
 {% if forecastModule %}
-<input type="checkbox" name="planForecast" {% if planForecast == 1 %}checked {% endif %}value="1" id="planForecast"/><label for="ws">&nbsp;&nbsp;{% trans "Compute statistical forecast" %}</label><br/>
+<input type="checkbox" name="planForecast" {% if planForecast == 1 %}checked {% endif %}value="1" id="planForecast"/><label for="ws">&nbsp;&nbsp;{% trans "Generate forecast" %}</label><br/>
 <input type="checkbox" name="planProduction" {% if planProduction == 1 %}checked {% endif %}value="1" id="planProduction"/><label for="ws">&nbsp;&nbsp;{% trans "Generate production plan" %}</label><br/>{% endif %}
 {% if forecastModule %}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{% endif %}<input type="radio" name="plantype" {% ifnotequal request.session.plantype '2' %}checked {% endifnotequal %}value="1"/>
 {% blocktrans %}<span title="This plan respects the constraints enabled below.<br/>In case of shortages the demand is planned late or short.">Constrained plan</span>{% endblocktrans %}
