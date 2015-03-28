@@ -74,11 +74,21 @@ class TaskReport(GridReport):
     # Synchronize the scenario table with the settings
     Scenario.syncWithSettings()
 
-    # Check if web service is required
+    # Check if web service module is activated
     if 'freppledb.quoting' in settings.INSTALLED_APPS:
       webservice = request.session.get('webservice', False) == "1" and 1 or -1
     else:
       webservice = 0
+
+    # Check if forecast module is activated
+    forecastModule = 'freppledb.forecast' in settings.INSTALLED_APPS
+    if forecastModule:
+      print (request.session)
+      planForecast = request.session.get('planForecast', '0') == '1' and 1 or -1
+      planProduction = request.session.get('planProduction', '0') == '1' and 1 or -1
+    else:
+      planForecast = 0
+      planProduction = 1
 
     # Loop over all fixtures of all apps and directories
     fixtures = set()
@@ -104,6 +114,9 @@ class TaskReport(GridReport):
             'leadtimeconstrained': constraint & 1,
             'fenceconstrained': constraint & 8,
             'webservice': webservice,
+            'forecastModule': forecastModule,
+            'planForecast': planForecast,
+            'planProduction': planProduction,
             'scenarios': Scenario.objects.all(),
             'fixtures': fixtures,
             'openbravo': 'freppledb.openbravo' in settings.INSTALLED_APPS,
@@ -194,6 +207,10 @@ def wrapTask(request, action):
     if request.POST.get('webservice', '0') == '1':
       env.append("webservice")
       task.arguments += " --background"
+    if request.POST.get('planForecast', '0') != '1':
+      env.append("noforecast")
+    if request.POST.get('planProduction', '0') != '1':
+      env.append("noproduction")
     if request.POST.get('odoo_read', None) == '1':
       env.append("odoo_read")
       request.session['odoo_read'] = True
@@ -211,6 +228,8 @@ def wrapTask(request, action):
     request.session['plantype'] = request.POST.get('plantype')
     request.session['constraint'] = constraint
     request.session['webservice'] = request.POST.get('webservice', '0')
+    request.session['planForecast'] = request.POST.get('planForecast', '0')
+    request.session['planProduction'] = request.POST.get('planProduction', '0')
   # B
   elif action == 'frepple_createmodel':
     task = Task(name='generate model', submitted=now, status='Waiting', user=request.user)
