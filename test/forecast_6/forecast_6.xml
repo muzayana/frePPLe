@@ -51,136 +51,154 @@
 from __future__ import print_function
 import csv
 
-solver = frepple.solver_forecast(
-  name="forecasting",
-  loglevel = 6,
-  SmapeAlfa=0.95,
-  Iterations=15,
-  Skip=5,
-  SingleExponential_minAlfa=0.03,
-  SingleExponential_maxAlfa=0.97,
-  DoubleExponential_minAlfa=0.03,
-  DoubleExponential_maxAlfa=0.97,
-  DoubleExponential_minGamma=0.03,
-  DoubleExponential_maxGamma=0.97,
-  DoubleExponential_dampenTrend=0.8,
-  Seasonal_minAlfa=0.03,
-  Seasonal_maxAlfa=0.97,
-  Seasonal_minBeta=0.01,
-  Seasonal_maxBeta=0.97,
-  Seasonal_gamma=0.05,
-  Seasonal_minPeriod=2,
-  Seasonal_maxPeriod=15,
-  Seasonal_dampenTrend=0.8,
-  Outlier_maxDeviation=5
-  )
-
 theitem = frepple.item(name="item")
 thecustomer = frepple.customer(name="customer")
 thecalendar = frepple.calendar(name="planningbuckets")
 thebuckets = [ i.start for i in thecalendar.buckets ]
-
 fcst = frepple.demand_forecast(name="test", item=theitem, customer=thecustomer, calendar=thecalendar, discrete=False)
-fcstdmd = None
-totalsmape = {
-  'total':0, '1':0, '2':0, '3':0, '4':0, '5':0, '6':0, '8':0, '12':0, '15':0, '18':0,
-  '1-4':0, '1-6':0, '1-8':0, '1-12':0, '1-15':0
-  }
-countsmape = totalsmape.copy()
 
+def measure(param, loglevel):
 
-for row in csv.reader(open("M3data.csv", "rt")):
+  solver = frepple.solver_forecast(
+    name="forecasting",
+    loglevel=0,
+    SmapeAlfa=0.96,
+    Iterations=15,
+    Skip=5,
+    SingleExponential_minAlfa=0.01,
+    SingleExponential_maxAlfa=0.8,
+    DoubleExponential_minAlfa=0.01,
+    DoubleExponential_maxAlfa=0.8,
+    DoubleExponential_minGamma=0.01,
+    DoubleExponential_maxGamma=0.8,
+    DoubleExponential_dampenTrend=0.8,
+    Seasonal_minAlfa=0.02,
+    Seasonal_maxAlfa=0.25,
+    Seasonal_minBeta=0.02,
+    Seasonal_maxBeta=0.25,
+    Seasonal_gamma=0.03,
+    Seasonal_minPeriod=2,
+    Seasonal_maxPeriod=15,
+    Seasonal_minAutocorrelation=0.5,
+    Seasonal_maxAutocorrelation=0.8,
+    Seasonal_dampenTrend=0.7,
+    Outlier_maxDeviation=2
+    )
 
-  # Skip comment lines
-  if row[0].startswith('#'): continue
+  fcstdmd = None
+  totalsmape = {
+    'total':0, '1':0, '2':0, '3':0, '4':0, '5':0, '6':0, '8':0, '12':0, '15':0, '18':0,
+    '1-4':0, '1-6':0, '1-8':0, '1-12':0, '1-15':0
+    }
+  countsmape = totalsmape.copy()
 
-  # Intro
-  print("\n%s\t%s\t%s\t%s" % (row[0], row[3], row[1], row[2]))
+  for row in csv.reader(open("M3data.csv", "rt")):
 
-  # Generate forecast
-  data = [ float(i) for i in row[6:6+int(row[1])-int(row[2])] ]
-  test = [ float(i) for i in row[6+int(row[1])-int(row[2]):6+int(row[1])] ]
-  solver.timeseries(fcst, data, thebuckets)
+    # Skip comment lines
+    if row[0].startswith('#'): continue
 
-  # Evaluate the sMAPE error in the future buckets
-  if fcstdmd == None:
-    fcstdmd = []
-    for i in frepple.demands():
-      if not isinstance(i, frepple.demand_forecastbucket): continue
-      fcstdmd.append(i)
-  smape = 0
-  cnt = 0
-  results = ['frePPLe', row[0], row[2]]
-  for i in test:
-    results.append("%.2f" % fcstdmd[cnt].quantity)
-    localsmape = abs(i - fcstdmd[cnt].quantity) / (i + fcstdmd[cnt].quantity) * 200
-    cnt += 1
-    totalsmape['total'] += localsmape
-    countsmape['total'] += 1
-    if cnt == 1:
-      totalsmape['1'] += localsmape
-      countsmape['1'] += 1
-    if cnt == 2:
-      totalsmape['2'] += localsmape
-      countsmape['2'] += 1
-    if cnt == 3:
-      totalsmape['3'] += localsmape
-      countsmape['3'] += 1
-    if cnt == 4:
-      totalsmape['4'] += localsmape
-      countsmape['4'] += 1
-    if cnt == 5:
-      totalsmape['5'] += localsmape
-      countsmape['5'] += 1
-    if cnt == 6:
-      totalsmape['6'] += localsmape
-      countsmape['6'] += 1
-    if cnt == 8:
-      totalsmape['8'] += localsmape
-      countsmape['8'] += 1
-    if cnt == 12:
-      totalsmape['12'] += localsmape
-      countsmape['12'] += 1
-    if cnt == 15:
-      totalsmape['15'] += localsmape
-      countsmape['15'] += 1
-    if cnt == 18:
-      totalsmape['18'] += localsmape
-      countsmape['18'] += 1
-    if cnt <= 4:
-      totalsmape['1-4'] += localsmape
-      countsmape['1-4'] += 1
-    if cnt <= 6:
-      totalsmape['1-6'] += localsmape
-      countsmape['1-6'] += 1
-    if cnt <= 8:
-      totalsmape['1-8'] += localsmape
-      countsmape['1-8'] += 1
-    if cnt <= 12:
-      totalsmape['1-12'] += localsmape
-      countsmape['1-12'] += 1
-    if cnt <= 15:
-      totalsmape['1-15'] += localsmape
-      countsmape['1-15'] += 1
-  print("\t".join(["Actuals", row[0], row[2]] + ["%.2f" % x for x in test]))
-  print("\t".join(results))
-  
-# Print the results
-print("smape 1:", totalsmape['1'] / countsmape['1'])
-print("smape 2:", totalsmape['2'] / countsmape['2'])
-print("smape 3:", totalsmape['3'] / countsmape['3'])
-print("smape 4:", totalsmape['4'] / countsmape['4'])
-print("smape 5:", totalsmape['5'] / countsmape['5'])
-print("smape 6:", totalsmape['6'] / countsmape['6'])
-print("smape 8:", totalsmape['8'] / countsmape['8'])
-print("smape 12:", totalsmape['12'] / countsmape['12'])
-print("smape 15:", totalsmape['15'] / countsmape['15'])
-print("smape 18:", totalsmape['18'] / countsmape['18'])
-print("smape 1-4:", totalsmape['1-4'] / countsmape['1-4'])
-print("smape 1-6:", totalsmape['1-6'] / countsmape['1-6'])
-print("smape 1-8:", totalsmape['1-8'] / countsmape['1-8'])
-print("smape 1-12:", totalsmape['1-12'] / countsmape['1-12'])
-print("smape 1-15:", totalsmape['1-15'] / countsmape['1-15'])
-print("smape total:", totalsmape['total'] / countsmape['total'])
+    # Intro
+    if loglevel >= 2:
+      print("\n%s\t%s\t%s\t%s" % (row[0], row[3], row[1], row[2]))
+
+    # Generate forecast
+    data = [ float(i) for i in row[6:6+int(row[1])-int(row[2])] ]
+    test = [ float(i) for i in row[6+int(row[1])-int(row[2]):6+int(row[1])] ]
+    solver.timeseries(fcst, data, thebuckets)
+
+    # Evaluate the sMAPE error in the future buckets
+    if fcstdmd == None:
+      fcstdmd = []
+      for i in frepple.demands():
+        if not isinstance(i, frepple.demand_forecastbucket): continue
+        fcstdmd.append(i)
+    smape = 0
+    cnt = 0
+    results = ['frePPLe', row[0], row[2]]
+    for i in test:
+      results.append("%.2f" % fcstdmd[cnt].quantity)
+      localsmape = abs(i - fcstdmd[cnt].quantity) / (i + fcstdmd[cnt].quantity) * 200
+      cnt += 1
+      totalsmape['total'] += localsmape
+      countsmape['total'] += 1
+      if cnt == 1:
+        totalsmape['1'] += localsmape
+        countsmape['1'] += 1
+      if cnt == 2:
+        totalsmape['2'] += localsmape
+        countsmape['2'] += 1
+      if cnt == 3:
+        totalsmape['3'] += localsmape
+        countsmape['3'] += 1
+      if cnt == 4:
+        totalsmape['4'] += localsmape
+        countsmape['4'] += 1
+      if cnt == 5:
+        totalsmape['5'] += localsmape
+        countsmape['5'] += 1
+      if cnt == 6:
+        totalsmape['6'] += localsmape
+        countsmape['6'] += 1
+      if cnt == 8:
+        totalsmape['8'] += localsmape
+        countsmape['8'] += 1
+      if cnt == 12:
+        totalsmape['12'] += localsmape
+        countsmape['12'] += 1
+      if cnt == 15:
+        totalsmape['15'] += localsmape
+        countsmape['15'] += 1
+      if cnt == 18:
+        totalsmape['18'] += localsmape
+        countsmape['18'] += 1
+      if cnt <= 4:
+        totalsmape['1-4'] += localsmape
+        countsmape['1-4'] += 1
+      if cnt <= 6:
+        totalsmape['1-6'] += localsmape
+        countsmape['1-6'] += 1
+      if cnt <= 8:
+        totalsmape['1-8'] += localsmape
+        countsmape['1-8'] += 1
+      if cnt <= 12:
+        totalsmape['1-12'] += localsmape
+        countsmape['1-12'] += 1
+      if cnt <= 15:
+        totalsmape['1-15'] += localsmape
+        countsmape['1-15'] += 1
+    if loglevel >= 2:
+      print("\t".join(["Actuals", row[0], row[2]] + ["%.2f" % x for x in test]))
+      print("\t".join(results))
+
+  # Print the results
+  if loglevel >= 1:
+    print("smape 1: %.2f" % (totalsmape['1'] / countsmape['1']))
+    print("smape 2: %.2f" % (totalsmape['2'] / countsmape['2']))
+    print("smape 3: %.2f" % (totalsmape['3'] / countsmape['3']))
+    print("smape 4: %.2f" % (totalsmape['4'] / countsmape['4']))
+    print("smape 5: %.2f" % (totalsmape['5'] / countsmape['5']))
+    print("smape 6: %.2f" % (totalsmape['6'] / countsmape['6']))
+    print("smape 8: %.2f" % (totalsmape['8'] / countsmape['8']))
+    print("smape 12: %.2f" % (totalsmape['12'] / countsmape['12']))
+    print("smape 15: %.2f" % (totalsmape['15'] / countsmape['15']))
+    print("smape 18: %.2f" % (totalsmape['18'] / countsmape['18']))
+    print("smape 1-4: %.2f" % (totalsmape['1-4'] / countsmape['1-4']))
+    print("smape 1-6: %.2f" % (totalsmape['1-6'] / countsmape['1-6']))
+    print("smape 1-8: %.2f" % (totalsmape['1-8'] / countsmape['1-8']))
+    print("smape 1-12: %.2f" % (totalsmape['1-12'] / countsmape['1-12']))
+    print("smape 1-15: %.2f" % (totalsmape['1-15'] / countsmape['1-15']))
+    print("smape total: %.2f" % (totalsmape['total'] / countsmape['total']))
+  return (totalsmape, countsmape)
+
+# ACTUAL TEST
+measure(0, 2)
+
+# PARAMETER TUNING LOOP
+# Quickly test a range of parameter values. The measure function needs to
+# be edited to use the parameter being passed to it.
+#print("\tsmape 1\tsmape all")
+#for param in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
+#   result = measure(param, 0)
+#   print("%s\t%.2f\t%.2f" % (param, result[0]['1'] / result[1]['1'], result[0]['total'] / result[1]['total']))
 ?>
 </plan>

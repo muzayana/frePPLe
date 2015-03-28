@@ -233,6 +233,16 @@
   *     instance, if we expect to find a yearly cycle use a minimum period of
   *     10 and maximum period of 14.
   *
+  *   - Forecast_Seasonal_minAutocorrelation,<br>
+  *     Forecast_Seasonal_maxAutocorrelation:<br>
+  *     A minimum value of the autocorrelation below which a seasonal forecast
+  *     is NEVER used.
+  *     A maximum value of the autocorrelation below which a seasonal forecast
+  *     is ALWAYS used.
+  *     Between the min and max value of the autocorrelation the seasonal
+  *     forecast method will be used ONLY IF it produces a lower SMAPE than
+  *     other methods.
+  *
   *   - Forecast_Seasonal_dampenTrend<br>
   *     Specifies how the trend is dampened for future buckets.<br>
   *     The allowed range is between 0 and 1, and the default value is 0.8.
@@ -623,8 +633,21 @@ class Forecast : public Demand
           */
         static unsigned int max_period;
 
+        /** Minimum required autocorrelation factor below which a seasonal
+          * forecast is never used.
+          */
+        static double min_autocorrelation;
+
+        /** Maximum required autocorrelation factor beyond which a seasonal
+          * forecast is always used.
+          */
+        static double max_autocorrelation;
+
         /** Period of the cycle. */
         unsigned short period;
+
+        /** Computed autocorrelation. */
+        double autocorrelation;
 
         /** Smoothed result - constant component.<br>
           * Used to carry results between the evaluation and applying of the forecast.
@@ -653,7 +676,7 @@ class Forecast : public Demand
       public:
         /** Constructor. */
         Seasonal(double a = initial_alfa, double b = initial_beta)
-          : alfa(a), beta(b), period(0), L_i(0), T_i(0) {}
+          : alfa(a), beta(b), period(0), autocorrelation(0.0), L_i(0), T_i(0) {}
 
         /** Forecast evaluation. */
         double generateForecast(Forecast* fcst, const double history[],
@@ -673,9 +696,31 @@ class Forecast : public Demand
         /** Update the maximum period that can be detected. */
         static void setMaxPeriod(int x)
         {
-          if (x <= 1 || x >24) throw DataException(
+          if (x <= 1 || x > 24) throw DataException(
               "Parameter Seasonal.maxPeriod must be between 1 and 24");
           max_period = x;
+        }
+
+        /** Update the autocorrelation value below which a seasonal forecast
+          * is NEVER used.
+          */
+        static void setMinAutocorrelation(double d)
+        {
+          if (d <= 0.0 || d > 1.0) throw DataException(
+              "Parameter Seasonal.minAutocorrelation must be between 0.0 and 1.0");
+          min_autocorrelation = d;
+        }
+
+        /** Update the autocorrelation value above which a seasonal forecast
+          * is ALWAYS used.
+          * For lower autocorrelation values a seasonal forecast can still
+          * be used, but only if it produces a lower SMAPE.
+          */
+        static void setMaxAutocorrelation(double d)
+        {
+          if (d <= 0.0 || d > 1.0) throw DataException(
+              "Parameter Seasonal.maxAutocorrelation must be between 0.0 and 1.0");
+          max_autocorrelation = d;
         }
 
         /** Update the initial value for the alfa parameter. */
@@ -1363,6 +1408,8 @@ class ForecastSolver : public Solver
     static const Keyword tag_Seasonal_dampenTrend;
     static const Keyword tag_Seasonal_minPeriod;
     static const Keyword tag_Seasonal_maxPeriod;
+    static const Keyword tag_Seasonal_minAutocorrelation;
+    static const Keyword tag_Seasonal_maxAutocorrelation;
     static const Keyword tag_Croston_initialAlfa;
     static const Keyword tag_Croston_minAlfa;
     static const Keyword tag_Croston_maxAlfa;

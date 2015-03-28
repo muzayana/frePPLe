@@ -29,6 +29,8 @@
 {"pk": "forecast.Seasonal_minBeta", "model": "common.parameter", "fields": {"description": "Initial value for the trend parameter", "value": "0.2"}},
 {"pk": "forecast.Seasonal_gamma", "model": "common.parameter", "fields": {"description": "Value of the seasonal parameter", "value": "0.05"}},
 {"pk": "forecast.Seasonal_minPeriod", "model": "common.parameter", "fields": {"description": "Minimum seasonal cycle to be checked.", "value": "2"}},
+{"pk": "forecast.Seasonal_minAutocorrelation", "model": "common.parameter", "fields": {"description": "Minimum autocorrelation below which the seasonal forecast method is never selected.", "value": "0.5"}},
+{"pk": "forecast.Seasonal_maxAutocorrelation", "model": "common.parameter", "fields": {"description": "Maximum autocorrelation above which the seasonal forecast method is always selected.", "value": "0.8"}},
 {"pk": "forecast.Skip", "model": "common.parameter", "fields": {"description": "Specifies the number of time series values used to initialize the forecasting method. The forecast error in these bucket isn't counted.", "value": "0"}},
 {"pk": "forecast.SingleExponential_initialAlfa", "model": "common.parameter", "fields": {"description": "Initial smoothing constant.", "value": "0.2"}},
 {"pk": "forecast.SingleExponential_maxAlfa", "model": "common.parameter", "fields": {"description": "Maximum smoothing constant.", "value": "1.0"}},
