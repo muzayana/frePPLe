@@ -54,6 +54,8 @@ const Keyword ForecastSolver::tag_Seasonal_gamma("Seasonal_gamma");
 const Keyword ForecastSolver::tag_Seasonal_dampenTrend("Seasonal_dampenTrend");
 const Keyword ForecastSolver::tag_Seasonal_minPeriod("Seasonal_minPeriod");
 const Keyword ForecastSolver::tag_Seasonal_maxPeriod("Seasonal_maxPeriod");
+const Keyword ForecastSolver::tag_Seasonal_minAutocorrelation("Seasonal_minAutocorrelation");
+const Keyword ForecastSolver::tag_Seasonal_maxAutocorrelation("Seasonal_maxAutocorrelation");
 const Keyword ForecastSolver::tag_Croston_initialAlfa("Croston_initialAlfa");
 const Keyword ForecastSolver::tag_Croston_minAlfa("Croston_minAlfa");
 const Keyword ForecastSolver::tag_Croston_maxAlfa("Croston_maxAlfa");
@@ -174,6 +176,10 @@ int ForecastSolver::setattro(const Attribute& attr, const PythonObject& field)
     Forecast::Seasonal::setMinPeriod(field.getInt());
   else if (attr.isA(tag_Seasonal_maxPeriod))
     Forecast::Seasonal::setMaxPeriod(field.getInt());
+  else if (attr.isA(tag_Seasonal_minAutocorrelation))
+    Forecast::Seasonal::setMinAutocorrelation(field.getDouble());
+  else if (attr.isA(tag_Seasonal_maxAutocorrelation))
+    Forecast::Seasonal::setMaxAutocorrelation(field.getDouble());
   // Croston forecast method
   else if (attr.isA(tag_Croston_initialAlfa))
     Forecast::Croston::setInitialAlfa(field.getDouble());

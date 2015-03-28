@@ -121,7 +121,7 @@ void Forecast::generateFutureValues(
     for (int i=0; i<numberOfMethods; ++i)
     {
       error = qualifiedmethods[i]->generateForecast(this, history, historycount, weight, solver);
-      if (error<best_error)
+      if (error < best_error)
       {
         best_error = error;
         best_method = i;
@@ -660,6 +660,8 @@ double Forecast::Seasonal::initial_beta = 0.2;
 double Forecast::Seasonal::min_beta = 0.2;
 double Forecast::Seasonal::max_beta = 1.0;
 double Forecast::Seasonal::gamma = 0.05;
+double Forecast::Seasonal::min_autocorrelation = 0.5;
+double Forecast::Seasonal::max_autocorrelation = 0.8;
 
 
 void Forecast::Seasonal::detectCycle(const double history[], unsigned int count)
@@ -681,9 +683,10 @@ void Forecast::Seasonal::detectCycle(const double history[], unsigned int count)
 
   // Compute autocorrelation for different periods
   unsigned short best_period = 0;
-  double best_autocorrelation = 0.3; // Minimum required correlation!
+  double best_autocorrelation = min_autocorrelation; // Minimum required correlation!
   double prev = 10.0;
   double prevprev = 10.0;
+  double prevprevprev = 10.0;
   for (unsigned short p = min_period; p <= max_period && p < count/2; ++p)
   {
     // Compute correlation
@@ -700,12 +703,33 @@ void Forecast::Seasonal::detectCycle(const double history[], unsigned int count)
       && prev > best_autocorrelation
       )
     {
+      // Autocorrelation peak at a single period
+      best_autocorrelation = prev;
+      best_period = p - 1;
+    }
+    if (p > min_period + 2
+      && prevprev > prevprevprev * 1.1
+      && fabs(prevprev - prev) < 0.05
+      && prev > correlation * 1.1
+      )
+    {
+      // Autocorrelation peak across 2 periods
+      if (prev > best_autocorrelation)
+      {
         best_autocorrelation = prev;
         best_period = p - 1;
+      }
+      if (prevprev > best_autocorrelation)
+      {
+        best_autocorrelation = prevprev;
+        best_period = p - 2;
+      }
     }
+    prevprevprev = prevprev;
     prevprev = prev;
     prev = correlation;
   }
+  autocorrelation = best_autocorrelation;
   period = best_period;
 }
 
@@ -739,25 +763,24 @@ double Forecast::Seasonal::generateForecast  // TODO No outlier detection in thi
   // T_i = average delta measured in second cycle
   // S_i[index] = seasonality index, measured over all complete cycles
   double L_i_initial = 0.0;
-  for (unsigned long i = 0; i < period; ++i)
-    L_i_initial += history[i];
-  L_i_initial /= period;
   double T_i_initial = 0.0;
-  for (unsigned long i = 0; i < period; ++i)
+  for (unsigned short i = 0; i < period; ++i)
   {
+    L_i_initial += history[i];
     T_i_initial += history[i+period] - history[i];
     initial_S_i[i] = 0.0;
   }
-  T_i_initial /= period * period;
-  unsigned long cyclecount = 0;
-  for (unsigned long i = 0; i + period <= count; i += period)
+  T_i_initial /= period;
+  L_i_initial = L_i_initial / period - period / 2 * T_i_initial;
+  unsigned short cyclecount = 0;
+  for (unsigned int i = 0; i + period <= count; i += period)
   {
     ++cyclecount;
     double cyclesum = 0.0;
     for (short j = 0; j < period; ++j)
       cyclesum += history[i+j];
     for (short j = 0; j < period; ++j)
-      initial_S_i[j] += history[i+j] / cyclesum;
+      initial_S_i[j] += history[i+j] / cyclesum * period;
   }
   for (unsigned long i = 0; i < period; ++i)
     initial_S_i[i] /= cyclecount;
@@ -773,7 +796,7 @@ double Forecast::Seasonal::generateForecast  // TODO No outlier detection in thi
     d_T_d_alfa = d_T_d_beta = 0.0;
     L_i = L_i_initial;
     T_i = T_i_initial;
-    for (unsigned long i = 0; i < period; ++i)
+    for (unsigned short i = 0; i < period; ++i)
     {
       S_i[i] = initial_S_i[i];
       d_S_d_alfa[i] = 0.0;
@@ -783,7 +806,7 @@ double Forecast::Seasonal::generateForecast  // TODO No outlier detection in thi
     // Calculate the forecast and forecast error.
     // We also compute the sums required for the Marquardt optimization.
     cycleindex = 0;
-    for (unsigned long i = period; i <= count; ++i)
+    for (unsigned int i = period; i <= count; ++i)
     {
       // Base calculations
       L_i_prev = L_i;
@@ -792,7 +815,14 @@ double Forecast::Seasonal::generateForecast  // TODO No outlier detection in thi
       else
         L_i = (1 - alfa) * (L_i + T_i);
       T_i = beta * (L_i - L_i_prev) + (1 - beta) * T_i;
+      double factor = - S_i[cycleindex];
       S_i[cycleindex] = gamma * history[i-1] / L_i + (1 - gamma) * S_i[cycleindex];
+
+      // Rescale the seasonal indexes to add up to 1
+      factor = period / (period + factor + S_i[cycleindex]);
+      for (unsigned short i2 = 0; i2 < period; ++i2)
+        S_i[i2] /= factor;
+
       if (i == count) break;
       // Calculations for the delta of the parameters
       d_L_d_alfa_prev = d_L_d_alfa;
@@ -947,10 +977,15 @@ double Forecast::Seasonal::generateForecast  // TODO No outlier detection in thi
         << ", period " << period
         << ", constant " << L_i
         << ", trend " << T_i
-        << ", forecast " << ((L_i + T_i) * S_i[count % period])
+        << ", forecast " << ((L_i + T_i/period) * S_i[count % period])
         << ", standard deviation " << best_standarddeviation
+        << ", autocorrelation " << autocorrelation
         << endl;
-  return best_smape;
+
+  // If the autocorrelation is high enough (ie there is a very obvious
+  // seasonal pattern) we cheat an return 0.0 as the error.
+  // This enforces the use of the seasonal method.
+  return (autocorrelation > min_autocorrelation) ? 0.0 : best_smape;
 }
 
 
