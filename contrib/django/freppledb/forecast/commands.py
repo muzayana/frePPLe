@@ -243,12 +243,6 @@ def generateBaseline(solver_fcst, cursor):
     solver_fcst.timeseries(curfcst, data, thebuckets[fcst.calendar.name])
 
   print("Exporting baseline forecast...")
-  print ('''
-    update forecastplan
-    set forecastbaseline=0, forecastbaselinevalue=0
-    where startdate>='%s'
-      and (forecastbaseline<>0 or forecastbaselinevalue<>0)
-    ''' % frepple.settings.current)
   cursor.execute('''
     update forecastplan
     set forecastbaseline=0, forecastbaselinevalue=0
@@ -290,8 +284,8 @@ def applyForecastAdjustments(cursor):
 
 def loadForecastValues(cursor):
   horizon_future = int(Parameter.getValue('forecast.Horizon_future', cursor.db.alias, 365))
-  cursor.execute('''select forecast.name, calendarbucket.startdate,
-       forecastplan.forecasttotal
+  cursor.execute('''select
+       forecast.name, calendarbucket.startdate, forecastplan.forecasttotal
      from forecast
      inner join calendarbucket
        on calendarbucket.calendar_id = forecast.calendar_id
@@ -329,10 +323,10 @@ def createSolver(cursor):
 def exportForecastFull(cursor):
   def generator(cursor):
     for i in frepple.demands():
-      if isinstance(i, frepple.demand_forecastbucket) and (i.total != 0.0 or i.quantity != 0 or i.consumed != 0):
+      if isinstance(i, frepple.demand_forecastbucket) and (i.total != 0 or i.quantity != 0 or i.consumed != 0):
         yield i
 
-  print("Exporting forecast...")
+  print("Exporting complete forecast...")
   starttime = time()
   cursor.execute('''update forecastplan
     set forecasttotal=0, forecastnet=0, forecastconsumed=0, ordersplanned=0, forecastplanned=0
@@ -402,6 +396,56 @@ def exportForecastFull(cursor):
     ''')
   transaction.commit(using=cursor.db.alias)
   print('Updated planned quantity fields in %.2f seconds' % (time() - starttime))
+  starttime = time()
+  cursor.execute('''
+    with aggfcst as (
+      select
+        forecastrelation.parent_id forecast_id, startdate,
+        sum(forecasttotal) forecasttotal,
+        sum(forecastbaseline) forecastbaseline,
+        sum(forecastconsumed) forecastconsumed,
+        sum(forecastnet) forecastnet,
+        sum(ordersadjustment) ordersadjustment,
+        sum(forecastadjustment) forecastadjustment,
+        sum(forecasttotalvalue) forecasttotalvalue,
+        sum(forecastbaselinevalue) forecastbaselinevalue,
+        sum(forecastconsumedvalue) forecastconsumedvalue,
+        sum(forecastnetvalue) forecastnetvalue,
+        sum(ordersadjustmentvalue) ordersadjustmentvalue,
+        sum(forecastadjustmentvalue) forecastadjustmentvalue
+      from forecastplan
+      inner join forecastrelation
+        on forecast_id = forecastrelation.child_id
+      inner join forecast
+        on forecast_id = name and method <> 'manual'
+      group by forecastrelation.parent_id, startdate
+      )
+    update forecastplan
+    set
+      forecasttotal = aggfcst.forecasttotal,
+      forecastbaseline = aggfcst.forecastbaseline,
+      forecastconsumed = aggfcst.forecastconsumed,
+      forecastnet = aggfcst.forecastnet,
+      ordersadjustment = aggfcst.ordersadjustment,
+      forecastadjustment = aggfcst.forecastadjustment,
+      forecasttotalvalue = aggfcst.forecasttotalvalue,
+      forecastbaselinevalue = aggfcst.forecastbaselinevalue,
+      forecastconsumedvalue = aggfcst.forecastconsumedvalue,
+      forecastnetvalue = aggfcst.forecastnetvalue,
+      ordersadjustmentvalue = aggfcst.ordersadjustmentvalue,
+      forecastadjustmentvalue = aggfcst.forecastadjustmentvalue
+    from aggfcst
+    where exists (
+      select 1
+      from forecast
+      where forecast.name = forecastplan.forecast_id
+        and forecast.method='manual'
+      )
+      and forecastplan.forecast_id = aggfcst.forecast_id
+      and forecastplan.startdate = aggfcst.startdate
+    ''')
+  transaction.commit(using=cursor.db.alias)
+  print('Updated aggregated values in %.2f seconds' % (time() - starttime))
 
 
 def exportForecastPlanned(cursor):
@@ -410,7 +454,7 @@ def exportForecastPlanned(cursor):
       if isinstance(i, frepple.demand_forecastbucket) and (i.quantity != 0 or i.consumed != 0):
         yield i
 
-  print("Exporting forecast...")
+  print("Exporting forecast plan...")
   starttime = time()
   cursor.execute('''update forecastplan
     set forecastnet=0, forecastconsumed=0, ordersplanned = 0, forecastplanned = 0
@@ -478,6 +522,39 @@ def exportForecastPlanned(cursor):
     ''')
   transaction.commit(using=cursor.db.alias)
   print('Updated planned quantity fields in %.2f seconds' % (time() - starttime))
+  starttime = time()
+  cursor.execute('''
+    with aggfcst as (
+      select
+        forecastrelation.parent_id forecast_id, startdate,
+        sum(forecastconsumed) forecastconsumed,
+        sum(forecastnet) forecastnet,
+        sum(forecastconsumedvalue) forecastconsumedvalue,
+        sum(forecastnetvalue) forecastnetvalue
+      from forecastplan
+      inner join forecastrelation
+        on forecast_id = forecastrelation.child_id
+      inner join forecast
+        on forecast_id = name and method <> 'manual'
+      group by forecastrelation.parent_id, startdate
+      )
+    update forecastplan
+    set
+      forecastconsumed = aggfcst.forecastconsumed,
+      forecastnet = aggfcst.forecastnet,
+      forecastconsumedvalue = aggfcst.forecastconsumedvalue
+    from aggfcst
+    where exists (
+      select 1
+      from forecast
+      where forecast.name = forecastplan.forecast_id
+        and forecast.method='manual'
+      )
+      and forecastplan.forecast_id = aggfcst.forecast_id
+      and forecastplan.startdate = aggfcst.startdate
+    ''')
+  transaction.commit(using=cursor.db.alias)
+  print('Updated aggregated values in %.2f seconds' % (time() - starttime))
 
 
 def exportForecastValues(cursor):
@@ -486,7 +563,7 @@ def exportForecastValues(cursor):
       if isinstance(i, frepple.demand_forecastbucket) and i.total != 0.0:
         yield i
 
-  print("Exporting forecast...")
+  print("Exporting forecast values...")
   starttime = time()
   cursor.execute('''update forecastplan
     set forecasttotal=0
@@ -508,6 +585,37 @@ def exportForecastValues(cursor):
       for i in generator(cursor)
     ])
   transaction.commit(using=cursor.db.alias)
+  print('Updated total values in %.2f seconds' % (time() - starttime))
+  starttime = time()
+  cursor.execute('''
+    with aggfcst as (
+      select
+        forecastrelation.parent_id forecast_id, startdate,
+        sum(forecasttotal) forecasttotal,
+        sum(forecasttotalvalue) forecasttotalvalue
+      from forecastplan
+      inner join forecastrelation
+        on forecast_id = forecastrelation.child_id
+      inner join forecast
+        on forecast_id = name and method <> 'manual'
+      group by forecastrelation.parent_id, startdate
+      )
+    update forecastplan
+    set
+      forecasttotal = aggfcst.forecasttotal,
+      forecasttotalvalue = aggfcst.forecasttotalvalue
+    from aggfcst
+    where exists (
+      select 1
+      from forecast
+      where forecast.name = forecastplan.forecast_id
+        and forecast.method='manual'
+      )
+      and forecastplan.forecast_id = aggfcst.forecast_id
+      and forecastplan.startdate = aggfcst.startdate
+    ''')
+  transaction.commit(using=cursor.db.alias)
+  print('Updated aggregated values in %.2f seconds' % (time() - starttime))
 
 
 def generate_plan():

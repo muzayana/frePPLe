@@ -83,9 +83,8 @@ class TaskReport(GridReport):
     # Check if forecast module is activated
     forecastModule = 'freppledb.forecast' in settings.INSTALLED_APPS
     if forecastModule:
-      print (request.session)
-      planForecast = request.session.get('planForecast', '0') == '1' and 1 or -1
-      planProduction = request.session.get('planProduction', '0') == '1' and 1 or -1
+      planForecast = request.session.get('planForecast', '1') == '1' and 1 or -1
+      planProduction = request.session.get('planProduction', '1') == '1' and 1 or -1
     else:
       planForecast = 0
       planProduction = 1
