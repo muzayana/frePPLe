@@ -4,7 +4,7 @@ setlocal
 
 rem EDIT THIS SECTION TO MATCH YOUR INSTALLATION
 set PYTHON=C:\develop\python34
-set OPENSSL=C:\develop\openssl-1.0.1j-vs2010
+set OPENSSL=C:\develop\openssl-1.0.1m-vs2010
 set XERCES=C:\develop\xerces-c-3.1.1-x86-windows-vc-10.0
 set DOTNET=C:\WINDOWS\Microsoft.NET\Framework\v4.0.30319
 
