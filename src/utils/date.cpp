@@ -36,11 +36,11 @@ DECLARE_EXPORT const Date Date::infinitePast("1971-01-01T00:00:00",true);
  * limit of the internal representation, but more a convenient end date. */
 DECLARE_EXPORT const Date Date::infiniteFuture("2030-12-31T00:00:00",true);
 
-DECLARE_EXPORT const TimePeriod TimePeriod::MAX(Date::infiniteFuture - Date::infinitePast);
-DECLARE_EXPORT const TimePeriod TimePeriod::MIN(Date::infinitePast - Date::infiniteFuture);
+DECLARE_EXPORT const Duration Duration::MAX(Date::infiniteFuture - Date::infinitePast);
+DECLARE_EXPORT const Duration Duration::MIN(Date::infinitePast - Date::infiniteFuture);
 
 
-DECLARE_EXPORT void TimePeriod::toCharBuffer(char* t) const
+DECLARE_EXPORT void Duration::toCharBuffer(char* t) const
 {
   if (!lval)
   {
@@ -83,7 +83,7 @@ DECLARE_EXPORT void TimePeriod::toCharBuffer(char* t) const
 }
 
 
-DECLARE_EXPORT void TimePeriod::double2CharBuffer(double val, char* t)
+DECLARE_EXPORT void Duration::double2CharBuffer(double val, char* t)
 {
   if (!val)
   {
@@ -150,7 +150,7 @@ DECLARE_EXPORT DateRange::operator string() const
 }
 
 
-DECLARE_EXPORT void TimePeriod::parse (const char* s)
+DECLARE_EXPORT void Duration::parse (const char* s)
 {
   long totalvalue = 0;
   long value = 0;
@@ -237,7 +237,7 @@ DECLARE_EXPORT void TimePeriod::parse (const char* s)
 }
 
 
-DECLARE_EXPORT double TimePeriod::parse2double (const char* s)
+DECLARE_EXPORT double Duration::parse2double (const char* s)
 {
   double totalvalue = 0.0;
   long value = 0;

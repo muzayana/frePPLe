@@ -1,19 +1,27 @@
 {% extends "admin/base_site_nav.html" %}
 {% load i18n admin_list %}
 {% block extrahead %}{{block.super}}
+<style>
+#content-main td {
+  padding-bottom: 1em;
+}
+#content-main th {
+  line-height: 2em;
+}
+</style>
 <script type="text/javascript">
   $(function() {
-    $(".vDateField").datepicker({
-      showOtherMonths: true, selectOtherMonths: true,
-      changeMonth:true, changeYear:true, yearRange: "c-1:c+5", dateFormat: 'yy-mm-dd'
-      });
     $("input:submit").button();
+    $("#id_theme").after('&nbsp;&nbsp;<span class="fa fa-exclamation-triangle"></span>');
+    $( document ).tooltip({
+      items: ".fa-exclamation-triangle",
+      content: "Only the theme 'frepple' will look nice.<br/><br/>The other themes are copied from the gallery at http://jqueryui.com/themeroller/, where you can also create your own customised theme."
+      });
   });
 </script>
 {% endblock %}
 {% block content %}
 <div id="content-main">
-
 <form action="." method="post" class="form">{% csrf_token %}
 <table>{{form.as_table}}
 <tr><td><input type="submit" value="{% trans 'Save' %}"/></td></tr>

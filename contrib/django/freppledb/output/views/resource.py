@@ -38,8 +38,7 @@ class OverviewReport(GridPivot):
     )
   crosses = (
     ('available', {
-       'title': _('available'),
-       'editable': lambda req: req.user.has_perm('input.change_resource')
+       'title': _('available')
        }),
     ('unavailable', {'title': _('unavailable')}),
     ('setup', {'title': _('setup')}),
@@ -73,7 +72,7 @@ class OverviewReport(GridPivot):
 
   @staticmethod
   def query(request, basequery, sortsql='1 asc'):
-    basesql, baseparams = basequery.query.get_compiler(basequery.db).as_sql(with_col_aliases=True)
+    basesql, baseparams = basequery.query.get_compiler(basequery.db).as_sql(with_col_aliases=False)
 
     # Get the time units
     units = OverviewReport.getUnits(request)

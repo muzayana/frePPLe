@@ -76,7 +76,6 @@ class Command(BaseCommand):
       user = None
 
     now = datetime.now()
-    transaction.enter_transaction_management(using=database)
     task = None
     try:
       # Initialize the task
@@ -120,7 +119,6 @@ class Command(BaseCommand):
 
       # Log task
       task.save(using=database)
-      transaction.commit(using=database)
 
       # Locate commands.py
       cmd = None
@@ -181,8 +179,3 @@ class Command(BaseCommand):
     finally:
       if task:
         task.save(using=database)
-      try:
-        transaction.commit(using=database)
-      except:
-        pass
-      transaction.leave_transaction_management(using=database)

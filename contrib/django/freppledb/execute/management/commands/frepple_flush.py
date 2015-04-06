@@ -77,7 +77,6 @@ class Command(BaseCommand):
       models = None
 
     now = datetime.now()
-    transaction.enter_transaction_management(using=database)
     task = None
     try:
       # Initialize the task
@@ -93,7 +92,6 @@ class Command(BaseCommand):
       else:
         task = Task(name='empty database', submitted=now, started=now, status='0%', user=user)
       task.save(using=database)
-      transaction.commit(using=database)
 
       # Create a database connection
       cursor = connections[database].cursor()
@@ -122,8 +120,6 @@ class Command(BaseCommand):
           tables.discard(i._meta.db_table)
 
       # Some tables need to be handled a bit special
-      if "common_bucket" in tables:
-        cursor.execute('update common_user set horizonbuckets = null')
       if "setupmatrix" in tables:
         tables.add("setuprule")
       if "forecast" in tables:
@@ -141,12 +137,13 @@ class Command(BaseCommand):
       tables.discard('django_content_type')
       tables.discard('execute_log')
       tables.discard('execute_scenario')
-      transaction.commit(using=database)
 
       # Delete all records from the tables.
-      for stmt in connections[database].ops.sql_flush(no_style(), tables, []):
-        cursor.execute(stmt)
-      transaction.commit(using=database)
+      with transaction.atomic(using=database, savepoint=False):
+        if "common_bucket" in tables:
+          cursor.execute('update common_user set horizonbuckets = null')
+        for stmt in connections[database].ops.sql_flush(no_style(), tables, []):
+          cursor.execute(stmt)
 
       # SQLite specials
       if settings.DATABASES[database]['ENGINE'] == 'django.db.backends.sqlite3':
@@ -156,17 +153,11 @@ class Command(BaseCommand):
       task.status = 'Done'
       task.finished = datetime.now()
       task.save(using=database)
-      transaction.commit(using=database)
 
     except Exception as e:
-      transaction.rollback()
       if task:
         task.status = 'Failed'
         task.message = '%s' % e
         task.finished = datetime.now()
         task.save(using=database)
-        transaction.commit(using=database)
       raise CommandError('%s' % e)
-
-    finally:
-      transaction.leave_transaction_management(using=database)

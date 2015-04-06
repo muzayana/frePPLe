@@ -61,7 +61,6 @@ class Command(BaseCommand):
       user = None
 
     now = datetime.now()
-    transaction.enter_transaction_management(using=database)
     task = None
     try:
       # Initialize the task
@@ -78,7 +77,6 @@ class Command(BaseCommand):
         task = Task(name='load XML file', submitted=now, started=now, status='0%', user=user)
       task.arguments = ' '.join(['"%s"' % i for i in args])
       task.save(using=database)
-      transaction.commit(using=database)
 
       if not args:
         raise CommandError("No XML input file given")
@@ -122,8 +120,3 @@ class Command(BaseCommand):
     finally:
       if task:
         task.save(using=database)
-      try:
-        transaction.commit(using=database)
-      except:
-        pass
-      transaction.leave_transaction_management(using=database)

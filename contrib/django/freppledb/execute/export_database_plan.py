@@ -188,6 +188,8 @@ def exportResourceplans(cursor):
   # Loop over all reporting buckets of all resources
   cnt = 0
   for i in frepple.resources():
+    for j in i.plan(buckets):
+      print(j['start'], str(j['start']))
     cursor.executemany(
       "insert into out_resourceplan \
       (theresource,startdate,available,unavailable,setup,%s,free) \

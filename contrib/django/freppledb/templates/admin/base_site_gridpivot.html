@@ -53,7 +53,8 @@ $(function() {
       grid.saveColumnConfiguration();
     },
     onPaging: grid.saveColumnConfiguration,
-    //altRows: true,  // Different color for alternating rows. But doesn't look nice with a lot of themes.
+    altRows: true,
+    altclass:'altRow',
     //scroll: 1,      // Enables scrolling over all records, instead of paging. But not compatible with frozen columns.
     autowidth: true,
 	  shrinkToFit: {% if mode == "table" %}false{% else %}true{% endif %},
@@ -108,7 +109,7 @@ $(window).bind('resize', function() {
 &nbsp;<span onclick="grid.showCustomize(true);" title="{% trans 'Customize'|escape %}" class="fa fa-wrench fa-lg"></span>
 </div>
 <div id="content-main" style="margin-right: 15px;">
-<table id="grid"></table>
+<table id="grid" class="pivotgrid"></table>
 <div id="gridpager"></div>
 </div>
 {% block after_table %}{% endblock %}

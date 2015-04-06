@@ -1,12 +1,13 @@
 {% extends "admin/base.html" %}
 {% load i18n %}
 {% block title %}{% if title %}{{title}} - {% endif %}frePPLe{% endblock %}
-{% block branding %}<img src="{{STATIC_URL}}img/frepple.svg" height="50" width="180" style="padding-right: 25px" alt="frePPLe&nbsp;{% version %}">{% endblock %}
+{% block branding %}<img src="{{STATIC_URL}}img/frepple.svg" height="40" width="124" alt="frePPLe&nbsp;{% version %}">{% endblock %}
 {% block extrastyle %}{{block.super}}<link rel="stylesheet" type="text/css" media="screen" href="{{STATIC_URL}}css/{{request.theme}}/jquery-ui.min.css" />
 <link rel="stylesheet" type="text/css" media="screen" href="{{STATIC_URL}}css/font-awesome.min.css" />
 <link rel="stylesheet" type="text/css" media="screen" href="{{STATIC_URL}}css/ui.jqgrid.css" />
 <link rel="stylesheet" type="text/css" media="screen" href="{{STATIC_URL}}css/uix.multiselect.css" />
 <link rel="stylesheet" type="text/css" href="{{STATIC_URL}}css/frepple.css" />
+<link rel="stylesheet" type="text/css" href="{{STATIC_URL}}css/{{request.theme}}/custom.css" />
 <link rel="shortcut icon" href="{{STATIC_URL}}favicon.ico"/>
 {% endblock %}
 {% block extrahead %}{{block.super}}
@@ -27,5 +28,5 @@
   });
 </script>
 {% endblock %}
-{% block breadcrumbs %}<div class="breadcrumbs"><a id="cockpitcrumb" href="{{request.prefix}}/admin/">{% trans 'Cockpit' %}</a><span id="breadcrumbs">{% crumbs %}</span></div>{% endblock %}
+{% block breadcrumbs %}<div class="breadcrumbs"><div class="selectdb">{% selectDatabase %}</div><a id="cockpitcrumb" href="{{request.prefix}}/admin/">{% trans 'Cockpit' %}</a><span id="breadcrumbs">{% crumbs %}</span></div>{% endblock %}
 {% block nav-global %}{% endblock %}
