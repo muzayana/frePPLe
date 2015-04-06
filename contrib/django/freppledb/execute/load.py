@@ -641,7 +641,7 @@ class loadData(object):
       SELECT
         operation_id, id, quantity, startdate, enddate, locked, source
       FROM operationplan
-      WHERE owner_id IS NULL %s
+      WHERE owner_id IS NULL and quantity >= 0 %s
       ORDER BY id ASC
       ''' % self.filter_and)
     for i in self.cursor.fetchall():
@@ -654,7 +654,7 @@ class loadData(object):
       SELECT
         operation_id, id, quantity, startdate, enddate, locked, owner_id, source
       FROM operationplan
-      WHERE owner_id IS NOT NULL %s
+      WHERE owner_id IS NOT NULL and quantity >= 0 %s
       ORDER BY id ASC
       ''' % self.filter_and)
     for i in self.cursor.fetchall():

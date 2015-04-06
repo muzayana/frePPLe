@@ -42,7 +42,6 @@ def loadForecast(cursor):
       if i[11] == 'constant':
         fcst.methods = 1
       elif i[11] == 'trend':
-        print ("yes", fcst.name)
         fcst.methods = 2
       elif i[11] == 'seasonal':
         fcst.methods = 4
