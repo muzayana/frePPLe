@@ -1647,7 +1647,7 @@ class GridPivot(GridReport):
     else:
       myrows = [ f for f in reportclass.rows if f.name and not f.hidden ]
     if prefs and 'crosses' in prefs:
-      mycrosses = [ reportclass.crosses[f] for f in prefs['crosses'] ]
+      mycrosses = [ reportclass.crosses[f] for f in prefs['crosses'] if f < len(reportclass.crosses) and reportclass.crosses[f][1].get('visible', True) ]
     else:
       mycrosses = [ f for f in reportclass.crosses if f[1].get('visible', True) ]
 
@@ -1772,7 +1772,7 @@ class GridPivot(GridReport):
     else:
       myrows = [ f for f in reportclass.rows if f.name and not f.hidden ]
     if prefs and 'crosses' in prefs:
-      mycrosses = [ reportclass.crosses[f] for f in prefs['crosses'] ]
+      mycrosses = [ reportclass.crosses[f] for f in prefs['crosses'] if f < len(reportclass.crosses) and reportclass.crosses[f][1].get('visible', True) ]
     else:
       mycrosses = [ f for f in reportclass.crosses if f[1].get('visible', True) ]
 
