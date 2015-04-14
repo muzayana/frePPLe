@@ -296,6 +296,7 @@ class Forecast : public Demand
     static const Keyword tag_net;
     static const Keyword tag_consumed;
     static const Keyword tag_methods;
+    static const Keyword tag_method;
     static const Keyword tag_planned;
 
     /** Constants for each forecast method. */
@@ -942,6 +943,9 @@ class Forecast : public Demand
     /** Updates computed flag. */
     void setMethods(unsigned long b) {methods = b & METHOD_ALL;} // TODO generate/erase baseline when set to 0
 
+    /** Return the forecast method applied to compute the forecast. */
+    string getMethod() const {return method;}
+
     /** Returns whether we generate forecast demands at this level.<br>
       * The default is true.
       */
@@ -1124,6 +1128,9 @@ class Forecast : public Demand
 
     /** Allowed forecasting methods. */
     unsigned int methods;
+
+    /** Applied forecast method. */
+    string method;
 
     /** A dictionary of all forecasts. */
     static MapOfForecasts ForecastDictionary;

@@ -149,6 +149,7 @@ void Forecast::generateFutureValues(
     if (solver->getLogLevel()>0)
       logger << getName() << ": chosen method: " << qualifiedmethods[best_method]->getName() << endl;
     qualifiedmethods[best_method]->applyForecast(this, buckets, bucketcount);
+    method = qualifiedmethods[best_method]->getName();
   }
 }
 

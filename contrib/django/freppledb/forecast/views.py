@@ -11,18 +11,21 @@
 from datetime import datetime
 from decimal import Decimal
 import json
+from openpyxl import load_workbook
 
 from django.contrib.admin.util import unquote
 from django.db import connections, transaction
+from django.http import HttpResponse, HttpResponseForbidden, Http404
+from django.utils import translation, six
+from django.utils.formats import get_format
 from django.utils.translation import ugettext_lazy as _
 from django.utils.text import capfirst
 from django.utils.encoding import force_unicode
-from django.http import HttpResponse, HttpResponseForbidden, Http404
 
 from freppledb.forecast.models import Forecast, ForecastDemand, ForecastPlan
 from freppledb.common.db import python_date
-from freppledb.common.report import GridPivot, GridFieldText, GridFieldInteger, GridFieldDate
-from freppledb.common.report import GridReport, GridFieldBool, GridFieldLastModified, GridFieldCurrency
+from freppledb.common.report import UnicodeReader, GridPivot, GridFieldText, GridFieldInteger, GridFieldDate
+from freppledb.common.report import GridReport, GridFieldBool, GridFieldLastModified
 from freppledb.common.report import GridFieldChoice, GridFieldNumber, GridFieldDateTime, GridFieldDuration
 from freppledb.input.views import PathReport
 from freppledb.input.models import Demand
@@ -99,7 +102,7 @@ class OverviewReport(GridPivot):
     ('ordersopen', {'title': _('open orders')}),
     ('ordersadjustment', {'title': _('orders adjustment'), 'editable': lambda req: req.user.has_perm('input.change_forecastdemand')}),
     ('forecastbaseline', {'title': _('forecast baseline')}),
-    ('forecastadjustment', {'title': _('forecast adjustment')}),
+    ('forecastadjustment', {'title': _('forecast adjustment'), 'editable': lambda req: req.user.has_perm('input.change_forecastdemand')}),
     ('forecasttotal', {'title': _('forecast total')}),
     ('forecastnet', {'title': _('forecast net')}),
     ('forecastconsumed', {'title': _('forecast consumed')}),
@@ -198,6 +201,13 @@ class OverviewReport(GridPivot):
         'forecastplanned': row[15],
         }
 
+
+  @staticmethod
+  def processUpload(fcst, startdate, enddate, bucket, fcstadj, ordersadj, units, request):
+    fcst = Forecast.objects.all().using(request.database).get(name=fcst)
+    print(fcst, startdate, enddate, bucket, fcstadj, ordersadj, units)
+
+
   @classmethod
   def parseJSONupload(reportclass, request):
     # Check permissions
@@ -289,6 +299,180 @@ class OverviewReport(GridPivot):
       resp.write("OK")
     resp.status_code = ok and 200 or 403
     return resp
+
+
+  @classmethod
+  def parseCSVupload(reportclass, request):    # TODO also support uploads in pivot format
+    # Check permissions
+    if not request.user.has_perm('input.change_forecastdemand'):
+      yield force_unicode(_('Permission denied')) + '\n '
+    else:
+
+      # Choose the right delimiter and language
+      delimiter = get_format('DECIMAL_SEPARATOR', request.LANGUAGE_CODE, True) == ',' and ';' or ','
+      if translation.get_language() != request.LANGUAGE_CODE:
+        translation.activate(request.LANGUAGE_CODE)
+
+      # Init
+      colindexes = [-1, -1, -1, -1, -1, -1]
+      rownumber = 0
+      prefs = request.user.getPreference(OverviewReport.getKey())
+      units = prefs and prefs.get('units', 'unit') == 'value'
+
+      # Handle the complete upload as a single database transaction
+      with transaction.atomic(using=request.database):
+
+        # Loop through the data records
+        for row in UnicodeReader(request.FILES['csv_file'].read(), delimiter=delimiter):
+          rownumber += 1
+
+          ### Case 1: The first line is read as a header line
+          if rownumber == 1:
+            colnum = 0
+            for col in row:
+              col = col.strip().strip('#').lower()
+              if col == _('forecast').lower():
+                colindexes[0] = colnum
+              elif col == _('start date').lower():
+                colindexes[1] = colnum
+              elif col == _('end date').lower():
+                colindexes[2] = colnum
+              elif col == _('bucket').lower():
+                colindexes[3] = colnum
+              elif col == _('forecast adjustment').lower():
+                colindexes[4] = colnum
+              elif col == _('orders adjustment').lower():
+                colindexes[5] = colnum
+              colnum += 1
+            errors = False
+            if colindexes[0] < 0:
+              yield force_unicode(_('Missing primary key field %(key)s') % {'key': 'forecast'}) + '\n '
+              errors = True
+            if colindexes[1] < 0 and colindexes[2] < 0 and colindexes[3] < 0:
+              yield force_unicode(_('No time field specified')) + '\n '
+              errors = True
+            if colindexes[4] < 0 and colindexes[5] < 0:
+              yield force_unicode(_('No adjustment field specified')) + '\n '
+              errors = True
+            if errors:
+              yield force_unicode(_('Allowed fields: forecast, bucket, start date, end date, forecast adjustment, orders adjustment')) + '\n '
+              break
+
+          ### Case 2: Skip empty rows and comments rows
+          elif len(row) == 0 or row[0].startswith('#'):
+            continue
+
+          ### Case 3: Process a data row
+          else:
+            try:
+              with transaction.atomic(using=request.database):
+                reportclass.processUpload(
+                  row[colindexes[0]] if colindexes[0] < len(row) else None,
+                  row[colindexes[1]] if colindexes[1] > 0 and colindexes[1] < len(row) else None,
+                  row[colindexes[2]] if colindexes[2] > 0 and colindexes[1] < len(row) else None,
+                  row[colindexes[3]] if colindexes[3] > 0 and colindexes[1] < len(row) else None,
+                  row[colindexes[4]] if colindexes[4] > 0 and colindexes[1] < len(row) else None,
+                  row[colindexes[5]] if colindexes[5] > 0 and colindexes[1] < len(row) else None,
+                  units,
+                  request
+                  )
+            except Exception as e:
+              yield force_unicode(
+                _('Row %(rownum)s: %(message)s') % {
+                  'rownum': rownumber, 'message': e
+                  }) + '\n '
+
+      # Report all failed records
+      yield force_unicode(
+          _('Uploaded data successfully: processed %d records') % rownumber
+          ) + '\n '
+
+
+  @classmethod
+  def parseSpreadsheetUpload(reportclass, request):    # TODO also support uploads in pivot format
+    # Check permissions
+    if not request.user.has_perm('input.change_forecastdemand'):
+      yield force_unicode(_('Permission denied')) + '\n '
+    else:
+      # Choose the right language
+      if translation.get_language() != request.LANGUAGE_CODE:
+        translation.activate(request.LANGUAGE_CODE)
+
+      # Init
+      colindexes = [-1, -1, -1, -1, -1, -1]
+      rownumber = 0
+      prefs = request.user.getPreference(OverviewReport.getKey())
+      units = prefs and prefs.get('units', 'unit') == 'value'
+
+      # Handle the complete upload as a single database transaction
+      with transaction.atomic(using=request.database):
+
+        # Loop through the data records
+        wb = load_workbook(filename=request.FILES['csv_file'], use_iterators=True, data_only=True)
+        ws = wb.worksheets[0]
+        for row in ws.iter_rows():
+          rownumber += 1
+
+          ### Case 1: The first line is read as a header line
+          if rownumber == 1:
+            colnum = 0
+            for col in row:
+              col = unicode(col.value).strip().strip('#').lower()
+              if col == _('forecast').lower():
+                colindexes[0] = colnum
+              elif col == _('start date').lower():
+                colindexes[1] = colnum
+              elif col == _('end date').lower():
+                colindexes[2] = colnum
+              elif col == _('bucket').lower():
+                colindexes[3] = colnum
+              elif col == _('forecast adjustment').lower():
+                colindexes[4] = colnum
+              elif col == _('orders adjustment').lower():
+                colindexes[5] = colnum
+              colnum += 1
+            errors = False
+            if colindexes[0] < 0:
+              yield force_unicode(_('Missing primary key field %(key)s') % {'key': 'forecast'}) + '\n '
+              errors = True
+            if colindexes[1] < 0 and colindexes[2] < 0 and colindexes[3] < 0:
+              yield force_unicode(_('No time field specified')) + '\n '
+              errors = True
+            if colindexes[4] < 0 and colindexes[5] < 0:
+              yield force_unicode(_('No adjustment field specified')) + '\n '
+              errors = True
+            if errors:
+              yield force_unicode(_('Allowed fields: forecast, bucket, start date, end date, forecast adjustment, orders adjustment')) + '\n '
+              break
+
+          ### Case 2: Skip empty rows and comments rows
+          elif len(row) == 0 or (isinstance(row[0].value, six.string_types) and row[0].value.startswith('#')):
+            continue
+
+          ### Case 3: Process a data row
+          else:
+            try:
+              with transaction.atomic(using=request.database):
+                reportclass.processUpload(
+                  row[colindexes[0]].value if colindexes[0] < len(row) else None,
+                  row[colindexes[1]].value if colindexes[1] > 0 and colindexes[1] < len(row) else None,
+                  row[colindexes[2]].value if colindexes[2] > 0 and colindexes[1] < len(row) else None,
+                  row[colindexes[3]].value if colindexes[3] > 0 and colindexes[1] < len(row) else None,
+                  row[colindexes[4]].value if colindexes[4] > 0 and colindexes[1] < len(row) else None,
+                  row[colindexes[5]].value if colindexes[5] > 0 and colindexes[1] < len(row) else None,
+                  units,
+                  request
+                  )
+            except Exception as e:
+              yield force_unicode(
+                _('Row %(rownum)s: %(message)s') % {
+                  'rownum': rownumber, 'message': e
+                  }) + '\n '
+
+      # Report all failed records
+      yield force_unicode(
+          _('Uploaded data successfully: processed %d records') % rownumber
+          ) + '\n '
 
 
 class UpstreamForecastPath(PathReport):

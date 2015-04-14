@@ -245,18 +245,19 @@ def generateBaseline(solver_fcst, cursor):
   print("Exporting baseline forecast...")
   cursor.execute('''
     update forecastplan
-    set forecastbaseline=0, forecastbaselinevalue=0
+    set forecastbaseline=0, forecastbaselinevalue=0, method=null
     where startdate>='%s'
-      and (forecastbaseline<>0 or forecastbaselinevalue<>0)
+      and (forecastbaseline<>0 or forecastbaselinevalue<>0 or method is not null)
     ''' % frepple.settings.current)
   cursor.executemany('''
     update forecastplan
-    set forecastbaseline=%s, forecastbaselinevalue=%s
+    set forecastbaseline=%s, forecastbaselinevalue=%s, method=%s
     where forecast_id = %s and startdate=%s
     ''', [
       (
         round(i.total, settings.DECIMAL_PLACES),
         round(i.total*i.item.price, settings.DECIMAL_PLACES),
+        i.owner.method,
         i.owner.name, str(i.startdate)
       )
       for i in frepple.demands()
@@ -597,7 +598,7 @@ def exportForecastValues(cursor):
       inner join forecastrelation
         on forecast_id = forecastrelation.child_id
       inner join forecast
-        on forecast_id = name and method <> 'manual'
+        on forecast_id = name and forecast.method <> 'manual'
       group by forecastrelation.parent_id, startdate
       )
     update forecastplan

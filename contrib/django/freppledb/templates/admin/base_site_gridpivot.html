@@ -104,6 +104,7 @@ $(window).bind('resize', function() {
 <span id="undo" onclick="upload.undo()" title="{% trans 'Undo changes'|escape %}" class="ui-state-disabled fa fa-undo fa-lg"></span>&nbsp;&nbsp;
 {% endif %}
 {% if reportclass.hasTimeBuckets %}<span onclick="grid.showBucket()" title="{% trans 'Configure time buckets'|escape %}" class="fa fa-clock-o fa-lg"></span>&nbsp;&nbsp;
+{% endif %}{% if reportclass.editable and haschangeperm %}<span id="csvimport" title="{% trans 'Import CSV or Excel file'|escape %}" onclick="import_show()" class="fa fa-arrow-up fa-lg"></span>
 {% endif %}<span onclick="grid.showExport(false)" title="{% trans 'Export as CSV or Excel file'|escape %}" class="fa fa-arrow-down fa-lg"></span>
 &nbsp;<span onclick="grid.showCustomize(true);" title="{% trans 'Customize'|escape %}" class="fa fa-wrench fa-lg"></span>
 </div>

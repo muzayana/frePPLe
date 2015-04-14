@@ -309,6 +309,7 @@ class ForecastPlan(models.Model):
   forecastnetvalue = models.DecimalField(_('forecast net'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
   forecastconsumedvalue = models.DecimalField(_('forecast consumed'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
   forecastplannedvalue = models.DecimalField(_('planned forecast'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
+  method = models.CharField(_('method'), max_length=60, db_index=True)
 
   def __unicode__(self):
     return "%s - %s" % (self.forecast.name, str(self.startdate))
