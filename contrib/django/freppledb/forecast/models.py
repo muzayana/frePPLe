@@ -81,7 +81,7 @@ class Forecast(AuditModel):
 
   def setTotal(self, startdate, enddate, quantity):
     '''
-    Update the forecast quantity.
+    Update the forecast quantity in the forecast demand table.
     The logic followed is three-fold:
       - If one or more forecast entries already exist in the daterange, the
         quantities of those entries are proportionally rescaled to fit the
@@ -215,37 +215,398 @@ class Forecast(AuditModel):
           i.save()
 
 
-  @classmethod
-  def rebuildAllRelations(cls, database=DEFAULT_DB_ALIAS):
-    # Loop over all forecasts that (potentially) have child forecasts
-    for fcst in Forecast.objects.using(database).filter(~Q(item__rght=F('item__lft') + 1) | ~Q(customer__rght=F('customer__lft') + 1)):
-      fcst.rebuildRelations(database)
-    # Delete relations of leaf forecasts, which can never have children
-    ForecastRelation.objects.using(database) \
-      .filter(parent__item__rght=F('parent__item__lft') + 1) \
-      .filter(parent__customer__rght=F('parent__customer__lft') + 1) \
-      .delete()
+  def updatePlan(self, startdate, enddate, fcstadj, ordersadj, units, database=DEFAULT_DB_ALIAS):
+    '''
+    Update adjustments in the forecastplan table.
+    # TODO include rounding
 
+    The *disaggregation* logic is as follows:
+      - First find all lowest level "leaf" forecast plan records.
+      - If there are existing overriden values:
+         - If the existing overridden quantities exceeds the new value, or if there are no unoverridden quantities:
+           Case A:
+           Scale the existing overrides and set all other values explicitly to 0.
+           A corner case is the situation where are all existing overrides are 0.
+         - Else:
+           Case B:
+           Scale non-overriden values to sum up correctly.
+           Existing overridden values are left untouched.
+           A corner case is when all non-overriden values are 0.
+         - For order adjustment we always scale the existing overrides.
+      - Else if existing total is greater than 0:
+        Case C:
+        Scale all existing records respecting their proportion of the total.
+      - Else:
+        Case D:
+        Divide the quantity evenly over all existing candidates.
 
-  def rebuildRelations(self, database=DEFAULT_DB_ALIAS):
-    # Pick up all existing relations
-    existing = {}
-    for cur in self.children.all():
-      existing[cur.child] = cur
+    This is followed by an *aggregation* step:
+      - For every "leaf" forecast plan record that is changed:
+         - Find its parent forecasts
+         - Add the delta to the parent quantity
+      - The parent values are cached in memory, to avoid that we update the
+        same parent record many times in the database.
+    '''
+    # Assure the end date is later than the start date.
+    if startdate > enddate:
+      tmp = startdate
+      startdate = enddate
+      enddate = tmp
 
-    # Find all children
-    query = Forecast.objects.using(database) \
-      .filter(item__lft__range=(self.item.lft, self.item.rght)) \
-      .filter(customer__lft__range=(self.customer.lft, self.customer.rght))
-    for p in query:
-      if self.name == p.name:
-        continue
-      elif p in existing:
-        del existing[p]
+    # Round the quantity, if discrete flag is on and we edit units
+    if self.discrete and units:
+      if fcstadj:
+        fcstadj = fcstadj.to_integral()
+      if ordersadj:
+        ordersadj = ordersadj.to_integral()
+
+    # Find all lowest level forecast records involved
+    leafQuery = ForecastPlan.objects.select_for_update().using(database).filter(
+      forecast__item__lft__gte = self.item.lft,
+      forecast__item__lft__lt = self.item.rght,
+      forecast__customer__lft__gte = self.customer.lft,
+      forecast__customer__lft__lt = self.customer.rght,
+      startdate__gte = startdate,
+      startdate__lt = enddate,
+      forecast__planned = True  # TODO need a more generic way to find the leaf forecasts. Only works for bottom up fcst
+      )
+    leafPlan = [ i for i in leafQuery ]
+    if not leafPlan:
+      raise Exception("No forecastplan entries found")
+
+    # Analyze the current status of the leaf forecasts
+    parents = {}
+    curFcstAdj = None
+    curWithoutFcstAdj = 0
+    curFcstAdjValue = 0
+    curFcstTotal = 0
+    curFcstTotalValue = 0
+    curOrdersTotal = 0
+    curOrdersAdj = None
+    curWithoutOrdersAdj = 0
+    curOrdersAdjValue = 0
+    for i in leafPlan:
+      curFcstTotal += i.forecasttotal
+      curOrdersTotal += i.orderstotal
+      curFcstTotalValue += i.forecasttotalvalue
+      if i.forecastadjustment is not None:
+        if curFcstAdj is None:
+          curFcstAdj = i.forecastadjustment
+        else:
+          curFcstAdj += i.forecastadjustment
       else:
-        ForecastRelation(parent=self, child=p).save(using=database)
-    for x in existing:
-      existing[x].delete()
+        curWithoutFcstAdj += 1
+      if i.ordersadjustment is not None:
+        if curOrdersAdj is None:
+          curOrdersAdj = i.ordersadjustment
+        else:
+          curOrdersAdj += i.ordersadjustment
+      else:
+        curWithoutOrdersAdj += 1
+      if i.forecastadjustmentvalue:
+        curFcstAdjValue += i.forecastadjustmentvalue
+      if i.ordersadjustmentvalue:
+        curOrdersAdjValue += i.ordersadjustmentvalue
+      # Identify parent records
+      parentQuery = ForecastPlan.objects.select_for_update().using(database).filter(
+        forecast__item__lft__lte = i.forecast.item.lft,
+        forecast__item__rght__gt = i.forecast.item.lft,
+        forecast__customer__lft__lte = i.forecast.customer.lft,
+        forecast__customer__rght__gt = i.forecast.customer.lft,
+        startdate = i.startdate
+        )
+      i.parentkeys = {}
+      for j in parentQuery:
+        if j.forecast.name != i.forecast.name:
+          i.parentkeys[(j.forecast.name, j.startdate)] = j
+          parents[(j.forecast.name, j.startdate)] = j
+          j.newForecastAdjustment = j.forecastadjustment is None
+
+    # Handle forecast adjustments
+    if fcstadj is None:
+      # Case A: Reset all existing overrides to null
+      for i in leafPlan:
+        if i.forecastadjustment is not None:
+          delta1 = i.forecastadjustment
+          deltavalue1 = i.forecastadjustment * i.forecast.item.price
+          delta2 = i.forecastadjustment - i.forecastbaseline
+          deltavalue2 = (i.forecastadjustment - i.forecastbaseline) * i.forecast.item.price
+          i.forecasttotal = i.forecastbaseline
+          i.forecasttotalvalue = i.forecastbaseline * i.forecast.item.price
+          i.forecastadjustment = None
+          i.forecastadjustmentvalue = None
+          for j in i.parentkeys:
+            if parents[j].forecastadjustment is not None and parents[j].forecastadjustment > delta1:
+              parents[j].forecastadjustment -= delta1
+              parents[j].forecastadjustmentvalue -= deltavalue1
+            else:
+              parents[j].forecastadjustment = None
+              parents[j].forecastadjustmentvalue = None            
+            parents[j].forecasttotal -= delta2
+            parents[j].forecasttotalvalue -= deltavalue2
+            if parents[j].forecasttotal < 0:
+              parents[j].forecasttotal = 0
+            if parents[j].forecasttotalvalue < 0:
+              parents[j].forecasttotalvalue = 0           
+    else:
+      if curFcstAdj is not None:
+        if curFcstAdj >= fcstadj or curWithoutFcstAdj == 0:
+          # Case B: Scale the existing overrides and set all other values explicitly to 0
+          if curFcstAdj:
+            factor = fcstadj / curFcstAdj
+          else:
+            # Special case: all overrides are 0.
+            factor = fcstadj / len(leafPlan)
+          for i in leafPlan:
+            if i.forecastadjustment is None:
+              for j in i.parentkeys:
+                parents[j].forecasttotal -= i.forecastadjustment
+                parents[j].forecasttotalvalue -= i.forecasttotalvalue
+                if parents[j].newForecastAdjustment:
+                  if parents[j].forecastadjustment is None:
+                    parents[j].forecastadjustment = Decimal(0.0)
+                    parents[j].forecastadjustmentvalue = Decimal(0.0)
+                else:
+                  parents[j].forecastadjustment -= i.forecastadjustment
+                  parents[j].forecastadjustmentvalue -= i.forecasttotalvalue
+              i.forecastadjustment = i.forecastadjustmentvalue = i.forecasttotal = i.forecasttotalvalue = Decimal(0.0)
+            else:
+              if curFcstAdj:
+                delta = (Decimal(1)-factor) * i.forecastadjustment
+                i.forecastadjustment *= factor
+                i.forecasttotal = i.forecastadjustment
+              else:
+                # Special case: all overrides are 0. Multiplying wouldn't work.
+                delta = -factor
+                i.forecastadjustment = i.forecastadjustment = factor
+              i.forecastadjustmentvalue = i.forecasttotalvalue = i.forecastadjustment * i.forecast.item.price
+              deltavalue = delta * i.forecast.item.price
+              for j in i.parentkeys:
+                parents[j].forecasttotal -= delta
+                parents[j].forecasttotalvalue -= deltavalue
+                if parents[j].newForecastAdjustment:
+                  if parents[j].forecastadjustment is None:
+                    parents[j].forecastadjustment = i.forecastadjustment
+                    parents[j].forecastadjustmentvalue = i.forecastadjustmentvalue
+                  else:
+                    parents[j].forecastadjustment += i.forecastadjustment
+                    parents[j].forecastadjustmentvalue += i.forecastadjustmentvalue
+                else:
+                  parents[j].forecastadjustment -= delta
+                  parents[j].forecastadjustmentvalue -= deltavalue
+        else:
+          # Case C: Scale non-overriden values to sum up correctly
+          special = abs(curFcstTotal - curFcstAdj) <= 0.001
+          if special:
+            factor = (fcstadj - curFcstAdj) / (curFcstTotal - curFcstAdj)
+          else:
+            factor = (fcstadj - curFcstAdj) / curWithoutFcstAdj
+          for i in leafPlan:
+            if i.forecastadjustment is None:
+              if special:
+                delta = -factor
+                i.forecastadjustment = i.forecasttotal = factor
+              else:
+                delta = (Decimal(1)-factor) * i.forecasttotal
+                i.forecastadjustment = i.forecasttotal = i.forecasttotal * factor
+              deltavalue = delta * i.forecast.item.price
+              i.forecastadjustmentvalue = i.forecasttotalvalue = i.forecastadjustment * i.forecast.item.price
+              for j in i.parentkeys:
+                parents[j].forecasttotal -= delta
+                parents[j].forecasttotalvalue -= delta
+                if parents[j].newForecastAdjustment:
+                  if parents[j].forecastadjustment is None:
+                    parents[j].forecastadjustment = i.forecastadjustment
+                    parents[j].forecastadjustmentvalue = i.forecastadjustmentvalue
+                  else:
+                    parents[j].forecastadjustment += i.forecastadjustment
+                    parents[j].forecastadjustmentvalue += i.forecastadjustmentvalue
+                else:
+                  parents[j].forecastadjustment -= delta
+                  parents[j].forecastadjustmentvalue -= deltavalue
+      elif curFcstTotal > 0:
+        # Case D: Scale all existing records respecting their proportion of the total
+        factor = fcstadj / curFcstTotal
+        for i in leafPlan:
+          if i.forecastadjustment is None:
+            delta = (Decimal(1)-factor) * i.forecasttotal
+            deltavalue = delta * i.forecast.item.price
+            i.forecastadjustment = i.forecasttotal * factor
+            i.forecasttotal = i.forecastadjustment
+            i.forecastadjustmentvalue = i.forecasttotalvalue = i.forecastadjustment * i.forecast.item.price
+            for j in i.parentkeys:
+              parents[j].forecasttotal -= delta
+              parents[j].forecasttotalvalue -= deltavalue 
+              if parents[j].newForecastAdjustment:
+                if parents[j].forecastadjustment is None:
+                  parents[j].forecastadjustment = i.forecastadjustment
+                  parents[j].forecastadjustmentvalue = i.forecastadjustment * i.forecast.item.price
+                else:
+                  parents[j].forecastadjustment += i.forecastadjustment
+                  parents[j].forecastadjustmentvalue += i.forecastadjustment * i.forecast.item.price
+              else:
+                parents[j].forecastadjustment -= delta
+                parents[j].forecastadjustmentvalue -= deltavalue
+      else:
+        # Case E: Divide the quantity evenly over all existing candidates
+        factor = fcstadj / len(leafPlan)
+        for i in leafPlan:
+          delta = i.forecasttotal - factor
+          deltavalue = delta * i.forecast.item.price
+          i.forecastadjustment = i.forecasttotal = factor
+          i.forecastadjustmentvalue = i.forecasttotalvalue = i.forecastadjustment * i.forecast.item.price
+          for j in i.parentkeys:
+            parents[j].forecasttotal -= delta
+            parents[j].forecasttotalvalue -= deltavalue
+            if parents[j].newForecastAdjustment:
+              if parents[j].forecastadjustment is None:
+                parents[j].forecastadjustment = i.forecastadjustment
+                parents[j].forecastadjustmentvalue = i.forecastadjustmentvalue
+              else:
+                parents[j].forecastadjustment += forecastadjustment
+                parents[j].forecastadjustmentvalue += i.forecastadjustmentvalue
+            else:
+              parents[j].forecastadjustment -= delta
+              parents[j].forecastadjustmentvalue -= delta
+
+    # Handle order adjustments
+    # The logic is identical to the forecast updates, except that we don't 
+    # update the total. 
+    if ordersadj is None:
+      # Case A: Reset all existing overrides to null
+      for i in leafPlan:
+        if i.ordersadjustment is not None:
+          delta = i.ordersadjustment
+          deltavalue = i.ordersadjustment * i.forecast.item.price
+          i.ordersadjustment = None
+          i.ordersadjustmentvalue = None
+          for j in i.parentkeys:
+            if parents[j].ordersadjustment is not None and parents[j].ordersadjustment > delta:
+              parents[j].ordersadjustment -= delta
+              parents[j].ordersadjustmentvalue -= deltavalue
+            else:
+              parents[j].ordersadjustment = None
+              parents[j].ordersadjustmentvalue = None            
+    else:
+      if curOrdersAdj is not None:
+        if curOrdersAdj >= ordersadj or curWithoutOrdersAdj == 0:
+          # Case B: Scale the existing overrides and set all other values explicitly to 0
+          if curOrdersAdj:
+            factor = ordersadj / curOrdersAdj
+          else:
+            # Special case: all overrides are 0.
+            factor = ordersadj / len(leafPlan)
+          for i in leafPlan:
+            if i.ordersadjustment is None:
+              for j in i.parentkeys:
+                if parents[j].newOrdersAdjustment:
+                  if parents[j].ordersadjustment is None:
+                    parents[j].ordersadjustment = Decimal(0.0)
+                    parents[j].ordersadjustmentvalue = Decimal(0.0)
+                else:
+                  parents[j].ordersadjustment -= i.ordersadjustment
+                  parents[j].ordersadjustmentvalue -= i.ordersadjustmentvalue
+              i.ordersadjustment = i.ordersadjustmentvalue = Decimal(0.0)
+            else:
+              if curOrdersAdj:
+                delta = (Decimal(1)-factor) * i.ordersadjustment
+                i.ordersadjustment *= factor
+              else:
+                # Special case: all overrides are 0. Multiplying wouldn't work.
+                delta = -factor
+                i.ordersadjustment = factor
+              i.ordersadjustmentvalue = i.ordersadjustment * i.forecast.item.price
+              deltavalue = delta * i.forecast.item.price
+              for j in i.parentkeys:
+                if parents[j].newOrdersAdjustment:
+                  if parents[j].ordersadjustment is None:
+                    parents[j].ordersadjustment = i.ordersadjustment
+                    parents[j].ordersadjustmentvalue = i.ordersadjustmentvalue
+                  else:
+                    parents[j].ordersadjustment += i.ordersadjustment
+                    parents[j].ordersadjustmentvalue += i.ordersadjustmentvalue
+                else:
+                  parents[j].ordersadjustment -= delta
+                  parents[j].ordersadjustmentvalue -= deltavalue
+        else:
+          # Case C: Scale non-overriden values to sum up correctly
+          special = abs(curOrdersTotal - curOrdersAdj) <= 0.001
+          if special:
+            factor = (ordersadj - curOrdersAdj) / (curOrdersTotal - curOrdersAdj)
+          else:
+            factor = (ordersadj - curOrdersAdj) / curWithoutOrdersAdj
+          for i in leafPlan:
+            if i.ordersadjustment is None:
+              if special:
+                delta = -factor
+                i.ordersadjustment = factor
+              else:
+                delta = (Decimal(1)-factor) * i.orderstotal
+                i.ordersadjustment = i.orderstotal * factor
+              deltavalue = delta * i.forecast.item.price
+              i.ordersadjustmentvalue = i.ordersadjustment * i.forecast.item.price
+              for j in i.parentkeys:
+                if parents[j].newOrdersAdjustment:
+                  if parents[j].ordersadjustment is None:
+                    parents[j].ordersadjustment = i.ordersadjustment
+                    parents[j].ordersadjustmentvalue = i.ordersadjustmentvalue
+                  else:
+                    parents[j].ordersadjustment += i.ordersadjustment
+                    parents[j].ordersadjustmentvalue += i.ordersadjustmentvalue
+                else:
+                  parents[j].ordersadjustment -= delta
+                  parents[j].ordersadjustmentvalue -= deltavalue
+      elif curOrdersTotal > 0:
+        # Case D: Scale all existing records respecting their proportion of the total
+        factor = ordersadj / curOrdersTotal
+        for i in leafPlan:
+          if i.ordersadjustment is None:
+            delta = (Decimal(1)-factor) * i.curOrdersTotal
+            deltavalue = delta * i.forecast.item.price
+            i.ordersadjustment = i.orderstotal * factor
+            i.ordersadjustmentvalue = i.ordersadjustment * i.forecast.item.price
+            for j in i.parentkeys:
+              if parents[j].newOrdersAdjustment:
+                if parents[j].ordersadjustment is None:
+                  parents[j].ordersadjustment = i.ordersadjustment
+                  parents[j].ordersadjustmentvalue = i.ordersadjustment * i.forecast.item.price
+                else:
+                  parents[j].ordersadjustment += i.ordersadjustment
+                  parents[j].ordersadjustmentvalue += i.ordersadjustment * i.forecast.item.price
+              else:
+                parents[j].ordersadjustment -= delta
+                parents[j].ordersadjustmentvalue -= deltavalue
+      else:
+        # Case E: Divide the quantity evenly over all existing candidates
+        factor = ordersadj / len(leafPlan)
+        for i in leafPlan:
+          delta = i.orderstotal - factor
+          deltavalue = delta * i.forecast.item.price
+          i.ordersadjustment = factor
+          i.ordersadjustmentvalue = i.ordersadjustment * i.orders.item.price
+          for j in i.parentkeys:
+            if parents[j].newOrdersAdjustment:
+              if parents[j].ordersadjustment is None:
+                parents[j].ordersadjustment = i.ordersadjustment
+                parents[j].ordersadjustmentvalue = i.ordersadjustmentvalue
+              else:
+                parents[j].ordersadjustment += ordersadjustment
+                parents[j].ordersadjustmentvalue += i.ordersadjustmentvalue
+            else:
+              parents[j].ordersadjustment -= delta
+              parents[j].ordersadjustmentvalue -= delta
+
+    # Save the results in the database
+    for i in leafPlan:
+      i.save(update_fields=[
+        'forecastadjustment', 'ordersadjustment', 'forecasttotal',
+        'forecastadjustmentvalue', 'ordersadjustmentvalue', 'forecasttotalvalue'
+        ])
+    for i in parents.itervalues():
+      i.save(update_fields=[
+        'forecastadjustment', 'ordersadjustment', 'forecasttotal',
+        'forecastadjustmentvalue', 'ordersadjustmentvalue', 'forecasttotalvalue'
+        ])
 
 
 class ForecastDemand(AuditModel):
@@ -265,23 +626,6 @@ class ForecastDemand(AuditModel):
     verbose_name_plural = _('forecast demands')
 
 
-class ForecastRelation(models.Model):
-  '''
-  This table stores the parent-child relations between forecasts.
-  '''
-  # Database fields
-  id = models.AutoField(primary_key=True)
-  parent = models.ForeignKey(Forecast, db_index=True, related_name='children')
-  child = models.ForeignKey(Forecast, db_index=True, related_name='parents')
-
-  def __unicode__(self):
-    return self.parent.name + " - " + self.child.name
-
-  class Meta(AuditModel.Meta):
-    db_table = 'forecastrelation'
-    unique_together = (('parent', 'child'),)
-
-
 class ForecastPlan(models.Model):
   # Database fields
   id = models.AutoField(_('identifier'), primary_key=True)
@@ -289,6 +633,7 @@ class ForecastPlan(models.Model):
   customerlvl = models.PositiveIntegerField(null=True, editable=False, blank=True)
   itemlvl = models.PositiveIntegerField(null=True, editable=False, blank=True)
   startdate = models.DateTimeField(_('start date'), null=False, db_index=True)
+  enddate = models.DateTimeField(_('end date'), null=False, db_index=True)
   orderstotal = models.DecimalField(_('total orders'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
   ordersadjustment = models.DecimalField(_('orders adjustment'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True, blank=True)
   ordersopen = models.DecimalField(_('open orders'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
@@ -309,6 +654,7 @@ class ForecastPlan(models.Model):
   forecastnetvalue = models.DecimalField(_('forecast net'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
   forecastconsumedvalue = models.DecimalField(_('forecast consumed'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
   forecastplannedvalue = models.DecimalField(_('planned forecast'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
+  method = models.CharField(_('method'), max_length=60, editable=False, db_index=True)
 
   def __unicode__(self):
     return "%s - %s" % (self.forecast.name, str(self.startdate))

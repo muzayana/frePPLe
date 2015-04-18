@@ -21,8 +21,9 @@ from django.http import HttpResponse, HttpResponseForbidden, Http404
 
 from freppledb.forecast.models import Forecast, ForecastDemand, ForecastPlan
 from freppledb.common.db import python_date
-from freppledb.common.report import GridPivot, GridFieldText, GridFieldInteger, GridFieldDate
-from freppledb.common.report import GridReport, GridFieldBool, GridFieldLastModified, GridFieldCurrency
+from freppledb.common.models import BucketDetail
+from freppledb.common.report import UnicodeReader, GridPivot, GridFieldText, GridFieldInteger, GridFieldDate
+from freppledb.common.report import GridReport, GridFieldBool, GridFieldLastModified
 from freppledb.common.report import GridFieldChoice, GridFieldNumber, GridFieldDateTime, GridFieldDuration
 from freppledb.input.views import PathReport
 from freppledb.input.models import Demand
@@ -198,6 +199,29 @@ class OverviewReport(GridPivot):
         'forecastplanned': row[15],
         }
 
+
+  @staticmethod
+  def processUpload(fcst, startdate, enddate, bucket, fcstadj, ordersadj, units, request):
+    fcst = Forecast.objects.all().using(request.database).get(name=fcst)
+    ok = False
+    if fcstadj != '' and fcstadj is not None:
+      fcstadj = Decimal(fcstadj)
+      ok = True
+    else:
+      fcstadj = None
+    if ordersadj != '' and ordersadj is not None:
+      ordersadj = Decimal(ordersadj)
+      ok = True
+    else:
+      ordersadj = None
+    if ok:
+      if bucket:
+        buck = BucketDetail.objects.all().using(request.database).get(name=bucket)  #TODO cache the buckets to avoid db queries
+        startdate = buck.startdate
+        enddate = buck.enddate
+      fcst.updatePlan(startdate, enddate, fcstadj, ordersadj, units, request.database)
+
+
   @classmethod
   def parseJSONupload(reportclass, request):
     # Check permissions
@@ -205,86 +229,25 @@ class OverviewReport(GridPivot):
       return HttpResponseForbidden(_('Permission denied'))
 
     # Loop over the data records
-    transaction.enter_transaction_management(using=request.database)
-    transaction.managed(True, using=request.database)
     resp = HttpResponse()
     ok = True
-    try:
+    with transaction.atomic(request.database, savepoint=False):
       for rec in json.JSONDecoder().decode(request.read()):
         try:
-          # Find the forecastplan records that are affected
-          start = datetime.strptime(rec['startdate'], '%Y-%m-%d').date()
-          end = datetime.strptime(rec['enddate'], '%Y-%m-%d').date()
-          fcsts = [ i for i in ForecastPlan.objects.all().using(request.database).filter(forecast__name=rec['id'], startdate__gte=start, startdate__lt=end).only('ordersadjustment', 'forecastadjustment', 'ordersadjustmentvalue', 'forecastadjustmentvalue')]
-          units = rec.get('units', 'units')
-
-          # Find the forecast and item
-          fcst = Forecast.objects.all().using(request.database).get(name=rec['id'])
-          price = fcst.item.price
-
-          # Which field to update
-          if 'adjHistory' in rec:
-            field = 'ordersadjustment'
-            value = Decimal(rec['adjHistory']) if (rec['adjHistory'] != '') else None
-          elif 'adjHistoryValue' in rec:
-            field = 'ordersadjustment'
-            value = (Decimal(rec['adjHistory'])/ price) if (rec['adjHistoryValue'] != '') else None
-          elif 'adjForecast' in rec:
-            field = 'forecastadjustment'
-            value = Decimal(rec['adjForecast']) if (rec['adjForecast'] != '') else None
-          elif 'adjForecastValue' in rec:
-            field = 'forecastadjustment'
-            value = (Decimal(rec['adjForecastValue'])/ price) if (rec['adjForecastValue'] != '') else None
-          else:
-            raise Exception('Posting invalid field')
-
-          # Sum up existing values
-          tot = Decimal(0.0)
-          cnt = 0
-          if value != None:
-            for i in fcsts:
-              if getattr(i, field):
-                tot += getattr(i, field)
-              cnt += 1
-
-          # Adjust forecastplan entries
-          if value == None:
-            for i in fcsts:
-              setattr(i, field, None)
-          elif tot > 0:
-            # Existing non-zero records are proportionally scaled
-            factor = value / tot
-            for i in fcsts:
-              if getattr(i, field):
-                setattr(i, field, getattr(i, field) * factor)
-          elif cnt > 0:
-            # All entries are 0 and we initialize them to the average
-            eql = value / cnt
-            for i in fcsts:
-              setattr(i, field, eql)
-          else:
-            # Not a single active record exists, so we try to create
-            fcstplan = [ ForecastPlan(forecast=fcst, startdate=j.startdate) for j in fcst.calendar.buckets.filter(startdate__gte=start, enddate__lte=end) ]
-            cnt = len(fcstplan)
-            if cnt > 0:
-              eql = value / cnt
-              for i in fcstplan:
-                setattr(i, field, eql)
-                i.save(using=request.database)
-            else:
-              raise Exception("Can't create matching forecastplan entries")
-
-          # Store results
-          for i in fcsts:
-            i.save(using=request.database)
-
+          with transaction.atomic(request.database, savepoint=False):
+            fcst = Forecast.objects.all().using(request.database).get(name=rec['id'])
+            fcst.updatePlan(
+              datetime.strptime(rec['startdate'], '%Y-%m-%d').date(),
+              datetime.strptime(rec['enddate'], '%Y-%m-%d').date(),
+              Decimal(rec['adjForecast']) if (rec.get('adjForecast','') != '') else None,
+              Decimal(rec['adjHistory']) if (rec.get('adjHistory','') != '') else None,
+              rec.get('units', 'units'),
+              request.database
+              )
         except Exception as e:
           ok = False
           resp.write(e)
           resp.write('<br/>')
-    finally:
-      transaction.commit(using=request.database)
-      transaction.leave_transaction_management(using=request.database)
     if ok:
       resp.write("OK")
     resp.status_code = ok and 200 or 403
