@@ -236,10 +236,19 @@ class User(AbstractUser):
       return default
 
   def setPreference(self, prop, val):
-    pref = self.preferences.get_or_create(property=prop)[0]
-    pref.value = val
-    # Always saved in the main database, to have the same preferences for all scenarios
-    pref.save(update_fields=['value'])
+    if val is None:
+      # Delete a preference
+      try:
+        self.preferences.get(property=prop).delete()
+      except UserPreference.DoesNotExist:
+        # No such preferences exists now
+        pass
+    else:
+      # Create or update a preference
+      pref = self.preferences.get_or_create(property=prop)[0]
+      pref.value = val
+      # Always saved in the main database, to have the same preferences for all scenarios
+      pref.save(update_fields=['value'])
 
 
 class UserPreference(models.Model):
