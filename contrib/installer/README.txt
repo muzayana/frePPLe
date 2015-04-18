@@ -49,7 +49,9 @@ To create the installer, the following steps are required:
 9) Patch the NSIS MultiUser.sh script
    The determination of the default installation folder doesn't make the
    distinction between the 64-bit and 32-bit folder.
-   At 2 places in the file you need something like:
+   You need to replace:
+     StrCpy $INSTDIR "$PROGRAMFILES\${MULTIUSER_INSTALLMODE_INSTDIR}"
+   with:
      !ifdef 64BIT
      StrCpy $INSTDIR "$PROGRAMFILES64\${MULTIUSER_INSTALLMODE_INSTDIR}"
      !else
