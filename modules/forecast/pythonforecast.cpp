@@ -27,6 +27,8 @@ PyObject* Forecast::getattro(const Attribute& attr)
     return PythonObject(getPlanned());
   else if (attr.isA(Forecast::tag_methods))
     return PythonObject(getMethods());
+  else if (attr.isA(Forecast::tag_method))
+    return PythonObject(getMethod());
   return Demand::getattro(attr);
 }
 
