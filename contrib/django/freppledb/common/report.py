@@ -454,7 +454,7 @@ class GridReport(View):
   def _render_colmodel(cls, is_popup=False, prefs=None, mode="graph"):
     if not prefs:
       frozencolumns = cls.frozenColumns
-      rows = [ (i, False, cls.rows[i].width) for i in range(len(cls.rows)) ]
+      rows = [ (i, cls.rows[i].hidden, cls.rows[i].width) for i in range(len(cls.rows)) ]
     else:
       frozencolumns = prefs.get('frozen', cls.frozenColumns)
       rows = prefs['rows']
@@ -1477,7 +1477,7 @@ class GridPivot(GridReport):
     if prefs and 'rows' in prefs:
       rows = prefs['rows']
     else:
-      rows = [ (i, False, cls.rows[i].width) for i in range(len(cls.rows)) ]
+      rows = [ (i, cls.rows[i].hidden, cls.rows[i].width) for i in range(len(cls.rows)) ]
 
     result = []
     if is_popup:
