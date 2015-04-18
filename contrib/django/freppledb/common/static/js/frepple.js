@@ -520,7 +520,31 @@ var grid = {
          {
          text: gettext("Cancel"),
          click: function() { $(this).dialog("close"); }
-         }]
+         },
+         {
+         text: gettext("reset"),
+         click: function() {
+           var result = {};
+           result[reportkey] = null;
+           $.ajax({
+            url: '/settings/',
+            type: 'POST',
+            contentType: 'application/json; charset=utf-8',
+            data: JSON.stringify(result),
+            success: function() {window.location.href = window.location.href;},
+            error: function (result, stat, errorThrown) {
+              $('#popup').html(result.responseText).dialog({
+                title: gettext("Error saving report settings"),
+                autoOpen: true,
+                resizable: false,
+                width: 'auto',
+                height: 'auto'
+              });
+              }
+            });
+          }
+         }
+         ]
        });
     $("#configure").multiselect({
       collapsableGroups: false,
