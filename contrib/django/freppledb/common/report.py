@@ -1647,7 +1647,7 @@ class GridPivot(GridReport):
       myrows = [
         reportclass.rows[f[0]]
         for f in prefs['rows']
-        if not f[1] and f[0] < len(reportclass.rows) and not reportclass.rows[f[0]].hidden
+        if not f[1] and f[0] < len(reportclass.rows)
         ]
     else:
       myrows = [ f for f in reportclass.rows if f.name and not f.hidden ]
@@ -1659,7 +1659,7 @@ class GridPivot(GridReport):
     # Write a header row
     fields = [
       force_unicode(f.title).title().encode(encoding, "ignore")
-      for f in myrows
+      for f in myrows if f.name
       ]
 
     if listformat:
@@ -1680,7 +1680,7 @@ class GridPivot(GridReport):
         if hasattr(row, "__getitem__"):
           fields = [
             unicode(row[f.name]).encode(encoding, "ignore") if row[f.name] is not None else ''
-            for f in myrows
+            for f in myrows if f.name
             ]
           fields.extend([ row['bucket'].encode(encoding, "ignore") ])
           fields.extend([
@@ -1690,7 +1690,7 @@ class GridPivot(GridReport):
         else:
           fields = [
             unicode(getattr(row, f.name)).encode(encoding, "ignore") if getattr(row, f.name) is not None else ''
-            for f in myrows
+            for f in myrows if f.name
             ]
           fields.extend([ getattr(row, 'bucket').encode(encoding, "ignore") ])
           fields.extend([
@@ -1716,7 +1716,7 @@ class GridPivot(GridReport):
             sf.truncate(0)
             fields = [
               unicode(row_of_buckets[0][s.name]).encode(encoding, "ignore")
-              for s in myrows
+              for s in myrows  if s.name
               ]
             fields.extend( [('title' in cross[1] and capfirst(_(cross[1]['title'])) or capfirst(_(cross[0]))).encode(encoding, "ignore")] )
             fields.extend([ unicode(_localize(bucket[cross[0]], decimal_separator)).encode(encoding, "ignore") for bucket in row_of_buckets ])
@@ -1731,7 +1731,7 @@ class GridPivot(GridReport):
         sf.truncate(0)
         fields = [
           unicode(row_of_buckets[0][s.name]).encode(encoding, "ignore")
-          for s in myrows
+          for s in myrows if s.name
           ]
         fields.extend( [('title' in cross[1] and capfirst(_(cross[1]['title'])) or capfirst(_(cross[0]))).encode(encoding, "ignore")] )
         fields.extend([
@@ -1764,7 +1764,7 @@ class GridPivot(GridReport):
       myrows = [
         reportclass.rows[f[0]]
         for f in prefs['rows']
-        if not f[1] and f[0] < len(reportclass.rows) and not reportclass.rows[f[0]].hidden
+        if not f[1] and f[0] < len(reportclass.rows)
         ]
     else:
       myrows = [ f for f in reportclass.rows if f.name and not f.hidden ]
@@ -1774,7 +1774,7 @@ class GridPivot(GridReport):
       mycrosses = [ f for f in reportclass.crosses if f[1].get('visible', True) ]
 
     # Write a header row
-    fields = [ force_unicode(f.title).title() for f in myrows ]
+    fields = [ force_unicode(f.title).title() for f in myrows if f.name ]
     if listformat:
       fields.extend([ capfirst(force_unicode(_('bucket'))) ])
       fields.extend([ capfirst(_(f[1].get('title', _(f[0])))) for f in mycrosses ])
@@ -1788,11 +1788,11 @@ class GridPivot(GridReport):
       for row in query:
         # Append a row
         if hasattr(row, "__getitem__"):
-          fields = [ _getCellValue(row[f.name]) for f in myrows ]
+          fields = [ _getCellValue(row[f.name]) for f in myrows if f.name ]
           fields.extend([ _getCellValue(row['bucket']) ])
           fields.extend([ _getCellValue(row[f[0]]) for f in mycrosses ])
         else:
-          fields = [ _getCellValue(getattr(row, f.name)) for f in myrows ]
+          fields = [ _getCellValue(getattr(row, f.name)) for f in myrows if f.name ]
           fields.extend([ _getCellValue(getattr(row, 'bucket')) ])
           fields.extend([ _getCellValue(getattr(row, f[0])) for f in mycrosses ])
         ws.append(fields)
@@ -1811,7 +1811,7 @@ class GridPivot(GridReport):
           for cross in mycrosses:
             if 'visible' in cross[1] and not cross[1]['visible']:
               continue
-            fields = [ _getCellValue(row_of_buckets[0][s.name]) for s in myrows ]
+            fields = [ _getCellValue(row_of_buckets[0][s.name]) for s in myrows if s.name ]
             fields.extend([ _getCellValue(('title' in cross[1] and capfirst(_(cross[1]['title'])) or capfirst(_(cross[0])))) ])
             fields.extend([ _getCellValue(bucket[cross[0]]) for bucket in row_of_buckets ])
             ws.append(fields)
@@ -1822,7 +1822,7 @@ class GridPivot(GridReport):
         for cross in mycrosses:
           if 'visible' in cross[1] and not cross[1]['visible']:
             continue
-          fields = [ _getCellValue(row_of_buckets[0][s.name]) for s in myrows ]
+          fields = [ _getCellValue(row_of_buckets[0][s.name]) for s in myrows if s.name ]
           fields.extend([ _getCellValue(('title' in cross[1] and capfirst(_(cross[1]['title'])) or capfirst(_(cross[0])))) ])
           fields.extend([ _getCellValue(bucket[cross[0]]) for bucket in row_of_buckets ])
           ws.append(fields)
