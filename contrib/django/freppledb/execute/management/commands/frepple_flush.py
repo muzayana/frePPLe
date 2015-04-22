@@ -124,7 +124,6 @@ class Command(BaseCommand):
         tables.add("setuprule")
       if "forecast" in tables:
         tables.add('forecastplan')
-        tables.add('forecastrelation')
       tables.discard('auth_group_permissions')
       tables.discard('auth_permission')
       tables.discard('auth_group')
