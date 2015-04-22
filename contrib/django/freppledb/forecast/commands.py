@@ -406,7 +406,7 @@ def exportForecastFull(cursor):
   cursor.execute('''
     with aggfcst as (
       select
-        forecastrelation.parent_id forecast_id, startdate,
+        forecastparent.name forecast_id, startdate,
         sum(forecasttotal) forecasttotal,
         sum(forecastbaseline) forecastbaseline,
         sum(forecastconsumed) forecastconsumed,
@@ -420,11 +420,18 @@ def exportForecastFull(cursor):
         sum(ordersadjustmentvalue) ordersadjustmentvalue,
         sum(forecastadjustmentvalue) forecastadjustmentvalue
       from forecastplan
-      inner join forecastrelation
-        on forecast_id = forecastrelation.child_id
       inner join forecast
         on forecast_id = name and forecast.method <> 'manual'
-      group by forecastrelation.parent_id, startdate
+      inner join item
+        on item.name = forecast.item_id
+      inner join customer
+        on customer.name = forecast.customer_id
+      cross join forecast as forecastparent
+      inner join item as itemparent
+        on item.lft > itemparent.lft and item.left < itemparent.rght
+      inner join customer as customerparent
+        on customer.lft > customerparent.lft and customer.left < customerparent.rght
+      group by forecastparent.name, startdate
       )
     update forecastplan
     set
