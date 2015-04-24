@@ -239,14 +239,25 @@ class OverviewReport(GridPivot):
         try:
           with transaction.atomic(request.database, savepoint=False):
             fcst = Forecast.objects.all().using(request.database).get(name=rec['id'])
-            fcst.updatePlan(
-              datetime.strptime(rec['startdate'], '%Y-%m-%d').date(),
-              datetime.strptime(rec['enddate'], '%Y-%m-%d').date(),
-              Decimal(rec['adjForecast']) if (rec.get('adjForecast','') != '') else None,
-              Decimal(rec['adjHistory']) if (rec.get('adjHistory','') != '') else None,
-              rec.get('units', 'units'),
-              request.database
-              )
+            if rec.get('adjForecast','') != '' or rec.get('adjHistory','') != '':
+              fcst.updatePlan(
+                datetime.strptime(rec['startdate'], '%Y-%m-%d').date(),
+                datetime.strptime(rec['enddate'], '%Y-%m-%d').date(),
+                Decimal(rec['adjForecast']) if (rec.get('adjForecast','') != '') else None,
+                Decimal(rec['adjHistory']) if (rec.get('adjHistory','') != '') else None,
+                True,
+                request.database
+                )
+            else:
+              fcst.updatePlan(
+                datetime.strptime(rec['startdate'], '%Y-%m-%d').date(),
+                datetime.strptime(rec['enddate'], '%Y-%m-%d').date(),
+                Decimal(rec['adjForecastValue']) if (rec.get('adjForecastValue','') != '') else None,
+                Decimal(rec['adjHistoryValue']) if (rec.get('adjHistoryValue','') != '') else None,
+                False,
+                request.database
+                )
+
         except Exception as e:
           ok = False
           resp.write(e)
