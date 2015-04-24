@@ -62,8 +62,8 @@ def aggregateDemand(cursor):
   starttime = time()
   cursor.execute('''
      update forecastplan
-     set orderstotal = 0, ordersopen = 0
-     where orderstotal <> 0 or ordersopen <> 0
+     set orderstotal=0, orderstotalvalue=0, ordersopen=0, ordersopenvalue=0
+     where orderstotal <> 0 or ordersopen <> 0 or orderstotalvalue<>0 or ordersopenvalue<>0
      ''')
   transaction.commit(using=cursor.db.alias)
   print('Aggregate - reset records in %.2f seconds' % (time() - starttime))
@@ -77,7 +77,6 @@ def aggregateDemand(cursor):
       select forecast.name as forecast,
         calendarbucket.startdate as startdate,
         calendarbucket.enddate as enddate,
-        fcustomer.lft as customer, fitem.lft as item,
         sum(demand.quantity) as orderstotal,
         sum(case when demand.status is null or demand.status = 'open' then demand.quantity else 0 end) as ordersopen,
         coalesce(sum(demand.quantity*ditem.price), 0) as orderstotalvalue,
@@ -93,7 +92,7 @@ def aggregateDemand(cursor):
         and calendarbucket.startdate <= demand.due
         and calendarbucket.enddate > demand.due
       where demand.status in ('open','closed')
-      group by forecast.name, fcustomer.lft, fitem.lft, calendarbucket.startdate, calendarbucket.enddate
+      group by forecast.name, calendarbucket.startdate, calendarbucket.enddate
      ''')
   cursor.execute('''CREATE UNIQUE INDEX demand_history_idx ON demand_history (forecast, startdate)''')
   print('Aggregate - temp table in %.2f seconds' % (time() - starttime))
@@ -102,15 +101,14 @@ def aggregateDemand(cursor):
   starttime = time()
   cursor.execute('''
     insert into forecastplan (
-      forecast_id, customerlvl, itemlvl, startdate, enddate, orderstotal, ordersopen,
+      forecast_id, startdate, enddate, orderstotal, ordersopen,
       forecastbaseline, forecasttotal, forecastnet, forecastconsumed,
       ordersplanned, forecastplanned, orderstotalvalue,
       ordersopenvalue, ordersplannedvalue, forecastbaselinevalue,
       forecasttotalvalue, forecastnetvalue, forecastconsumedvalue, forecastplannedvalue
       )
     select
-       demand_history.forecast, demand_history.customer,
-       demand_history.item, demand_history.startdate, demand_history.enddate,
+       demand_history.forecast, demand_history.startdate, demand_history.enddate,
        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
     from demand_history
     left outer join forecastplan
@@ -142,17 +140,17 @@ def aggregateDemand(cursor):
   # Initialize all buckets in the past and future
   starttime = time()
   horizon_future = int(Parameter.getValue('forecast.Horizon_future', cursor.db.alias, 365))
+  horizon_history = int(Parameter.getValue('forecast.Horizon_history', cursor.db.alias, 10000))
   cursor.execute('''
     insert into forecastplan (
-        forecast_id, customerlvl, itemlvl, startdate, enddate, orderstotal, ordersopen,
+        forecast_id, startdate, enddate, orderstotal, ordersopen,
         forecastbaseline, forecasttotal, forecastnet, forecastconsumed, ordersplanned,
         forecastplanned, orderstotalvalue, ordersopenvalue, ordersplannedvalue,
         forecastbaselinevalue, forecasttotalvalue, forecastnetvalue, forecastconsumedvalue,
         forecastplannedvalue
         )
       select
-        forecast.name, customer.lft, item.lft,
-        calendarbucket.startdate, calendarbucket.enddate,
+        forecast.name, calendarbucket.startdate, calendarbucket.enddate,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
       from forecast
       inner join item on forecast.item_id = item.name
@@ -167,7 +165,10 @@ def aggregateDemand(cursor):
       where forecastplan.forecast_id is null
       group by forecast.name, customer.lft, item.lft,
         calendarbucket.startdate, calendarbucket.enddate
-    ''' % (frepple.settings.current, frepple.settings.current + timedelta(days=horizon_future))
+    ''' % (
+      frepple.settings.current - timedelta(days=horizon_history),
+      frepple.settings.current + timedelta(days=horizon_future)
+      )
   )
   print('Aggregate - init future records in %.2f seconds' % (time() - starttime))
 
@@ -421,16 +422,22 @@ def exportForecastFull(cursor):
         sum(forecastadjustmentvalue) forecastadjustmentvalue
       from forecastplan
       inner join forecast
-        on forecast_id = name and forecast.method <> 'manual'
+        on forecast_id = name
       inner join item
         on item.name = forecast.item_id
       inner join customer
         on customer.name = forecast.customer_id
       cross join forecast as forecastparent
       inner join item as itemparent
-        on item.lft > itemparent.lft and item.left < itemparent.rght
+        on forecastparent.item_id = itemparent.name
+        and item.lft >= itemparent.lft
+        and item.lft < itemparent.rght
       inner join customer as customerparent
-        on customer.lft > customerparent.lft and customer.left < customerparent.rght
+        on forecastparent.customer_id = customerparent.name
+        and customer.lft >= customerparent.lft
+        and customer.lft < customerparent.rght
+      where forecast.method <> 'manual'
+        and forecastparent.method = 'manual'
       group by forecastparent.name, startdate
       )
     update forecastplan
@@ -539,17 +546,28 @@ def exportForecastPlanned(cursor):
   cursor.execute('''
     with aggfcst as (
       select
-        forecastrelation.parent_id forecast_id, startdate,
+        forecastparent.name forecast_id, startdate,
         sum(forecastconsumed) forecastconsumed,
         sum(forecastnet) forecastnet,
         sum(forecastconsumedvalue) forecastconsumedvalue,
         sum(forecastnetvalue) forecastnetvalue
       from forecastplan
-      inner join forecastrelation
-        on forecast_id = forecastrelation.child_id
       inner join forecast
         on forecast_id = name and method <> 'manual'
-      group by forecastrelation.parent_id, startdate
+      inner join item
+        on forecast.item_id = item.name
+      inner join customer
+        on forecast.customer_id = customer.name
+      cross join forecast as forecastparent
+      inner join item as itemparent
+        on forecastparent.item_id = item.name
+        and item.lft >= itemparent.lft
+        and item.lft < itemparent.rght
+      inner join customer as customerparent
+        on forecastparent.customer_id = customerparent.name
+        and customer.lft >= customerparent.lft
+        and customer.lft < customerparent.rght
+      group by forecastparent.name, startdate
       )
     update forecastplan
     set
@@ -603,15 +621,26 @@ def exportForecastValues(cursor):
   cursor.execute('''
     with aggfcst as (
       select
-        forecastrelation.parent_id forecast_id, startdate,
+        forecastparent.name forecast_id, startdate,
         sum(forecasttotal) forecasttotal,
         sum(forecasttotalvalue) forecasttotalvalue
       from forecastplan
-      inner join forecastrelation
-        on forecast_id = forecastrelation.child_id
       inner join forecast
         on forecast_id = name and forecast.method <> 'manual'
-      group by forecastrelation.parent_id, startdate
+      inner join item
+        on forecast.item_id = item.name
+      inner join customer
+        on forecast.customer_id = customer.name
+      cross join forecast as forecastparent
+      inner join item as itemparent
+        on forecastparent.item_id = item.name
+        and item.lft >= itemparent.lft
+        and item.lft < itemparent.rght
+      inner join customer as customerparent
+        on forecastparent.customer_id = customerparent.name
+        and customer.lft >= customerparent.lft
+        and customer.lft < customerparent.rght
+      group by forecastparent.name, startdate
       )
     update forecastplan
     set
