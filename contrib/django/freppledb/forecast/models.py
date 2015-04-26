@@ -374,15 +374,10 @@ class Forecast(AuditModel):
             if i.forecastadjustment is None:
               if abs(curFcstTotal - curFcstAdj) > 0.001:
                 for j in i.parentkeys:
-                  parents[j].forecasttotal -= i.forecastadjustment
-                  parents[j].forecasttotalvalue -= i.forecasttotalvalue
                   if parents[j].newForecastAdjustment:
                     if parents[j].forecastadjustment is None:
                       parents[j].forecastadjustment = Decimal(0.0)
                       parents[j].forecastadjustmentvalue = Decimal(0.0)
-                  else:
-                    parents[j].forecastadjustment -= i.forecastadjustment
-                    parents[j].forecastadjustmentvalue -= i.forecasttotalvalue
                 i.forecastadjustment = i.forecastadjustmentvalue = i.forecasttotal = i.forecasttotalvalue = Decimal(0.0)
             else:
               if curFcstAdj:
@@ -488,15 +483,10 @@ class Forecast(AuditModel):
             if i.forecastadjustmentvalue is None:
               if abs(curFcstTotalValue - curFcstAdjValue) > 0.001:
                 for j in i.parentkeys:
-                  parents[j].forecasttotal -= i.forecastadjustment
-                  parents[j].forecasttotalvalue -= i.forecasttotalvalue
                   if parents[j].newForecastAdjustment:
                     if parents[j].forecastadjustment is None:
                       parents[j].forecastadjustment = Decimal(0.0)
                       parents[j].forecastadjustmentvalue = Decimal(0.0)
-                  else:
-                    parents[j].forecastadjustment -= i.forecastadjustment
-                    parents[j].forecastadjustmentvalue -= i.forecasttotalvalue
                 i.forecastadjustment = i.forecastadjustmentvalue = i.forecasttotal = i.forecasttotalvalue = Decimal(0.0)
             elif i.forecast.item.price:
               if curFcstAdjValue:
@@ -627,9 +617,6 @@ class Forecast(AuditModel):
                     if parents[j].ordersadjustment is None:
                       parents[j].ordersadjustment = Decimal(0.0)
                       parents[j].ordersadjustmentvalue = Decimal(0.0)
-                  else:
-                    parents[j].ordersadjustment -= i.ordersadjustment
-                    parents[j].ordersadjustmentvalue -= i.ordersadjustmentvalue
                 i.ordersadjustment = i.ordersadjustmentvalue = Decimal(0.0)
             else:
               if curOrdersAdj:
@@ -729,9 +716,6 @@ class Forecast(AuditModel):
                     if parents[j].ordersadjustment is None:
                       parents[j].ordersadjustment = Decimal(0.0)
                       parents[j].ordersadjustmentvalue = Decimal(0.0)
-                  else:
-                    parents[j].ordersadjustment -= i.ordersadjustment
-                    parents[j].ordersadjustmentvalue -= i.ordersadjustmentvalue
                 i.ordersadjustment = i.ordersadjustmentvalue = Decimal(0.0)
             elif i.forecast.item.price:
               if curOrdersAdj:
