@@ -205,14 +205,14 @@ void Forecast::setTotalQuantity(const DateRange& d, double f, bool add)
       {
         // Rounding to discrete numbers
         carryover += f * percent;
-        int intdelta = static_cast<int>(ceil(carryover - 0.5));
+        double intdelta = ceil(carryover - 0.5);
         carryover -= intdelta;
         if (o < x->getDueRange().getDuration() || add)
           // The bucket is only partially updated
-          x->incTotal(static_cast<double>(intdelta));
+          x->incTotal(intdelta);
         else
           // The bucket is completely updated
-          x->setTotal(static_cast<double>(intdelta));
+          x->setTotal(intdelta);
       }
       else
       {
