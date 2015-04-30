@@ -778,8 +778,9 @@ double Forecast::Seasonal::generateForecast  // TODO No outlier detection in thi
     double cyclesum = 0.0;
     for (short j = 0; j < period; ++j)
       cyclesum += history[i+j];
-    for (short j = 0; j < period; ++j)
-      initial_S_i[j] += history[i+j] / cyclesum * period;
+    if (cyclesum)
+      for (short j = 0; j < period; ++j)
+        initial_S_i[j] += history[i+j] / cyclesum * period;
   }
   for (unsigned long i = 0; i < period; ++i)
     initial_S_i[i] /= cyclecount;
@@ -815,12 +816,16 @@ double Forecast::Seasonal::generateForecast  // TODO No outlier detection in thi
         L_i = (1 - alfa) * (L_i + T_i);
       T_i = beta * (L_i - L_i_prev) + (1 - beta) * T_i;
       double factor = - S_i[cycleindex];
-      S_i[cycleindex] = gamma * history[i-1] / L_i + (1 - gamma) * S_i[cycleindex];
+      if (L_i)
+        S_i[cycleindex] = gamma * history[i-1] / L_i + (1 - gamma) * S_i[cycleindex];
+      if (S_i[cycleindex] < 0.0)
+        S_i[cycleindex] = 0.0;
 
       // Rescale the seasonal indexes to add up to 1
       factor = period / (period + factor + S_i[cycleindex]);
-      for (unsigned short i2 = 0; i2 < period; ++i2)
-        S_i[i2] /= factor;
+      if (factor)
+        for (unsigned short i2 = 0; i2 < period; ++i2)
+          S_i[i2] /= factor;
 
       if (i == count) break;
       // Calculations for the delta of the parameters
