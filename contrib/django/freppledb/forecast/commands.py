@@ -436,8 +436,8 @@ def exportForecastFull(cursor):
         on forecastparent.customer_id = customerparent.name
         and customer.lft >= customerparent.lft
         and customer.lft < customerparent.rght
-      where forecast.method <> 'manual'
-        and forecastparent.method = 'manual'
+      where forecast.planned = 't'
+        and forecastparent.planned = 'f'
       group by forecastparent.name, startdate
       )
     update forecastplan
@@ -459,7 +459,7 @@ def exportForecastFull(cursor):
       select 1
       from forecast
       where forecast.name = forecastplan.forecast_id
-        and forecast.method='manual'
+        and forecast.planned = 'f'
       )
       and forecastplan.forecast_id = aggfcst.forecast_id
       and forecastplan.startdate = aggfcst.startdate
@@ -553,7 +553,7 @@ def exportForecastPlanned(cursor):
         sum(forecastnetvalue) forecastnetvalue
       from forecastplan
       inner join forecast
-        on forecast_id = name and method <> 'manual'
+        on forecast_id = name and forecast.planned = 't'
       inner join item
         on forecast.item_id = item.name
       inner join customer
@@ -579,7 +579,7 @@ def exportForecastPlanned(cursor):
       select 1
       from forecast
       where forecast.name = forecastplan.forecast_id
-        and forecast.method='manual'
+        and forecast.planned = 'f'
       )
       and forecastplan.forecast_id = aggfcst.forecast_id
       and forecastplan.startdate = aggfcst.startdate
@@ -626,7 +626,7 @@ def exportForecastValues(cursor):
         sum(forecasttotalvalue) forecasttotalvalue
       from forecastplan
       inner join forecast
-        on forecast_id = name and forecast.method <> 'manual'
+        on forecast_id = name and forecast.planned = 't'
       inner join item
         on forecast.item_id = item.name
       inner join customer
@@ -651,7 +651,7 @@ def exportForecastValues(cursor):
       select 1
       from forecast
       where forecast.name = forecastplan.forecast_id
-        and forecast.method='manual'
+        and forecast.planned = 'f'
       )
       and forecastplan.forecast_id = aggfcst.forecast_id
       and forecastplan.startdate = aggfcst.startdate
