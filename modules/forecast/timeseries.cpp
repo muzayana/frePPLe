@@ -201,11 +201,10 @@ void Forecast::MovingAverage::applyForecast
 (Forecast* forecast, const Date buckets[], unsigned int bucketcount)
 {
   // Loop over all buckets and set the forecast to a constant value
-  if (avg < 0) return;
   for (unsigned int i = 1; i < bucketcount; ++i)
     forecast->setTotalQuantity(
       DateRange(buckets[i-1], buckets[i]),
-      avg
+      avg > 0.0 ? avg : 0.0
     );
 }
 
@@ -385,11 +384,10 @@ void Forecast::SingleExponential::applyForecast
 (Forecast* forecast, const Date buckets[], unsigned int bucketcount)
 {
   // Loop over all buckets and set the forecast to a constant value
-  if (f_i < 0) return;
   for (unsigned int i = 1; i < bucketcount; ++i)
     forecast->setTotalQuantity(
       DateRange(buckets[i-1], buckets[i]),
-      f_i
+      f_i > 0.0 ? f_i : 0.0
     );
 }
 
@@ -641,7 +639,7 @@ void Forecast::DoubleExponential::applyForecast
     if (constant_i > 0)
       forecast->setTotalQuantity(
         DateRange(buckets[i-1], buckets[i]),
-        constant_i
+        constant_i > 0.0 ? constant_i : 0.0
       );
   }
 }
@@ -998,10 +996,11 @@ void Forecast::Seasonal::applyForecast
   {
     L_i += T_i;
     T_i *= dampenTrend; // Reduce slope in the future
+    double fcst = L_i * S_i[cycleindex];
     if (L_i * S_i[cycleindex] > 0)
       forecast->setTotalQuantity(
         DateRange(buckets[i-1], buckets[i]),
-        L_i * S_i[cycleindex]
+        fcst > 0.0 ? fcst : 0.0
       );
     if (++cycleindex >= period) cycleindex = 0;
   }
@@ -1149,11 +1148,10 @@ void Forecast::Croston::applyForecast
 (Forecast* forecast, const Date buckets[], unsigned int bucketcount)
 {
   // Loop over all buckets and set the forecast to a constant value
-  if (f_i < 0) return;
   for (unsigned int i = 1; i < bucketcount; ++i)
     forecast->setTotalQuantity(
       DateRange(buckets[i-1], buckets[i]),
-      f_i
+      f_i > 0.0 ? f_i : 0.0
     );
 }
 
