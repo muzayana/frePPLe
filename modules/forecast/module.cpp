@@ -19,8 +19,8 @@ namespace module_forecast
 Forecast::MapOfForecasts Forecast::ForecastDictionary;
 bool Forecast::Customer_Then_Item_Hierarchy = true;
 bool Forecast::Match_Using_Delivery_Operation = true;
-TimePeriod Forecast::Net_Late(0L);
-TimePeriod Forecast::Net_Early(0L);
+Duration Forecast::Net_Late(0L);
+Duration Forecast::Net_Early(0L);
 unsigned long Forecast::Forecast_Iterations(15L);
 double Forecast::Forecast_SmapeAlfa(0.95);
 unsigned long Forecast::Forecast_Skip(5);
@@ -118,9 +118,9 @@ int ForecastSolver::setattro(const Attribute& attr, const PythonObject& field)
   else if (attr.isA(tag_Net_MatchUsingDeliveryOperation))
     Forecast::setMatchUsingDeliveryOperation(field.getBool());
   else if (attr.isA(tag_Net_NetEarly))
-    Forecast::setNetEarly(field.getTimeperiod());
+    Forecast::setNetEarly(field.getDuration());
   else if (attr.isA(tag_Net_NetLate))
-    Forecast::setNetLate(field.getTimeperiod());
+    Forecast::setNetLate(field.getDuration());
   // Forecasting
   else if (attr.isA(tag_Iterations))
     Forecast::setForecastIterations(field.getInt());

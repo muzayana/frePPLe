@@ -141,7 +141,7 @@ int main(int argc, char* argv[])
   if (stringfrom.empty()) stringfrom = string(datefrom);
   string stringtill;
   Date datetill = Date::now();
-  datetill = datefrom + TimePeriod(86400*(365+90));
+  datetill = datefrom + Duration(86400*(365+90));
   datetill -= datetill.getSecondsMonth();
   cout << "\nValid till (" << datetill << "): ";
   getline(cin, stringtill);

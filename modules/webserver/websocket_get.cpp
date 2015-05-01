@@ -199,7 +199,7 @@ int WebServer::websocket_solve(struct mg_connection *conn, int bits,
   {
     // Regenerate the plan
     logger << "Completing the plan in backward planning mode" << endl;
-    SolverMRP solver("MRP");
+    SolverMRP solver;
     solver.setConstraints(15);
     // TODO pick up plan type arguments from the command
     // TODO During this planning no other users should connect or use the planboard
@@ -217,10 +217,10 @@ int WebServer::websocket_solve(struct mg_connection *conn, int bits,
   {
     // Regenerate the plan
     logger << "Completing the plan in backward planning mode" << endl;
-    TimePeriod delta(86400L * 3650L);
+    Duration delta(86400L * 3650L);
     for (Demand::iterator it = Demand::begin(); it != Demand::end(); ++it)
       it->setDue(it->getDue() - delta);
-    SolverMRP solver("MRP");
+    SolverMRP solver;
     solver.setConstraints(15);
     // TODO pick up plan type arguments from the command
     // TODO During this planning no other users should connect or use the planboard
@@ -244,10 +244,10 @@ int WebServer::websocket_solve(struct mg_connection *conn, int bits,
     {
       logger << "Planning demand '" << name << "' in backward mode" << endl;
       // Remove existing plan
-      OperatorDelete unplan("Unplan");
+      OperatorDelete unplan;
       unplan.solve(dem);
       // Create new plan
-      SolverMRP solver("MRP");
+      SolverMRP solver;
       solver.setConstraints(15);
       solver.setPlanType(1);
       solver.setLogLevel(2);
@@ -263,13 +263,13 @@ int WebServer::websocket_solve(struct mg_connection *conn, int bits,
     if (dem)
     {
       logger << "Planning demand '" << name << "' in forward mode" << endl;
-      TimePeriod delta(86400L * 3650L);
+      Duration delta(86400L * 3650L);
       dem->setDue(dem->getDue() - delta);
       // Remove existing plan
-      OperatorDelete unplan("Unplan");
+      OperatorDelete unplan;
       unplan.solve(dem);
       // Create new plan
-      SolverMRP solver("MRP");
+      SolverMRP solver;
       solver.setConstraints(15);
       solver.setPlanType(1);
       dem->solve(solver, &solver.getCommands());
@@ -286,7 +286,7 @@ int WebServer::websocket_solve(struct mg_connection *conn, int bits,
     {
       logger << "Unplanning demand '" << name << "'" << endl;
       // Remove existing plan
-      OperatorDelete unplan("Unplan");
+      OperatorDelete unplan;
       unplan.solve(dem);
       demandChanges = 1;
       changedDemand = dem;

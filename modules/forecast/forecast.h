@@ -969,7 +969,7 @@ class Forecast : public Demand
     virtual void setCustomer(Customer*);
 
     /* Update the maximum allowed lateness for planning. */
-    void setMaxLateness(TimePeriod);
+    void setMaxLateness(Duration);
 
     /* Update the minumum allowed shipment quantity for planning. */
     void setMinShipment(double);
@@ -1033,16 +1033,16 @@ class Forecast : public Demand
     {return Match_Using_Delivery_Operation;}
 
     /** Updates the value of the Net_Early module parameter. */
-    static void setNetEarly(TimePeriod t) {Net_Early = t;}
+    static void setNetEarly(Duration t) {Net_Early = t;}
 
     /** Returns the value of the Net_Early module parameter. */
-    static TimePeriod getNetEarly() {return Net_Early;}
+    static Duration getNetEarly() {return Net_Early;}
 
     /** Updates the value of the Net_Late module parameter. */
-    static void setNetLate(TimePeriod t) {Net_Late = t;}
+    static void setNetLate(Duration t) {Net_Late = t;}
 
     /** Returns the value of the Net_Late module parameter. */
-    static TimePeriod getNetLate() {return Net_Late;}
+    static Duration getNetLate() {return Net_Late;}
 
     /** Updates the value of the Forecast.smapeAlfa module parameter. */
     static void setForecastSmapeAlfa(double t)
@@ -1150,14 +1150,14 @@ class Forecast : public Demand
       * The default value is 0, meaning that only netting from the due
       * bucket is allowed.
       */
-    static TimePeriod Net_Late;
+    static Duration Net_Late;
 
     /** Store the maximum time difference between an order due date and a
       * forecast bucket to net from.<br>
       * The default value is 0, meaning that only netting from the due
       * bucket is allowed.
       */
-    static TimePeriod Net_Early;
+    static Duration Net_Early;
 
     /** Specifies the maximum number of iterations allowed for a forecast
       * method to tune its parameters.<br>
@@ -1337,7 +1337,7 @@ class ForecastSolver : public Solver
     friend class Forecast;
   public:
     /** Constructor. */
-    explicit ForecastSolver(const string& n) : Solver(n) {initType(metadata);}
+    explicit ForecastSolver() {initType(metadata);}
 
     /** This method handles the search for a matching forecast, followed
       * by decreasing the net forecast.
@@ -1352,8 +1352,8 @@ class ForecastSolver : public Solver
     virtual const MetaClass& getType() const {return *metadata;}
     static const MetaClass *metadata;
     virtual size_t getSize() const {return sizeof(ForecastSolver);}
-    void writeElement(Serializer*, const Keyword&, mode=DEFAULT) const;
     static int initialize();
+    static PyObject* create(PyTypeObject*, PyObject*, PyObject*);
 
     /** Generates a baseline forecast. */
     static PyObject* timeseries(PyObject *, PyObject *);

@@ -436,7 +436,7 @@ class SerializerJSON : public Serializer
     /** Writes an timeperiod element.<br>
       * Output: "TAG_T": "val"
       */
-    void writeElement(const Keyword& t, const TimePeriod d)
+    void writeElement(const Keyword& t, const Duration d)
     {
       if (first)
         first = false;
@@ -770,7 +770,7 @@ class JSONElement : public DataElement
 
     virtual unsigned long getUnsignedLong() const;
 
-    virtual TimePeriod getTimeperiod() const;
+    virtual Duration getDuration() const;
 
     virtual int getInt() const;
 

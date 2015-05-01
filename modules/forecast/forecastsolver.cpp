@@ -22,14 +22,57 @@ int ForecastSolver::initialize()
 {
   // Initialize the metadata
   metadata = new MetaClass("solver", "solver_forecast",
-      Object::createString<ForecastSolver>);
+      Object::createDefault<ForecastSolver>);
 
   // Initialize the Python class
-  FreppleClass<ForecastSolver,Solver>::getType().addMethod(
+  PythonType& x = FreppleClass<ForecastSolver, Solver>::getType();
+  x.setName("solver_forecast");
+  x.setDoc("frePPLe solver_forecast");
+  x.supportgetattro();
+  x.supportsetattro();
+  x.supportcreate(create);
+  x.addMethod(
     "timeseries", ForecastSolver::timeseries, METH_VARARGS,
     "Set the future based on the timeseries of historical data"
     );
-  return FreppleClass<ForecastSolver,Solver>::initialize();
+  const_cast<MetaClass*>(metadata)->pythonClass = x.type_object();
+  return x.typeReady();
+}
+
+
+PyObject* ForecastSolver::create(PyTypeObject* pytype, PyObject* args, PyObject* kwds)
+{
+  try
+  {
+    // Create the solver
+    ForecastSolver *s = new ForecastSolver();
+
+    // Iterate over extra keywords, and set attributes.   @todo move this responsibility to the readers...
+    PyObject *key, *value;
+    Py_ssize_t pos = 0;
+    while (PyDict_Next(kwds, &pos, &key, &value))
+    {
+      PythonObject field(value);
+      PyObject* key_utf8 = PyUnicode_AsUTF8String(key);
+      Attribute attr(PyBytes_AsString(key_utf8));
+      Py_DECREF(key_utf8);
+      int result = s->setattro(attr, field);
+      if (result && !PyErr_Occurred())
+        PyErr_Format(PyExc_AttributeError,
+            "attribute '%S' on '%s' can't be updated",
+            key, Py_TYPE(s)->tp_name);
+    };
+
+    // Return the object. The reference count doesn't need to be increased
+    // as we do with other objects, because we want this object to be available
+    // for the garbage collector of Python.
+    return static_cast<PyObject*>(s);
+  }
+  catch (...)
+  {
+    PythonType::evalException();
+    return NULL;
+  }
 }
 
 
@@ -40,25 +83,6 @@ bool ForecastSolver::callback(Demand* l, const Signal a)
 
   // Always return 'okay'
   return true;
-}
-
-
-void ForecastSolver::writeElement(Serializer *o, const Keyword& tag, mode m) const
-{
-  // Writing a reference
-  if (m == REFERENCE)
-  {
-    o->writeElement
-    (tag, Tags::tag_name, getName(), Tags::tag_type, getType().type);
-    return;
-  }
-
-  // Write the complete object
-  if (m != NOHEAD) o->BeginObject
-    (tag, Tags::tag_name, getName(), Tags::tag_type, getType().type);
-
-  // Write the parent class
-  Solver::writeElement(o, tag, NOHEAD);
 }
 
 
@@ -194,7 +218,7 @@ void ForecastSolver::netDemandFromForecast(const Demand* dmd, Forecast* fcst)
 
   // Find the bucket with the due date
   ForecastBucket* zerobucket = NULL;
-  for (Forecast::memberIterator i = fcst->beginMember(); i != fcst->end(); ++i)
+  for (Forecast::memberIterator i = fcst->getMembers(); i != fcst->end(); ++i)
   {
     zerobucket = dynamic_cast<ForecastBucket*>(&*i);
     if (zerobucket && zerobucket->getDueRange().within(dmd->getDue())) break;
