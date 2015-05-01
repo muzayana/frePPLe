@@ -1485,10 +1485,10 @@ class GridPivot(GridReport):
     count = -1
     for (index, hidden, width) in rows:
       count += 1
-      result.append("{%s,width:%s,counter:%d,frozen:true%s%s,searchoptions:{searchhidden: true},fixed:true}" % (
+      result.append("{%s,width:%s,counter:%d,frozen:true%s,hidden:%s,searchoptions:{searchhidden: true},fixed:true}" % (
         cls.rows[index], width, index,
         is_popup and ',popup:true' or '',
-        hidden and not cls.rows[index].hidden and ',hidden:true' or ''
+        hidden and 'true' or 'false'
         ))
     if mode == "graph":
       result.append(
