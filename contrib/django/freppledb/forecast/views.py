@@ -25,8 +25,8 @@ from django.utils.encoding import force_text
 from freppledb.forecast.models import Forecast, ForecastDemand, ForecastPlan
 from freppledb.common.db import python_date
 from freppledb.common.models import BucketDetail
-from freppledb.common.report import UnicodeReader, GridPivot, GridFieldText, GridFieldInteger, GridFieldDate
-from freppledb.common.report import GridReport, GridFieldBool, GridFieldLastModified
+from freppledb.common.report import GridPivot, GridFieldText, GridFieldInteger, GridFieldDate
+from freppledb.common.report import EncodedCSVReader, GridReport, GridFieldBool, GridFieldLastModified
 from freppledb.common.report import GridFieldChoice, GridFieldNumber, GridFieldDateTime, GridFieldDuration
 from freppledb.input.views import PathReport
 from freppledb.input.models import Demand
@@ -290,7 +290,7 @@ class OverviewReport(GridPivot):
       with transaction.atomic(using=request.database):
 
         # Loop through the data records
-        for row in UnicodeReader(request.FILES['csv_file'].read(), delimiter=delimiter):
+        for row in EncodedCSVReader(request.FILES['csv_file'], delimiter=delimiter):
           rownumber += 1
 
           ### Case 1: The first line is read as a header line

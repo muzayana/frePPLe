@@ -1776,7 +1776,7 @@ class GridPivot(GridReport):
       mycrosses = [ f for f in reportclass.crosses if f[1].get('visible', True) ]
 
     # Write a header row
-    fields = [ force_unicode(f.title).title() for f in myrows if f.name ]
+    fields = [ force_text(f.title).title() for f in myrows if f.name ]
     if listformat:
       fields.extend([ capfirst(force_text(_('bucket'))) ])
       fields.extend([ capfirst(_(f[1].get('title', _(f[0])))) for f in mycrosses ])
