@@ -12,7 +12,7 @@
 
 Summary: Free Production PLanning
 Name: frepple
-Version: 2.3.2
+Version: 2.4
 Release: 1%{?dist}
 License: Proprietary
 Group: Applications/Productivity
