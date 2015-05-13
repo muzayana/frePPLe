@@ -23,7 +23,7 @@ double Forecast::Forecast_maxDeviation = 4.0;
 
 
 void Forecast::generateFutureValues(
-  const double history[], unsigned int historycount,
+  double history[], unsigned int historycount,
   const Date buckets[], unsigned int bucketcount,
   ForecastSolver* solver)
 {
@@ -41,7 +41,7 @@ void Forecast::generateFutureValues(
   // Eg when demand only starts in the middle of horizon, we only want to
   // use the second part of the horizon for forecasting. The zeros before the
   // demand start would distort the results.
-  while (historycount >= 1 && *history == 0.0)
+  while (historycount >= 1 && *history <= 0.0)
   {
     ++history;
     --historycount;
@@ -67,7 +67,14 @@ void Forecast::generateFutureValues(
   {
     unsigned int zero = 0;
     for (unsigned long i = 0; i < historycount; ++i)
-      if (!history[i]) ++zero;
+    {
+      // Correct negative demands to be 0
+      if (history[i] < 0)
+        history[i] = 0.0;
+      // Count the number of buckets without demand
+      if (!history[i])
+        ++zero;
+    }
     if (zero > Croston::getMinIntermittence() * historycount)
     {
       // If there are too many zeros: use croston or moving average.
@@ -201,11 +208,26 @@ void Forecast::MovingAverage::applyForecast
 (Forecast* forecast, const Date buckets[], unsigned int bucketcount)
 {
   // Loop over all buckets and set the forecast to a constant value
-  for (unsigned int i = 1; i < bucketcount; ++i)
-    forecast->setTotalQuantity(
-      DateRange(buckets[i-1], buckets[i]),
-      avg > 0.0 ? avg : 0.0
-    );
+  if (forecast->discrete)
+  {
+    double carryover = 0.0;
+    for (unsigned int i = 1; i < bucketcount; ++i)
+    {
+      carryover += avg;
+      double val = ceil(carryover - 0.5);
+      carryover -= val;
+      forecast->setTotalQuantity(
+        DateRange(buckets[i-1], buckets[i]),
+        val > 0.0 ? val : 0.0
+      );
+    }
+  }
+  else
+    for (unsigned int i = 1; i < bucketcount; ++i)
+      forecast->setTotalQuantity(
+        DateRange(buckets[i-1], buckets[i]),
+        avg > 0.0 ? avg : 0.0
+      );
 }
 
 
@@ -384,11 +406,26 @@ void Forecast::SingleExponential::applyForecast
 (Forecast* forecast, const Date buckets[], unsigned int bucketcount)
 {
   // Loop over all buckets and set the forecast to a constant value
-  for (unsigned int i = 1; i < bucketcount; ++i)
-    forecast->setTotalQuantity(
-      DateRange(buckets[i-1], buckets[i]),
-      f_i > 0.0 ? f_i : 0.0
-    );
+  if (forecast->discrete)
+  {
+    double carryover = 0.0;
+    for (unsigned int i = 1; i < bucketcount; ++i)
+    {
+      carryover += f_i;
+      double val = ceil(carryover - 0.5);
+      carryover -= val;
+      forecast->setTotalQuantity(
+        DateRange(buckets[i-1], buckets[i]),
+        val > 0.0 ? val : 0.0
+      );
+    }
+  }
+  else
+    for (unsigned int i = 1; i < bucketcount; ++i)
+      forecast->setTotalQuantity(
+        DateRange(buckets[i-1], buckets[i]),
+        f_i > 0.0 ? f_i : 0.0
+      );
 }
 
 
@@ -632,16 +669,32 @@ void Forecast::DoubleExponential::applyForecast
 (Forecast* forecast, const Date buckets[], unsigned int bucketcount)
 {
   // Loop over all buckets and set the forecast to a linearly changing value
-  for (unsigned int i = 1; i < bucketcount; ++i)
+  if (forecast->discrete)
   {
-    constant_i += trend_i;
-    trend_i *= dampenTrend; // Reduce slope in the future
-    if (constant_i > 0)
+    double carryover = 0.0;
+    for (unsigned int i = 1; i < bucketcount; ++i)
+    {
+      constant_i += trend_i;
+      trend_i *= dampenTrend; // Reduce slope in the future
+      carryover += constant_i;
+      double val = ceil(carryover - 0.5);
+      carryover -= val;
+      forecast->setTotalQuantity(
+        DateRange(buckets[i-1], buckets[i]),
+        val > 0.0 ? val : 0.0
+      );
+    }
+  }
+  else
+    for (unsigned int i = 1; i < bucketcount; ++i)
+    {
+      constant_i += trend_i;
+      trend_i *= dampenTrend; // Reduce slope in the future
       forecast->setTotalQuantity(
         DateRange(buckets[i-1], buckets[i]),
         constant_i > 0.0 ? constant_i : 0.0
       );
-  }
+    }
 }
 
 
@@ -997,18 +1050,36 @@ void Forecast::Seasonal::applyForecast
 (Forecast* forecast, const Date buckets[], unsigned int bucketcount)
 {
   // Loop over all buckets and set the forecast to a linearly changing value
-  for (unsigned int i = 1; i < bucketcount; ++i)
+  if (forecast->discrete)
   {
-    L_i += T_i;
-    T_i *= dampenTrend; // Reduce slope in the future
-    double fcst = L_i * S_i[cycleindex];
-    if (L_i * S_i[cycleindex] > 0)
+    double carryover = 0.0;
+    for (unsigned int i = 1; i < bucketcount; ++i)
+    {
+      L_i += T_i;
+      T_i *= dampenTrend; // Reduce slope in the future
+      carryover += L_i * S_i[cycleindex];
+      double val = ceil(carryover - 0.5);
+      carryover -= val;
       forecast->setTotalQuantity(
         DateRange(buckets[i-1], buckets[i]),
-        fcst > 0.0 ? fcst : 0.0
+        val > 0.0 ? val : 0.0
       );
-    if (++cycleindex >= period) cycleindex = 0;
+      if (++cycleindex >= period) cycleindex = 0;
+    }
   }
+  else
+    for (unsigned int i = 1; i < bucketcount; ++i)
+    {
+      L_i += T_i;
+      T_i *= dampenTrend; // Reduce slope in the future
+      double fcst = L_i * S_i[cycleindex];
+      if (L_i * S_i[cycleindex] > 0)
+        forecast->setTotalQuantity(
+          DateRange(buckets[i-1], buckets[i]),
+          fcst > 0.0 ? fcst : 0.0
+        );
+      if (++cycleindex >= period) cycleindex = 0;
+    }
 }
 
 
@@ -1153,11 +1224,26 @@ void Forecast::Croston::applyForecast
 (Forecast* forecast, const Date buckets[], unsigned int bucketcount)
 {
   // Loop over all buckets and set the forecast to a constant value
-  for (unsigned int i = 1; i < bucketcount; ++i)
-    forecast->setTotalQuantity(
-      DateRange(buckets[i-1], buckets[i]),
-      f_i > 0.0 ? f_i : 0.0
-    );
+  if (forecast->discrete)
+  {
+    double carryover = 0.0;
+    for (unsigned int i = 1; i < bucketcount; ++i)
+    {
+      carryover += f_i;
+      double val = ceil(carryover - 0.5);
+      carryover -= val;
+      forecast->setTotalQuantity(
+        DateRange(buckets[i-1], buckets[i]),
+        val > 0.0 ? val : 0.0
+      );
+    }
+  }
+  else
+    for (unsigned int i = 1; i < bucketcount; ++i)
+      forecast->setTotalQuantity(
+        DateRange(buckets[i-1], buckets[i]),
+        f_i > 0.0 ? f_i : 0.0
+      );
 }
 
 }       // end namespace

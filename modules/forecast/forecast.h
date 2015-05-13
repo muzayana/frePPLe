@@ -989,7 +989,7 @@ class Forecast : public Demand
       * each of the time buckets passed.
       */
     void generateFutureValues
-    (const double[], unsigned int, const Date[], unsigned int, ForecastSolver*);
+    (double[], unsigned int, const Date[], unsigned int, ForecastSolver*);
 
     /** Updates the due date of the demand. Lower numbers indicate a
       * higher priority level. The method also updates the priority
