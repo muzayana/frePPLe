@@ -761,7 +761,7 @@ void Forecast::Seasonal::detectCycle(const double history[], unsigned int count)
     }
     if (p > min_period + 2
       && prevprev > prevprevprev * 1.1
-      && fabs(prevprev - prev) < 0.05
+      && fabs(prevprev - prev) < 0.1
       && prev > correlation * 1.1
       )
     {
@@ -811,7 +811,7 @@ double Forecast::Seasonal::generateForecast  // TODO No outlier detection in thi
   double best_S_i[24], best_L_i, best_T_i;
 
   // Compute initialization values for the timeseries and seasonal index.
-  // L_i = average over first cycle
+  // L_i = average over first cycle, corrected for trend within cycle
   // T_i = average delta measured in second cycle
   // S_i[index] = seasonality index, measured over all complete cycles
   double L_i_initial = 0.0;
@@ -835,12 +835,13 @@ double Forecast::Seasonal::generateForecast  // TODO No outlier detection in thi
       for (short j = 0; j < period; ++j)
         initial_S_i[j] += history[i+j] / cyclesum * period;
   }
-  for (unsigned long i = 0; i < period; ++i)
+  for (unsigned int i = 0; i < period; ++i)
     initial_S_i[i] /= cyclecount;
 
   // Iterations
   double L_i_prev;
   unsigned int iteration = 1, boundarytested = 0;
+  double cyclesum;
   for (; iteration <= Forecast::getForecastIterations(); ++iteration)
   {
     // Initialize variables
@@ -849,36 +850,43 @@ double Forecast::Seasonal::generateForecast  // TODO No outlier detection in thi
     d_T_d_alfa = d_T_d_beta = 0.0;
     L_i = L_i_initial;
     T_i = T_i_initial;
+    cyclesum = 0.0;
     for (unsigned short i = 0; i < period; ++i)
     {
       S_i[i] = initial_S_i[i];
       d_S_d_alfa[i] = 0.0;
       d_S_d_beta[i] = 0.0;
+      cyclesum += history[i];
     }
 
     // Calculate the forecast and forecast error.
     // We also compute the sums required for the Marquardt optimization.
+    unsigned int prevcycleindex = period - 1;
     cycleindex = 0;
     for (unsigned int i = period; i <= count; ++i)
     {
       // Base calculations
       L_i_prev = L_i;
-      if (S_i[cycleindex] > ROUNDING_ERROR)
-        L_i = alfa * history[i-1] / S_i[cycleindex] + (1 - alfa) * (L_i + T_i);
+      cyclesum += history[i-1] - history[i-period];
+      if (S_i[prevcycleindex] > ROUNDING_ERROR)
+        // Textbook approach for Holt-Winters multiplicative method:
+        // L_i = alfa * history[i-1] / S_i[prevcycleindex] + (1 - alfa) * (L_i + T_i);
+        // FrePPLe uses a variation to compute the constant component.
+        // The alternative gives more stable and intuitive results for data that show variability.
+        L_i = alfa * cyclesum / period + (1 - alfa) * (L_i + T_i);
       else
         L_i = (1 - alfa) * (L_i + T_i);
       T_i = beta * (L_i - L_i_prev) + (1 - beta) * T_i;
-      double factor = - S_i[cycleindex];
+      double factor = - S_i[prevcycleindex];
       if (L_i)
-        S_i[cycleindex] = gamma * history[i-1] / L_i + (1 - gamma) * S_i[cycleindex];
-      if (S_i[cycleindex] < 0.0)
-        S_i[cycleindex] = 0.0;
+        S_i[prevcycleindex] = gamma * history[i-1] / L_i + (1 - gamma) * S_i[prevcycleindex];
+      if (S_i[prevcycleindex] < 0.0)
+        S_i[prevcycleindex] = 0.0;
 
-      // Rescale the seasonal indexes to add up to 1
-      factor = period / (period + factor + S_i[cycleindex]);
-      if (factor)
-        for (unsigned short i2 = 0; i2 < period; ++i2)
-          S_i[i2] /= factor;
+      // Rescale the seasonal indexes to add up to "period"
+      factor = period / (period + factor + S_i[prevcycleindex]);
+      for (unsigned short i2 = 0; i2 < period; ++i2)
+        S_i[i2] *= factor;
 
       if (i == count) break;
       // Calculations for the delta of the parameters
@@ -886,15 +894,15 @@ double Forecast::Seasonal::generateForecast  // TODO No outlier detection in thi
       d_L_d_beta_prev = d_L_d_beta;
       d_T_d_alfa_prev = d_T_d_alfa;
       d_T_d_beta_prev = d_T_d_beta;
-      d_S_d_alfa_prev = d_S_d_alfa[cycleindex];
-      d_S_d_beta_prev = d_S_d_beta[cycleindex];
+      d_S_d_alfa_prev = d_S_d_alfa[prevcycleindex];
+      d_S_d_beta_prev = d_S_d_beta[prevcycleindex];
       if (S_i[cycleindex] > ROUNDING_ERROR)
       {
-        d_L_d_alfa = history[i-1] / S_i[cycleindex]
-           - alfa * history[i-1] / S_i[cycleindex] /  S_i[cycleindex] * d_S_d_alfa_prev
+        d_L_d_alfa = history[i-1] / S_i[prevcycleindex]
+           - alfa * history[i-1] / S_i[prevcycleindex] /  S_i[prevcycleindex] * d_S_d_alfa_prev
            - (L_i + T_i)
            + (1 - alfa) * (d_L_d_alfa_prev + d_T_d_alfa_prev);
-        d_L_d_beta = - alfa * history[i-1] / S_i[cycleindex] /  S_i[cycleindex] * d_S_d_beta_prev
+        d_L_d_beta = - alfa * history[i-1] / S_i[prevcycleindex] /  S_i[prevcycleindex] * d_S_d_beta_prev
           + (1 - alfa) * (d_L_d_beta_prev + d_T_d_beta_prev);
       }
       else
@@ -905,15 +913,15 @@ double Forecast::Seasonal::generateForecast  // TODO No outlier detection in thi
       }
       if (L_i > ROUNDING_ERROR)
       {
-        d_S_d_alfa[cycleindex] = - gamma * history[i-1] / L_i / L_i * d_L_d_alfa_prev
+        d_S_d_alfa[prevcycleindex] = - gamma * history[i-1] / L_i / L_i * d_L_d_alfa_prev
           + (1 - gamma) * d_S_d_alfa_prev;
-        d_S_d_beta[cycleindex] = - gamma * history[i-1] / L_i / L_i * d_L_d_beta_prev
+        d_S_d_beta[prevcycleindex] = - gamma * history[i-1] / L_i / L_i * d_L_d_beta_prev
           + (1 - gamma) * d_S_d_beta_prev;
       }
       else
       {
-        d_S_d_alfa[cycleindex] = (1 - gamma) * d_S_d_alfa_prev;
-        d_S_d_beta[cycleindex] = (1 - gamma) * d_S_d_beta_prev;
+        d_S_d_alfa[prevcycleindex] = (1 - gamma) * d_S_d_alfa_prev;
+        d_S_d_beta[prevcycleindex] = (1 - gamma) * d_S_d_beta_prev;
       }
       d_T_d_alfa = beta * (d_L_d_alfa - d_L_d_alfa_prev)
         + (1 - beta) * d_T_d_alfa_prev;
@@ -921,8 +929,8 @@ double Forecast::Seasonal::generateForecast  // TODO No outlier detection in thi
         + beta * (d_L_d_beta - d_L_d_beta_prev)
         - T_i
         + (1 - beta) * d_T_d_beta_prev;
-      d_forecast_d_alfa = (d_L_d_alfa + d_T_d_alfa) * S_i[cycleindex] + (L_i + T_i) * d_S_d_alfa[cycleindex];
-      d_forecast_d_beta = (d_L_d_beta + d_T_d_beta) * S_i[cycleindex] + (L_i + T_i) * d_S_d_beta[cycleindex];
+      d_forecast_d_alfa = (d_L_d_alfa + d_T_d_alfa) * S_i[prevcycleindex] + (L_i + T_i) * d_S_d_alfa[prevcycleindex];
+      d_forecast_d_beta = (d_L_d_beta + d_T_d_beta) * S_i[prevcycleindex] + (L_i + T_i) * d_S_d_beta[prevcycleindex];
       forecast_i = (L_i + T_i) * S_i[cycleindex];
       sum11 += weight[i] * d_forecast_d_alfa * d_forecast_d_alfa;
       sum12 += weight[i] * d_forecast_d_alfa * d_forecast_d_beta;
@@ -937,6 +945,7 @@ double Forecast::Seasonal::generateForecast  // TODO No outlier detection in thi
           error_smape += fabs(fcst - history[i]) / (fcst + history[i]) * weight[i];
       }
       if (++cycleindex >= period) cycleindex = 0;
+      if (++prevcycleindex >= period) prevcycleindex = 0;
     }
 
     // Better than earlier iterations?
