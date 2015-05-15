@@ -75,13 +75,13 @@ def measure(param, loglevel):
     Seasonal_minAlfa=0.02,
     Seasonal_maxAlfa=0.25,
     Seasonal_minBeta=0.02,
-    Seasonal_maxBeta=0.25,
-    Seasonal_gamma=0.03,
+    Seasonal_maxBeta=0.10,
+    Seasonal_gamma=0.02,
     Seasonal_minPeriod=2,
     Seasonal_maxPeriod=15,
     Seasonal_minAutocorrelation=0.5,
     Seasonal_maxAutocorrelation=0.8,
-    Seasonal_dampenTrend=0.7,
+    Seasonal_dampenTrend=0.8,
     Outlier_maxDeviation=2
     )
 
