@@ -77,9 +77,12 @@ void Forecast::generateFutureValues(
     }
     if (zero > Croston::getMinIntermittence() * historycount)
     {
-      // If there are too many zeros: use croston or moving average.
+      // If there are too many zeros: use croston, moving average or seasonal.
       if (methods & METHOD_CROSTON)
         qualifiedmethods[numberOfMethods++] = &croston;
+      // Add seasonal only if there are at least 3 data points
+      if (methods & METHOD_SEASONAL && zero < historycount - 3)
+        qualifiedmethods[numberOfMethods++] = &seasonal;
     }
     else
     {
@@ -175,22 +178,15 @@ double Forecast::MovingAverage::generateForecast
   double error_smape = 0.0;
 
   // Calculate the forecast and forecast error.
+  // For the first buckets we also divide by the order. As a result the
+  // forecast gradually grows to a stable value over these first buckets,
+  // which is helpful for new products.
   for (unsigned int i = 1; i <= count; ++i)
   {
     double sum = 0.0;
-    if (i > order)
-    {
-      for (unsigned int j = 0; j < order; ++j)
-        sum += history[i-j-1];
-      avg = sum / order;
-    }
-    else
-    {
-      // For the first few values
-      for (unsigned int j = 0; j < i; ++j)
-        sum += history[i-j-1];
-      avg = sum / i;
-    }
+    for (unsigned int j = 0; j < order && j < i; ++j)
+      sum += history[i-j-1];
+    avg = sum / order;
     if (i >= fcst->getForecastSkip() && i < count && avg + history[i] > ROUNDING_ERROR)
       error_smape += fabs(avg - history[i]) / (avg + history[i]) * weight[i];
   }
@@ -876,6 +872,7 @@ double Forecast::Seasonal::generateForecast  // TODO No outlier detection in thi
         L_i = alfa * cyclesum / period + (1 - alfa) * (L_i + T_i);
       else
         L_i = (1 - alfa) * (L_i + T_i);
+      if (L_i < 0) L_i = 0.0;
       T_i = beta * (L_i - L_i_prev) + (1 - beta) * T_i;
       double factor = - S_i[prevcycleindex];
       if (L_i)
@@ -896,21 +893,11 @@ double Forecast::Seasonal::generateForecast  // TODO No outlier detection in thi
       d_T_d_beta_prev = d_T_d_beta;
       d_S_d_alfa_prev = d_S_d_alfa[prevcycleindex];
       d_S_d_beta_prev = d_S_d_beta[prevcycleindex];
-      if (S_i[cycleindex] > ROUNDING_ERROR)
-      {
-        d_L_d_alfa = history[i-1] / S_i[prevcycleindex]
-           - alfa * history[i-1] / S_i[prevcycleindex] /  S_i[prevcycleindex] * d_S_d_alfa_prev
-           - (L_i + T_i)
-           + (1 - alfa) * (d_L_d_alfa_prev + d_T_d_alfa_prev);
-        d_L_d_beta = - alfa * history[i-1] / S_i[prevcycleindex] /  S_i[prevcycleindex] * d_S_d_beta_prev
-          + (1 - alfa) * (d_L_d_beta_prev + d_T_d_beta_prev);
-      }
-      else
-      {
-        d_L_d_alfa = - (L_i + T_i)
-           + (1 - alfa) * (d_L_d_alfa_prev + d_T_d_alfa_prev);
-        d_L_d_beta = (1 - alfa) * (d_L_d_beta_prev + d_T_d_beta_prev);
-      }
+      d_L_d_alfa = cyclesum / period
+        - (L_i + T_i)
+        + (1 - alfa) * (d_L_d_alfa_prev + d_T_d_alfa_prev);
+      d_L_d_beta = (1 - alfa) * (d_L_d_beta_prev + d_T_d_beta_prev);
+
       if (L_i > ROUNDING_ERROR)
       {
         d_S_d_alfa[prevcycleindex] = - gamma * history[i-1] / L_i / L_i * d_L_d_alfa_prev
@@ -929,8 +916,8 @@ double Forecast::Seasonal::generateForecast  // TODO No outlier detection in thi
         + beta * (d_L_d_beta - d_L_d_beta_prev)
         - T_i
         + (1 - beta) * d_T_d_beta_prev;
-      d_forecast_d_alfa = (d_L_d_alfa + d_T_d_alfa) * S_i[prevcycleindex] + (L_i + T_i) * d_S_d_alfa[prevcycleindex];
-      d_forecast_d_beta = (d_L_d_beta + d_T_d_beta) * S_i[prevcycleindex] + (L_i + T_i) * d_S_d_beta[prevcycleindex];
+      d_forecast_d_alfa = (d_L_d_alfa + d_T_d_alfa) * S_i[cycleindex] + (L_i + T_i) * d_S_d_alfa[cycleindex];
+      d_forecast_d_beta = (d_L_d_beta + d_T_d_beta) * S_i[cycleindex] + (L_i + T_i) * d_S_d_beta[cycleindex];
       forecast_i = (L_i + T_i) * S_i[cycleindex];
       sum11 += weight[i] * d_forecast_d_alfa * d_forecast_d_alfa;
       sum12 += weight[i] * d_forecast_d_alfa * d_forecast_d_beta;
@@ -1051,7 +1038,7 @@ double Forecast::Seasonal::generateForecast  // TODO No outlier detection in thi
   // If the autocorrelation is high enough (ie there is a very obvious
   // seasonal pattern) we cheat an return 0.0 as the error.
   // This enforces the use of the seasonal method.
-  return (autocorrelation > min_autocorrelation) ? 0.0 : best_smape;
+  return (autocorrelation > max_autocorrelation) ? -1.0 : best_smape;
 }
 
 
@@ -1173,7 +1160,7 @@ double Forecast::Croston::generateForecast
           if (history_i > f_i + Forecast::Forecast_maxDeviation * standarddeviation)
             history_i = f_i + Forecast::Forecast_maxDeviation * standarddeviation;
         }
-        if (i >= fcst->getForecastSkip() && p_i > 0) // Don't measure during the warmup period
+        if (i >= fcst->getForecastSkip()) // Don't measure during the warmup period
         {
           if (f_i + history[i] > ROUNDING_ERROR)
             error_smape += fabs(f_i - history_i) / (f_i + history_i) * weight[i];

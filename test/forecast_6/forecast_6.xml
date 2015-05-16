@@ -66,7 +66,7 @@ def measure(param, loglevel):
     Iterations=15,
     Skip=5,
     SingleExponential_minAlfa=0.01,
-    SingleExponential_maxAlfa=0.8,
+    SingleExponential_maxAlfa=0.65,
     DoubleExponential_minAlfa=0.01,
     DoubleExponential_maxAlfa=0.8,
     DoubleExponential_minGamma=0.01,
