@@ -638,7 +638,7 @@ double Forecast::DoubleExponential::generateForecast
     if ((gamma == min_gamma || gamma == max_gamma)
         && (alfa == min_alfa || alfa == max_alfa))
     {
-      if (boundarytested++ > 5) break;
+      if (boundarytested++ > 3) break;
     }
   }
 
@@ -807,7 +807,7 @@ double Forecast::Seasonal::generateForecast  // TODO No outlier detection in thi
   double best_S_i[24], best_L_i, best_T_i;
 
   // Compute initialization values for the timeseries and seasonal index.
-  // L_i = average over first cycle, corrected for trend within cycle
+  // L_i = average over first cycle
   // T_i = average delta measured in second cycle
   // S_i[index] = seasonality index, measured over all complete cycles
   double L_i_initial = 0.0;
@@ -819,7 +819,7 @@ double Forecast::Seasonal::generateForecast  // TODO No outlier detection in thi
     initial_S_i[i] = 0.0;
   }
   T_i_initial /= period;
-  L_i_initial = L_i_initial / period - period / 2 * T_i_initial;
+  L_i_initial = L_i_initial / period;
   unsigned short cyclecount = 0;
   for (unsigned int i = 0; i + period <= count; i += period)
   {
@@ -852,7 +852,7 @@ double Forecast::Seasonal::generateForecast  // TODO No outlier detection in thi
       S_i[i] = initial_S_i[i];
       d_S_d_alfa[i] = 0.0;
       d_S_d_beta[i] = 0.0;
-      cyclesum += history[i];
+      if (i) cyclesum += history[i-1];
     }
 
     // Calculate the forecast and forecast error.
@@ -863,15 +863,13 @@ double Forecast::Seasonal::generateForecast  // TODO No outlier detection in thi
     {
       // Base calculations
       L_i_prev = L_i;
-      cyclesum += history[i-1] - history[i-period];
-      if (S_i[prevcycleindex] > ROUNDING_ERROR)
-        // Textbook approach for Holt-Winters multiplicative method:
-        // L_i = alfa * history[i-1] / S_i[prevcycleindex] + (1 - alfa) * (L_i + T_i);
-        // FrePPLe uses a variation to compute the constant component.
-        // The alternative gives more stable and intuitive results for data that show variability.
-        L_i = alfa * cyclesum / period + (1 - alfa) * (L_i + T_i);
-      else
-        L_i = (1 - alfa) * (L_i + T_i);
+      cyclesum += history[i-1];
+      if (i > period) cyclesum -= history[i-1-period];
+      // Textbook approach for Holt-Winters multiplicative method:
+      // L_i = alfa * history[i-1] / S_i[prevcycleindex] + (1 - alfa) * (L_i + T_i);
+      // FrePPLe uses a variation to compute the constant component.
+      // The alternative gives more stable and intuitive results for data that show variability.
+      L_i = alfa * cyclesum / period + (1 - alfa) * (L_i + T_i);
       if (L_i < 0) L_i = 0.0;
       T_i = beta * (L_i - L_i_prev) + (1 - beta) * T_i;
       double factor = - S_i[prevcycleindex];
@@ -1002,7 +1000,7 @@ double Forecast::Seasonal::generateForecast  // TODO No outlier detection in thi
     if ((beta == min_beta || beta == max_beta)
         && (alfa == min_alfa || alfa == max_alfa))
     {
-      if (boundarytested++ > 5) break;
+      if (boundarytested++ > 3) break;
     }
   }
 
