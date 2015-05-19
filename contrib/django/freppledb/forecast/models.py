@@ -758,7 +758,7 @@ class Forecast(AuditModel):
                 else:
                   parents[j].ordersadjustment -= delta
                   parents[j].ordersadjustmentvalue -= deltavalue
-      elif curOrdersTotal > 0:
+      elif curOrdersTotalValue > 0:
         # Case D: Scale all existing records respecting their proportion of the total
         factor = ordersadj / curOrdersTotalValue
         for i in leafPlan:
