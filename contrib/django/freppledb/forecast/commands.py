@@ -228,7 +228,12 @@ def generateBaseline(solver_fcst, cursor):
        AND calendarbucket.startdate = forecastplan.startdate
      WHERE calendarbucket.startdate >= '%s'
       AND calendarbucket.startdate < '%s'
-     ORDER BY forecast.name, calendarbucket.startdate''' % (frepple.settings.current - timedelta(days=horizon_history), frepple.settings.current))
+      AND forecast.planned = 't'
+     ORDER BY forecast.name, calendarbucket.startdate''' % (
+       frepple.settings.current - timedelta(days=horizon_history),
+       frepple.settings.current
+       )
+     )
   first = True
   for rec in cursor.fetchall():
     fcst = frepple.demand(name=rec[0])
@@ -253,6 +258,7 @@ def generateBaseline(solver_fcst, cursor):
     set forecastbaseline=0, forecastbaselinevalue=0, method=null
     where startdate>='%s'
       and (forecastbaseline<>0 or forecastbaselinevalue<>0 or method is not null)
+      and exists (select 1 from forecast where name = forecastplan.forecast_id and forecast.planned = 't')
     ''' % frepple.settings.current)
   cursor.executemany('''
     update forecastplan
@@ -266,7 +272,7 @@ def generateBaseline(solver_fcst, cursor):
         i.owner.name, str(i.startdate)
       )
       for i in frepple.demands()
-      if isinstance(i, frepple.demand_forecastbucket) and i.owner.methods != 0 and i.total != 0.0
+      if isinstance(i, frepple.demand_forecastbucket) and i.total != 0.0
     ])
 
 
@@ -302,6 +308,7 @@ def loadForecastValues(cursor):
      where calendarbucket.enddate >= '%s'
        and calendarbucket.startdate < '%s'
        and forecastplan.forecasttotal > 0
+       and forecast.planned = 't'
      order by forecast.name, calendarbucket.startdate''' % (frepple.settings.current, frepple.settings.current + timedelta(days=horizon_future)))
   for fcstname, start, qty in cursor.fetchall():
     frepple.demand(name=fcstname).setQuantity(qty, start, start, False)

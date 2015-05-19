@@ -134,8 +134,8 @@ function drawGraphs(jsondata)
         });
       if (tmp[5] > max_y && 5 in fields)
          max_y = tmp[5];
-      if (tmp[0] > max_y && 0 in fields)
-        max_y = tmp[0];
+      if (tmp[0] + tmp[2] > max_y && 0 in fields)
+        max_y = tmp[0] + tmp[2];
       if (tmp[8] + tmp[9] > max_y && 8 in fields && 9 in fields)
         max_y = tmp[8] + tmp[9];
       else if (tmp[8] > max_y && 8 in fields)
@@ -243,7 +243,7 @@ function drawGraphs(jsondata)
     {
       var line = d3.svg.line()
         .x(function(d) { return x(timebuckets[d['bucket']]['name']) + x_width / 2; })
-        .y(function(d) { return y(d['orderstotal']); });
+        .y(function(d) { return y(d['orderstotal'] + d['ordersadjustment']); });
       svg.append("svg:path")
         .attr('class', 'graphline')
         .attr("stroke","#8BBA00")
