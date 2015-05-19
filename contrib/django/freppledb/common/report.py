@@ -1509,7 +1509,39 @@ class GridPivot(GridReport):
 
 
   @classmethod
-  def _apply_sort(reportclass, request, prefs=None):
+  def _apply_sort(reportclass, request, query, prefs=None):
+    '''
+    Applies a sort to the query.
+    '''
+    asc = True
+    sort = None
+    if 'sidx' in request.GET:
+      sort = request.GET['sidx']
+      if 'sord' in request.GET and request.GET['sord'] == 'desc':
+        asc = False
+    if not sort:
+      if prefs and 'sidx' in prefs:
+        sort = prefs['sidx']
+        if 'sord' in prefs and prefs['sord'] == 'desc':
+          asc = False
+      if not sort and reportclass.default_sort:
+        sort = reportclass.rows[reportclass.default_sort[0]].name
+        if reportclass.default_sort[1] == 'desc':
+          asc = False
+      else:
+        # No sorting
+        return query
+    if sort:
+      # Validate the field does exist.
+      for i in reportclass.rows:
+        if i.name == sort and i.search:
+          return query.order_by(asc and i.field_name or ('-%s' % i.field_name))
+    # Sorting by a non-existent field name: ignore the filter
+    return query
+
+
+  @classmethod
+  def _apply_sort_index(reportclass, request, prefs=None):
     '''
     Returns the index of the column to sort on.
     '''
@@ -1553,17 +1585,18 @@ class GridPivot(GridReport):
       if page < 1:
         page = 1
       cnt = (page - 1) * request.pagesize + 1
+      prefs = request.user.getPreference(reportclass.getKey())
       if callable(reportclass.basequeryset):
         query = reportclass.query(
           request,
-          reportclass.filter_items(request, reportclass.basequeryset(request, args, kwargs), False).using(request.database)[cnt - 1:cnt + request.pagesize],
-          sortsql=reportclass._apply_sort(request)
+          reportclass._apply_sort(request, reportclass.filter_items(request, reportclass.basequeryset(request, args, kwargs), False), prefs).using(request.database)[cnt - 1:cnt + request.pagesize],
+          sortsql=reportclass._apply_sort_index(request)
           )
       else:
         query = reportclass.query(
           request,
-          reportclass.filter_items(request, reportclass.basequeryset).using(request.database)[cnt - 1:cnt + request.pagesize],
-          sortsql=reportclass._apply_sort(request)
+          reportclass._apply_sort(request, reportclass.filter_items(request, reportclass.basequeryset), prefs).using(request.database)[cnt - 1:cnt + request.pagesize],
+          sortsql=reportclass._apply_sort_index(request)
           )
 
     # Generate header of the output
@@ -1633,9 +1666,9 @@ class GridPivot(GridReport):
     if args and args[0]:
       query = reportclass.query(request, reportclass.basequeryset.filter(pk__exact=args[0]).using(request.database), sortsql="1 asc")
     elif callable(reportclass.basequeryset):
-      query = reportclass.query(request, reportclass.filter_items(request, reportclass.basequeryset(request, args, kwargs), False).using(request.database), sortsql=reportclass._apply_sort(request))
+      query = reportclass.query(request, reportclass.filter_items(request, reportclass.basequeryset(request, args, kwargs), False).using(request.database), sortsql=reportclass._apply_sort_index(request))
     else:
-      query = reportclass.query(request, reportclass.filter_items(request, reportclass.basequeryset).using(request.database), sortsql=reportclass._apply_sort(request))
+      query = reportclass.query(request, reportclass.filter_items(request, reportclass.basequeryset).using(request.database), sortsql=reportclass._apply_sort_index(request))
 
     # Write a Unicode Byte Order Mark header, aka BOM (Excel needs it to open UTF-8 file properly)
     encoding = settings.CSV_CHARSET
@@ -1754,9 +1787,9 @@ class GridPivot(GridReport):
     if args and args[0]:
       query = reportclass.query(request, reportclass.basequeryset.filter(pk__exact=args[0]).using(request.database), sortsql="1 asc")
     elif callable(reportclass.basequeryset):
-      query = reportclass.query(request, reportclass.filter_items(request, reportclass.basequeryset(request, args, kwargs), False).using(request.database), sortsql=reportclass._apply_sort(request))
+      query = reportclass.query(request, reportclass.filter_items(request, reportclass.basequeryset(request, args, kwargs), False).using(request.database), sortsql=reportclass._apply_sort_index(request))
     else:
-      query = reportclass.query(request, reportclass.filter_items(request, reportclass.basequeryset).using(request.database), sortsql=reportclass._apply_sort(request))
+      query = reportclass.query(request, reportclass.filter_items(request, reportclass.basequeryset).using(request.database), sortsql=reportclass._apply_sort_index(request))
 
     # Pick up the preferences
     prefs = request.user.getPreference(reportclass.getKey())
