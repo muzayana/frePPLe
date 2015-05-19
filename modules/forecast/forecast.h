@@ -1204,7 +1204,7 @@ class ForecastBucket : public Demand
       setHidden(true);  // Avoid the subdemands show up in the output
       setItem(&*(f->getItem()));
       setCustomer(&*(f->getCustomer()));
-      setDue(DueAtEndOfBucket ? e : d);
+      setDue(DueAtEndOfBucket ? e - TimePeriod(1L) : d);
       setPriority(f->getPriority());
       setMaxLateness(f->getMaxLateness());
       setMinShipment(f->getMinShipment());
