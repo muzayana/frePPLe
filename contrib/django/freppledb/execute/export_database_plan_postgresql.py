@@ -110,14 +110,15 @@ def exportFlowplans(process):
 def exportLoadplans(process):
   print("Exporting loadplans...")
   starttime = time()
-  process.stdin.write('COPY out_loadplan (operationplan_id, theresource, quantity, startdate, enddate, setup) FROM STDIN;\n')
+  process.stdin.write('COPY out_loadplan (operationplan_id, theresource, quantity, startdate, enddate, loaddate, setup) FROM STDIN;\n')
   for i in frepple.resources():
     for j in i.loadplans:
       if j.quantity < 0:
-        process.stdin.write("%s\t%s\t%s\t%s\t%s\t%s\n" % (
+        process.stdin.write("%s\t%s\t%s\t%s\t%s\t%s\t%s\n" % (
           j.operationplan.id, j.resource.name.encode(encoding),
           round(-j.quantity, settings.DECIMAL_PLACES),
           str(j.startdate), str(j.enddate),
+          str(j.date) if isinstance(i, frepple.resource_buckets) else None,
           j.setup and j.setup.encode(encoding) or "\\N"
           ))
   process.stdin.write('\\.\n')

@@ -11,8 +11,10 @@ Resource          Resource name.
 Operation         | Name of the operation loading the resource.
                   | If the name is “setup operation” this load plan shows a conversion of the
                     resource to a new setup.
-Start date        Date when the load plan starts.
-End date          Date when the load plan ends.
+Start date        Date when the operationplan starts.
+End date          Date when the operationplan ends.
+Load date         | Start date of the bucket where capacity is consumed from.
+                  | This field is only relevant for resources of type "buckets".
 | Operatioplan    Quantity of the operationplan.
   quantity
 | Load            Size of the loadplan.

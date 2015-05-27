@@ -10,8 +10,11 @@ $(function(){ graph.header(); })
 {% block contextmenus %}
 {% include "resourcecontext.html" %}
 {% include "locationcontext.html" %}
-<div id="detailcontext" class="ContextMenu"><ul class="ui-menu ui-widget ui-widget-content ui-corner-all ui-state-default">
+<div id="detail0context" class="ContextMenu"><ul class="ui-menu ui-widget ui-widget-content ui-corner-all ui-state-default">
 <li class="ui-menu-item"><a id="{{request.prefix}}/loadplan/{value}/?startdate__lt={enddate}&amp;enddate__gt={startdate}">{% trans 'Detail' %}</a></li>
+</ul></div>
+<div id="detail1context" class="ContextMenu"><ul class="ui-menu ui-widget ui-widget-content ui-corner-all ui-state-default">
+<li class="ui-menu-item"><a id="{{request.prefix}}/loadplan/{value}/?loaddate__lte={enddate}&amp;loaddate__gt={startdate}">{% trans 'Detail' %}</a></li>
 </ul></div>{% endblock %}
 
 {% block tools %}{% if args.0 %}
@@ -85,7 +88,8 @@ function drawGraphs(jsondata)
         'unavailable': tmp[1],
         'setup': tmp[2],
         'load': tmp[3],
-        'perc': tmp[4]
+        'perc': tmp[4],
+        'type': jsondata['rows'][index]['type']
         });
       if (1 in fields)
       {
@@ -111,7 +115,10 @@ function drawGraphs(jsondata)
       .on("click", function(d) {
           if (d3.event.defaultPrevented || d['load'] == 0) return;
           d3.select("#tooltip").style('display', 'none');
-          contextMenu = $("#detailcontext");
+          if (d['type'] == 'buckets')
+            contextMenu = $("#detail1context");
+          else
+            contextMenu = $("#detail0context");
           contextMenu.find('a').each( function() {
               $(this).attr(
                 'href',
@@ -281,7 +288,12 @@ function crosses (cellvalue, options, rowdata)
     {
       case 3:
         if (cellvalue[3] != 0.0)
-          result += cellvalue[3] + "<span class='context cross fa fa-caret-right' role='detail'></span></br>";
+        {
+          if (rowdata["type"] == "buckets")
+            result += cellvalue[3] + "<span class='context cross fa fa-caret-right' role='detail1'></span></br>";
+          else
+            result += cellvalue[3] + "<span class='context cross fa fa-caret-right' role='detail0'></span></br>";          
+        }
         else
           result += '0.0</br>';
         break;

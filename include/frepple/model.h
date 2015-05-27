@@ -5013,6 +5013,11 @@ class LoadPlan : public TimeLine<LoadPlan>::EventChangeOnhand, public PythonExte
       */
     DECLARE_EXPORT LoadPlan* getOtherLoadPlan() const;
 
+    /** Return the date where the capacity is actually consumed.
+      * This field is only relevant for bucketized resources.
+      */
+    DECLARE_EXPORT Date getConsumingDate() const;
+
     static int initialize();
     static DECLARE_EXPORT const MetaCategory* metadata;
     PyObject* getattro(const Attribute&);

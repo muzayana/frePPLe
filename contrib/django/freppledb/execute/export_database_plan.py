@@ -137,12 +137,13 @@ def exportLoadplans(cursor):
   for i in frepple.resources():
     cursor.executemany(
       "insert into out_loadplan \
-      (operationplan_id, theresource, quantity, startdate, enddate, setup) \
+      (operationplan_id, theresource, quantity, startdate, enddate, loaddate, setup) \
       values (%s,%s,%s,%s,%s,%s)",
       [(
          j.operationplan.id, j.resource.name,
          round(-j.quantity, settings.DECIMAL_PLACES),
-         str(j.startdate), str(j.enddate), j.setup
+         str(j.startdate), str(j.enddate),
+         str(j.date) if isinstance(i, frepple.resource_buckets) else None, j.setup
        ) for j in i.loadplans if j.quantity < 0]
       )
     cnt += 1

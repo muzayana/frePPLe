@@ -277,6 +277,17 @@ DECLARE_EXPORT LoadPlan* LoadPlan::getOtherLoadPlan() const
 }
 
 
+DECLARE_EXPORT Date LoadPlan::getConsumingDate() const
+{
+  for (Resource::loadplanlist::const_iterator i(this);
+    i != getResource()->getLoadPlans().end(); --i)
+    if (i->getType() == 2)
+      // Closest setonhand event before this loadplan
+      return i->getDate();
+  return Date::infinitePast;
+}
+
+
 DECLARE_EXPORT void LoadPlan::update()
 {
   // Update the timeline data structure
@@ -397,6 +408,8 @@ PyObject* LoadPlan::getattro(const Attribute& attr)
     return PythonObject(getOnhand());
   if (attr.isA(Tags::tag_setup))
     return PythonObject(getSetup());
+  if (attr.isA(Tags::tag_date))
+    return PythonObject(getConsumingDate());
   return NULL;
 }
 

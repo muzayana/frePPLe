@@ -35,6 +35,7 @@ class OverviewReport(GridPivot):
     GridFieldText('resource', title=_('resource'), key=True, field_name='name', formatter='resource', editable=False),
     GridFieldText('location', title=_('location'), field_name='location__name', formatter='location', editable=False),
     GridFieldText('avgutil', title=_('utilization %'), field_name='util', formatter='percentage', editable=False, width=100, align='center', search=False),
+    GridFieldText('type', title=_('type'), hidden=True),
     )
   crosses = (
     ('available', {
@@ -85,7 +86,8 @@ class OverviewReport(GridPivot):
     cursor = connections[request.database].cursor()
     query = '''
       select res.name as row1, res.location_id as row2,
-             coalesce(max(plan_summary.avg_util),0) as avgutil,
+             coalesce(max(plan_summary.avg_util),0) as row3,
+             res.type as row4,
              d.bucket as col1, d.startdate as col2,
              coalesce(sum(out_resourceplan.available),0) * (case when res.type = 'buckets' then 1 else %f end) as available,
              coalesce(sum(out_resourceplan.unavailable),0) * (case when res.type = 'buckets' then 1 else %f end) as unavailable,
@@ -136,20 +138,21 @@ class OverviewReport(GridPivot):
 
     # Build the python result
     for row in cursor.fetchall():
-      if row[5] != 0:
-        util = row[7] * 100 / row[5]
+      if row[6] != 0:
+        util = row[8] * 100 / row[6]
       else:
         util = 0
       yield {
         'resource': row[0],
         'location': row[1],
         'avgutil': round(row[2], 2),
-        'bucket': row[3],
-        'startdate': python_date(row[4]),
-        'available': round(row[5], 1),
-        'unavailable': round(row[6], 1),
-        'load': round(row[7], 1),
-        'setup': round(row[8], 1),
+        'type': row[3],
+        'bucket': row[4],
+        'startdate': python_date(row[5]),
+        'available': round(row[6], 1),
+        'unavailable': round(row[7], 1),
+        'load': round(row[8], 1),
+        'setup': round(row[9], 1),
         'utilization': round(util, 2)
         }
 
@@ -192,6 +195,7 @@ class DetailReport(GridReport):
     GridFieldText('operationplan__operation', title=_('operation'), formatter='operation', editable=False),
     GridFieldDateTime('startdate', title=_('start date'), editable=False),
     GridFieldDateTime('enddate', title=_('end date'), editable=False),
+    GridFieldDateTime('loaddate', title=_('load date'), editable=False),
     GridFieldNumber('operationplan__quantity', title=_('operationplan quantity'), editable=False),
     GridFieldText('demand', title=_('demand quantity'), editable=False),
     GridFieldNumber('quantity', title=_('load quantity'), editable=False),
