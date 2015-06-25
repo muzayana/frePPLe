@@ -118,8 +118,8 @@ def exportLoadplans(process):
           j.operationplan.id, j.resource.name.encode(encoding),
           round(-j.quantity, settings.DECIMAL_PLACES),
           str(j.startdate), str(j.enddate),
-          str(j.date) if isinstance(i, frepple.resource_buckets) else None,
-          j.setup and j.setup.encode(encoding) or "\\N"
+          str(j.date) if isinstance(i, frepple.resource_buckets) else "\\N",
+          j.setup.encode(encoding) if j.setup else "\\N"
           ))
   process.stdin.write('\\.\n')
   print('Exported loadplans in %.2f seconds' % (time() - starttime))

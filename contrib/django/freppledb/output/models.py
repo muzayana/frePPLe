@@ -98,7 +98,7 @@ class LoadPlan(models.Model):
   quantity = models.DecimalField(_('quantity'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES)
   startdate = models.DateTimeField(_('startdate'), db_index=True)
   enddate = models.DateTimeField(_('enddate'), db_index=True)
-  loaddate = models.DateTimeField(_('loaddate'), db_index=True)
+  loaddate = models.DateTimeField(_('loaddate'), db_index=True, null=True)
   operationplan = models.ForeignKey(OperationPlan, verbose_name=_('operationplan'), db_index=True, related_name='loadplans')
   setup = models.CharField(_('setup'), max_length=settings.NAMESIZE, null=True)
 
