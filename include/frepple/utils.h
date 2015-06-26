@@ -212,6 +212,7 @@ template<class T, class U, class V> class MetaFieldIterator2;
 template<class T, class U, class V> class MetaFieldList;
 template<class T, class U> class MetaFieldList2;
 template<class T, class U> class MetaFieldList3;
+template<class T, class U, class V> class MetaFieldList4;
 template<class T> class MetaFieldInt;
 template<class T> class MetaFieldShort;
 
@@ -1833,9 +1834,9 @@ class MetaClass : public NonCopyable
 
     /** This constructor registers the metadata of a class that is intended
       * only for internal use. */
-    template <class T> static inline MetaClass* registerClass()
+    template <class T> static inline MetaClass* registerClass(creatorDefault f)
     {
-      return new MetaClass(sizeof(T), Object::create<T>);
+      return new MetaClass(sizeof(T), f);
     }
 
     /** This constructor registers the metadata of a class, with a factory
