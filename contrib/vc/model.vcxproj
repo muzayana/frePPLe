@@ -107,6 +107,8 @@
       <RuntimeTypeInfo>
       </RuntimeTypeInfo>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MinimalRebuild>false</MinimalRebuild>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -151,6 +153,8 @@
       </RuntimeTypeInfo>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <StringPooling>Yes</StringPooling>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MinimalRebuild>false</MinimalRebuild>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -219,6 +223,7 @@
     <ClCompile Include="..\..\src\model\setupmatrix.cpp" />
     <ClCompile Include="..\..\src\model\skill.cpp" />
     <ClCompile Include="..\..\src\model\solver.cpp" />
+    <ClCompile Include="..\..\src\model\suboperation.cpp" />
     <ClCompile Include="..\..\src\model\supplier.cpp" />
     <ClCompile Include="..\..\src\model\supplieritem.cpp" />
   </ItemGroup>

@@ -1,6 +1,6 @@
 /***************************************************************************
  *                                                                         *
- * Copyright (C) 2007-2013 by Johan De Taeye, frePPLe bvba                 *
+ * Copyright (C) 2007-2015 by Johan De Taeye, frePPLe bvba                 *
  *                                                                         *
  * All information contained herein is, and remains the property of        *
  * frePPLe.                                                                *
@@ -35,7 +35,7 @@ DECLARE_EXPORT void SolverMRP::chooseResource(const Load* l, void* v)   // @todo
 
   // CASE 2: Skill involved, or aggregate resource
   SolverMRPdata* data = static_cast<SolverMRPdata*>(v);
-  unsigned int loglevel = data->getSolver()->getLogLevel();
+  short loglevel = data->getSolver()->getLogLevel();
 
   // Control the planning mode
   bool originalPlanningMode = data->constrainedPlanning;
@@ -244,7 +244,7 @@ void SolverMRP::solve(const Load* l, void* v)
   // CASE II: It is an alternate load.
   // We ask each alternate load in order of priority till we find a load
   // that has a non-zero reply.
-  unsigned int loglevel = data->getSolver()->getLogLevel();
+  short loglevel = data->getSolver()->getLogLevel();
 
   // 1) collect a list of alternates
   list<const Load*> thealternates;
@@ -285,7 +285,7 @@ void SolverMRP::solve(const Load* l, void* v)
     data->state->q_loadplan = lplan; // because q_loadplan can change!
 
     // 4a) Switch to this load
-    if (lplan->getLoad() != curload) lplan->setLoad(curload);
+    if (lplan->getLoad() != curload) lplan->setLoad(const_cast<Load*>(curload));
     lplan->getOperationPlan()->restore(originalOpplan);
     data->state->q_qty = lplan->getQuantity();
     data->state->q_date = lplan->getDate();
@@ -416,7 +416,7 @@ void SolverMRP::solve(const Load* l, void* v)
     data->state->a_cost = beforeCost;
     data->state->a_penalty = beforePenalty;
     if (lplan->getLoad() != bestAlternateSelection)
-      lplan->setLoad(bestAlternateSelection);
+      lplan->setLoad(const_cast<Load*>(bestAlternateSelection));
     lplan->getOperationPlan()->restore(originalOpplan);
     // TODO XXX need to restore also the selected resource with the right skill!
     data->state->q_qty = lplan->getQuantity();

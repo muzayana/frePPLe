@@ -1,6 +1,6 @@
 /***************************************************************************
  *                                                                         *
- * Copyright (C) 2009-2013 by Johan De Taeye, frePPLe bvba                 *
+ * Copyright (C) 2009-2015 by Johan De Taeye, frePPLe bvba                 *
  *                                                                         *
  * All information contained herein is, and remains the property of        *
  * frePPLe.                                                                *
@@ -20,30 +20,31 @@ namespace frepple
 template<class SetupMatrix> DECLARE_EXPORT Tree utils::HasName<SetupMatrix>::st;
 DECLARE_EXPORT const MetaCategory* SetupMatrix::metadata;
 DECLARE_EXPORT const MetaClass* SetupMatrixDefault::metadata;
-DECLARE_EXPORT const MetaCategory* SetupMatrix::Rule::metadata;
+DECLARE_EXPORT const MetaCategory* SetupMatrixRule::metadata;
 
 
 int SetupMatrix::initialize()
 {
   // Initialize the metadata
-  metadata = new MetaCategory("setupmatrix", "setupmatrices", reader, writer, finder);
+  metadata = MetaCategory::registerCategory<SetupMatrix>("setupmatrix", "setupmatrices", reader, writer, finder);
+  registerFields<SetupMatrix>(const_cast<MetaCategory*>(metadata));
 
   // Initialize the Python class
-  FreppleCategory<SetupMatrix>::getType().addMethod("addRule",
+  FreppleCategory<SetupMatrix>::getPythonType().addMethod("addRule",
     addPythonRule, METH_VARARGS | METH_KEYWORDS, "add a new setup rule");
   return FreppleCategory<SetupMatrix>::initialize()
-      + Rule::initialize()
       + SetupMatrixRuleIterator::initialize();
 }
 
 
-int SetupMatrix::Rule::initialize()
+int SetupMatrixRule::initialize()
 {
   // Initialize the metadata
-  metadata = new MetaCategory("setupmatrixrule", "setupmatrixrules");
+  metadata = MetaCategory::registerCategory<SetupMatrixRule>("setupmatrixrule", "setupmatrixrules");
+  registerFields<SetupMatrixRule>(const_cast<MetaCategory*>(metadata));
 
   // Initialize the Python class
-  PythonType& x = PythonExtension<SetupMatrix::Rule>::getType();
+  PythonType& x = PythonExtension<SetupMatrixRule>::getPythonType();
   x.setName("setupmatrixrule");
   x.setDoc("frePPLe setupmatrixrule");
   x.supportgetattro();
@@ -56,10 +57,10 @@ int SetupMatrix::Rule::initialize()
 int SetupMatrixDefault::initialize()
 {
   // Initialize the metadata
-  SetupMatrixDefault::metadata = new MetaClass(
+  SetupMatrixDefault::metadata = MetaClass::registerClass<SetupMatrixDefault>(
     "setupmatrix",
     "setupmatrix_default",
-    Object::createString<SetupMatrixDefault>, true);
+    Object::create<SetupMatrixDefault>, true);
 
   // Initialize the Python class
   return FreppleClass<SetupMatrixDefault,SetupMatrix>::initialize();
@@ -78,57 +79,13 @@ DECLARE_EXPORT SetupMatrix::~SetupMatrix()
 }
 
 
-DECLARE_EXPORT void SetupMatrix::writeElement(Serializer *o, const Keyword& tag, mode m) const
-{
-  // Writing a reference
-  if (m == REFERENCE)
-  {
-    o->writeElement
-    (tag, Tags::tag_name, getName(), Tags::tag_type, getType().type);
-    return;
-  }
-
-  // Write the head
-  if (m != NOHEAD && m != NOHEADTAIL) o->BeginObject
-    (tag, Tags::tag_name, getName(), Tags::tag_type, getType().type);
-
-  // Write source field
-  o->writeElement(Tags::tag_source, getSource());
-
-  // Write the custom fields
-  PythonDictionary::write(o, getDict());
-
-  // Write all rules
-  o->BeginList (Tags::tag_rules);
-  for (RuleIterator i = beginRules(); i != endRules(); ++i)
-    // We use the FULL mode, to force the rules being written regardless
-    // of the depth in the XML tree.
-    o->writeElement(Tags::tag_rule, *i, FULL);
-  o->EndList(Tags::tag_rules);
-
-  // Write the tail
-  if (m != NOHEADTAIL && m != NOTAIL) o->EndObject(tag);
-}
-
-
-DECLARE_EXPORT void SetupMatrix::beginElement(DataInput& pIn, const Attribute& pAttr)
-{
-  if (pAttr.isA(Tags::tag_rule)
-      && pIn.getParentElement().isA(Tags::tag_rules))
-    // A new rule
-    pIn.readto(createRule(pIn.getAttributes()));
-  else
-    PythonDictionary::read(pIn, pAttr, getDict());
-}
-
-
-DECLARE_EXPORT SetupMatrix::Rule* SetupMatrix::createRule(const AttributeList& atts)
+DECLARE_EXPORT SetupMatrixRule* SetupMatrix::createRule(const DataValueDict& atts)
 {
   // Pick up the start, end and name attributes
-  int priority = atts.get(Tags::tag_priority)->getInt();
+  int priority = atts.get(Tags::priority)->getInt();
 
   // Check for existence of a rule with the same priority
-  Rule* result = firstRule;
+  SetupMatrixRule* result = firstRule;
   while (result && priority > result->priority)
     result = result->nextRule;
   if (result && result->priority != priority) result = NULL;
@@ -145,7 +102,7 @@ DECLARE_EXPORT SetupMatrix::Rule* SetupMatrix::createRule(const AttributeList& a
           << " already exists in setup matrix '" << getName() << "'";
         throw DataException(o.str());
       }
-      result = new Rule(this, priority);
+      result = new SetupMatrixRule(this, priority);
       return result;
     case CHANGE:
       // Only changes are allowed
@@ -175,43 +132,12 @@ DECLARE_EXPORT SetupMatrix::Rule* SetupMatrix::createRule(const AttributeList& a
     case ADD_CHANGE:
       if (!result)
         // Adding a new rule
-        result = new Rule(this, priority);
+        result = new SetupMatrixRule(this, priority);
       return result;
   }
 
   // This part of the code isn't expected not be reached
   throw LogicException("Unreachable code reached");
-}
-
-
-DECLARE_EXPORT void SetupMatrix::endElement(DataInput& pIn, const Attribute& pAttr, const DataElement& pElement)
-{
-  if (pAttr.isA(Tags::tag_source))
-    setSource(pElement.getString());
-}
-
-
-DECLARE_EXPORT PyObject* SetupMatrix::getattro(const Attribute& attr)
-{
-  if (attr.isA(Tags::tag_name))
-    return PythonObject(getName());
-  if (attr.isA(Tags::tag_rules))
-    return new SetupMatrixRuleIterator(this);
-  if (attr.isA(Tags::tag_source))
-    return PythonObject(getSource());
-  return NULL;
-}
-
-
-DECLARE_EXPORT int SetupMatrix::setattro(const Attribute& attr, const PythonObject& field)
-{
-  if (attr.isA(Tags::tag_name))
-    setName(field.getString());
-  else if (attr.isA(Tags::tag_source))
-    setSource(field.getString());
-  else
-    return -1;  // Error
-  return 0;
 }
 
 
@@ -236,12 +162,12 @@ DECLARE_EXPORT PyObject* SetupMatrix::addPythonRule(PyObject* self, PyObject* ar
       return NULL;
 
     // Add the new rule
-    Rule * r = new Rule(matrix, prio);
-    if (pyfrom) r->setFromSetup(PythonObject(pyfrom).getString());
-    if (pyto) r->setToSetup(PythonObject(pyfrom).getString());
+    SetupMatrixRule *r = new SetupMatrixRule(matrix, prio);
+    if (pyfrom) r->setFromSetup(PythonData(pyfrom).getString());
+    if (pyto) r->setToSetup(PythonData(pyfrom).getString());
     r->setDuration(duration);
     r->setCost(cost);
-    return PythonObject(r);
+    return PythonData(r);
   }
   catch(...)
   {
@@ -251,14 +177,14 @@ DECLARE_EXPORT PyObject* SetupMatrix::addPythonRule(PyObject* self, PyObject* ar
 }
 
 
-DECLARE_EXPORT SetupMatrix::Rule::Rule(SetupMatrix *s, int p)
+DECLARE_EXPORT SetupMatrixRule::SetupMatrixRule(SetupMatrix *s, int p)
   : cost(0), priority(p), matrix(s), nextRule(NULL), prevRule(NULL)
 {
   // Validate the arguments
   if (!matrix) throw DataException("Can't add a rule to NULL setup matrix");
 
   // Find the right place in the list
-  Rule *next = matrix->firstRule, *prev = NULL;
+  SetupMatrixRule *next = matrix->firstRule, *prev = NULL;
   while (next && p > next->priority)
   {
     prev = next;
@@ -281,7 +207,7 @@ DECLARE_EXPORT SetupMatrix::Rule::Rule(SetupMatrix *s, int p)
 }
 
 
-DECLARE_EXPORT SetupMatrix::Rule::~Rule()
+DECLARE_EXPORT SetupMatrixRule::~SetupMatrixRule()
 {
   // Maintain linked list
   if (nextRule) nextRule->prevRule = prevRule;
@@ -290,70 +216,7 @@ DECLARE_EXPORT SetupMatrix::Rule::~Rule()
 }
 
 
-DECLARE_EXPORT void SetupMatrix::Rule::writeElement
-(Serializer* o, const Keyword& tag, mode m) const
-{
-  o->BeginObject(tag, Tags::tag_priority, priority);
-  if (!from.empty()) o->writeElement(Tags::tag_fromsetup, from);
-  if (!to.empty()) o->writeElement(Tags::tag_tosetup, to);
-  if (duration) o->writeElement(Tags::tag_duration, duration);
-  if (cost) o->writeElement(Tags::tag_cost, cost);
-  o->EndObject(tag);
-}
-
-
-DECLARE_EXPORT void SetupMatrix::Rule::endElement(DataInput& pIn, const Attribute& pAttr, const DataElement& pElement)
-{
-  if (pAttr.isA(Tags::tag_priority))
-    setPriority(pElement.getInt());
-  else if (pAttr.isA(Tags::tag_fromsetup))
-    setFromSetup(pElement.getString());
-  else if (pAttr.isA(Tags::tag_tosetup))
-    setToSetup(pElement.getString());
-  else if (pAttr.isA(Tags::tag_duration))
-    setDuration(pElement.getDuration());
-  else if (pAttr.isA(Tags::tag_cost))
-    setCost(pElement.getDouble());
-}
-
-
-DECLARE_EXPORT PyObject* SetupMatrix::Rule::getattro(const Attribute& attr)
-{
-  if (attr.isA(Tags::tag_priority))
-    return PythonObject(priority);
-  if (attr.isA(Tags::tag_setupmatrix))
-    return PythonObject(matrix);
-  if (attr.isA(Tags::tag_fromsetup))
-    return PythonObject(from);
-  if (attr.isA(Tags::tag_tosetup))
-    return PythonObject(to);
-  if (attr.isA(Tags::tag_duration))
-    return PythonObject(duration);
-  if (attr.isA(Tags::tag_cost))
-    return PythonObject(cost);
-  return NULL;
-}
-
-
-DECLARE_EXPORT int SetupMatrix::Rule::setattro(const Attribute& attr, const PythonObject& field)
-{
-  if (attr.isA(Tags::tag_priority))
-    setPriority(field.getInt());
-  else if (attr.isA(Tags::tag_fromsetup))
-    setFromSetup(field.getString());
-  else if (attr.isA(Tags::tag_tosetup))
-    setToSetup(field.getString());
-  else if (attr.isA(Tags::tag_duration))
-    setDuration(field.getDuration());
-  else if (attr.isA(Tags::tag_cost))
-    setCost(field.getDouble());
-  else
-    return -1;  // Error
-  return 0;  // OK
-}
-
-
-DECLARE_EXPORT void SetupMatrix::Rule::setPriority(const int n)
+DECLARE_EXPORT void SetupMatrixRule::setPriority(const int n)
 {
   // Update the field
   priority = n;
@@ -361,8 +224,8 @@ DECLARE_EXPORT void SetupMatrix::Rule::setPriority(const int n)
   // Check ordering on the left
   while (prevRule && priority < prevRule->priority)
   {
-    Rule* next = nextRule;
-    Rule* prev = prevRule;
+    SetupMatrixRule* next = nextRule;
+    SetupMatrixRule* prev = prevRule;
     if (prev && prev->prevRule) prev->prevRule->nextRule = this;
     else matrix->firstRule = this;
     if (prev) prev->nextRule = nextRule;
@@ -376,8 +239,8 @@ DECLARE_EXPORT void SetupMatrix::Rule::setPriority(const int n)
   // Check ordering on the right
   while (nextRule && priority > nextRule->priority)
   {
-    Rule* next = nextRule;
-    Rule* prev = prevRule;
+    SetupMatrixRule* next = nextRule;
+    SetupMatrixRule* prev = prevRule;
     nextRule = next->nextRule;
     if (next && next->nextRule) next->nextRule->prevRule = this;
     if (prev) prev->nextRule = next;
@@ -401,7 +264,7 @@ DECLARE_EXPORT void SetupMatrix::Rule::setPriority(const int n)
 int SetupMatrixRuleIterator::initialize()
 {
   // Initialize the type
-  PythonType& x = PythonExtension<SetupMatrixRuleIterator>::getType();
+  PythonType& x = PythonExtension<SetupMatrixRuleIterator>::getPythonType();
   x.setName("setupmatrixRuleIterator");
   x.setDoc("frePPLe iterator for setupmatrix rules");
   x.supportiter();
@@ -418,14 +281,14 @@ PyObject* SetupMatrixRuleIterator::iternext()
 }
 
 
-DECLARE_EXPORT SetupMatrix::Rule* SetupMatrix::calculateSetup
+DECLARE_EXPORT SetupMatrixRule* SetupMatrix::calculateSetup
 (const string oldsetup, const string newsetup) const
 {
   // No need to look
   if (oldsetup == newsetup) return NULL;
 
   // Loop through all rules
-  for (Rule *curRule = firstRule; curRule; curRule = curRule->nextRule)
+  for (SetupMatrixRule *curRule = firstRule; curRule; curRule = curRule->nextRule)
   {
     // Need a match on the fromsetup
     if (!curRule->getFromSetup().empty()

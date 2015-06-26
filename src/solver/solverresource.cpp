@@ -1,6 +1,6 @@
 /***************************************************************************
  *                                                                         *
- * Copyright (C) 2007-2013 by Johan De Taeye, frePPLe bvba                 *
+ * Copyright (C) 2007-2015 by Johan De Taeye, frePPLe bvba                 *
  *                                                                         *
  * All information contained herein is, and remains the property of        *
  * frePPLe.                                                                *
@@ -24,7 +24,7 @@ DECLARE_EXPORT void SolverMRP::solve(const Resource* res, void* v)
   SolverMRPdata* data = static_cast<SolverMRPdata*>(v);
 
   // Call the user exit
-  if (userexit_resource) userexit_resource.call(res, PythonObject(data->constrainedPlanning));
+  if (userexit_resource) userexit_resource.call(res, PythonData(data->constrainedPlanning));
 
   // Message
   if (data->getSolver()->getLogLevel()>1)
@@ -84,9 +84,9 @@ DECLARE_EXPORT void SolverMRP::solve(const Resource* res, void* v)
       prevdate = data->state->q_operationplan->getDates().getEnd();
       noRestore = data->state->forceLate;
 
-      if (isLeadtimeConstrained() || isFenceConstrained())
+      if (isLeadTimeConstrained() || isFenceConstrained())
         // Note that the check function can update the answered date and quantity
-         if (data->constrainedPlanning && !checkOperationLeadtime(data->state->q_operationplan,*data,false))
+         if (data->constrainedPlanning && !checkOperationLeadTime(data->state->q_operationplan,*data,false))
          {
            // Operationplan violates the lead time and/or fence constraint
            noRestore = true;
@@ -272,11 +272,11 @@ DECLARE_EXPORT void SolverMRP::solve(const Resource* res, void* v)
             // If there isn't available time in the location calendar, the move
             // can fail.
             data->state->a_qty = 0.0;
-          else if (data->constrainedPlanning && (isLeadtimeConstrained() || isFenceConstrained()))
+          else if (data->constrainedPlanning && (isLeadTimeConstrained() || isFenceConstrained()))
             // Check the leadtime constraints after the move
             // Note that the check function can update the answered date
             // and quantity
-            checkOperationLeadtime(data->state->q_operationplan,*data,false);
+            checkOperationLeadTime(data->state->q_operationplan,*data,false);
         }
         else
           // No earlier capacity found: get out of the loop
@@ -468,7 +468,7 @@ DECLARE_EXPORT void SolverMRP::solve(const ResourceInfinite* res, void* v)
   SolverMRPdata* data = static_cast<SolverMRPdata*>(v);
 
   // Call the user exit
-  if (userexit_resource) userexit_resource.call(res, PythonObject(data->constrainedPlanning));
+  if (userexit_resource) userexit_resource.call(res, PythonData(data->constrainedPlanning));
 
   // Message
   if (data->getSolver()->getLogLevel()>1 && data->state->q_qty < 0)
@@ -496,7 +496,7 @@ DECLARE_EXPORT void SolverMRP::solve(const ResourceBuckets* res, void* v)
   SolverMRPdata* data = static_cast<SolverMRPdata*>(v);
 
   // Call the user exit
-  if (userexit_resource) userexit_resource.call(res, PythonObject(data->constrainedPlanning));
+  if (userexit_resource) userexit_resource.call(res, PythonData(data->constrainedPlanning));
 
   // Message
   if (data->getSolver()->getLogLevel()>1 && data->state->q_qty < 0)
@@ -534,9 +534,9 @@ DECLARE_EXPORT void SolverMRP::solve(const ResourceBuckets* res, void* v)
       prevdate = data->state->q_operationplan->getDates().getEnd();
       noRestore = data->state->forceLate;
 
-      if (isLeadtimeConstrained() || isFenceConstrained())
+      if (isLeadTimeConstrained() || isFenceConstrained())
         // Note that the check function can update the answered date and quantity
-         if (data->constrainedPlanning && !checkOperationLeadtime(data->state->q_operationplan,*data,false))
+         if (data->constrainedPlanning && !checkOperationLeadTime(data->state->q_operationplan,*data,false))
          {
            // Operationplan violates the lead time and/or fence constraint
            noRestore = true;
@@ -561,42 +561,45 @@ DECLARE_EXPORT void SolverMRP::solve(const ResourceBuckets* res, void* v)
         Date oldEnd = data->state->q_operationplan->getDates().getEnd();
         double oldQty = data->state->q_operationplan->getQuantity();
         double newQty = oldQty + overloadQty / data->state->q_loadplan->getLoad()->getQuantity();
-        data->state->q_operationplan->getOperation()->setOperationPlanParameters(
-          data->state->q_operationplan,
-          newQty,
-          Date::infinitePast,
-          oldEnd
-          );
-        if (data->state->q_operationplan->getQuantity() > 0
-          && data->state->q_operationplan->getQuantity() <= newQty + ROUNDING_ERROR
-          && data->state->q_operationplan->getDates().getEnd() <= oldEnd)
+        if (newQty > ROUNDING_ERROR)
         {
-          // The squeezing did work!
-          // The operationplan quantity is now reduced. The buffer solver will
-          // ask again for the remaining short quantity, so we don't need to
-          // bother about that here.
-          overloadQty = 0.0;
-          data->state->a_qty = -data->state->q_loadplan->getQuantity();
-          // With operations of type time_per, it is also possible that the
-          // operation now consumes capacity in a different bucket.
-          // If that's the case, we move it to start right at the end of the bucket.
-          if (cur!=res->getLoadPlans().end() &&
-            data->state->q_operationplan->getDates().getStart() > cur->getDate())
-              data->state->q_operationplan->setStart(cur->getDate() - Duration(1L));
-        }
-        else
-        {
-          // It didn't work. Restore the original operationplan.
-          // @todo this undoing is a performance bottleneck: trying to resize
-          // and restoring the original are causing lots of updates in the
-          // buffer and resource timelines...
-          // We need an api that only checks the resizing.
           data->state->q_operationplan->getOperation()->setOperationPlanParameters(
             data->state->q_operationplan,
-            oldQty,
+            newQty,
             Date::infinitePast,
             oldEnd
             );
+          if (data->state->q_operationplan->getQuantity() > 0
+            && data->state->q_operationplan->getQuantity() <= newQty + ROUNDING_ERROR
+            && data->state->q_operationplan->getDates().getEnd() <= oldEnd)
+          {
+            // The squeezing did work!
+            // The operationplan quantity is now reduced. The buffer solver will
+            // ask again for the remaining short quantity, so we don't need to
+            // bother about that here.
+            overloadQty = 0.0;
+            data->state->a_qty = -data->state->q_loadplan->getQuantity();
+            // With operations of type time_per, it is also possible that the
+            // operation now consumes capacity in a different bucket.
+            // If that's the case, we move it to start right at the end of the bucket.
+            if (cur!=res->getLoadPlans().end() &&
+              data->state->q_operationplan->getDates().getStart() > cur->getDate())
+                data->state->q_operationplan->setStart(cur->getDate() - Duration(1L));
+          }
+          else
+          {
+            // It didn't work. Restore the original operationplan.
+            // @todo this undoing is a performance bottleneck: trying to resize
+            // and restoring the original are causing lots of updates in the
+            // buffer and resource timelines...
+            // We need an api that only checks the resizing.
+            data->state->q_operationplan->getOperation()->setOperationPlanParameters(
+              data->state->q_operationplan,
+              oldQty,
+              Date::infinitePast,
+              oldEnd
+              );
+          }
         }
       }
 
@@ -645,11 +648,11 @@ DECLARE_EXPORT void SolverMRP::solve(const ResourceBuckets* res, void* v)
             // Not sure if there are cases where this will fail, but just
             // in case...
             data->state->a_qty = 0.0;
-          else if (data->constrainedPlanning && (isLeadtimeConstrained() || isFenceConstrained()))
+          else if (data->constrainedPlanning && (isLeadTimeConstrained() || isFenceConstrained()))
             // Check the leadtime constraints after the move
             // Note that the check function can update the answered date
             // and quantity
-            checkOperationLeadtime(data->state->q_operationplan,*data,false);
+            checkOperationLeadTime(data->state->q_operationplan,*data,false);
         }
         else
           // No earlier capacity found: get out of the loop

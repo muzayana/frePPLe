@@ -1,6 +1,6 @@
 /***************************************************************************
  *                                                                         *
- * Copyright (C) 2007-2013 by Johan De Taeye, frePPLe bvba                 *
+ * Copyright (C) 2007-2015 by Johan De Taeye, frePPLe bvba                 *
  *                                                                         *
  * All information contained herein is, and remains the property of        *
  * frePPLe.                                                                *
@@ -13,6 +13,7 @@
 
 #define FREPPLE_CORE
 #include "frepple/utils.h"
+#include "frepple/xml.h"
 #include <sys/stat.h>
 
 // These headers are required for the loading of dynamic libraries and the
@@ -35,6 +36,8 @@ DECLARE_EXPORT const MetaCategory* MetaCategory::firstCategory = NULL;
 DECLARE_EXPORT MetaCategory::CategoryMap MetaCategory::categoriesByTag;
 DECLARE_EXPORT MetaCategory::CategoryMap MetaCategory::categoriesByGroupTag;
 
+DECLARE_EXPORT const MetaCategory* Object::metadata = NULL; // XXX TODO Only required to keep pointerfield to Object valid, used in problem.getOwner()
+
 // Repository of loaded modules
 DECLARE_EXPORT set<string> Environment::moduleRegistry;
 
@@ -56,7 +59,7 @@ DECLARE_EXPORT string Environment::logfilename;
 // Hash value computed only once
 DECLARE_EXPORT const hashtype MetaCategory::defaultHash(Keyword::hash("default"));
 
-vector<PythonType*> PythonExtensionBase::table;
+vector<PythonType*> Object::table;
 
 
 void LibraryUtils::initialize()
@@ -306,7 +309,7 @@ DECLARE_EXPORT void Environment::loadModule(string lib, ParameterList& parameter
 }
 
 
-DECLARE_EXPORT void MetaClass::registerClass (const string& a, const string& b,
+DECLARE_EXPORT void MetaClass::addClass (const string& a, const string& b,
     bool def, creatorDefault f)
 {
   // Find or create the category
@@ -327,21 +330,23 @@ DECLARE_EXPORT void MetaClass::registerClass (const string& a, const string& b,
   cat->classes[Keyword::hash(b)] = this;
 
   // Register this tag also as the default one, if requested
-  if (def) cat->classes[Keyword::hash("default")] = this;
+  if (isDefault)
+    cat->classes[Keyword::hash("default")] = this;
 
   // Set method pointers to NULL
-  factoryMethodDefault = f;
+  factoryMethod = f;
 }
 
 
 DECLARE_EXPORT MetaCategory::MetaCategory (const string& a, const string& gr,
-    readController f, writeController w, findController s)
+    size_t sz, readController f, writeController w, findController s)
 {
   // Update registry
   if (!a.empty()) categoriesByTag[Keyword::hash(a)] = this;
   if (!gr.empty()) categoriesByGroupTag[Keyword::hash(gr)] = this;
 
   // Update fields
+  size = sz;
   readFunction = f;
   writeFunction = w;
   findFunction = s;
@@ -455,6 +460,24 @@ DECLARE_EXPORT void MetaClass::printClasses()
 }
 
 
+DECLARE_EXPORT const MetaFieldBase* MetaClass::findField(const Keyword& key) const
+{
+  for (fieldlist::const_iterator i = fields.begin(); i != fields.end(); ++i)
+    if ((*i)->getName() == key)
+      return *i;
+  return NULL;
+}
+
+
+DECLARE_EXPORT const MetaFieldBase* MetaClass::findField(hashtype h) const
+{
+  for (fieldlist::const_iterator i = fields.begin(); i != fields.end(); ++i)
+    if ((*i)->getHash() == h)
+      return *i;
+  return NULL;
+}
+
+
 DECLARE_EXPORT Action MetaClass::decodeAction(const char *x)
 {
   // Validate the action
@@ -467,11 +490,11 @@ DECLARE_EXPORT Action MetaClass::decodeAction(const char *x)
 }
 
 
-DECLARE_EXPORT Action MetaClass::decodeAction(const AttributeList& atts)
+DECLARE_EXPORT Action MetaClass::decodeAction(const DataValueDict& atts)
 {
   // Decode the string and return the default in the absence of the attribute
-  const DataElement* c = atts.get(Tags::tag_action);
-  return *c ? decodeAction(c->getString().c_str()) : ADD_CHANGE;
+  const DataValue* c = atts.get(Tags::action);
+  return c ? decodeAction(c->getString().c_str()) : ADD_CHANGE;
 }
 
 
@@ -492,7 +515,7 @@ DECLARE_EXPORT bool MetaClass::raiseEvent(Object* v, Signal a) const
 }
 
 
-Object* MetaCategory::ControllerDefault (const MetaClass* cat, const AttributeList& in)
+Object* MetaCategory::ControllerDefault (const MetaClass* cat, const DataValueDict& in)
 {
   Action act = ADD;
   switch (act)
@@ -504,7 +527,7 @@ Object* MetaCategory::ControllerDefault (const MetaClass* cat, const AttributeLi
       throw DataException
       ("Entity " + cat->type + " doesn't support CHANGE action");
     default:
-      /* Lookup for the class in the map of registered classes. */
+      /* Lookup the class in the map of registered classes. */
       const MetaClass* j;
       if (cat->category)
         // Class metadata passed: we already know what type to create
@@ -512,17 +535,20 @@ Object* MetaCategory::ControllerDefault (const MetaClass* cat, const AttributeLi
       else
       {
         // Category metadata passed: we need to look up the type
-        const DataElement* type = in.get(Tags::tag_type);
-        j = static_cast<const MetaCategory&>(*cat).findClass(*type ? Keyword::hash(type->getString()) : MetaCategory::defaultHash);
+        const DataValue* type = in.get(Tags::type);
+        j = static_cast<const MetaCategory&>(*cat).findClass(
+          type ? Keyword::hash(type->getString()) : MetaCategory::defaultHash
+          );
         if (!j)
         {
-          string t(*type ? type->getString() : "default");
+          string t(type ? type->getString() : "default");
           throw LogicException("No type " + t + " registered for category " + cat->type);
         }
       }
 
       // Call the factory method
-      Object* result = j->factoryMethodDefault();
+      assert(j->factoryMethod);
+      Object* result = j->factoryMethod();
 
       // Run the callback methods
       if (!result->getType().raiseEvent(result, SIG_ADD))
@@ -537,31 +563,6 @@ Object* MetaCategory::ControllerDefault (const MetaClass* cat, const AttributeLi
   }
   throw LogicException("Unreachable code reached");
   return NULL;
-}
-
-
-void HasDescription::writeElement(Serializer* o, const Keyword &t, mode m) const
-{
-  // Note that this function is never called on its own. It is always called
-  // from the writeElement() method of a subclass.
-  // Hence, we don't bother about the mode.
-  o->writeElement(Tags::tag_category, cat);
-  o->writeElement(Tags::tag_subcategory, subcat);
-  o->writeElement(Tags::tag_description, descr);
-  o->writeElement(Tags::tag_source, getSource());
-}
-
-
-void HasDescription::endElement(DataInput& pIn, const Attribute& pAttr, const DataElement& pElement)
-{
-  if (pAttr.isA(Tags::tag_category))
-    setCategory(pElement.getString());
-  else if (pAttr.isA(Tags::tag_subcategory))
-    setSubCategory(pElement.getString());
-  else if (pAttr.isA(Tags::tag_description))
-    setDescription(pElement.getString());
-  else if (pAttr.isA(Tags::tag_source))
-    setSource(pElement.getString());
 }
 
 

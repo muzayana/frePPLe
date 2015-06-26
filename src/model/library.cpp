@@ -1,6 +1,6 @@
 /***************************************************************************
  *                                                                         *
- * Copyright (C) 2007-2013 by Johan De Taeye, frePPLe bvba                 *
+ * Copyright (C) 2007-2015 by Johan De Taeye, frePPLe bvba                 *
  *                                                                         *
  * All information contained herein is, and remains the property of        *
  * frePPLe.                                                                *
@@ -53,8 +53,9 @@ void LibraryModel::initialize()
   nok += SupplierIterator::initialize();
 
   // Initialize the calendar metadata.
+  nok += CalendarBucket::initialize();
   nok += Calendar::initialize();
-  nok += CalendarDouble::initialize();
+  nok += CalendarDefault::initialize();
   nok += CalendarIterator::initialize();
 
   // Initialize the operation metadata.
@@ -65,7 +66,9 @@ void LibraryModel::initialize()
   nok += OperationTimePer::initialize();
   nok += OperationRouting::initialize();
   nok += OperationSetup::initialize();
+  nok += SubOperation::initialize();
   nok += OperationIterator::initialize();
+  nok += SubOperationIterator::initialize();
 
   // Initialize the item metadata.
   nok += Item::initialize();
@@ -90,6 +93,7 @@ void LibraryModel::initialize()
   nok += DemandPlanIterator::initialize();
 
   // Initialize the setupmatrix metadata.
+  nok += SetupMatrixRule::initialize();
   nok += SetupMatrix::initialize();
   nok += SetupMatrixDefault::initialize();
   nok += SetupMatrixIterator::initialize();
@@ -160,7 +164,7 @@ void LibraryModel::initialize()
     "buffers", BufferIterator::create, METH_NOARGS,
     "Returns an iterator over the buffers.");
   PythonInterpreter::registerGlobalMethod(
-    "locations", LocationIterator::create, METH_NOARGS,
+    "locations", LocationIterator::create, METH_NOARGS,    // TODO Replace with a attribute?
     "Returns an iterator over the locations.");
   PythonInterpreter::registerGlobalMethod(
     "customers", CustomerIterator::create, METH_NOARGS,

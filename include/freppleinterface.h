@@ -1,6 +1,6 @@
 /***************************************************************************
  *                                                                         *
- * Copyright (C) 2007-2013 by Johan De Taeye, frePPLe bvba                                    *
+ * Copyright (C) 2007-2015 by Johan De Taeye, frePPLe bvba                 *
  *                                                                         *
  * All information contained herein is, and remains the property of        *
  * frePPLe.                                                                *
@@ -24,6 +24,7 @@
   * It provides a more detailed API to interface with frePPLe.
   */
 
+#pragma once
 #ifndef FREPPLE_INTERFACE_H
 #define FREPPLE_INTERFACE_H
 

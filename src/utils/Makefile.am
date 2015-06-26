@@ -7,7 +7,7 @@ AM_CPPFLAGS=-DDATADIRECTORY='"${pkgdatadir}"' -DLIBDIRECTORY='"${libdir}"' -DSYS
 CLEANFILES = *.gcda *.gcov *.gcno
 
 noinst_LTLIBRARIES = libutils.la
-libutils_la_SOURCES = pythonutils.cpp date.cpp xmlparser.cpp actions.cpp library.cpp name.cpp service.cpp
+libutils_la_SOURCES = python.cpp date.cpp xml.cpp actions.cpp library.cpp name.cpp service.cpp
 
 if LICENSE
 # Full installation of all files

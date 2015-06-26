@@ -1,6 +1,6 @@
 /***************************************************************************
  *                                                                         *
- * Copyright (C) 2007-2013 by Johan De Taeye, frePPLe bvba                 *
+ * Copyright (C) 2007-2015 by Johan De Taeye, frePPLe bvba                 *
  *                                                                         *
  * All information contained herein is, and remains the property of        *
  * frePPLe.                                                                *
@@ -23,10 +23,11 @@ DECLARE_EXPORT const MetaCategory* PeggingIterator::metadata;
 int PeggingIterator::initialize()
 {
   // Initialize the pegging metadata
-  PeggingIterator::metadata = new MetaCategory("pegging","peggings");
+  PeggingIterator::metadata = MetaCategory::registerCategory<PeggingIterator>("pegging","peggings");
+  registerFields<PeggingIterator>(const_cast<MetaCategory*>(metadata));
 
   // Initialize the Python type
-  PythonType& x = PythonExtension<PeggingIterator>::getType();
+  PythonType& x = PythonExtension<PeggingIterator>::getPythonType();
   x.setName("peggingIterator");
   x.setDoc("frePPLe iterator for demand pegging");
   x.supportgetattro();
@@ -36,7 +37,7 @@ int PeggingIterator::initialize()
 }
 
 
-DECLARE_EXPORT PeggingIterator::PeggingIterator(const Demand* d)
+DECLARE_EXPORT PeggingIterator::PeggingIterator(Demand* d)
   : downstream(false), firstIteration(true), first(false)
 {
   initType(metadata);
@@ -50,7 +51,7 @@ DECLARE_EXPORT PeggingIterator::PeggingIterator(const Demand* d)
 }
 
 
-DECLARE_EXPORT PeggingIterator::PeggingIterator(const OperationPlan* opplan, bool b)
+DECLARE_EXPORT PeggingIterator::PeggingIterator(OperationPlan* opplan, bool b)
   : downstream(b), firstIteration(true), first(false)
 {
   initType(metadata);
@@ -72,7 +73,7 @@ DECLARE_EXPORT PeggingIterator::PeggingIterator(const OperationPlan* opplan, boo
 }
 
 
-DECLARE_EXPORT PeggingIterator::PeggingIterator(const FlowPlan* fp, bool b)
+DECLARE_EXPORT PeggingIterator::PeggingIterator(FlowPlan* fp, bool b)
   : downstream(b), firstIteration(true), first(false)
 {
   initType(metadata);
@@ -86,7 +87,7 @@ DECLARE_EXPORT PeggingIterator::PeggingIterator(const FlowPlan* fp, bool b)
 }
 
 
-DECLARE_EXPORT PeggingIterator::PeggingIterator(const LoadPlan* lp, bool b)
+DECLARE_EXPORT PeggingIterator::PeggingIterator(LoadPlan* lp, bool b)
   : downstream(b), firstIteration(true), first(false)
 {
   initType(metadata);
@@ -197,20 +198,8 @@ DECLARE_EXPORT PyObject* PeggingIterator::iternext()
 }
 
 
-DECLARE_EXPORT PyObject* PeggingIterator::getattro(const Attribute& attr)
-{
-  if (attr.isA(Tags::tag_operationplan))
-    return PythonObject(getOperationPlan());
-  if (attr.isA(Tags::tag_quantity))
-    return PythonObject(getQuantity());
-  if (attr.isA(Tags::tag_level))
-    return PythonObject(getLevel());
-  return NULL;
-}
-
-
 DECLARE_EXPORT void PeggingIterator::updateStack
-(const OperationPlan* op, double qty, double o, short lvl)
+(OperationPlan* op, double qty, double o, short lvl)
 {
   // Avoid very small pegging quantities
   if (qty < ROUNDING_ERROR) return;

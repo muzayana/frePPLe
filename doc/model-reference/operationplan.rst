@@ -27,13 +27,21 @@ id               unsigned long     | Unique identifier of the operationplan.
                                    | If left unspecified an identifier will be automatically
                                      generated.
                                    | This field is required when updating existing instances.
-start            dateTime          Start date.
-end              dateTime          End date.
+start            dateTime          | Start date.
+                                   | If left unspecified (or set to 1971-01-01), this field
+                                     will be computed based on the end date.
+end              dateTime          | End date.
+                                   | If left unspecified (or set to 1971-01-01), this field
+                                     will be computed based on the start date.
 demand           demand            | Points to the demand being satisfied with this
                                     operationplan.
                                    | This field is only non-null for the actual delivery
                                     operationplans.
-quantity         double            Quantity being planned.
+quantity         double            | Quantity being planned.
+                                   | For unlocked operationplans, this quantity will be rounded
+                                     to the respect the min, max and multiple constraints set
+                                     on the operation.
+                                   | Locked operationplans don't need to respect these limits.
 locked           boolean           A locked operation plan is not allowed to be changed by any
                                    solver algorithm.
 consume_material boolean           | Controls whether this operationplan should consume material
@@ -69,11 +77,6 @@ unavailable      duration          | Amount of time that the operationplan is in
                                      due to the unavailability (modelled through the
                                      availability calendar of the operation location).
                                    | This field is export-only.
-motive           demand, buffer    | Planning object that triggered the creation of this
-                 or resource         operationplan.
-                                   | This is an export-only field that is updated by the
-                                     solver. The information is normally not relevant for
-                                     end users.
 action           A/C/AC/R          | Type of action to be executed:
                                    | A: Add an new entity, and report an error if the entity
                                      already exists.
