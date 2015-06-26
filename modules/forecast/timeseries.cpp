@@ -1,6 +1,6 @@
 /***************************************************************************
  *                                                                         *
- * Copyright (C) 2012-2013 by frePPLe bvba                                 *
+ * Copyright (C) 2012-2015 by frePPLe bvba                                 *
  *                                                                         *
  * All information contained herein is, and remains the property of        *
  * frePPLe.                                                                *

@@ -8,6 +8,7 @@
 
 #define FREPPLE_CORE
 #include "frepple/utils.h"
+#include "frepple/xml.h"
 
 #include <openssl/rsa.h>
 #include <openssl/evp.h>
@@ -21,7 +22,7 @@ namespace utils
 
 DECLARE_EXPORT int flags = 836125;
 
-const MetaClass LicenseValidator::metadata;
+const MetaClass *LicenseValidator::metadata = NULL;
 
 
 const unsigned char Decryptor::key[270] = {
@@ -77,34 +78,33 @@ unsigned char* Decryptor::unbase64(string input)
 }
 
 
-void LicenseValidator::endElement(DataInput& pIn, const Attribute& pAttr, const DataElement& pElement)
+void LicenseValidator::valid()
 {
   static const Keyword tag_customer("customer");
   static const Keyword tag_email("email");
   static const Keyword tag_valid_from("valid_from");
   static const Keyword tag_valid_till("valid_till");
   static const Keyword tag_signature("signature");
-  if (pAttr.isA(tag_customer))
-    customer = pElement.getString();
-  else if (pAttr.isA(tag_email))
-    email = pElement.getString();
-  else if (pAttr.isA(tag_valid_from))
+  if (!metadata)
   {
-    valid_from = pElement.getString();
-    valid_from_date = pElement.getDate();
+    metadata = MetaClass::registerClass<LicenseValidator>();
+    const_cast<MetaClass*>(metadata)->addStringField<LicenseValidator>(
+      tag_customer, &LicenseValidator::getCustomer, &LicenseValidator::setCustomer
+      );
+    const_cast<MetaClass*>(metadata)->addStringField<LicenseValidator>(
+      tag_email, &LicenseValidator::getEmail, &LicenseValidator::setEmail
+      );
+    const_cast<MetaClass*>(metadata)->addStringField<LicenseValidator>(
+      tag_valid_from, &LicenseValidator::getValidFrom, &LicenseValidator::setValidFrom
+      );
+    const_cast<MetaClass*>(metadata)->addStringField<LicenseValidator>(
+      tag_valid_till, &LicenseValidator::getValidTill, &LicenseValidator::setValidTill
+      );
+    const_cast<MetaClass*>(metadata)->addStringField<LicenseValidator>(
+      tag_signature, &LicenseValidator::getSignature, &LicenseValidator::setSignature
+      );
   }
-  else if (pAttr.isA(tag_valid_till))
-  {
-    valid_till = pElement.getString();
-    valid_till_date = pElement.getDate();
-  }
-  else if (pAttr.isA(tag_signature))
-    signature = pElement.getString();
-}
 
-
-void LicenseValidator::valid()
-{
   // Parse the license file
   XMLInputFile(Environment::searchFile("license.xml")).parse(this, false);
 

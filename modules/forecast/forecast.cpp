@@ -1,6 +1,6 @@
 /***************************************************************************
  *                                                                         *
- * Copyright (C) 2012 by frePPLe bvba                                      *
+ * Copyright (C) 2012-2015 by frePPLe bvba                                 *
  *                                                                         *
  * All information contained herein is, and remains the property of        *
  * frePPLe.                                                                *
@@ -30,15 +30,19 @@ bool ForecastBucket::DueAtEndOfBucket = false;
 int Forecast::initialize()
 {
   // Initialize the metadata
-  metadata = new MetaClass("demand", "demand_forecast",
-      Object::createString<Forecast>);
+  metadata = MetaClass::registerClass<BufferDefault>(
+    "demand", "demand_forecast", Object::create<Forecast>
+    );
+  registerFields<Forecast>(const_cast<MetaClass*>(metadata));
 
   // Get notified when a calendar is deleted
   FunctorStatic<Calendar,Forecast>::connect(SIG_REMOVE);
 
   // Initialize the Python class
-  FreppleClass<Forecast,Demand>::getType().addMethod("setQuantity", Forecast::setPythonTotalQuantity, METH_VARARGS,
-      "Update the total quantity in one or more buckets");
+  FreppleClass<Forecast, Demand>::getPythonType().addMethod(
+    "setQuantity", Forecast::setPythonTotalQuantity, METH_VARARGS,
+    "Update the total quantity in one or more buckets"
+    );
   return FreppleClass<Forecast,Demand>::initialize();
 }
 
@@ -47,11 +51,13 @@ int ForecastBucket::initialize()
 {
   // Initialize the metadata
   // No factory method for this class
-  metadata = new MetaClass("demand", "demand_forecastbucket");
+  metadata = MetaClass::registerClass<ForecastBucket>(
+    "demand", "demand_forecastbucket"
+    );
 
   // Initialize the Python class
   // No support for creation
-  PythonType& x = FreppleClass<ForecastBucket,Demand>::getType();
+  PythonType& x = FreppleClass<ForecastBucket, Demand>::getPythonType();
   x.setName("demand_forecastbucket");
   x.setDoc("frePPLe forecastbucket");
   x.supportgetattro();
@@ -107,20 +113,17 @@ void Forecast::instantiate()
 
   // Create a demand for every bucket. The weight value depends on the
   // calendar type: double, integer, bool or other
-  const CalendarDouble* c = dynamic_cast<const CalendarDouble*>(calptr);
+  const Calendar* c = dynamic_cast<const Calendar*>(calptr);
   ForecastBucket* prev = NULL;
   Date prevDate;
   double prevValue(0.0);
   if (c)
   {
     // Double calendar
-    for (CalendarDouble::EventIterator i(c); i.getDate()<=Date::infiniteFuture; ++i)
+    for (Calendar::EventIterator i(c); i.getDate()<=Date::infiniteFuture; ++i)
     {
       if ((prevDate || i.getDate() == Date::infiniteFuture) && prevValue > 0.0)
-      {
         prev = new ForecastBucket(this, prevDate, i.getDate(), prevValue, prev);
-        Demand::add(prev);
-      }
       if (i.getDate() == Date::infiniteFuture) break;
       prevDate = i.getDate();
       prevValue = i.getValue();
@@ -134,7 +137,6 @@ void Forecast::instantiate()
       if (prevDate || i.getDate() == Date::infiniteFuture)
       {
         prev = new ForecastBucket(this, prevDate, i.getDate(), 1.0, prev);
-        Demand::add(prev);
         if (i.getDate() == Date::infiniteFuture) break;
       }
       prevDate = i.getDate();
@@ -251,144 +253,6 @@ void Forecast::setTotalQuantity(const Date d, double f, bool add)
 }
 
 
-void Forecast::writeElement(Serializer *o, const Keyword &tag, mode m) const
-{
-  // Writing a reference
-  if (m == REFERENCE)
-  {
-    o->writeElement
-    (tag, Tags::tag_name, getName(), Tags::tag_type, getType().type);
-    return;
-  }
-
-  // Write the complete object
-  if (m != NOHEAD) o->BeginObject
-    (tag, Tags::tag_name, getName(), Tags::tag_type, getType().type);
-
-  o->writeElement(Tags::tag_item, &*getItem());
-  o->writeElement(Tags::tag_operation, &*getOperation());
-  if (getPriority()) o->writeElement(Tags::tag_priority, getPriority());
-  o->writeElement(Tags::tag_calendar, calptr);
-  if (getMaxLateness() != Duration::MAX)
-    o->writeElement(Tags::tag_maxlateness, getMaxLateness());
-  if (getMinShipment() != 1.0)
-    o->writeElement(Tags::tag_minshipment, getMinShipment());
-
-  // Write source field
-  o->writeElement(Tags::tag_source, getSource());
-
-  // Write the custom fields
-  PythonDictionary::write(o, getDict());
-
-  // Write fields specific to the forecast model
-  if (!getDiscrete())
-    o->writeElement(Tags::tag_discrete, false);
-  if (getMethods() != METHOD_ALL)
-    o->writeElement(Forecast::tag_methods, getMethods());
-  if (!getPlanned())
-    o->writeElement(Forecast::tag_planned, false);
-
-  // Write all entries
-  o->BeginList(Tags::tag_buckets);
-  for (memberIterator i = getMembers(); i != end(); ++i)
-  {
-    ForecastBucket* f = dynamic_cast<ForecastBucket*>(&*i);
-    o->BeginObject(Tags::tag_bucket, Tags::tag_start, f->getDue());
-    o->writeElement(tag_total, f->getTotal());
-    o->writeElement(Tags::tag_quantity, f->getQuantity());
-    o->writeElement(tag_consumed, f->getConsumed());
-    o->EndObject(Tags::tag_bucket);
-  }
-  o->EndList(Tags::tag_buckets);
-
-  o->EndObject(tag);
-}
-
-
-void Forecast::endElement(DataInput& pIn, const Attribute& pAttr, const DataElement& pElement)
-{
-  // While reading forecast buckets, we use the userarea field on the input
-  // to cache the data. The temporary object is deleted when the bucket
-  // tag is closed.
-  if (pAttr.isA(Tags::tag_calendar))
-  {
-    Calendar *b = dynamic_cast<Calendar*>(pIn.getPreviousObject());
-    if (b) setCalendar(b);
-    else throw LogicException("Incorrect object type during read operation");
-  }
-  else if (pAttr.isA(Tags::tag_discrete))
-    setDiscrete(pElement.getBool());
-  else if (pAttr.isA(Forecast::tag_planned))
-    setPlanned(pElement.getBool());
-  else if (pAttr.isA(Forecast::tag_methods))
-    setMethods(pElement.getUnsignedLong());
-  else if (pAttr.isA(Tags::tag_bucket))
-  {
-    pair<DateRange,double> *d =
-      static_cast< pair<DateRange,double>* >(pIn.getUserArea());
-    if (d)
-    {
-      // Update the forecast quantities
-      setTotalQuantity(d->first, d->second);
-      // Clear the read buffer
-      d->first.setStart(Date());
-      d->first.setEnd(Date());
-      d->second = 0;
-    }
-  }
-  else if (pIn.getParentElement().isA(Tags::tag_bucket))
-  {
-    pair<DateRange,double> *d =
-      static_cast< pair<DateRange,double>* >(pIn.getUserArea());
-    if (pAttr.isA(tag_total))
-    {
-      if (d) d->second = pElement.getDouble();
-      else pIn.setUserArea(
-          new pair<DateRange,double>(DateRange(),pElement.getDouble())
-        );
-    }
-    else if (pAttr.isA(Tags::tag_start))
-    {
-      Date x = pElement.getDate();
-      if (d)
-      {
-        if (!d->first.getStart()) d->first.setStartAndEnd(x,x);
-        else d->first.setStart(x);
-      }
-      else pIn.setUserArea(new pair<DateRange,double>(DateRange(x,x),0));
-    }
-    else if (pAttr.isA(Tags::tag_end))
-    {
-      Date x = pElement.getDate();
-      if (d)
-      {
-        if (!d->first.getStart()) d->first.setStartAndEnd(x,x);
-        else d->first.setEnd(x);
-      }
-      else pIn.setUserArea(new pair<DateRange,double>(DateRange(x,x),0));
-    }
-  }
-  else
-    Demand::endElement(pIn, pAttr, pElement);
-
-  if (pIn.isObjectEnd())
-  {
-    // Delete dynamically allocated temporary read object
-    if (pIn.getUserArea())
-      delete static_cast< pair<DateRange,double>* >(pIn.getUserArea());
-  }
-}
-
-
-void Forecast::beginElement(DataInput& pIn, const Attribute& pAttr)
-{
-  if (pAttr.isA(Tags::tag_calendar))
-    pIn.readto( Calendar::reader(Calendar::metadata, pIn.getAttributes()) );
-  else
-    Demand::beginElement(pIn, pAttr);
-}
-
-
 void Forecast::setCalendar(Calendar* c)
 {
   if (isGroup())
@@ -486,5 +350,113 @@ void Forecast::setOperation(Operation *o)
   for (memberIterator m = getMembers(); m!=end(); ++m)
     m->setOperation(o);
 }
+
+
+extern "C" PyObject* Forecast::setPythonTotalQuantity(PyObject *self, PyObject *args)
+{
+  try
+  {
+    // Get the forecast model
+    Forecast* forecast = static_cast<Forecast*>(self);
+
+    // Parse the Python arguments
+    double value;
+    PyObject* pystart;
+    PyObject* pyend = NULL;
+    PyObject* pyadd = NULL;
+    int ok = PyArg_ParseTuple(args, "dO|OO:setQuantity", &value, &pystart, &pyend, &pyadd);
+    if (!ok) return NULL;
+
+    // Update the forecast
+    PythonData start(pystart), end(pyend), add(pyadd);
+    if (pyend)
+      forecast->setTotalQuantity(DateRange(start.getDate(), end.getDate()), value, add.getBool());
+    else
+      forecast->setTotalQuantity(start.getDate(), value, add.getBool());
+  }
+  catch(...)
+  {
+    PythonType::evalException();
+    return NULL;
+  }
+  return Py_BuildValue("");
+}
+
+
+extern "C" PyObject* ForecastSolver::timeseries(PyObject *self, PyObject *args)
+{
+  // Get the forecast model
+  ForecastSolver* solver = static_cast<ForecastSolver*>(self);
+
+  // Parse the Python arguments
+  PyObject* fcst;
+  PyObject* history;
+  PyObject* buckets = NULL;
+  int ok = PyArg_ParseTuple(args, "OO|O:timeseries", &fcst, &history, &buckets);
+  if (!ok) return NULL;
+
+  // Verify the object type
+  PythonData pyfcst(fcst);
+  if (!pyfcst.check(Forecast::metadata))
+  {
+    PyErr_SetString(PythonDataException, "first argument must be of type forecast");
+    return NULL;
+  }
+
+  // Verify we can iterate over the arguments
+  PyObject *historyiterator = PyObject_GetIter(history);
+  PyObject *bucketiterator = NULL;
+  if (!historyiterator)
+  {
+    PyErr_Format(PyExc_AttributeError,"Invalid type for time series");
+    return NULL;
+  }
+  if (buckets) bucketiterator = PyObject_GetIter(buckets);
+  if (!bucketiterator)
+  {
+    PyErr_Format(PyExc_AttributeError,"Invalid type for time series");
+    return NULL;
+  }
+
+  // Copy the history data into a C++ data structure
+  double data[300];
+  unsigned int historycount = 0;
+  PyObject *item;
+  while ((item = PyIter_Next(historyiterator)))
+  {
+    data[historycount++] = PyFloat_AsDouble(item);
+    Py_DECREF(item);
+    if (historycount>=300) break;
+  }
+  Py_DECREF(historyiterator);
+
+  // Copy the bucket data into a C++ data structure
+  Date bucketdata[300];
+  unsigned int bucketcount = 0;
+  while ((item = PyIter_Next(bucketiterator)))
+  {
+    bucketdata[bucketcount++] = PythonData(item).getDate();
+    Py_DECREF(item);
+    if (bucketcount>=300) break;
+  }
+  Py_DECREF(bucketiterator);
+
+  Py_BEGIN_ALLOW_THREADS  // Free the Python interpreter for other threads
+  try
+  {
+    // Generate the forecast
+    static_cast<Forecast*>(fcst)->generateFutureValues
+      (data, historycount, bucketdata, bucketcount, solver);
+  }
+  catch (...)
+  {
+    Py_BLOCK_THREADS;
+    PythonType::evalException();
+    return NULL;
+  }
+  Py_END_ALLOW_THREADS   // Release the Python interpreter
+  return Py_BuildValue("");
+}
+
 
 }       // end namespace

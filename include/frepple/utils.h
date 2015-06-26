@@ -1365,7 +1365,10 @@ class Keyword : public NonCopyable
     }
 
     /** Returns the quoted name of the tag: "TAG": */
-    const string& getQuoted() const {return strQuoted;}
+    const string& getQuoted() const
+    {
+      return strQuoted;
+    }
 
     /** Returns a pointer to an array of XML characters. This format is used
       * by Xerces for the internal representation of character strings. */
@@ -1828,6 +1831,13 @@ class MetaClass : public NonCopyable
       return new MetaClass(cat, cls, sizeof(T), def);
     }
 
+    /** This constructor registers the metadata of a class that is intended
+      * only for internal use. */
+    template <class T> static inline MetaClass* registerClass()
+    {
+      return new MetaClass(sizeof(T), Object::create<T>);
+    }
+
     /** This constructor registers the metadata of a class, with a factory
       * method that uses the default constructor of the class. */
     template <class T> static inline MetaClass* registerClass(
@@ -2120,6 +2130,13 @@ class MetaClass : public NonCopyable
     }
 
   private:
+    /** This constructor registers the metadata of a class. */
+    MetaClass(size_t sz, creatorDefault f)
+      : size(sz), pythonClass(NULL), isDefault(false)
+    {
+      factoryMethod = f;
+    }
+
     /** This constructor registers the metadata of a class. */
     MetaClass(const string& cat, const string& cls, size_t sz, bool def = false)
       : size(sz), pythonClass(NULL), isDefault(def)
@@ -7143,17 +7160,6 @@ class FreppleIterator : public PythonExtension<ME>
 /** @brief This Python function loads a frepple extension module in memory. */
 DECLARE_EXPORT PyObject* loadModule(PyObject*, PyObject*, PyObject*);
 
-class LicenseValidator : private Object
-{
-  private:
-    void endElement(DataInput&, const Attribute&, const DataElement&);
-    string customer;
-    string email;
-    string valid_from;
-    string valid_till;
-    Date valid_from_date;
-    Date valid_till_date;
-    string signature;
 
 /** @brief A template class to expose category classes which use a string
   * as the key to Python. */
@@ -7202,29 +7208,90 @@ class FreppleClass  : public PythonExtension< FreppleClass<ME,BASE> >
     }
 };
 
+
+class LicenseValidator : public Object
+{
+  private:
+    string customer;
+    string email;
+    string valid_from;
+    string valid_till;
+    Date valid_from_date;
+    Date valid_till_date;
+    string signature;
+
     /** Check a license file. */
     void valid();
 
     /** Virtual functions we have to define... */
-    static const MetaClass metadata;
+    static const MetaClass *metadata;
     virtual size_t getSize() const {return 0;}
-    virtual const MetaClass& getType() const {return metadata;}
+    virtual const MetaClass& getType() const {return *metadata;}
+
+    void setCustomer(string e)
+    {
+      customer = e;
+    }
+
+    void setEmail(string e)
+    {
+      email = e;
+    }
+
+    void setSignature(string e)
+    {
+      signature = e;
+    }
+
+    void setValidFrom(string d)
+    {
+      valid_from = d;
+      valid_from_date = Date(d.c_str());
+    }
+
+    void setValidTill(string d)
+    {
+      valid_till = d;
+      valid_till_date = Date(d.c_str());
+    }
 
   public:
     /** Default constructor. */
-    LicenseValidator() { resetReferenceCount(); valid(); };
+    LicenseValidator()
+    {
+      resetReferenceCount();
+      valid();
+    };
 
     /** Return the customer from the license file. */
-    string getCustomer() const {return customer;}
+    string getCustomer() const
+    {
+      return customer;
+    }
 
     /** Return the email from the license file. */
-    string getEmail() const {return email;}
+    string getEmail() const
+    {
+      return email;
+    }
 
     /** Return the validity start date from the license file. */
-    Date getValidFrom() const {return valid_from_date;}
+    string getValidFrom() const
+    {
+      return valid_from;
+    }
 
     /** Return the validity end date from the license file. */
-    Date getValidTill() const {return valid_till_date;}
+    string getValidTill() const
+    {
+      return valid_till;
+    }
+
+    /** Return the signature from the license file. */
+    string getSignature() const
+    {
+      return signature;
+    }
 };
 
 
@@ -7243,6 +7310,7 @@ class Decryptor
       */
     static unsigned char* unbase64(string input);
 };
+
 
 #if defined(WIN32) && !defined(__CYGWIN__)
 class Service

@@ -1,6 +1,6 @@
 /***************************************************************************
  *                                                                         *
- * Copyright (C) 2012-2013 by frePPLe bvba                                 *
+ * Copyright (C) 2012-2015 by frePPLe bvba                                 *
  *                                                                         *
  * All information contained herein is, and remains the property of        *
  * frePPLe.                                                                *
@@ -21,11 +21,13 @@ const MetaClass *ForecastSolver::metadata;
 int ForecastSolver::initialize()
 {
   // Initialize the metadata
-  metadata = new MetaClass("solver", "solver_forecast",
-      Object::createDefault<ForecastSolver>);
+  metadata = MetaClass::registerClass<ForecastSolver>(
+    "solver", "solver_forecast", Object::create<ForecastSolver>
+    );
+  registerFields<ForecastSolver>(const_cast<MetaClass*>(metadata));
 
   // Initialize the Python class
-  PythonType& x = FreppleClass<ForecastSolver, Solver>::getType();
+  PythonType& x = FreppleClass<ForecastSolver, Solver>::getPythonType();
   x.setName("solver_forecast");
   x.setDoc("frePPLe solver_forecast");
   x.supportgetattro();
@@ -52,12 +54,17 @@ PyObject* ForecastSolver::create(PyTypeObject* pytype, PyObject* args, PyObject*
     Py_ssize_t pos = 0;
     while (PyDict_Next(kwds, &pos, &key, &value))
     {
-      PythonObject field(value);
+      PythonData field(value);
       PyObject* key_utf8 = PyUnicode_AsUTF8String(key);
       Attribute attr(PyBytes_AsString(key_utf8));
       Py_DECREF(key_utf8);
-      int result = s->setattro(attr, field);
-      if (result && !PyErr_Occurred())
+      const MetaFieldBase* fmeta = SolverMRP::metadata->findField(attr.getHash());
+      if (!fmeta)
+        fmeta = Solver::metadata->findField(attr.getHash());
+      if (fmeta)
+        // Update the attribute
+        fmeta->setField(s, field);
+      else
         PyErr_Format(PyExc_AttributeError,
             "attribute '%S' on '%s' can't be updated",
             key, Py_TYPE(s)->tp_name);

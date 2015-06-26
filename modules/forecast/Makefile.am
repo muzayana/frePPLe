@@ -2,7 +2,7 @@
 # Process this file with automake to produce Makefile.in
 #
 
-sources = forecast.cpp forecast.h forecastsolver.cpp module.cpp timeseries.cpp pythonforecast.cpp
+sources = forecast.cpp forecast.h forecastsolver.cpp module.cpp timeseries.cpp
 
 EXTRA_DIST = mod_forecast.xsd $(sources)
 

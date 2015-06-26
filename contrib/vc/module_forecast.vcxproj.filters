@@ -37,8 +37,5 @@
     <ClCompile Include="..\..\modules\forecast\module.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\modules\forecast\pythonforecast.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
 </Project>

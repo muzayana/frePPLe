@@ -1,6 +1,6 @@
 /***************************************************************************
  *                                                                         *
- * Copyright (C) 2012-2013 by frePPLe bvba                                 *
+ * Copyright (C) 2012-2015 by frePPLe bvba                                 *
  *                                                                         *
  * All information contained herein is, and remains the property of        *
  * frePPLe.                                                                *
@@ -105,94 +105,6 @@ MODULE_EXPORT const char* initialize(const Environment::ParameterList& z)
 
   // Return the name of the module
   return name;
-}
-
-
-int ForecastSolver::setattro(const Attribute& attr, const PythonObject& field)
-{
-  if (attr.isA(tag_DueAtEndOfBucket))
-    ForecastBucket::setDueAtEndOfBucket(field.getBool());
-  // Netting
-  else if (attr.isA(tag_Net_CustomerThenItemHierarchy))
-    Forecast::setCustomerThenItemHierarchy(field.getBool());
-  else if (attr.isA(tag_Net_MatchUsingDeliveryOperation))
-    Forecast::setMatchUsingDeliveryOperation(field.getBool());
-  else if (attr.isA(tag_Net_NetEarly))
-    Forecast::setNetEarly(field.getDuration());
-  else if (attr.isA(tag_Net_NetLate))
-    Forecast::setNetLate(field.getDuration());
-  // Forecasting
-  else if (attr.isA(tag_Iterations))
-    Forecast::setForecastIterations(field.getInt());
-  else if (attr.isA(tag_SmapeAlfa))
-    Forecast::setForecastSmapeAlfa(field.getDouble());
-  else if (attr.isA(tag_Skip))
-    Forecast::setForecastSkip(field.getUnsignedLong());
-  else if (attr.isA(tag_Outlier_maxDeviation))
-    Forecast::setForecastMaxDeviation(field.getDouble());
-  // Moving average forecast method
-  else if (attr.isA(tag_MovingAverage_order))
-    Forecast::MovingAverage::setDefaultOrder(field.getInt());
-  // Single exponential forecast method
-  else if (attr.isA(tag_SingleExponential_initialAlfa))
-    Forecast::SingleExponential::setInitialAlfa(field.getDouble());
-  else if (attr.isA(tag_SingleExponential_minAlfa))
-    Forecast::SingleExponential::setMinAlfa(field.getDouble());
-  else if (attr.isA(tag_SingleExponential_maxAlfa))
-    Forecast::SingleExponential::setMaxAlfa(field.getDouble());
-  // Double exponential forecast method
-  else if (attr.isA(tag_DoubleExponential_initialAlfa))
-    Forecast::DoubleExponential::setInitialAlfa(field.getDouble());
-  else if (attr.isA(tag_DoubleExponential_minAlfa))
-    Forecast::DoubleExponential::setMinAlfa(field.getDouble());
-  else if (attr.isA(tag_DoubleExponential_maxAlfa))
-    Forecast::DoubleExponential::setMaxAlfa(field.getDouble());
-  else if (attr.isA(tag_DoubleExponential_initialGamma))
-    Forecast::DoubleExponential::setInitialGamma(field.getDouble());
-  else if (attr.isA(tag_DoubleExponential_minGamma))
-    Forecast::DoubleExponential::setMinGamma(field.getDouble());
-  else if (attr.isA(tag_DoubleExponential_maxGamma))
-    Forecast::DoubleExponential::setMaxGamma(field.getDouble());
-  else if (attr.isA(tag_DoubleExponential_dampenTrend))
-    Forecast::DoubleExponential::setDampenTrend(field.getDouble());
-  // Seasonal forecast method
-  else if (attr.isA(tag_Seasonal_initialAlfa))
-    Forecast::Seasonal::setInitialAlfa(field.getDouble());
-  else if (attr.isA(tag_Seasonal_minAlfa))
-    Forecast::Seasonal::setMinAlfa(field.getDouble());
-  else if (attr.isA(tag_Seasonal_maxAlfa))
-    Forecast::Seasonal::setMaxAlfa(field.getDouble());
-  else if (attr.isA(tag_Seasonal_initialBeta))
-    Forecast::Seasonal::setInitialBeta(field.getDouble());
-  else if (attr.isA(tag_Seasonal_minBeta))
-    Forecast::Seasonal::setMinBeta(field.getDouble());
-  else if (attr.isA(tag_Seasonal_maxBeta))
-    Forecast::Seasonal::setMaxBeta(field.getDouble());
-  else if (attr.isA(tag_Seasonal_gamma))
-    Forecast::Seasonal::setGamma(field.getDouble());
-  else if (attr.isA(tag_Seasonal_dampenTrend))
-    Forecast::Seasonal::setDampenTrend(field.getDouble());
-  else if (attr.isA(tag_Seasonal_minPeriod))
-    Forecast::Seasonal::setMinPeriod(field.getInt());
-  else if (attr.isA(tag_Seasonal_maxPeriod))
-    Forecast::Seasonal::setMaxPeriod(field.getInt());
-  else if (attr.isA(tag_Seasonal_minAutocorrelation))
-    Forecast::Seasonal::setMinAutocorrelation(field.getDouble());
-  else if (attr.isA(tag_Seasonal_maxAutocorrelation))
-    Forecast::Seasonal::setMaxAutocorrelation(field.getDouble());
-  // Croston forecast method
-  else if (attr.isA(tag_Croston_initialAlfa))
-    Forecast::Croston::setInitialAlfa(field.getDouble());
-  else if (attr.isA(tag_Croston_minAlfa))
-    Forecast::Croston::setMinAlfa(field.getDouble());
-  else if (attr.isA(tag_Croston_maxAlfa))
-    Forecast::Croston::setMaxAlfa(field.getDouble());
-  else if (attr.isA(tag_Croston_minIntermittence))
-    Forecast::Croston::setMinIntermittence(field.getDouble());
-  // Default fields
-  else
-    return Solver::setattro(attr, field);
-  return 0;  // OK
 }
 
 }       // end namespace

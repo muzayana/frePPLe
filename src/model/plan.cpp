@@ -93,7 +93,7 @@ DECLARE_EXPORT void Plan::writeElement(Serializer *o, const Keyword& tag, mode m
   PythonDictionary::write(o, getDict());
 
   // Write all categories
-  MetaCategory::persist(o);
+  MetaCategory::persistAll(o);
 
   // Write the tail
   if (m != NOHEADTAIL && m != NOTAIL)

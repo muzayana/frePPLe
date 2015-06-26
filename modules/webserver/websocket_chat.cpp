@@ -1,4 +1,4 @@
- /***************************************************************************
+/***************************************************************************
  *                                                                         *
  * Copyright (C) 2014 by frePPLe bvba                                      *
  *                                                                         *
@@ -33,9 +33,9 @@ void WebServer::loadChatHistory(const string& c)
   {
     SerializerJSONString o;
     o.writeString("{");
-    o.writeElement(Tags::tag_name, res.getValueString(i, 0));
-    o.writeElement(Tags::tag_value, res.getValueString(i, 1));
-    o.writeElement(Tags::tag_date, res.getValueDate(i, 2));
+    o.writeElement(Tags::name, res.getValueString(i, 0));
+    o.writeElement(Tags::value, res.getValueString(i, 1));
+    o.writeElement(Tags::date, res.getValueDate(i, 2));
     o.writeString("}");
     history.push_back(o.getData().c_str());
   }
@@ -49,9 +49,9 @@ int WebServer::websocket_chat(struct mg_connection *conn, int bits,
   Date now = Date::now();
   SerializerJSONString o1;
   o1.writeString("{");
-  o1.writeElement(Tags::tag_name, clnt->getUsername());
-  o1.writeElement(Tags::tag_value, data + 6);
-  o1.writeElement(Tags::tag_date, now);
+  o1.writeElement(Tags::name, clnt->getUsername());
+  o1.writeElement(Tags::value, data + 6);
+  o1.writeElement(Tags::date, now);
   o1.writeString("}");
   stringstream o2;
   o2 << "{\"category\": \"chat\", \"messages\": [" << o1.getData() << "]}";

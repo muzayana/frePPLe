@@ -29,56 +29,56 @@ int WebServer::websocket_get(struct mg_connection *conn, int bits,
   // Item
   if (data_len == 5 || !strncmp(data+5, "item/", 5))
   {
-    o.BeginList(Tags::tag_items);
+    o.BeginList(Tags::items);
     for (Item::iterator it = Item::begin(); it != Item::end(); ++it)
-      o.writeElement(Tags::tag_item, Tags::tag_name, it->getName());
-    o.EndList(Tags::tag_items);
+      o.writeElement(Tags::item, Tags::name, it->getName());
+    o.EndList(Tags::items);
   }
 
   // Resources
   if (data_len == 5 || !strncmp(data+5, "resource/", 9))
   {
-    o.BeginList(Tags::tag_resources);
+    o.BeginList(Tags::resources);
     for (Resource::iterator res = Resource::begin(); res != Resource::end(); ++res)
-      o.writeElement(Tags::tag_resource, Tags::tag_name, res->getName());
-    o.EndList(Tags::tag_resources);
+      o.writeElement(Tags::resource, Tags::name, res->getName());
+    o.EndList(Tags::resources);
   }
 
   // Buffer
   if (data_len == 5 || !strncmp(data+5, "buffer/", 7))
   {
-    o.BeginList(Tags::tag_buffers);
+    o.BeginList(Tags::buffers);
     for (Buffer::iterator bf = Buffer::begin(); bf != Buffer::end(); ++bf)
-      o.writeElement(Tags::tag_buffer, Tags::tag_name, bf->getName());
-    o.EndList(Tags::tag_buffers);
+      o.writeElement(Tags::buffer, Tags::name, bf->getName());
+    o.EndList(Tags::buffers);
   }
 
   // Operation
   if (data_len == 5 || !strncmp(data+5, "operation/", 10))
   {
-    o.BeginList(Tags::tag_operations);
+    o.BeginList(Tags::operations);
     for (Operation::iterator op = Operation::begin(); op != Operation::end(); ++op)
-      o.writeElement(Tags::tag_operation, Tags::tag_name, op->getName());
-    o.EndList(Tags::tag_operations);
+      o.writeElement(Tags::operation, Tags::name, op->getName());
+    o.EndList(Tags::operations);
   }
 
   // Demand
   if (data_len == 5 || !strncmp(data+5, "demand/", 7))
   {
-    o.BeginList(Tags::tag_demands);
+    o.BeginList(Tags::demands);
     for (Demand::iterator dm = Demand::begin(); dm != Demand::end(); ++dm)
     {
-      //dm->writeElement(&o, Tags::tag_demand);
-      //o.writeElement(Tags::tag_demand, Tags::tag_name, dm->getName());
-      o.BeginObject(Tags::tag_demand, Tags::tag_name, dm->getName());
-      o.writeElement(Tags::tag_customer, dm->getCustomer()->getName());
-      o.writeElement(Tags::tag_quantity, dm->getQuantity());
-      o.writeElement(Tags::tag_item, dm->getItem()->getName());
-      o.writeElement(Tags::tag_due, dm->getDue());
-      o.writeElement(Tags::tag_priority, dm->getPriority());
-      o.EndObject(Tags::tag_demand);
+      //dm->writeElement(&o, Tags::demand);
+      //o.writeElement(Tags::demand, Tags::name, dm->getName());
+      o.BeginObject(Tags::demand, Tags::name, dm->getName());
+      o.writeElement(Tags::customer, dm->getCustomer()->getName());
+      o.writeElement(Tags::quantity, dm->getQuantity());
+      o.writeElement(Tags::item, dm->getItem()->getName());
+      o.writeElement(Tags::due, dm->getDue());
+      o.writeElement(Tags::priority, dm->getPriority());
+      o.EndObject(Tags::demand);
     }
-    o.EndList(Tags::tag_demands);
+    o.EndList(Tags::demands);
   }
 
   // Chat history
@@ -119,9 +119,9 @@ int WebServer::websocket_plan(struct mg_connection *conn, int bits,
     Demand *dmd = Demand::find(name);
     if (dmd)
     {
-      o.BeginList(Tags::tag_demands);
-      dmd->writeElement(&o, Tags::tag_demand);
-      o.EndList(Tags::tag_demands);
+      o.BeginList(Tags::demands);
+      dmd->writeElement(&o, Tags::demand);
+      o.EndList(Tags::demands);
     }
     else
       // Not found
@@ -133,9 +133,9 @@ int WebServer::websocket_plan(struct mg_connection *conn, int bits,
     Resource *res = Resource::find(name);
     if (res)
     {
-      o.BeginList(Tags::tag_resources);
-      res->writeElement(&o, Tags::tag_resource);
-      o.EndList(Tags::tag_resources);
+      o.BeginList(Tags::resources);
+      res->writeElement(&o, Tags::resource);
+      o.EndList(Tags::resources);
     }
     else
       // Not found
@@ -147,9 +147,9 @@ int WebServer::websocket_plan(struct mg_connection *conn, int bits,
     Buffer *buf = Buffer::find(name);
     if (buf)
     {
-      o.BeginList(Tags::tag_buffers);
-      buf->writeElement(&o, Tags::tag_buffer);
-      o.EndList(Tags::tag_buffers);
+      o.BeginList(Tags::buffers);
+      buf->writeElement(&o, Tags::buffer);
+      o.EndList(Tags::buffers);
     }
     else
       // Not found
@@ -161,9 +161,9 @@ int WebServer::websocket_plan(struct mg_connection *conn, int bits,
     Operation *oper = Operation::find(name);
     if (oper)
     {
-      o.BeginList(Tags::tag_operations);
-      oper->writeElement(&o, Tags::tag_operation);
-      o.EndList(Tags::tag_operations);
+      o.BeginList(Tags::operations);
+      oper->writeElement(&o, Tags::operation);
+      o.EndList(Tags::operations);
     }
     else
       // Not found
@@ -174,7 +174,7 @@ int WebServer::websocket_plan(struct mg_connection *conn, int bits,
     ok = false;
   if (ok)
   {
-    o.EndObject(Tags::tag_plan);
+    o.EndObject(Tags::plan);
     mg_websocket_write( conn, WEBSOCKET_OPCODE_TEXT, o.getData().c_str(), o.getData().size() );
   }
   return 1;
@@ -315,13 +315,13 @@ int WebServer::websocket_solve(struct mg_connection *conn, int bits,
         continue;
       if (first)
       {
-        o.BeginList(Tags::tag_resources);
+        o.BeginList(Tags::resources);
         first = false;
       }
-      static_cast<Resource*>(j->getPublisher()->getOwner())->writeElement(&o, Tags::tag_resource);
+      static_cast<Resource*>(j->getPublisher()->getOwner())->writeElement(&o, Tags::resource);
     }
     if (!first)
-      o.EndList(Tags::tag_resources);
+      o.EndList(Tags::resources);
     first = true;
     for (WebClient::subscriptionlist::iterator j = i->second.getSubscriptions().begin();
       j != i->second.getSubscriptions().end(); ++j)
@@ -330,13 +330,13 @@ int WebServer::websocket_solve(struct mg_connection *conn, int bits,
         continue;
       if (first)
       {
-        o.BeginList(Tags::tag_buffers);
+        o.BeginList(Tags::buffers);
         first = false;
       }
-      static_cast<Buffer*>(j->getPublisher()->getOwner())->writeElement(&o, Tags::tag_buffer);
+      static_cast<Buffer*>(j->getPublisher()->getOwner())->writeElement(&o, Tags::buffer);
     }
     if (!first)
-      o.EndList(Tags::tag_buffers);
+      o.EndList(Tags::buffers);
     first = true;
     for (WebClient::subscriptionlist::iterator j = i->second.getSubscriptions().begin();
       j != i->second.getSubscriptions().end(); ++j)
@@ -345,13 +345,13 @@ int WebServer::websocket_solve(struct mg_connection *conn, int bits,
         continue;
       if (first)
       {
-        o.BeginList(Tags::tag_operations);
+        o.BeginList(Tags::operations);
         first = false;
       }
-      static_cast<Operation*>(j->getPublisher()->getOwner())->writeElement(&o, Tags::tag_operation);
+      static_cast<Operation*>(j->getPublisher()->getOwner())->writeElement(&o, Tags::operation);
     }
     if (!first)
-      o.EndList(Tags::tag_operations);
+      o.EndList(Tags::operations);
     first = true;
     if (demandChanges != 2)
     {
@@ -363,11 +363,11 @@ int WebServer::websocket_solve(struct mg_connection *conn, int bits,
           continue;
         if (first)
         {
-          o.BeginList(Tags::tag_demands);
+          o.BeginList(Tags::demands);
           first = false;
         }
         Demand * dm = static_cast<Demand*>(j->getPublisher()->getOwner());
-        dm->writeElement(&o, Tags::tag_demand);
+        dm->writeElement(&o, Tags::demand);
         if (changedDemand == dm)
           changedDemand = NULL;
       }
@@ -375,10 +375,10 @@ int WebServer::websocket_solve(struct mg_connection *conn, int bits,
       {
         if (first)
         {
-          o.BeginList(Tags::tag_demands);
+          o.BeginList(Tags::demands);
           first = false;
         }
-        changedDemand->writeElement(&o, Tags::tag_demand);
+        changedDemand->writeElement(&o, Tags::demand);
       }
     }
     else
@@ -388,17 +388,17 @@ int WebServer::websocket_solve(struct mg_connection *conn, int bits,
       {
         if (first)
         {
-          o.BeginList(Tags::tag_demands);
+          o.BeginList(Tags::demands);
           first = false;
         }
-        d->writeElement(&o, Tags::tag_demand);
+        d->writeElement(&o, Tags::demand);
       }
     }
     if (!first)
-      o.EndList(Tags::tag_demands);
+      o.EndList(Tags::demands);
     if (o.getData().size())
     {
-      o.EndObject(Tags::tag_plan);
+      o.EndObject(Tags::plan);
       mg_websocket_write( i->first, WEBSOCKET_OPCODE_TEXT, o.getData().c_str(), o.getData().size() );  // TODO performance check for large model
     }
   }

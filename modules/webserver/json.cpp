@@ -43,7 +43,7 @@ PyObject* saveJSONfile(PyObject* self, PyObject* args)
         throw DataException("Invalid content type '" + string(content) + "'");
     }
     o.setMode(true);
-    Plan::instance().writeElement(&o, Tags::tag_plan);
+    Plan::instance().writeElement(&o, Tags::plan);
   }
   catch (...)
   {
@@ -495,7 +495,7 @@ void JSONInput::parse(char *s, JSONInput::JsonValue *value, JSONInput::JsonAlloc
 }
 
 
-const DataElement* JSONAttributeList::get(const Keyword& kw) const
+const DataValue* JSONAttributeList::get(const Keyword& kw) const // TODO XXX
 {
   /*
   for (JSONInput::JsonIterator i(node); i != JSONInput::JsonIterator(NULL); ++i)

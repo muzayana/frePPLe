@@ -42,7 +42,7 @@ bool WebServer::handleGet(CivetServer *server, struct mg_connection *conn)
       mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/xml\r\n\r\n");
       mg_printf(conn, "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n");
       mg_printf(conn, "<plan xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n");
-      SerializerXMLString o;
+      XMLSerializerString o;
       MetaCategory::persistAll(&o);
       mg_printf(conn, "%s", o.getData().c_str());
       mg_printf(conn, "</plan>\n");
@@ -110,7 +110,7 @@ bool WebServer::handleGet(CivetServer *server, struct mg_connection *conn)
       mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/xml\r\n\r\n");
       mg_printf(conn, "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n");
       mg_printf(conn, "<plan xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n");
-      SerializerXMLString o;
+      XMLSerializerString o;
       cat->persist(&o);
       mg_printf(conn, "%s", o.getData().c_str());
       mg_printf(conn, "</plan>\n");
@@ -152,7 +152,7 @@ bool WebServer::handleGet(CivetServer *server, struct mg_connection *conn)
       mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/xml\r\n\r\n");
       mg_printf(conn, "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n");
       mg_printf(conn, "<plan xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n");
-      SerializerXMLString o;
+      XMLSerializerString o;
       o.BeginList(*(cat->grouptag));
       entity->writeElement(&o, *(cat->typetag), FULL);
       o.EndList(*(cat->grouptag));

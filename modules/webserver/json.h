@@ -749,16 +749,16 @@ class JSONInput : public NonCopyable
 };
 
 
-class JSONAttributeList : public AttributeList
+class JSONAttributeList : public DataValueDict
 {
   private:
     JSONInput::JsonNode *node;
   public:
-    virtual const DataElement* get(const Keyword&) const;
+    virtual const DataValue* get(const Keyword&) const;
 };
 
 
-class JSONElement : public DataElement
+class JSONElement : public DataValue
 {
   public:
     virtual operator bool() const;

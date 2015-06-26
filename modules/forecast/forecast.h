@@ -877,9 +877,9 @@ class Forecast : public Demand
     };
 
   public:
-    /** Constructor. */
-    explicit Forecast(const string& nm)
-      : Demand(nm), calptr(NULL), discrete(true), planned(true), methods(METHOD_ALL)
+    /** Default constructor. */
+    explicit Forecast()
+      : calptr(NULL), discrete(true), planned(true), methods(METHOD_ALL)
     {
       initType(metadata);
     }
@@ -889,7 +889,9 @@ class Forecast : public Demand
 
     /** Updates the quantity of the forecast. This method is empty. */
     virtual void setQuantity(double f)
-    {throw DataException("Can't set quantity of a forecast");}
+    {
+      throw DataException("Can't set quantity of a forecast");
+    }
 
     /** Update the forecast quantity.<br>
       * The forecast quantity will be distributed equally among the buckets
@@ -920,9 +922,79 @@ class Forecast : public Demand
       */
     static PyObject* setPythonTotalQuantity(PyObject*, PyObject*);
 
-    void writeElement(Serializer*, const Keyword&, mode=DEFAULT) const;
-    void endElement(DataInput& pIn, const Attribute& pAttr, const DataElement& pElement);
-    void beginElement(DataInput& pIn, const Attribute& pAttr);
+    template<class Cls> static inline void registerFields(MetaClass* m)
+    {
+      m->addPointerField<Cls, Calendar>(Tags::calendar, &Cls::getCalendar, &Cls::setCalendar);
+      m->addBoolField<Cls>(Tags::discrete, &Cls::getDiscrete, &Cls::setDiscrete);
+      m->addUnsignedLongField<Cls>(tag_methods, &Cls::getMethods, &Cls::setMethods, METHOD_ALL);
+      m->addStringField<Cls>(tag_method, &Cls::getMethod);
+      m->addBoolField<Cls>(tag_planned, &Cls::getPlanned, &Cls::setPlanned, BOOL_TRUE);
+      m->addIterator2Field<Cls, Demand::memberIterator, ForecastBucket>(
+        Tags::buckets, Tags::bucket, &Cls::getMembers, MetaFieldBase::DETAIL + MetaFieldBase::PARENT
+        ); /*
+      XXX TODO specific set for forecast buckets
+        else if (pAttr.isA(Tags::bucket))
+  {
+    pair<DateRange,double> *d =
+      static_cast< pair<DateRange,double>* >(pIn.getUserArea());
+    if (d)
+    {
+      // Update the forecast quantities
+      setTotalQuantity(d->first, d->second);
+      // Clear the read buffer
+      d->first.setStart(Date());
+      d->first.setEnd(Date());
+      d->second = 0;
+    }
+  }
+  else if (pIn.getParentElement().isA(Tags::bucket))
+  {
+    pair<DateRange,double> *d =
+      static_cast< pair<DateRange,double>* >(pIn.getUserArea());
+    if (pAttr.isA(tag_total))
+    {
+      if (d) d->second = pElement.getDouble();
+      else pIn.setUserArea(
+          new pair<DateRange,double>(DateRange(),pElement.getDouble())
+        );
+    }
+    else if (pAttr.isA(Tags::start))
+    {
+      Date x = pElement.getDate();
+      if (d)
+      {
+        if (!d->first.getStart()) d->first.setStartAndEnd(x,x);
+        else d->first.setStart(x);
+      }
+      else pIn.setUserArea(new pair<DateRange,double>(DateRange(x,x),0));
+    }
+    else if (pAttr.isA(Tags::end))
+    {
+      Date x = pElement.getDate();
+      if (d)
+      {
+        if (!d->first.getStart()) d->first.setStartAndEnd(x,x);
+        else d->first.setEnd(x);
+      }
+      else pIn.setUserArea(new pair<DateRange,double>(DateRange(x,x),0));
+    }
+  }
+  if (attr.isA(Tags::startdate))
+    return PythonObject(getDueRange().getStart());
+  if (attr.isA(Tags::enddate))
+    return PythonObject(getDueRange().getEnd());
+  if (attr.isA(Forecast::tag_total))
+    return PythonObject(getTotal());
+  if (attr.isA(Forecast::tag_consumed))
+    return PythonObject(getConsumed());
+  if (attr.isA(Tags::weight))
+    return PythonObject(getWeight());
+  return Demand::getattro(attr);
+
+
+  */
+    }
+
     static int initialize();
 
     /** Returns which statistical forecast methods are allowed.<br>
@@ -938,26 +1010,44 @@ class Forecast : public Demand
       * forecast method which returns the lowest forecast error.<br>
       * The default value is 31, which enables all forecast methods.
       */
-    unsigned long getMethods() const {return methods;}
+    unsigned long getMethods() const
+    {
+      return methods;
+    }
 
     /** Updates computed flag. */
-    void setMethods(unsigned long b) {methods = b & METHOD_ALL;} // TODO generate/erase baseline when set to 0
+    void setMethods(unsigned long b) // TODO generate/erase baseline when set to 0
+    {
+      methods = b & METHOD_ALL;
+    }
 
     /** Return the forecast method applied to compute the forecast. */
-    string getMethod() const {return method;}
+    string getMethod() const
+    {
+      return method;
+    }
 
     /** Returns whether we generate forecast demands at this level.<br>
       * The default is true.
       */
-    bool getPlanned() const {return planned;}
+    bool getPlanned() const
+    {
+      return planned;
+    }
 
     /** Updates planned flag. */
-    void setPlanned(const bool b) {planned = b;}  // TODO erase/create demands
+    void setPlanned(const bool b) // TODO erase/create demands
+    {
+      planned = b;
+    }
 
     /** Returns whether fractional forecasts are allowed or not.<br>
       * The default is true.
       */
-    bool getDiscrete() const {return discrete;}
+    bool getDiscrete() const
+    {
+      return discrete;
+    }
 
     /** Updates forecast discreteness flag. */
     void setDiscrete(const bool b);
@@ -980,7 +1070,10 @@ class Forecast : public Demand
     virtual void setCalendar(Calendar*);
 
     /** Returns a reference to the calendar used for this forecast. */
-    Calendar* getCalendar() const {return calptr;}
+    Calendar* getCalendar() const
+    {
+      return calptr;
+    }
 
     /** Generate a forecast value based on historical demand data.<br>
       * This method will call the different forecasting methods and select the
@@ -1002,47 +1095,69 @@ class Forecast : public Demand
 
     /** Updates the due date of the demand. */
     virtual void setDue(const Date& d)
-    {throw DataException("Can't set due date of a forecast");}
+    {
+      throw DataException("Can't set due date of a forecast");
+    }
 
     virtual const MetaClass& getType() const {return *metadata;}
     static const MetaClass *metadata;
     virtual size_t getSize() const
     {
-      return sizeof(Forecast) + Demand::extrasize()
+      return sizeof(Forecast)
           + 6 * sizeof(void*); // Approx. size of an entry in forecast dictionary
     }
 
     /** Updates the value of the Customer_Then_Item_Hierarchy module
       * parameter. */
     static void setCustomerThenItemHierarchy(bool b)
-    {Customer_Then_Item_Hierarchy = b;}
+    {
+      Customer_Then_Item_Hierarchy = b;
+    }
 
     /** Returns the value of the Customer_Then_Item_Hierarchy module
       * parameter. */
     static bool getCustomerThenItemHierarchy()
-    {return Customer_Then_Item_Hierarchy;}
+    {
+      return Customer_Then_Item_Hierarchy;
+    }
 
     /** Updates the value of the Match_Using_Delivery_Operation module
       * parameter. */
     static void setMatchUsingDeliveryOperation(bool b)
-    {Match_Using_Delivery_Operation = b;}
+    {
+      Match_Using_Delivery_Operation = b;
+    }
 
     /** Returns the value of the Match_Using_Delivery_Operation module
       * parameter. */
     static bool getMatchUsingDeliveryOperation()
-    {return Match_Using_Delivery_Operation;}
+    {
+      return Match_Using_Delivery_Operation;
+    }
 
     /** Updates the value of the Net_Early module parameter. */
-    static void setNetEarly(Duration t) {Net_Early = t;}
+    static void setNetEarly(Duration t)
+    {
+      Net_Early = t;
+    }
 
     /** Returns the value of the Net_Early module parameter. */
-    static Duration getNetEarly() {return Net_Early;}
+    static Duration getNetEarly()
+    {
+      return Net_Early;
+    }
 
     /** Updates the value of the Net_Late module parameter. */
-    static void setNetLate(Duration t) {Net_Late = t;}
+    static void setNetLate(Duration t)
+    {
+      Net_Late = t;
+    }
 
     /** Returns the value of the Net_Late module parameter. */
-    static Duration getNetLate() {return Net_Late;}
+    static Duration getNetLate()
+    {
+      return Net_Late;
+    }
 
     /** Updates the value of the Forecast.smapeAlfa module parameter. */
     static void setForecastSmapeAlfa(double t)
@@ -1054,7 +1169,10 @@ class Forecast : public Demand
     }
 
     /** Returns the value of the Forecast_Iterations module parameter. */
-    static double getForecastSmapeAlfa() {return Forecast_SmapeAlfa;}
+    static double getForecastSmapeAlfa()
+    {
+      return Forecast_SmapeAlfa;
+    }
 
     /** Updates the value of the Forecast_Iterations module parameter. */
     static void setForecastIterations(unsigned long t)
@@ -1066,7 +1184,10 @@ class Forecast : public Demand
     }
 
     /** Returns the value of the Forecast_Iterations module parameter. */
-    static unsigned long getForecastIterations() {return Forecast_Iterations;}
+    static unsigned long getForecastIterations()
+    {
+      return Forecast_Iterations;
+    }
 
     /** Updates the value of the Forecast_Skip module parameter. */
     static void setForecastSkip(unsigned int t)
@@ -1080,7 +1201,10 @@ class Forecast : public Demand
     /** Return the number of timeseries values used to initialize the
       * algorithm. The forecast error is not counted for these buckets.
       */
-    static unsigned int getForecastSkip() {return Forecast_Skip;}
+    static unsigned int getForecastSkip()
+    {
+      return Forecast_Skip;
+    }
 
     /** Update the multiplier of the standard deviation used for detecting
       * outlier demands.
@@ -1096,7 +1220,10 @@ class Forecast : public Demand
     /** Return the multiplier of the standard deviation used for detecting
       * outlier demands.
       */
-    static double getForecastMaxDeviation() {return Forecast_maxDeviation;}
+    static double getForecastMaxDeviation()
+    {
+      return Forecast_maxDeviation;
+    }
 
     /** A data type to maintain a dictionary of all forecasts. */
     typedef multimap < pair<const Item*, const Customer*>, Forecast* > MapOfForecasts;
@@ -1107,9 +1234,6 @@ class Forecast : public Demand
 
     /** Return a reference to a dictionary with all forecast objects. */
     static const MapOfForecasts& getForecasts() {return ForecastDictionary;}
-
-    virtual PyObject* getattro(const Attribute&);
-    virtual int setattro(const Attribute&, const PythonObject&);
 
   private:
     /** Initializion of a forecast.<br>
@@ -1196,9 +1320,10 @@ class ForecastBucket : public Demand
 {
   public:
     ForecastBucket(Forecast* f, Date d, Date e, double w, ForecastBucket* p)
-      : Demand(f->getName() + " - " + string(d)), weight(w), consumed(0.0),
-        total(0.0), timebucket(d,e), prev(p), next(NULL)
+      : weight(w), consumed(0.0), total(0.0), timebucket(d, e),
+      prev(p), next(NULL)
     {
+      setName(f->getName() + " - " + string(d));
       if (p) p->next = this;
       setOwner(f);
       setHidden(true);  // Avoid the subdemands show up in the output
@@ -1215,19 +1340,28 @@ class ForecastBucket : public Demand
     static const MetaClass *metadata;
     virtual size_t getSize() const
     {
-      return sizeof(ForecastBucket) + Demand::extrasize();
+      return sizeof(ForecastBucket);
     }
 
     /** Returns the relative weight of this forecast bucket when distributing
       * forecast over different buckets.
       */
-    double getWeight() const {return weight;}
+    double getWeight() const
+    {
+      return weight;
+    }
 
     /** Returns the total, gross forecast. */
-    double getTotal() const {return total;}
+    double getTotal() const
+    {
+      return total;
+    }
 
     /** Returns the consumed forecast. */
-    double getConsumed() const {return consumed;}
+    double getConsumed() const
+    {
+      return consumed;
+    }
 
     /** Update the weight of this forecasting bucket. */
     void setWeight(double n)
@@ -1277,22 +1411,32 @@ class ForecastBucket : public Demand
     }
 
     /** Return the date range for this bucket. */
-    DateRange getDueRange() const {return timebucket;}
+    DateRange getDueRange() const
+    {
+      return timebucket;
+    }
 
     /** Return a pointer to the next forecast bucket. */
-    ForecastBucket* getNextBucket() const {return next;}
+    ForecastBucket* getNextBucket() const
+    {
+      return next;
+    }
 
     /** Return a pointer to the previous forecast bucket. */
-    ForecastBucket* getPreviousBucket() const {return prev;}
+    ForecastBucket* getPreviousBucket() const
+    {
+      return prev;
+    }
 
     /** A flag to mark whether forecast is due at the start or at the end of a
       * bucket.<br>
       * The default is false, ie due at the start of the bucket.
       */
-    static void setDueAtEndOfBucket(bool b) {DueAtEndOfBucket = b;}
+    static void setDueAtEndOfBucket(bool b)
+    {
+      DueAtEndOfBucket = b;
+    }
 
-    virtual PyObject* getattro(const Attribute&);
-    virtual int setattro(const Attribute&, const PythonObject&);
     static int initialize();
 
   private:
@@ -1336,8 +1480,11 @@ class ForecastSolver : public Solver
 {
     friend class Forecast;
   public:
-    /** Constructor. */
-    explicit ForecastSolver() {initType(metadata);}
+    /** Default constructor. */
+    explicit ForecastSolver()
+    {
+      initType(metadata);
+    }
 
     /** This method handles the search for a matching forecast, followed
       * by decreasing the net forecast.
@@ -1356,13 +1503,96 @@ class ForecastSolver : public Solver
     static PyObject* create(PyTypeObject*, PyObject*, PyObject*);
 
     /** Generates a baseline forecast. */
-    static PyObject* timeseries(PyObject *, PyObject *);
+    static PyObject* timeseries(PyObject*, PyObject*);
 
     /** Callback function, used for netting orders against the forecast. */
     bool callback(Demand* l, const Signal a);
 
-    /** Python update method. */
-    int setattro(const Attribute&, const PythonObject&);
+    template<class Cls> static inline void registerFields(MetaClass* m)
+    {
+      //m->addShortField<Cls>(Tags::constraints, &Cls::getConstraints, &Cls::setConstraints);
+/* XXX
+  if (attr.isA(tag_DueAtEndOfBucket))
+    ForecastBucket::setDueAtEndOfBucket(field.getBool());
+  // Netting
+  else if (attr.isA(tag_Net_CustomerThenItemHierarchy))
+    Forecast::setCustomerThenItemHierarchy(field.getBool());
+  else if (attr.isA(tag_Net_MatchUsingDeliveryOperation))
+    Forecast::setMatchUsingDeliveryOperation(field.getBool());
+  else if (attr.isA(tag_Net_NetEarly))
+    Forecast::setNetEarly(field.getDuration());
+  else if (attr.isA(tag_Net_NetLate))
+    Forecast::setNetLate(field.getDuration());
+  // Forecasting
+  else if (attr.isA(tag_Iterations))
+    Forecast::setForecastIterations(field.getInt());
+  else if (attr.isA(tag_SmapeAlfa))
+    Forecast::setForecastSmapeAlfa(field.getDouble());
+  else if (attr.isA(tag_Skip))
+    Forecast::setForecastSkip(field.getUnsignedLong());
+  else if (attr.isA(tag_Outlier_maxDeviation))
+    Forecast::setForecastMaxDeviation(field.getDouble());
+  // Moving average forecast method
+  else if (attr.isA(tag_MovingAverage_order))
+    Forecast::MovingAverage::setDefaultOrder(field.getInt());
+  // Single exponential forecast method
+  else if (attr.isA(tag_SingleExponential_initialAlfa))
+    Forecast::SingleExponential::setInitialAlfa(field.getDouble());
+  else if (attr.isA(tag_SingleExponential_minAlfa))
+    Forecast::SingleExponential::setMinAlfa(field.getDouble());
+  else if (attr.isA(tag_SingleExponential_maxAlfa))
+    Forecast::SingleExponential::setMaxAlfa(field.getDouble());
+  // Double exponential forecast method
+  else if (attr.isA(tag_DoubleExponential_initialAlfa))
+    Forecast::DoubleExponential::setInitialAlfa(field.getDouble());
+  else if (attr.isA(tag_DoubleExponential_minAlfa))
+    Forecast::DoubleExponential::setMinAlfa(field.getDouble());
+  else if (attr.isA(tag_DoubleExponential_maxAlfa))
+    Forecast::DoubleExponential::setMaxAlfa(field.getDouble());
+  else if (attr.isA(tag_DoubleExponential_initialGamma))
+    Forecast::DoubleExponential::setInitialGamma(field.getDouble());
+  else if (attr.isA(tag_DoubleExponential_minGamma))
+    Forecast::DoubleExponential::setMinGamma(field.getDouble());
+  else if (attr.isA(tag_DoubleExponential_maxGamma))
+    Forecast::DoubleExponential::setMaxGamma(field.getDouble());
+  else if (attr.isA(tag_DoubleExponential_dampenTrend))
+    Forecast::DoubleExponential::setDampenTrend(field.getDouble());
+  // Seasonal forecast method
+  else if (attr.isA(tag_Seasonal_initialAlfa))
+    Forecast::Seasonal::setInitialAlfa(field.getDouble());
+  else if (attr.isA(tag_Seasonal_minAlfa))
+    Forecast::Seasonal::setMinAlfa(field.getDouble());
+  else if (attr.isA(tag_Seasonal_maxAlfa))
+    Forecast::Seasonal::setMaxAlfa(field.getDouble());
+  else if (attr.isA(tag_Seasonal_initialBeta))
+    Forecast::Seasonal::setInitialBeta(field.getDouble());
+  else if (attr.isA(tag_Seasonal_minBeta))
+    Forecast::Seasonal::setMinBeta(field.getDouble());
+  else if (attr.isA(tag_Seasonal_maxBeta))
+    Forecast::Seasonal::setMaxBeta(field.getDouble());
+  else if (attr.isA(tag_Seasonal_gamma))
+    Forecast::Seasonal::setGamma(field.getDouble());
+  else if (attr.isA(tag_Seasonal_dampenTrend))
+    Forecast::Seasonal::setDampenTrend(field.getDouble());
+  else if (attr.isA(tag_Seasonal_minPeriod))
+    Forecast::Seasonal::setMinPeriod(field.getInt());
+  else if (attr.isA(tag_Seasonal_maxPeriod))
+    Forecast::Seasonal::setMaxPeriod(field.getInt());
+  else if (attr.isA(tag_Seasonal_minAutocorrelation))
+    Forecast::Seasonal::setMinAutocorrelation(field.getDouble());
+  else if (attr.isA(tag_Seasonal_maxAutocorrelation))
+    Forecast::Seasonal::setMaxAutocorrelation(field.getDouble());
+  // Croston forecast method
+  else if (attr.isA(tag_Croston_initialAlfa))
+    Forecast::Croston::setInitialAlfa(field.getDouble());
+  else if (attr.isA(tag_Croston_minAlfa))
+    Forecast::Croston::setMinAlfa(field.getDouble());
+  else if (attr.isA(tag_Croston_maxAlfa))
+    Forecast::Croston::setMaxAlfa(field.getDouble());
+  else if (attr.isA(tag_Croston_minIntermittence))
+    Forecast::Croston::setMinIntermittence(field.getDouble());
+*/
+    }
 
   private:
     /** Given a demand, this function will identify the forecast model it
@@ -1379,7 +1609,9 @@ class ForecastSolver : public Solver
     struct sorter
     {
       bool operator()(const Demand* x, const Demand* y) const
-      {return SolverMRP::demand_comparison(x,y);}
+      {
+        return SolverMRP::demand_comparison(x,y);
+      }
     };
 
     /** Used for sorting demands during netting. */

@@ -218,7 +218,6 @@
     <ClCompile Include="..\..\modules\forecast\forecast.cpp" />
     <ClCompile Include="..\..\modules\forecast\forecastsolver.cpp" />
     <ClCompile Include="..\..\modules\forecast\module.cpp" />
-    <ClCompile Include="..\..\modules\forecast\pythonforecast.cpp" />
     <ClCompile Include="..\..\modules\forecast\timeseries.cpp" />
   </ItemGroup>
   <ItemGroup>

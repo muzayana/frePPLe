@@ -55,49 +55,49 @@ PyObject* runWebServer (PyObject* self, PyObject* args, PyObject* kwds)
   PyObject* pyobj = PyDict_GetItemString(kwds,"document_root");
   if (pyobj)
   {
-    PythonObject d(pyobj);
+    PythonData d(pyobj);
     document_root = d.getString();
     options[1] = document_root.c_str();
   }
   pyobj = PyDict_GetItemString(kwds,"listening_ports");
   if (pyobj)
   {
-    PythonObject d(pyobj);
+    PythonData d(pyobj);
     listening_ports = d.getString();
     options[3] = listening_ports.c_str();
   }
   pyobj = PyDict_GetItemString(kwds,"num_threads");
   if (pyobj)
   {
-    PythonObject d(pyobj);
+    PythonData d(pyobj);
     num_threads = d.getString();
     options[5] = num_threads.c_str();
   }
   pyobj = PyDict_GetItemString(kwds,"enable_directory_listing");
   if (pyobj)
   {
-    PythonObject d(pyobj);
+    PythonData d(pyobj);
     enable_directory_listing = d.getString();
     options[7] = enable_directory_listing.c_str();
   }
   pyobj = PyDict_GetItemString(kwds,"request_timeout_ms");
   if (pyobj)
   {
-    PythonObject d(pyobj);
+    PythonData d(pyobj);
     request_timeout_ms = d.getString();
     options[9] = request_timeout_ms.c_str();
   }
   pyobj = PyDict_GetItemString(kwds,"error_log_file");
   if (pyobj)
   {
-    PythonObject d(pyobj);
+    PythonData d(pyobj);
     error_log_file = d.getString();
     options[11] = error_log_file.c_str();
   }
   pyobj = PyDict_GetItemString(kwds,"access_log_file");
   if (pyobj)
   {
-    PythonObject d(pyobj);
+    PythonData d(pyobj);
     access_log_file = d.getString();
     options[13] = access_log_file.c_str();
   }
@@ -115,13 +115,13 @@ PyObject* runWebServer (PyObject* self, PyObject* args, PyObject* kwds)
   pyobj = PyDict_GetItemString(kwds,"max_websocket_clients");
   if (pyobj)
   {
-    PythonObject d(pyobj);
+    PythonData d(pyobj);
     WebClient::setMaxClients(d.getUnsignedLong());
   }
   pyobj = PyDict_GetItemString(kwds,"secret_key");
   if (pyobj)
   {
-    PythonObject d(pyobj);
+    PythonData d(pyobj);
     WebClient::setSecretKey(d.getString());
   }
   else
@@ -134,7 +134,7 @@ PyObject* runWebServer (PyObject* self, PyObject* args, PyObject* kwds)
   pyobj = PyDict_GetItemString(kwds,"database_connection");
   if (pyobj)
   {
-    PythonObject d(pyobj);
+    PythonData d(pyobj);
     database_connection = d.getString();
     if (!database_connection.empty())
     {
