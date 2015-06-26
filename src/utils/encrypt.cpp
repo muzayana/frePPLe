@@ -1,6 +1,6 @@
 /***************************************************************************
  *                                                                         *
- * Copyright (C) 2013 by Johan De Taeye, frePPLe bvba                      *
+ * Copyright (C) 2013 by frePPLe bvba                                      *
  *                                                                         *
  * You should never have received this file!                               *
  *                                                                         *

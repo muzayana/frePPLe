@@ -1,6 +1,6 @@
 /***************************************************************************
  *                                                                         *
- * Copyright (C) 2009 by Johan De Taeye, frePPLe bvba                                    *
+ * Copyright (C) 2009 by frePPLe bvba                                                    *
  *                                                                         *
  * All information contained herein is, and remains the property of        *
  * frePPLe.                                                                *
