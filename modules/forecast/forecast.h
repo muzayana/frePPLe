@@ -274,6 +274,7 @@ namespace module_forecast
 
 // Forward declarations
 class ForecastSolver;
+class ForecastBucket;
 
 /** Initialization routine for the library. */
 MODULE_EXPORT const char* initialize(const Environment::ParameterList&);

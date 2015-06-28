@@ -20,15 +20,15 @@
 #ifndef JSON_H
 #define JSON_H
 
-#if defined(HAVE_STDINT)
+#include "frepple.h"
+using namespace frepple;
+
+#if defined(HAVE_STDINT_H)
 #include <stdint.h>
 #else
 typedef unsigned __int64 uint64_t;
 typedef __int64   int64_t;
 #endif
-
-#include "frepple.h"
-using namespace frepple;
 
 namespace module_webserver
 {
