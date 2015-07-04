@@ -24,7 +24,9 @@ DECLARE_EXPORT const MetaClass* ResourceSkillDefault::metadata;
 int ResourceSkill::initialize()
 {
   // Initialize the metadata
-  metadata = MetaCategory::registerCategory<ResourceSkill>("resourceskill", "resourceskills", MetaCategory::ControllerDefault, writer);
+  metadata = MetaCategory::registerCategory<ResourceSkill>(
+    "resourceskill", "resourceskills", MetaCategory::ControllerDefault, writer
+    );
   registerFields<ResourceSkill>(const_cast<MetaCategory*>(metadata));
   ResourceSkillDefault::metadata = MetaClass::registerClass<ResourceSkillDefault>(
     "resourceskill", "resourceskill", Object::create<ResourceSkillDefault>, true
@@ -81,8 +83,10 @@ DECLARE_EXPORT ResourceSkill::ResourceSkill(Skill* s, Resource* r, int u, DateRa
 DECLARE_EXPORT ResourceSkill::~ResourceSkill()
 {
   // Delete the associated from the related objects
-  if (getResource()) getResource()->skills.erase(this);
-  if (getSkill()) getSkill()->resources.erase(this);
+  if (getResource())
+    getResource()->skills.erase(this);
+  if (getSkill())
+    getSkill()->resources.erase(this);
 }
 
 
@@ -155,7 +159,7 @@ PyObject* ResourceSkill::create(PyTypeObject* pytype, PyObject* args, PyObject* 
       {
         PythonData field(value);
         PyObject* key_utf8 = PyUnicode_AsUTF8String(key);
-        Attribute attr(PyBytes_AsString(key_utf8));
+        DataKeyword attr(PyBytes_AsString(key_utf8));
         Py_DECREF(key_utf8);
         if (!attr.isA(Tags::effective_end) && !attr.isA(Tags::effective_start)
           && !attr.isA(Tags::skill) && !attr.isA(Tags::resource)

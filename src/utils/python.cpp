@@ -513,6 +513,17 @@ DECLARE_EXPORT void PythonData::setObject(Object* val)
 }
 
 
+inline Object* PythonData::getObject() const
+{
+  if (obj && (obj->ob_type->tp_getattro == getattro_handler ||
+    (obj->ob_type->tp_base && obj->ob_type->tp_base->tp_getattro == getattro_handler)))
+    // This objects are owned by us!
+    return static_cast<Object*>(const_cast<PyObject*>(obj));
+  else
+    return NULL;
+}
+
+
 DECLARE_EXPORT PythonType::PythonType(size_t base_size, const type_info* tp)
   : cppClass(tp)
 {
@@ -585,9 +596,10 @@ DECLARE_EXPORT void PythonDictionary::write(Serializer* o, PyObject* const* pydi
 
  
 //XXX TODO change API:  void PythonDictionary::endElement(DataInput& pIn, const Attribute& pAttr, const DataValue& pElement)
+/*
 void PythonDictionary::endElement(DataInput& pIn, const Attribute& pAttr, const DataValue& pElement)
 {
-  /*
+
   if (pAttr.isA(Tags::name))
     name = pElement.getString();
   else if (pAttr.isA(Tags::value))
@@ -646,11 +658,10 @@ void PythonDictionary::endElement(DataInput& pIn, const Attribute& pAttr, const 
     PyGILState_Release(pythonstate);
     delete this;  // This was only a temporary object during the read!
   }
-  */
 }
+*/
 
-
-DECLARE_EXPORT void PythonDictionary::read(DataInput& pIn, const Attribute& pAttr, PyObject** pDict)
+DECLARE_EXPORT void PythonDictionary::read(DataInput& pIn, const DataKeyword& pAttr, PyObject** pDict)
 {
   /* XXX TODO
   if (pAttr.isA(Tags::booleanproperty))

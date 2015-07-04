@@ -26,7 +26,9 @@ DECLARE_EXPORT const MetaClass* FlowFixedEnd::metadata;
 int Flow::initialize()
 {
   // Initialize the metadata
-  metadata = MetaCategory::registerCategory<Flow>("flow", "flows", MetaCategory::ControllerDefault, writer);
+  metadata = MetaCategory::registerCategory<Flow>(
+    "flow", "flows", MetaCategory::ControllerDefault, writer
+    );
   registerFields<Flow>(const_cast<MetaCategory*>(metadata));
   FlowStart::metadata = MetaClass::registerClass<FlowStart>(
     "flow", "flow_start", Object::create<FlowStart>, true
@@ -150,8 +152,10 @@ DECLARE_EXPORT Flow::~Flow()
   }
 
   // Delete the flow from the operation and the buffer
-  if (getOperation()) getOperation()->flowdata.erase(this);
-  if (getBuffer()) getBuffer()->flows.erase(this);
+  if (getOperation())
+    getOperation()->flowdata.erase(this);
+  if (getBuffer())
+    getBuffer()->flows.erase(this);
 
   // Clean up alternate flows
   if (hasAlts)
@@ -217,7 +221,7 @@ DECLARE_EXPORT void Flow::setAlternate(Flow *f)
     throw DataException("Setting NULL alternate flow");
   if (hasAlts || f->altFlow)
     throw DataException("Nested alternate flows are not allowed");
-  if (!f->isConsumer() || !isConsumer())
+  if (f->getQuantity() > 0.0 || getQuantity() > 0.0)
     throw DataException("Only consuming alternate flows are supported");
 
   // Update both flows
@@ -226,12 +230,13 @@ DECLARE_EXPORT void Flow::setAlternate(Flow *f)
 }
 
 
-DECLARE_EXPORT void Flow::setAlternate(string n)
+DECLARE_EXPORT void Flow::setAlternateName(string n)
 {
   if (!getOperation())
     throw LogicException("Can't set an alternate flow before setting the operation");
   Flow *x = getOperation()->flowdata.find(n);
-  if (!x) throw DataException("Can't find flow with name '" + n + "'");
+  if (!x)
+    throw DataException("Can't find flow with name '" + n + "'");
   setAlternate(x);
 }
 
@@ -279,44 +284,45 @@ PyObject* Flow::create(PyTypeObject* pytype, PyObject* args, PyObject* kwds)
         l = new FlowEnd(
           static_cast<Operation*>(oper),
           static_cast<Buffer*>(buf),
-          q2, eff
+          q2
         );
       else if (d.getString() == "flow_fixed_end")
         l = new FlowFixedEnd(
           static_cast<Operation*>(oper),
           static_cast<Buffer*>(buf),
-          q2, eff
+          q2
         );
       else if (d.getString() == "flow_fixed_start")
         l = new FlowFixedStart(
           static_cast<Operation*>(oper),
           static_cast<Buffer*>(buf),
-          q2, eff
+          q2
         );
       else
         l = new FlowStart(
           static_cast<Operation*>(oper),
           static_cast<Buffer*>(buf),
-          q2, eff
+          q2
         );
     }
     else
       l = new FlowStart(
         static_cast<Operation*>(oper),
         static_cast<Buffer*>(buf),
-        q2, eff
+        q2
       );
 
     // Iterate over extra keywords, and set attributes.   @todo move this responsibility to the readers...
     if (l)
     {
+      l->setEffective(eff);
       PyObject *key, *value;
       Py_ssize_t pos = 0;
       while (PyDict_Next(kwds, &pos, &key, &value))
       {
         PythonData field(value);
         PyObject* key_utf8 = PyUnicode_AsUTF8String(key);
-        Attribute attr(PyBytes_AsString(key_utf8));
+        DataKeyword attr(PyBytes_AsString(key_utf8));
         Py_DECREF(key_utf8);
         if (!attr.isA(Tags::effective_end) && !attr.isA(Tags::effective_start)
           && !attr.isA(Tags::operation) && !attr.isA(Tags::buffer)

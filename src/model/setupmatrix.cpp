@@ -20,7 +20,8 @@ namespace frepple
 template<class SetupMatrix> DECLARE_EXPORT Tree utils::HasName<SetupMatrix>::st;
 DECLARE_EXPORT const MetaCategory* SetupMatrix::metadata;
 DECLARE_EXPORT const MetaClass* SetupMatrixDefault::metadata;
-DECLARE_EXPORT const MetaCategory* SetupMatrixRule::metadata;
+DECLARE_EXPORT const MetaClass* SetupMatrixRule::metadata;
+DECLARE_EXPORT const MetaCategory* SetupMatrixRule::metacategory;
 
 
 int SetupMatrix::initialize()
@@ -40,8 +41,13 @@ int SetupMatrix::initialize()
 int SetupMatrixRule::initialize()
 {
   // Initialize the metadata
-  metadata = MetaCategory::registerCategory<SetupMatrixRule>("setupmatrixrule", "setupmatrixrules");
-  registerFields<SetupMatrixRule>(const_cast<MetaCategory*>(metadata));
+  metacategory = MetaCategory::registerCategory<SetupMatrixRule>(
+    "setupmatrixrule", "setupmatrixrules", MetaCategory::ControllerDefault
+    );
+  registerFields<SetupMatrixRule>(const_cast<MetaCategory*>(metacategory));
+  metadata = MetaClass::registerClass<SetupMatrixRule>(
+    "setupmatrixrule", "setupmatrixrule", Object::create<SetupMatrixRule>, true
+    );
 
   // Initialize the Python class
   PythonType& x = PythonExtension<SetupMatrixRule>::getPythonType();
@@ -49,7 +55,7 @@ int SetupMatrixRule::initialize()
   x.setDoc("frePPLe setupmatrixrule");
   x.supportgetattro();
   x.supportsetattro();
-  const_cast<MetaCategory*>(metadata)->pythonClass = x.type_object();
+  const_cast<MetaClass*>(metadata)->pythonClass = x.type_object();
   return x.typeReady();
 }
 
@@ -79,16 +85,19 @@ DECLARE_EXPORT SetupMatrix::~SetupMatrix()
 }
 
 
-DECLARE_EXPORT SetupMatrixRule* SetupMatrix::createRule(const DataValueDict& atts)
+/*
+DECLARE_EXPORT SetupMatrixRule* SetupMatrix::createRule(const DataValueDict& atts)  TODO Review for use as read controller for rules
 {
-  // Pick up the start, end and name attributes
-  int priority = atts.get(Tags::priority)->getInt();
+  // Pick up the priority attributes
+  const DataValue *val = atts.get(Tags::priority);
+  int priority = val ? val->getInt() : 0;
 
   // Check for existence of a rule with the same priority
   SetupMatrixRule* result = firstRule;
   while (result && priority > result->priority)
     result = result->nextRule;
-  if (result && result->priority != priority) result = NULL;
+  if (result && result->priority != priority)
+    result = NULL;
 
   // Pick up the action attribute and update the rule accordingly
   switch (MetaClass::decodeAction(atts))
@@ -139,7 +148,7 @@ DECLARE_EXPORT SetupMatrixRule* SetupMatrix::createRule(const DataValueDict& att
   // This part of the code isn't expected not be reached
   throw LogicException("Unreachable code reached");
 }
-
+*/
 
 DECLARE_EXPORT PyObject* SetupMatrix::addPythonRule(PyObject* self, PyObject* args, PyObject* kwdict)
 {
@@ -162,7 +171,9 @@ DECLARE_EXPORT PyObject* SetupMatrix::addPythonRule(PyObject* self, PyObject* ar
       return NULL;
 
     // Add the new rule
-    SetupMatrixRule *r = new SetupMatrixRule(matrix, prio);
+    SetupMatrixRule *r = new SetupMatrixRule();
+    r->setPriority(prio);
+    r->setSetupMatrix(matrix);
     if (pyfrom) r->setFromSetup(PythonData(pyfrom).getString());
     if (pyto) r->setToSetup(PythonData(pyfrom).getString());
     r->setDuration(duration);
@@ -177,33 +188,38 @@ DECLARE_EXPORT PyObject* SetupMatrix::addPythonRule(PyObject* self, PyObject* ar
 }
 
 
-DECLARE_EXPORT SetupMatrixRule::SetupMatrixRule(SetupMatrix *s, int p)
-  : cost(0), priority(p), matrix(s), nextRule(NULL), prevRule(NULL)
+DECLARE_EXPORT void SetupMatrixRule::setSetupMatrix(SetupMatrix *s)
 {
   // Validate the arguments
-  if (!matrix) throw DataException("Can't add a rule to NULL setup matrix");
+  if (matrix)
+    throw DataException("Can't reassign setup matrix matrix once assigned");
+  if (!s)
+    throw DataException("Can't update setup matrix to NULL");
+
+  // Assign the pointer
+  matrix = s;
 
   // Find the right place in the list
   SetupMatrixRule *next = matrix->firstRule, *prev = NULL;
-  while (next && p > next->priority)
+  while (next && priority > next->priority)
   {
     prev = next;
     next = next->nextRule;
   }
 
   // Duplicate priority
-  if (next && next->priority == p)
+  if (next && next->priority == priority)
     throw DataException("Multiple rules with identical priority in setup matrix");
 
   // Maintain linked list
   nextRule = next;
   prevRule = prev;
-  if (prev) prev->nextRule = this;
-  else matrix->firstRule = this;
-  if (next) next->prevRule = this;
-
-  // Initialize the Python type
-  initType(metadata);
+  if (prev)
+    prev->nextRule = this;
+  else
+    matrix->firstRule = this;
+  if (next)
+    next->prevRule = this;
 }
 
 
@@ -218,6 +234,27 @@ DECLARE_EXPORT SetupMatrixRule::~SetupMatrixRule()
 
 DECLARE_EXPORT void SetupMatrixRule::setPriority(const int n)
 {
+  if (n == priority)
+    return;
+  if (!matrix)
+  {
+    // As long as there is no matrix assigned, anything goes
+    priority = n;
+    return;
+  }
+
+  // Check for duplicate priorities, before making any changes
+  for (SetupMatrixRule *i = matrix->firstRule; i; i = i->nextRule)
+    if (i->priority == n)
+    {
+      ostringstream o;
+      o << "Rule with priority " << priority << " in setup matrix '"
+        << matrix->getName() << "' already exists";
+      throw DataException(o.str());
+    }
+    else if (i->priority > n)
+      break;
+
   // Update the field
   priority = n;
 
@@ -226,14 +263,16 @@ DECLARE_EXPORT void SetupMatrixRule::setPriority(const int n)
   {
     SetupMatrixRule* next = nextRule;
     SetupMatrixRule* prev = prevRule;
-    if (prev && prev->prevRule) prev->prevRule->nextRule = this;
-    else matrix->firstRule = this;
-    if (prev) prev->nextRule = nextRule;
+    if (prev->prevRule)
+      prev->prevRule->nextRule = this;
+    else
+      matrix->firstRule = this;
+    prev->nextRule = nextRule;
     nextRule = prev;
-    prevRule = prev ? prev->prevRule : NULL;
-    if (next && next->nextRule) next->nextRule->prevRule = prev;
-    if (next) next->prevRule = prev;
-    if (prev) prev->prevRule = this;
+    prevRule = prev->prevRule;
+    if (next)
+      next->prevRule = prev;
+    prev->prevRule = this;
   }
 
   // Check ordering on the right
@@ -242,21 +281,15 @@ DECLARE_EXPORT void SetupMatrixRule::setPriority(const int n)
     SetupMatrixRule* next = nextRule;
     SetupMatrixRule* prev = prevRule;
     nextRule = next->nextRule;
-    if (next && next->nextRule) next->nextRule->prevRule = this;
-    if (prev) prev->nextRule = next;
-    if (next) next->nextRule = this;
-    if (next) next->prevRule = prev;
+    if (next->nextRule)
+      next->nextRule->prevRule = this;
+    if (prev)
+      prev->nextRule = next;
+    else
+      matrix->firstRule = next;
+    next->nextRule = this;
+    next->prevRule = prev;
     prevRule = next;
-  }
-
-  // Check for duplicate priorities
-  if ((prevRule && prevRule->priority == priority)
-      || (nextRule && nextRule->priority == priority))
-  {
-    ostringstream o;
-    o << "Duplicate priority " << priority << " in setup matrix '"
-      << matrix->getName() << "'";
-    throw DataException(o.str());
   }
 }
 
@@ -274,7 +307,7 @@ int SetupMatrixRuleIterator::initialize()
 
 PyObject* SetupMatrixRuleIterator::iternext()
 {
-  if (currule == matrix->endRules()) return NULL;
+  if (currule == SetupMatrixRule::iterator::end()) return NULL;
   PyObject *result = &*(currule++);
   Py_INCREF(result);
   return result;

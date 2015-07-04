@@ -1668,13 +1668,21 @@ class MetaFieldBase
   public:
     enum FieldCategory
     {
-      MANDATORY = 1,
-      BASE = 2,
-      PLAN = 4,
-      DETAIL = 8,
-      DONT_SERIALIZE = 16,
-      COMPUTED = 32,
-      PARENT = 64
+      MANDATORY = 1,         // Marks a key field of the object. This is
+                             // used when we need to serialize only a reference
+                             // to the object.
+      BASE = 2,              // The default value. The field will be serialized
+                             // and deserialized normally.
+      PLAN = 4,              // Marks fields containing planning output. It is
+                             // only serialized when we request such info.
+      DETAIL = 8,            // Marks fields containing more detail than is
+                             // required to restore all state.
+      DONT_SERIALIZE = 16,   // These fields are not intended to be ever
+                             // serialized.
+      COMPUTED = 32,         // A computed field doesn't consume any storage
+      PARENT = 64            // If set, the constructor of the child object
+                             // will get a pointer to the parent as extra
+                             // argument.
     };
 
     MetaFieldBase(const Keyword& k, unsigned int fl)
@@ -1950,6 +1958,17 @@ class MetaClass : public NonCopyable
       )
 		{
       fields.push_back( new MetaFieldInt<Cls>(k, getfunc, setfunc, d, c) );
+		}
+
+    template <class Cls, class Enum> inline void addEnumField(
+      const Keyword& k,
+      Enum (Cls::*getfunc)(void) const,
+      void (Cls::*setfunc)(string),
+      Enum d,
+      unsigned int c = MetaFieldBase::BASE
+      )
+		{
+      fields.push_back( new MetaFieldEnum<Cls, Enum>(k, getfunc, setfunc, d, c) );
 		}
 
     template <class Cls> inline void addShortField(
@@ -2744,11 +2763,11 @@ class Serializer
 };
 
 
-/** @brief A class to model keyword instances.
+/** @brief A class to model a string to be interpreted as a keyword.
   *
   * The class uses hashes to do a fast comparison with the set of keywords.
   */
-class Attribute  // XXX TODO rename
+class DataKeyword
 {
   private:
     /** This string stores the hash value of the element. */
@@ -2762,17 +2781,17 @@ class Attribute  // XXX TODO rename
 
   public:
     /** Default constructor. */
-    explicit Attribute() : hash(0), ch(NULL) {}
+    explicit DataKeyword() : hash(0), ch(NULL) {}
 
     /** Constructor. */
-    explicit Attribute(const string& n)
+    explicit DataKeyword(const string& n)
       : hash(Keyword::hash(n)), ch(n.c_str()) {}
 
     /** Constructor. */
-    explicit Attribute(const char* c) : hash(Keyword::hash(c)), ch(c) {}
+    explicit DataKeyword(const char* c) : hash(Keyword::hash(c)), ch(c) {}
 
     /** Copy constructor. */
-    Attribute(const Attribute& o) : hash(o.hash), ch(o.ch) {}
+    DataKeyword(const DataKeyword& o) : hash(o.hash), ch(o.ch) {}
 
     /** Returns the hash value of this tag. */
     hashtype getHash() const
@@ -2818,7 +2837,7 @@ class Attribute  // XXX TODO rename
     }
 
     /** Comparison operator. */
-    bool operator < (const Attribute& o) const
+    bool operator < (const DataKeyword& o) const
     {
       return hash < o.hash;
     }
@@ -3234,6 +3253,11 @@ class PythonData : public DataValue
       Py_INCREF(obj);
     }
 
+    /** Copy constructor.<br>
+      * The reference counter isn't increased.
+      */
+    PythonData(const PythonData& o) : obj(o) {}
+
     /** Constructor from an existing Python object. */
     PythonData(const PyObject* o)
       : obj(o ? const_cast<PyObject*>(o) : Py_None)
@@ -3420,10 +3444,10 @@ class PythonData : public DataValue
       return result;
     }
 
-    Object* getObject() const
-    {
-      return reinterpret_cast<Object*>(obj);
-    }
+    /** Return the frePPle Object referred to by the Python value.
+      * If it points to a non-frePPLe object, the return value is NULL.
+      */
+    DECLARE_EXPORT Object* getObject() const;
 
     /** Constructor from a pointer to an Object.<br>
       * The metadata of the Object instances allow us to create a Python
@@ -3651,9 +3675,9 @@ class PythonDataValueDict : public DataValueDict
         const_cast<PythonDataValueDict*>(this)->result = PythonData();
         return &result;
       }
-      PyObject* val = PyDict_GetItemString(kwds,k.getName().c_str());
+      PyObject* val = PyDict_GetItemString(kwds, k.getName().c_str());
       const_cast<PythonDataValueDict*>(this)->result = PythonData(val);
-      return &result;
+      return val ? &result : NULL;
     }
 };
 
@@ -3728,17 +3752,16 @@ class Object : public PyObject
 
     /** This template function can generate a factory method for objects that
       * can be constructed with their default constructor.  */
-    template <class T>
-    static Object* create()
+    template <class T> static Object* create()
     {
       return new T();
     }
 
     /** Template function that generates a factory method callable
       * from Python. */
-    template<class T>
-    static PyObject* create
-    (PyTypeObject* pytype, PyObject* args, PyObject* kwds)
+    template<class T> static PyObject* create(
+      PyTypeObject* pytype, PyObject* args, PyObject* kwds
+      )
     {
       try
       {
@@ -3757,12 +3780,12 @@ class Object : public PyObject
         Py_ssize_t pos = 0;
         while (PyDict_Next(kwds, &pos, &key, &value))
         {
-          PythonData field(value);
           PyObject* key_utf8 = PyUnicode_AsUTF8String(key);
-		      Attribute attr(PyBytes_AsString(key_utf8));
+		      DataKeyword attr(PyBytes_AsString(key_utf8));
           Py_DECREF(key_utf8);
           if (!attr.isA(Tags::name) && !attr.isA(Tags::type) && !attr.isA(Tags::action))
           {
+            PythonData field(value);
             const MetaFieldBase* fmeta = x->getType().findField(attr.getHash());
             if (!fmeta && x->getType().category)
               fmeta = x->getType().category->findField(attr.getHash());
@@ -3823,7 +3846,7 @@ class Object : public PyObject
       * Subclasses are expected to implement an override if the type supports
       * gettattro.
       */
-    virtual PyObject* getattro(const Attribute& attr)
+    virtual PyObject* getattro(const DataKeyword& attr)
     {
       PyErr_SetString(PythonLogicException, "Missing method 'getattro'");
       return NULL;
@@ -3880,6 +3903,7 @@ class Object : public PyObject
       return &dict;
     }
 
+    // TODO Only required to keep pointerfield to Object valid, used in problem.getOwner()
     static DECLARE_EXPORT const MetaCategory* metadata;
 
   protected:
@@ -3980,14 +4004,12 @@ class PythonDictionary : public Object
     }
 
     /** This static method is used to read XML data into a dictionary. */
-    static DECLARE_EXPORT void read(DataInput&, const Attribute&, PyObject**);
+    static DECLARE_EXPORT void read(DataInput&, const DataKeyword&, PyObject**);
 
     /** This static method is used to write a dictionary as XML.
       * It is normally called from the writeElement() method of an object.
       */
     static DECLARE_EXPORT void write(Serializer*, PyObject* const*);
-
-    void endElement(DataInput&, const Attribute&, const DataValue&);
 
     static const MetaCategory *metadata;
     const MetaClass& getType() const {return *metadata;}
@@ -5180,8 +5202,6 @@ template <class T> class HasName : public NonCopyable, public Tree::TreeNode, pu
       Tree::TreeNode *i = st.findLowerBound(k, f);
       return (i!=st.end() ? static_cast<T*>(i) : NULL);
     }
-
-    void endElement(DataInput& pIn, const Attribute& pAttr, const DataValue& pElement) {};
 
     /** This method is available as a object creation factory for
       * classes that are using a string as a key identifier, in particular
@@ -6383,6 +6403,59 @@ template <class Cls> class MetaFieldInt : public MetaFieldBase
 };
 
 
+template <class Cls, class Enum> class MetaFieldEnum : public MetaFieldBase
+{
+  public:
+    typedef void (Cls::*setFunction)(string);
+
+    typedef Enum (Cls::*getFunction)(void) const;
+
+    MetaFieldEnum(const Keyword& n,
+        getFunction getfunc,
+        setFunction setfunc,
+        Enum d,
+        unsigned int c = BASE
+        ) : MetaFieldBase(n, c), getf(getfunc), setf(setfunc), def(d)
+    {
+      if (getfunc == NULL)
+        throw DataException("Getter function can't be NULL");
+    };
+
+    virtual void setField(Object* me, const DataValue& el) const
+    {
+      if (setf == NULL)
+      {
+        ostringstream o;
+        o << "Can't set field " << getName().getName() << " on class " << me->getType().type;
+        throw DataException(o.str());
+      }
+      (static_cast<Cls*>(me)->*setf)(el.getString());
+    }
+
+    virtual void getField(Object* me, DataValue& el) const
+    {
+      el.setInt((static_cast<Cls*>(me)->*getf)());
+    }
+
+    virtual void writeField(Serializer& output) const
+    {
+      Enum tmp = (static_cast<Cls*>(output.getCurrentObject())->*getf)();
+      if (tmp != def)
+        output.writeElement(getName(), tmp);
+    }
+
+  protected:
+    /** Get function. */
+    getFunction getf;
+
+    /** Set function. */
+    setFunction setf;
+
+    /** Defaut value. */
+    Enum def;
+};
+
+
 template <class Cls> class MetaFieldShort : public MetaFieldBase
 {
   public:
@@ -6727,7 +6800,7 @@ template <class Cls, class Ptr> class MetaFieldPointer : public MetaFieldBase
       }
       Ptr *obj = static_cast<Ptr*>(el.getObject());
       if (!obj || (obj && (
-        (obj->getType().category && Ptr::metadata && *(obj->getType().category) == *(Ptr::metadata))
+        (obj->getType().category && *(obj->getType().category) == *(Ptr::metadata))
         || obj->getType() == *(Ptr::metadata)))
         )
         (static_cast<Cls*>(me)->*setf)(obj);
@@ -6924,11 +6997,6 @@ template <class Cls, class Ptr, class Ptr2> class MetaFieldList : public MetaFie
       }
       if (!first)
         output.EndList(getName());
-    }
-
-    virtual bool isPointer() const
-    {
-      return true;
     }
 
     virtual bool isGroup() const

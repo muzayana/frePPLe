@@ -36,7 +36,7 @@ DECLARE_EXPORT const MetaCategory* MetaCategory::firstCategory = NULL;
 DECLARE_EXPORT MetaCategory::CategoryMap MetaCategory::categoriesByTag;
 DECLARE_EXPORT MetaCategory::CategoryMap MetaCategory::categoriesByGroupTag;
 
-DECLARE_EXPORT const MetaCategory* Object::metadata = NULL; // XXX TODO Only required to keep pointerfield to Object valid, used in problem.getOwner()
+DECLARE_EXPORT const MetaCategory* Object::metadata = NULL;
 
 // Repository of loaded modules
 DECLARE_EXPORT set<string> Environment::moduleRegistry;
@@ -481,12 +481,18 @@ DECLARE_EXPORT const MetaFieldBase* MetaClass::findField(hashtype h) const
 DECLARE_EXPORT Action MetaClass::decodeAction(const char *x)
 {
   // Validate the action
-  if (!x) throw LogicException("Invalid action NULL");
-  else if (!strcmp(x,"AC")) return ADD_CHANGE;
-  else if (!strcmp(x,"A")) return ADD;
-  else if (!strcmp(x,"C")) return CHANGE;
-  else if (!strcmp(x,"R")) return REMOVE;
-  else throw LogicException("Invalid action '" + string(x) + "'");
+  if (!x)
+    throw LogicException("Invalid action NULL");
+  else if (!strcmp(x, "AC"))
+    return ADD_CHANGE;
+  else if (!strcmp(x, "A"))
+    return ADD;
+  else if (!strcmp(x, "C"))
+    return CHANGE;
+  else if (!strcmp(x, "R"))
+    return REMOVE;
+  else
+    throw DataException("Invalid action '" + string(x) + "'");
 }
 
 

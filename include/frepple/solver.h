@@ -65,7 +65,6 @@ class OperatorDelete : public Solver
     static PyObject* create(PyTypeObject*, PyObject*, PyObject*);
     virtual const MetaClass& getType() const {return *metadata;}
     static DECLARE_EXPORT const MetaClass* metadata;
-    virtual size_t getSize() const {return sizeof(OperatorDelete);}
 
   private:
     /** Auxilary function to push consuming or producing buffers of an
@@ -313,7 +312,6 @@ class SolverMRP : public Solver
     static PyObject* create(PyTypeObject*, PyObject*, PyObject*);
     virtual const MetaClass& getType() const {return *metadata;}
     static DECLARE_EXPORT const MetaClass* metadata;
-    virtual size_t getSize() const {return sizeof(SolverMRP);}
 
     /** Static constant for the LEADTIME constraint type.<br>
       * The numeric value is 1.
@@ -857,7 +855,6 @@ class SolverMRP : public Solver
         virtual DECLARE_EXPORT void commit();
 
         virtual const MetaClass& getType() const {return *SolverMRP::metadata;}
-        virtual size_t getSize() const {return sizeof(SolverMRPdata);}
 
         bool getVerbose() const
         {
