@@ -123,13 +123,15 @@ DECLARE_EXPORT void  XMLInput::processingInstruction
 
 
 DECLARE_EXPORT void XMLInput::startElement(const XMLCh* const uri,
-  const XMLCh* const n, const XMLCh* const qname,
+  const XMLCh* const ename, const XMLCh* const qname,
   const xercesc::Attributes& atts)
 {
+  string ename_utf8 = transcodeUTF8(ename);
+
   // Currently ignoring all input?
   if (ignore)
   {
-    if (data[dataindex].hash == Keyword::hash(n))
+    if (data[dataindex].hash == Keyword::hash(ename_utf8))
     {
       // Ignoring elements one level deeper
       ++ignore;
@@ -144,14 +146,14 @@ DECLARE_EXPORT void XMLInput::startElement(const XMLCh* const uri,
   reading = true;
 
   #ifdef PARSE_DEBUG
-  logger << "Start XML element #" << dataindex << " '" << transcodeUTF8(n)
+  logger << "Start XML element #" << dataindex << " '" << ename_utf8
     << "' for object #" << objectindex << " ("
     << ((objectindex >= 0 && objects[objectindex].cls) ? objects[objectindex].cls->type : "none")
     << ")" << endl;
   #endif
 
   // Look up the field
-  data[dataindex].hash = Keyword::hash(n);
+  data[dataindex].hash = Keyword::hash(ename_utf8);
   data[dataindex].field = NULL;
   if (dataindex >= 1 && data[dataindex-1].field && data[dataindex-1].field->isGroup() && data[dataindex].hash == data[dataindex-1].field->getKeyword()->getHash())
   {
@@ -180,7 +182,8 @@ DECLARE_EXPORT void XMLInput::startElement(const XMLCh* const uri,
       // will thus give a (very small) performance improvement.
       for (XMLSize_t i = atts.getLength(); i > 0; --i)
       {
-        if (Keyword::hash(atts.getLocalName(i - 1)) == Tags::type.getHash())
+        string attr_name = transcodeUTF8(atts.getLocalName(i - 1));
+        if (Keyword::hash(attr_name) == Tags::type.getHash())
         {
           string tp = transcodeUTF8(atts.getValue(i - 1));
           objects[objectindex].cls = static_cast<const MetaCategory&>(*objects[objectindex].cls).findClass(
@@ -208,7 +211,8 @@ DECLARE_EXPORT void XMLInput::startElement(const XMLCh* const uri,
     {
       // Look up the field
       ++dataindex;
-      data[dataindex].hash = Keyword::hash(atts.getLocalName(i));
+      string attr_name = transcodeUTF8(atts.getLocalName(i));
+      data[dataindex].hash = Keyword::hash(attr_name);
       if (data[dataindex].hash == Tags::type.getHash())
       {
         // Skip attribute called "type"
@@ -219,10 +223,7 @@ DECLARE_EXPORT void XMLInput::startElement(const XMLCh* const uri,
       if (!data[dataindex].field && objects[objectindex].cls->category)
         data[dataindex].field = objects[objectindex].cls->category->findField(data[dataindex].hash);
       if (!data[dataindex].field)
-      {
-        string a = transcodeUTF8(atts.getLocalName(i));
-        throw DataException("Attribute '" + a + "' not defined");
-      }
+        throw DataException("Attribute '" + attr_name + "' not defined");
 
       // Set the data value
       data[dataindex].value.setString(transcodeUTF8(atts.getValue(i)));
@@ -248,7 +249,7 @@ DECLARE_EXPORT void XMLInput::startElement(const XMLCh* const uri,
       reading = false;
       ++ignore;
       #ifdef PARSE_DEBUG
-      logger << "Ignoring XML element '" << transcodeUTF8(n) << "'" << endl;
+      logger << "Ignoring XML element '" << ename_utf8 << "'" << endl;
       #endif
     }
   }
@@ -263,7 +264,7 @@ DECLARE_EXPORT void XMLInput::startElement(const XMLCh* const uri,
     objects[objectindex].object = NULL;
     objects[objectindex].cls = data[dataindex].field->getClass();
     objects[objectindex].start = dataindex + 1;
-    objects[objectindex].hash = Keyword::hash(n);
+    objects[objectindex].hash = Keyword::hash(ename_utf8);
     reading = false;
 
     // Debugging message
@@ -279,7 +280,8 @@ DECLARE_EXPORT void XMLInput::startElement(const XMLCh* const uri,
       // will thus give a (very small) performance improvement.
       for (XMLSize_t i = atts.getLength(); i > 0; --i)
       {
-        if (Keyword::hash(atts.getLocalName(i - 1)) == Tags::type.getHash())
+        string attr_name = transcodeUTF8(atts.getLocalName(i - 1));
+        if (Keyword::hash(attr_name) == Tags::type.getHash())
         {
           string tp = transcodeUTF8(atts.getValue(i - 1));
           objects[objectindex].cls = static_cast<const MetaCategory&>(*objects[objectindex].cls).findClass(
@@ -308,7 +310,8 @@ DECLARE_EXPORT void XMLInput::startElement(const XMLCh* const uri,
       ++dataindex;
 
       // Look up the field
-      data[dataindex].hash = Keyword::hash(atts.getLocalName(i));
+      string attr_name = transcodeUTF8(atts.getLocalName(i));
+      data[dataindex].hash = Keyword::hash(attr_name);
       if (data[dataindex].hash == Tags::type.getHash())
       {
         // Skip attribute called "type"
@@ -319,10 +322,7 @@ DECLARE_EXPORT void XMLInput::startElement(const XMLCh* const uri,
       if (!data[dataindex].field && objects[objectindex].cls->category)
         data[dataindex].field = objects[objectindex].cls->category->findField(data[dataindex].hash);
       if (!data[dataindex].field)
-      {
-        string a = transcodeUTF8(atts.getLocalName(i));
-        throw DataException("Attribute '" + a + "' not defined");
-      }
+        throw DataException("Attribute '" + attr_name + "' not defined");
 
       // Set the data value
       data[dataindex].value.setString(transcodeUTF8(atts.getValue(i)));
@@ -334,11 +334,13 @@ DECLARE_EXPORT void XMLInput::startElement(const XMLCh* const uri,
 
 
 DECLARE_EXPORT void XMLInput::endElement(const XMLCh* const uri,
-    const XMLCh* const s,
+    const XMLCh* const ename,
     const XMLCh* const qname)
 {
+  string ename_utf8 = transcodeUTF8(ename);
+
   // Currently ignoring all input?
-  hashtype h = Keyword::hash(s);
+  hashtype h = Keyword::hash(ename_utf8);
   if (ignore)
   {
     if (data[dataindex].hash == h)
@@ -352,7 +354,7 @@ DECLARE_EXPORT void XMLInput::endElement(const XMLCh* const uri,
   }
 
   #ifdef PARSE_DEBUG
-  logger << "End XML element #" << dataindex << " '" << transcodeUTF8(s)
+  logger << "End XML element #" << dataindex << " '" << ename_utf8
     << "' for object #" << objectindex << " ("
     << ((objectindex >= 0 && objects[objectindex].cls) ? objects[objectindex].cls->type : "none")
     << ")" << endl;
@@ -888,10 +890,6 @@ DECLARE_EXPORT Keyword::Keyword(const string& name) : strName(name)
   // Compute the hash value
   dw = hash(name.c_str());
 
-  // Create a properly encoded Xerces string
-  xercesc::XMLPlatformUtils::Initialize();
-  xmlname = xercesc::XMLString::transcode(name.c_str());
-
   // Verify that the hash is "perfect".
   check();
 }
@@ -915,10 +913,6 @@ DECLARE_EXPORT Keyword::Keyword(const string& name, const string& nspace)
 
   // Compute the hash value
   dw = hash(name);
-
-  // Create a properly encoded Xerces string
-  xercesc::XMLPlatformUtils::Initialize();
-  xmlname = xercesc::XMLString::transcode(string(nspace + ":" + name).c_str());
 
   // Verify that the hash is "perfect".
   check();
@@ -946,10 +940,6 @@ DECLARE_EXPORT Keyword::~Keyword()
   // Remove from the tag list
   tagtable::iterator i = getTags().find(dw);
   if (i!=getTags().end()) getTags().erase(i);
-
-  // Destroy the xerces string
-  xercesc::XMLString::release(&xmlname);
-  xercesc::XMLPlatformUtils::Terminate();
 }
 
 
@@ -978,27 +968,6 @@ DECLARE_EXPORT hashtype Keyword::hash(const char* c)
     hashVal = (hashVal * 37) + (hashVal >> 24) + *curCh++;
 
   // Divide by modulus
-  return hashVal % 954991;
-}
-
-
-DECLARE_EXPORT hashtype Keyword::hash(const XMLCh* t)
-{
-  char* c = xercesc::XMLString::transcode(t);
-  if (c == 0 || *c == 0)
-  {
-    xercesc::XMLString::release(&c);
-    return 0;
-  }
-
-  // Compute hash
-  const char* curCh = c;
-  hashtype hashVal = *curCh;
-  while (*curCh)
-    hashVal = (hashVal * 37) + (hashVal >> 24) + *curCh++;
-
-  // Divide by modulus
-  xercesc::XMLString::release(&c);
   return hashVal % 954991;
 }
 

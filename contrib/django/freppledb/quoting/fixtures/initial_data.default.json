@@ -1,3 +1,0 @@
-[
-{"pk": "quoting.service_location", "model": "common.parameter", "fields": {"value": "localhost:8001", "description": "HTTP location of the web service, formatted as address:port"}}
-]

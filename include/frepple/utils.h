@@ -149,10 +149,6 @@ using namespace std;
   */
 #define ROUNDING_ERROR   0.000001
 
-/** Xerces-c XML libary header. */
-#define XERCES_STATIC_LIBRARY
-#include <xercesc/util/XercesDefs.hpp>
-
 /** @def DECLARE_EXPORT
   * Used to define which symbols to export from a Windows DLL.
   * @def MODULE_EXPORT
@@ -204,6 +200,7 @@ template<class T> class MetaFieldBool;
 template<class T> class MetaFieldDuration;
 template<class T> class MetaFieldDurationDouble;
 template<class T> class MetaFieldString;
+template<class T, class u> class MetaFieldEnum;
 template<class T, class U> class MetaFieldPointer;
 template<class T> class MetaFieldUnsignedLong;
 template<class T> class MetaFieldPythonFunction;
@@ -1329,9 +1326,6 @@ class Keyword : public NonCopyable
     string strName, strStartElement, strEndElement, strElement,
       strAttribute, strQuoted;
 
-    /** Name of the string transcoded to its Xerces-internal representation. */
-    XMLCh* xmlname;
-
     /** A function to verify the uniquess of our hashes. */
     void check();
 
@@ -1369,13 +1363,6 @@ class Keyword : public NonCopyable
     const string& getQuoted() const
     {
       return strQuoted;
-    }
-
-    /** Returns a pointer to an array of XML characters. This format is used
-      * by Xerces for the internal representation of character strings. */
-    const XMLCh* getXMLCharacters() const
-    {
-      return xmlname;
     }
 
     /** Returns a string to start an XML element with this tag: \<TAG */
@@ -1420,13 +1407,6 @@ class Keyword : public NonCopyable
     {
       return hash(c.c_str());
     }
-
-    /** This is the hash function taken an XML character string as input.<br>
-      * The function is expected to return exactly the same result as when a
-      * character pointer is passed as argument.
-      * @see hash(const char*)
-      */
-    static DECLARE_EXPORT hashtype hash(const XMLCh*);
 
     /** Finds a tag when passed a certain string. If no tag exists yet, it
       * will be created. */
@@ -2804,15 +2784,6 @@ class DataKeyword
     {
       hash = Keyword::hash(c);
       ch = c;
-    }
-
-    /** Returns this tag. */
-    void reset(const XMLCh *const c)
-    {
-      hash = Keyword::hash(c);
-      // An XMLCh is normally a wchar, and would need to be transcoded
-      // to a char. We won't bother...
-      ch = NULL;
     }
 
     /** Return the element name. Since this method involves a lookup in a
