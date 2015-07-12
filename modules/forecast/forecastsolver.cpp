@@ -33,6 +33,7 @@ int ForecastSolver::initialize()
   x.supportgetattro();
   x.supportsetattro();
   x.supportcreate(create);
+  x.addMethod("solve", Solver::solve, METH_NOARGS, "run the solver");
   x.addMethod(
     "timeseries", ForecastSolver::timeseries, METH_VARARGS,
     "Set the future based on the timeseries of historical data"

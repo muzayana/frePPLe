@@ -598,7 +598,7 @@ class GridReport(View):
 
 
   @classmethod
-  def _apply_sort(reportclass, request, query):
+  def _apply_sort(reportclass, request, query, prefs=None):
     '''
     Applies a sort to the query.
     '''
@@ -608,14 +608,25 @@ class GridReport(View):
       sort = request.GET['sidx']
       if 'sord' in request.GET and request.GET['sord'] == 'desc':
         asc = False
-    if not sort and reportclass.default_sort:
-      sort = reportclass.rows[reportclass.default_sort[0]].name
-      if reportclass.default_sort[1] == 'desc':
-        asc = False
     if not sort:
-      return query  # No sorting
-    else:
-      return query.order_by(asc and sort or ('-%s' % sort))
+      if prefs and 'sidx' in prefs:
+        sort = prefs['sidx']
+        if 'sord' in prefs and prefs['sord'] == 'desc':
+          asc = False
+      if not sort and reportclass.default_sort:
+        sort = reportclass.rows[reportclass.default_sort[0]].name
+        if reportclass.default_sort[1] == 'desc':
+          asc = False
+      else:
+        # No sorting
+        return query
+    if sort and reportclass.model:
+      # Validate the field does exist.
+      for name in reportclass.model._meta.get_all_field_names():
+        if name == sort:
+          return query.order_by(asc and sort or ('-%s' % sort))
+    # Sorting by a non-existent field name: ignore the filter
+    return query
 
 
   @classmethod

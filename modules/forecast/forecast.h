@@ -293,8 +293,8 @@ class Forecast : public Demand
     friend class ForecastSolver;
   public:
 
+    static const Keyword tag_weight;
     static const Keyword tag_total;
-    static const Keyword tag_net;
     static const Keyword tag_consumed;
     static const Keyword tag_methods;
     static const Keyword tag_method;
@@ -1336,12 +1336,10 @@ class ForecastBucket : public Demand
       setOperation(&*(f->getOperation()));
       initType(metadata);
     }
+
     virtual const MetaClass& getType() const {return *metadata;}
     static const MetaClass *metadata;
-    virtual size_t getSize() const
-    {
-      return sizeof(ForecastBucket);
-    }
+
 
     /** Returns the relative weight of this forecast bucket when distributing
       * forecast over different buckets.
@@ -1439,6 +1437,13 @@ class ForecastBucket : public Demand
 
     static int initialize();
 
+    template<class Cls> static inline void registerFields(MetaClass* m)
+    {
+      m->addDoubleField<Cls>(Forecast::tag_weight, &Cls::getWeight, &Cls::setWeight);
+      m->addDoubleField<Cls>(Forecast::tag_total, &Cls::getTotal, &Cls::setTotal);
+      m->addDoubleField<Cls>(Forecast::tag_consumed, &Cls::getConsumed, &Cls::setConsumed);
+    }
+
   private:
     double weight;
     double consumed;
@@ -1448,7 +1453,10 @@ class ForecastBucket : public Demand
     ForecastBucket* next;
 
     /** A flag to mark whether forecast is due at the start or at the end of a
-      * bucket. */
+      * bucket.
+      * Note this is a static field, and all forecastbuckets thus automatically
+      * use the same value.
+      */
     static bool DueAtEndOfBucket;
 };
 

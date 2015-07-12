@@ -16,8 +16,8 @@
 namespace module_forecast
 {
 
+const Keyword Forecast::tag_weight("weight");
 const Keyword Forecast::tag_total("total");
-const Keyword Forecast::tag_net("net");
 const Keyword Forecast::tag_consumed("consumed");
 const Keyword Forecast::tag_planned("planned");
 const Keyword Forecast::tag_methods("methods");
@@ -54,6 +54,7 @@ int ForecastBucket::initialize()
   metadata = MetaClass::registerClass<ForecastBucket>(
     "demand", "demand_forecastbucket"
     );
+  registerFields<ForecastBucket>(const_cast<MetaClass*>(metadata));
 
   // Initialize the Python class
   // No support for creation
