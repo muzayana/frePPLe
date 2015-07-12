@@ -1827,9 +1827,9 @@ class MetaClass : public NonCopyable
 
     /** This constructor registers the metadata of a class that is intended
       * only for internal use. */
-    template <class T> static inline MetaClass* registerClass(creatorDefault f)
+    template <class T> static inline MetaClass* registerClass(const string& cls, creatorDefault f)
     {
-      return new MetaClass(sizeof(T), f);
+      return new MetaClass(cls, sizeof(T), f);
     }
 
     /** This constructor registers the metadata of a class, with a factory
@@ -2126,10 +2126,12 @@ class MetaClass : public NonCopyable
 
   private:
     /** This constructor registers the metadata of a class. */
-    MetaClass(size_t sz, creatorDefault f)
-      : size(sz), pythonClass(NULL), isDefault(false)
+    MetaClass(const string& cls, size_t sz, creatorDefault f)
+      : type(cls), size(sz), category(NULL), pythonClass(NULL), factoryMethod(f),
+      parent(false), isDefault(false)
     {
       factoryMethod = f;
+      typetag = &Keyword::find(cls.c_str());
     }
 
     /** This constructor registers the metadata of a class. */
@@ -7386,7 +7388,6 @@ class LicenseValidator : public Object
 
     /** Virtual functions we have to define... */
     static const MetaClass *metadata;
-    virtual size_t getSize() const {return 0;}
     virtual const MetaClass& getType() const {return *metadata;}
 
     void setCustomer(string e)
