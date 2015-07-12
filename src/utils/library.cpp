@@ -74,11 +74,11 @@ void LibraryUtils::initialize()
   }
   init = true;
 
-  // Validate the license file
-  LicenseValidator x;
-
   // Initialize Xerces parser
   xercesc::XMLPlatformUtils::Initialize();
+
+  // Validate the license file
+  LicenseValidator x;
 
   // Initialize the Python interpreter
   PythonInterpreter::initialize();
@@ -339,7 +339,7 @@ DECLARE_EXPORT void MetaClass::addClass (const string& a, const string& b,
 
 
 DECLARE_EXPORT MetaCategory::MetaCategory (const string& a, const string& gr,
-    size_t sz, readController f, writeController w, findController s)
+    size_t sz, readController f, findController s)
 {
   // Update registry
   if (!a.empty()) categoriesByTag[Keyword::hash(a)] = this;
@@ -348,7 +348,6 @@ DECLARE_EXPORT MetaCategory::MetaCategory (const string& a, const string& gr,
   // Update fields
   size = sz;
   readFunction = f;
-  writeFunction = w;
   findFunction = s;
   type = a.empty() ? "unspecified" : a;
   typetag = &Keyword::find(type.c_str());
@@ -413,13 +412,6 @@ DECLARE_EXPORT const MetaClass* MetaCategory::findClass(const hashtype h) const
   // Look up in the registered classes
   MetaCategory::ClassMap::const_iterator j = classes.find(h);
   return (j == classes.end()) ? NULL : j->second;
-}
-
-
-DECLARE_EXPORT void MetaCategory::persistAll(Serializer* o)
-{
-  for (const MetaCategory *i = firstCategory; i; i = i->nextCategory)
-    i->persist(o);
 }
 
 

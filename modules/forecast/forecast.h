@@ -930,9 +930,10 @@ class Forecast : public Demand
       m->addUnsignedLongField<Cls>(tag_methods, &Cls::getMethods, &Cls::setMethods, METHOD_ALL);
       m->addStringField<Cls>(tag_method, &Cls::getMethod);
       m->addBoolField<Cls>(tag_planned, &Cls::getPlanned, &Cls::setPlanned, BOOL_TRUE);
-      m->addIterator2Field<Cls, Demand::memberIterator, ForecastBucket>(
-        Tags::buckets, Tags::bucket, &Cls::getMembers, MetaFieldBase::DETAIL + MetaFieldBase::PARENT
-        ); /*
+      //m->addIteratorField<Cls, Demand::memberIterator, ForecastBucket>(
+      //  Tags::buckets, Tags::bucket, &Cls::getMembers, MetaFieldBase::DETAIL + MetaFieldBase::PARENT
+      //  );
+      /*
       XXX TODO specific set for forecast buckets
         else if (pAttr.isA(Tags::bucket))
   {
@@ -991,8 +992,6 @@ class Forecast : public Demand
   if (attr.isA(Tags::weight))
     return PythonObject(getWeight());
   return Demand::getattro(attr);
-
-
   */
     }
 

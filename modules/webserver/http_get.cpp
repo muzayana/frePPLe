@@ -32,7 +32,7 @@ bool WebServer::handleGet(CivetServer *server, struct mg_connection *conn)
       mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n");
       SerializerJSONString o;
       o.writeString("{");
-      MetaCategory::persistAll(&o);
+      Plan::instance().writeElement(&o, Tags::plan);
       o.writeString("}");
       mg_printf(conn, "%s", o.getData().c_str());
     }
@@ -43,7 +43,7 @@ bool WebServer::handleGet(CivetServer *server, struct mg_connection *conn)
       mg_printf(conn, "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n");
       mg_printf(conn, "<plan xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n");
       XMLSerializerString o;
-      MetaCategory::persistAll(&o);
+      Plan::instance().writeElement(&o, Tags::plan);
       mg_printf(conn, "%s", o.getData().c_str());
       mg_printf(conn, "</plan>\n");
     }
@@ -90,7 +90,11 @@ bool WebServer::handleGet(CivetServer *server, struct mg_connection *conn)
   // Get requested output format
   string format = "xml";
   CivetServer::getParam(conn, "format", format);
-  if (!slash || strncmp(request_info->uri + 1, cat->type.c_str(), slash - request_info->uri - 1))
+
+  // Find the matching field
+  const MetaFieldBase *fld = Plan::metadata->findField(*(cat->grouptag));
+
+  if (fld && (!slash || strncmp(request_info->uri + 1, cat->type.c_str(), slash - request_info->uri - 1)))
   {
     // Return all objects of a single category
     if (format == "json")
@@ -99,7 +103,7 @@ bool WebServer::handleGet(CivetServer *server, struct mg_connection *conn)
       mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n");
       SerializerJSONString o;
       o.writeString("{");
-      cat->persist(&o);
+      fld->writeField(o);
       o.writeString("}");
       mg_printf(conn, "%s", o.getData().c_str());
       return true;
@@ -111,7 +115,7 @@ bool WebServer::handleGet(CivetServer *server, struct mg_connection *conn)
       mg_printf(conn, "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n");
       mg_printf(conn, "<plan xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n");
       XMLSerializerString o;
-      cat->persist(&o);
+      fld->writeField(o);
       mg_printf(conn, "%s", o.getData().c_str());
       mg_printf(conn, "</plan>\n");
       return true;

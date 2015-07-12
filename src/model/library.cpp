@@ -40,23 +40,19 @@ void LibraryModel::initialize()
   // Initialize the location metadata.
   nok += Location::initialize();
   nok += LocationDefault::initialize();
-  nok += LocationIterator::initialize();
 
   // Initialize the customer metadata.
   nok += Customer::initialize();
   nok += CustomerDefault::initialize();
-  nok += CustomerIterator::initialize();
 
   // Initialize the supplier metadata.
   nok += Supplier::initialize();
   nok += SupplierDefault::initialize();
-  nok += SupplierIterator::initialize();
 
   // Initialize the calendar metadata.
   nok += CalendarBucket::initialize();
   nok += Calendar::initialize();
   nok += CalendarDefault::initialize();
-  nok += CalendarIterator::initialize();
 
   // Initialize the operation metadata.
   nok += Operation::initialize();
@@ -67,28 +63,22 @@ void LibraryModel::initialize()
   nok += OperationRouting::initialize();
   nok += OperationSetup::initialize();
   nok += SubOperation::initialize();
-  nok += OperationIterator::initialize();
-  nok += SubOperationIterator::initialize();
 
   // Initialize the item metadata.
   nok += Item::initialize();
   nok += ItemDefault::initialize();
-  nok += ItemIterator::initialize();
 
   // Initialize the supplieritem metadata
   nok += SupplierItem::initialize();
-  nok += SupplierItemIterator::initialize();
 
   // Initialize the buffer metadata.
   nok += Buffer::initialize();
   nok += BufferDefault::initialize();
   nok += BufferInfinite::initialize();
   nok += BufferProcure::initialize();
-  nok += BufferIterator::initialize();
 
   // Initialize the demand metadata.
   nok += Demand::initialize();
-  nok += DemandIterator::initialize();
   nok += DemandDefault::initialize();
   nok += DemandPlanIterator::initialize();
 
@@ -96,44 +86,36 @@ void LibraryModel::initialize()
   nok += SetupMatrixRule::initialize();
   nok += SetupMatrix::initialize();
   nok += SetupMatrixDefault::initialize();
-  nok += SetupMatrixIterator::initialize();
 
   // Initialize the skill metadata
   nok += Skill::initialize();
   nok += SkillDefault::initialize();
-  nok += SkillIterator::initialize();
 
   // Initialize the resource metadata.
   nok += Resource::initialize();
   nok += ResourceDefault::initialize();
   nok += ResourceInfinite::initialize();
-  nok += ResourceIterator::initialize();
   nok += Resource::PlanIterator::initialize();
   nok += ResourceBuckets::initialize();
 
   // Initialize the resourceskill metadata
   nok += ResourceSkill::initialize();
-  nok += ResourceSkillIterator::initialize();
 
   // Initialize the load metadata.
   nok += Load::initialize();
-  nok += LoadIterator::initialize();
   nok += LoadPlan::initialize();
   nok += LoadPlanIterator::initialize();
 
   // Initialize the flow metadata.
   nok += Flow::initialize();
-  nok += FlowIterator::initialize();
   nok += FlowPlan::initialize();
   nok += FlowPlanIterator::initialize();
 
   // Initialize the operationplan metadata.
   nok += OperationPlan::initialize();
-  nok += OperationPlanIterator::initialize();
 
   // Initialize the problem metadata.
   nok += Problem::initialize();
-  nok += ProblemIterator::initialize();
 
   // Initialize the pegging metadata.
   nok += PeggingIterator::initialize();
@@ -161,43 +143,43 @@ void LibraryModel::initialize()
     "saveplan", savePlan, METH_VARARGS,
     "Save the main plan information to a file.");
   PythonInterpreter::registerGlobalMethod(
-    "buffers", BufferIterator::create, METH_NOARGS,
+    "buffers", Buffer::createIterator, METH_NOARGS,
     "Returns an iterator over the buffers.");
   PythonInterpreter::registerGlobalMethod(
-    "locations", LocationIterator::create, METH_NOARGS,    // TODO Replace with a attribute?
+    "locations", Location::createIterator, METH_NOARGS,
     "Returns an iterator over the locations.");
   PythonInterpreter::registerGlobalMethod(
-    "customers", CustomerIterator::create, METH_NOARGS,
+    "customers", Customer::createIterator, METH_NOARGS,
     "Returns an iterator over the customers.");
   PythonInterpreter::registerGlobalMethod(
-    "suppliers", SupplierIterator::create, METH_NOARGS,
+    "suppliers", Supplier::createIterator, METH_NOARGS,
     "Returns an iterator over the suppliers.");
   PythonInterpreter::registerGlobalMethod(
-    "items", ItemIterator::create, METH_NOARGS,
+    "items", Item::createIterator, METH_NOARGS,
     "Returns an iterator over the items.");
   PythonInterpreter::registerGlobalMethod(
-    "calendars", CalendarIterator::create, METH_NOARGS,
+    "calendars", Calendar::createIterator, METH_NOARGS,
     "Returns an iterator over the calendars.");
   PythonInterpreter::registerGlobalMethod(
-    "demands", DemandIterator::create, METH_NOARGS,
+    "demands", Demand::createIterator, METH_NOARGS,
     "Returns an iterator over the demands.");
   PythonInterpreter::registerGlobalMethod(
-    "resources", ResourceIterator::create, METH_NOARGS,
+    "resources", Resource::createIterator, METH_NOARGS,
     "Returns an iterator over the resources.");
   PythonInterpreter::registerGlobalMethod(
-    "operations", OperationIterator::create, METH_NOARGS,
+    "operations", Operation::createIterator, METH_NOARGS,
     "Returns an iterator over the operations.");
   PythonInterpreter::registerGlobalMethod(
-    "operationplans", OperationPlanIterator::create, METH_NOARGS,
+    "operationplans", PythonIterator2<OperationPlan::iterator, OperationPlan>::create, METH_NOARGS,
     "Returns an iterator over the operationplans.");
   PythonInterpreter::registerGlobalMethod(
-    "problems", ProblemIterator::create, METH_NOARGS,
+    "problems", PythonIterator2<Problem::iterator, Problem>::create, METH_NOARGS,
     "Returns an iterator over the problems.");
   PythonInterpreter::registerGlobalMethod(
-    "setupmatrices", SetupMatrixIterator::create, METH_NOARGS,
+    "setupmatrices", SetupMatrix::createIterator, METH_NOARGS,
     "Returns an iterator over the setup matrices.");
   PythonInterpreter::registerGlobalMethod(
-    "skills", SkillIterator::create, METH_NOARGS,
+    "skills", Skill::createIterator, METH_NOARGS,
     "Returns an iterator over the skills.");
 }
 

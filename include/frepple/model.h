@@ -33,7 +33,6 @@ namespace frepple
 {
 
 class Flow;
-class FlowIterator;
 class FlowEnd;
 class FlowFixedStart;
 class FlowFixedEnd;
@@ -62,7 +61,6 @@ class Plannable;
 class Calendar;
 class CalendarBucket;
 class Load;
-class LoadIterator;
 class LoadDefault;
 class Location;
 class Customer;
@@ -348,7 +346,8 @@ class CalendarBucket : public Object, public NonCopyable
 
         iterator& operator++()
         {
-          if (curBucket) curBucket = curBucket->nextBucket;
+          if (curBucket)
+            curBucket = curBucket->nextBucket;
           return *this;
         }
 
@@ -356,6 +355,14 @@ class CalendarBucket : public Object, public NonCopyable
         {
           iterator tmp = *this;
           ++*this;
+          return tmp;
+        }
+
+        CalendarBucket *next()
+        {
+          CalendarBucket *tmp = curBucket;
+          if (curBucket)
+            curBucket = curBucket->nextBucket;
           return tmp;
         }
 
@@ -559,7 +566,7 @@ class Calendar : public HasName<Calendar>, public HasSource
       m->addStringField<Cls>(Tags::name, &Cls::getName, &Cls::setName, MetaFieldBase::MANDATORY);
       HasSource::registerFields<Cls>(m);
       m->addDoubleField<Cls>(Tags::deflt, &Cls::getDefault, &Cls::setDefault);
-      m->addIterator2Field<Cls, CalendarBucket::iterator, CalendarBucket>(Tags::buckets, Tags::bucket, &Cls::getBuckets);
+      m->addIteratorField<Cls, CalendarBucket::iterator, CalendarBucket>(Tags::buckets, Tags::bucket, &Cls::getBuckets);
     }
 
   protected:
@@ -616,14 +623,14 @@ class CalendarDefault : public Calendar
   *    the problems for. In this way we can avoid the cpu and memory overhead
   *    of keeping the problem list up to date at all times, while still
   *    providing the user with the correct list of problems when required.
-  *  - Given the above, Problems are lightweight objects that consume
+  *  - Given the above, problems are lightweight objects that consume
   *    limited memory.
   */
 class Problem : public NonCopyable, public Object
 {
   public:
-    class const_iterator;
-    friend class const_iterator;
+    class iterator;
+    friend class iterator;
     class List;
     friend class List;
 
@@ -633,7 +640,9 @@ class Problem : public NonCopyable, public Object
       * @see addProblem
       */
     explicit Problem(HasProblems *p = NULL) : owner(p), nextProblem(NULL)
-    {initType(metadata);}
+    {
+      initType(metadata);
+    }
 
     /** Initialize the class. */
     static int initialize();
@@ -683,8 +692,6 @@ class Problem : public NonCopyable, public Object
       */
     virtual double getWeight() const = 0;
 
-    static DECLARE_EXPORT void writer(const MetaCategory*, Serializer*);
-
     PyObject* str() const
     {
       return PythonData(getDescription());
@@ -692,7 +699,7 @@ class Problem : public NonCopyable, public Object
 
     /** Returns an iterator to the very first problem. The iterator can be
       * incremented till it points past the very last problem. */
-    static DECLARE_EXPORT const_iterator begin();
+    static DECLARE_EXPORT iterator begin();
 
     /** Return an iterator to the first problem of this entity. The iterator
       * can be incremented till it points past the last problem of this
@@ -700,10 +707,10 @@ class Problem : public NonCopyable, public Object
       * The boolean argument specifies whether the problems need to be
       * recomputed as part of this method.
       */
-    static DECLARE_EXPORT const_iterator begin(HasProblems*, bool = true);
+    static DECLARE_EXPORT iterator begin(HasProblems*, bool = true);
 
     /** Return an iterator pointing beyond the last problem. */
-    static DECLARE_EXPORT const const_iterator end();
+    static DECLARE_EXPORT const iterator end();
 
     /** Erases the list of all problems. This methods can be used reduce the
       * memory consumption at critical points. The list of problems will be
@@ -789,7 +796,7 @@ class Problem : public NonCopyable, public Object
   */
 class HasProblems
 {
-    friend class Problem::const_iterator;
+    friend class Problem::iterator;
     friend class Problem;
   public:
     class EntityIterator;
@@ -873,13 +880,13 @@ class Problem::List
       return first == NULL;
     }
 
-    typedef Problem::const_iterator iterator;
+    typedef Problem::iterator iterator;
 
     /** Return an iterator to the start of the list. */
-    Problem::const_iterator begin() const;
+    Problem::iterator begin() const;
 
     /** End iterator. */
-    Problem::const_iterator end() const;
+    Problem::iterator end() const;
 
   private:
     /** Pointer to the head of the list. */
@@ -1631,6 +1638,12 @@ class Operation : public HasName<Operation>,
         Date, Demand* = NULL, OperationPlan* = NULL, unsigned long = 0,
         bool makeflowsloads=true) const;
 
+    /** Returns true for operation types that own suboperations. */
+    virtual bool hasSubOperations() const
+    {
+      return false;
+    }
+
     /** Calculates the daterange starting from (or ending at) a certain date
       * and using a certain amount of effective available time on the
       * operation.
@@ -1729,16 +1742,34 @@ class Operation : public HasName<Operation>,
       loc = l;
     }
 
-    /** Returns an reference to the list of flows. */
+    /** Returns an reference to the list of flows.
+      * TODO get rid of this method.
+      */
     const flowlist& getFlows() const
     {
       return flowdata;
     }
 
-    /** Returns an reference to the list of loads. */
+    // XXX OperationPlan::iterator getOperationPlans();
+
+    /** Returns an reference to the list of flows. */
+    flowlist::const_iterator getFlowIterator() const
+    {
+      return flowdata.begin();
+    }
+
+    /** Returns an reference to the list of loads.
+      * TODO get rid of this method.
+      */
     const loadlist& getLoads() const
     {
       return loaddata;
+    }
+
+    /** Returns an reference to the list of loads. */
+    loadlist::const_iterator getLoadIterator() const
+    {
+      return loaddata.begin();
     }
 
     /** Return the flow that is associates a given buffer with this
@@ -1906,9 +1937,9 @@ class Operation : public HasName<Operation>,
       m->addDoubleField<Cls>(Tags::size_multiple, &Cls::getSizeMultiple, &Cls::setSizeMultiple);
       m->addDoubleField<Cls>(Tags::size_maximum, &Cls::getSizeMaximum, &Cls::setSizeMaximum, DBL_MAX);
       m->addPointerField<Cls, Location>(Tags::location, &Cls::getLocation, &Cls::setLocation);
-      // XXX TODO m->addIteratorField<Cls, >(Tags::operationplans, Tags::operationplan, &Cls::getOperationPlans, MetaFieldBase::DETAIL);
-      m->addListField<Cls, loadlist, Load>(Tags::loads, Tags::load, &Cls::getLoads, MetaFieldBase::DETAIL);
-      m->addListField<Cls, flowlist, Flow>(Tags::flows, Tags::flow, &Cls::getFlows, MetaFieldBase::DETAIL);
+      // XXX m->addIteratorField<Cls, OperationPlan::iterator, OperationPlan>(Tags::operationplans, Tags::operationplan, &Cls::getOperationPlans, MetaFieldBase::DETAIL);
+      m->addIteratorField<Cls, loadlist::const_iterator, Load>(Tags::loads, Tags::load, &Cls::getLoadIterator);
+      m->addIteratorField<Cls, flowlist::const_iterator, Flow>(Tags::flows, Tags::flow, &Cls::getFlowIterator);
       m->addBoolField<Cls>(Tags::hidden, &Cls::getHidden, &Cls::setHidden, BOOL_FALSE, MetaFieldBase::DONT_SERIALIZE);
       HasLevel::registerFields<Cls>(m);
     }
@@ -2137,6 +2168,14 @@ class OperationPlan
             else
               opplan = NULL;
           }
+          return tmp;
+        }
+
+        /** Return current elemetn and advance the iterator. */
+        OperationPlan* next()
+        {
+          OperationPlan* tmp = opplan;
+          operator++();
           return tmp;
         }
 
@@ -2601,9 +2640,6 @@ class OperationPlan
 
     static DECLARE_EXPORT const MetaCategory* metacategory;
 
-    /** Handles the persistence of operationplan objects. */
-    static DECLARE_EXPORT void writer(const MetaCategory*, Serializer*);
-
     /** Lookup a operationplan given its primary key. */
     static DECLARE_EXPORT Object* finder(const string&);
 
@@ -3032,6 +3068,11 @@ class OperationRouting : public Operation
     /** Destructor. */
     DECLARE_EXPORT ~OperationRouting();
 
+    virtual bool hasSubOperations() const
+    {
+      return true;
+    }
+
     /** A operation of this type enforces the following rules on its
       * operationplans:
       *  - If an end date is given, sequentially use this method on the
@@ -3154,6 +3195,11 @@ class OperationSplit : public Operation
     /** Destructor. */
     DECLARE_EXPORT ~OperationSplit();
 
+    virtual bool hasSubOperations() const
+    {
+      return true;
+    }
+
     /** A operation of this type enforces the following rules on its
       * operationplans:
       *  - Very simple, accept any value. Ignore any lot size constraints
@@ -3218,6 +3264,11 @@ class OperationAlternate : public Operation
 
     /** Destructor. */
     DECLARE_EXPORT ~OperationAlternate();
+
+    virtual bool hasSubOperations() const
+    {
+      return true;
+    }
 
     /** Return the search mode. */
     SearchMode getSearch() const
@@ -3364,7 +3415,7 @@ class Item : public HasHierarchy<Item>, public HasDescription
       m->addDoubleField<Cls>(Tags::price, &Cls::getPrice, &Cls::setPrice, 0);
       m->addPointerField<Cls, Operation>(Tags::operation, &Cls::getOperation, &Cls::setOperation);
       m->addBoolField<Cls>(Tags::hidden, &Cls::getHidden, &Cls::setHidden, BOOL_FALSE, MetaFieldBase::DONT_SERIALIZE);
-      m->addListField<Cls, typename Cls::supplierlist, SupplierItem>(Tags::supplieritems, Tags::supplieritem, &Cls::getSuppliers, MetaFieldBase::DETAIL);
+      m->addListField<Cls, typename Cls::supplierlist, SupplierItem>(Tags::supplieritems, Tags::supplieritem, &Cls::getSuppliers);
     }
 
   private:
@@ -4348,7 +4399,6 @@ class Flow : public Object, public Association<Operation,Buffer,Flow>::Node,
     virtual double getFlowplanQuantity(const FlowPlan*) const;
 
     static int initialize();
-    static void writer(const MetaCategory*, Serializer*);
 
     string getTypeName() const
     {
@@ -4831,7 +4881,8 @@ class SetupMatrixRule : public Object
 
         iterator& operator++()
         {
-          if (curRule) curRule = curRule->nextRule;
+          if (curRule)
+            curRule = curRule->nextRule;
           return *this;
         }
 
@@ -4839,6 +4890,14 @@ class SetupMatrixRule : public Object
         {
           iterator tmp = *this;
           ++*this;
+          return tmp;
+        }
+
+        SetupMatrixRule *next()
+        {
+          SetupMatrixRule *tmp = curRule;
+          if (curRule)
+            curRule = curRule->nextRule;
           return tmp;
         }
 
@@ -4886,7 +4945,7 @@ class SetupMatrix : public HasName<SetupMatrix>, public HasSource
     {
       m->addStringField<Cls>(Tags::name, &Cls::getName, &Cls::setName, MetaFieldBase::MANDATORY);
       HasSource::registerFields<Cls>(m);
-      m->addIterator2Field<Cls, SetupMatrixRule::iterator, SetupMatrixRule>(Tags::rules, Tags::rule, &Cls::getRules);
+      m->addIteratorField<Cls, SetupMatrixRule::iterator, SetupMatrixRule>(Tags::rules, Tags::rule, &Cls::getRules);
     }
 
   public:
@@ -4969,10 +5028,10 @@ class Skill : public HasName<Skill>, public HasSource
 
     typedef Association<Resource,Skill,ResourceSkill>::ListB resourcelist;
 
-    /** Returns an reference to the list of resources having this skill. */
-    const resourcelist& getResources() const
+    /** Returns an iterator over the list of resources having this skill. */
+    resourcelist::const_iterator getResources() const
     {
-      return resources;
+      return resources.begin();
     }
 
     /** Python interface to add a new resource. */
@@ -4986,7 +5045,7 @@ class Skill : public HasName<Skill>, public HasSource
     template<class Cls> static inline void registerFields(MetaClass* m)
     {
       m->addStringField<Cls>(Tags::name, &Cls::getName, &Cls::setName, MetaFieldBase::MANDATORY);
-      m->addListField<Cls, resourcelist, ResourceSkill>(Tags::resourceskills, Tags::resourceskill, &Cls::getResources, MetaFieldBase::DETAIL);
+      m->addIteratorField<Cls, resourcelist::const_iterator, ResourceSkill>(Tags::resourceskills, Tags::resourceskill, &Cls::getResources);
       HasSource::registerFields<Cls>(m);
     }
   private:
@@ -5093,16 +5152,25 @@ class Resource : public HasHierarchy<Resource>,
 
     /** Returns a constant reference to the list of loads. It defines
       * which operations are using the resource.
+      * TODO Get rid of this
       */
     const loadlist& getLoads() const
     {
       return loads;
     }
 
-    /** Returns a constant reference to the list of skills. */
-    const skilllist& getSkills() const
+    /** Returns a constant reference to the list of loads. It defines
+      * which operations are using the resource.
+      */
+    loadlist::const_iterator getLoadIterator() const
     {
-      return skills;
+      return loads.begin();
+    }
+
+    /** Returns a constant reference to the list of skills. */
+    skilllist::const_iterator getSkills() const
+    {
+      return skills.begin();
     }
 
     /** Return the load that is associates a given operation with this
@@ -5208,8 +5276,8 @@ class Resource : public HasHierarchy<Resource>,
       m->addStringField<Cls>(Tags::setup, &Cls::getSetup, &Cls::setSetup);
       m->addPointerField<Cls, SetupMatrix>(Tags::setupmatrix, &Cls::getSetupMatrix, &Cls::setSetupMatrix);
       Plannable::registerFields<Cls>(m);
-      m->addListField<Cls, loadlist, Load>(Tags::loads, Tags::load, &Cls::getLoads, MetaFieldBase::DETAIL);
-      m->addListField<Cls, skilllist, ResourceSkill>(Tags::skills, Tags::skill, &Cls::getSkills, MetaFieldBase::DETAIL);
+      m->addIteratorField<Cls, loadlist::const_iterator, Load>(Tags::loads, Tags::load, &Cls::getLoadIterator, MetaFieldBase::DETAIL);
+      m->addIteratorField<Cls, skilllist::const_iterator, ResourceSkill>(Tags::resourceskills, Tags::resourceskill, &Cls::getSkills, MetaFieldBase::DETAIL);
       // TODO XXX m->addIteratorField<Cls, LoadPlanIterator>(Tags::loadplans, &Cls::getLoadPlans, DETAIL);  TODO SHOULD BE ONLY THE ONES OF TYPE 1
       // TODO XXX m->addIteratorField<Cls, ProblemIterator>(Tags::problems, &Cls::getProblems, DETAIL);
       m->addBoolField<Cls>(Tags::hidden, &Cls::getHidden, &Cls::setHidden, BOOL_FALSE, MetaFieldBase::DONT_SERIALIZE);
@@ -5397,7 +5465,6 @@ class ResourceSkill : public Object,
 
     /** Initialize the class. */
     static int initialize();
-    static void writer(const MetaCategory*, Serializer*);
 
     /** Returns the resource. */
     Resource* getResource() const
@@ -5408,7 +5475,7 @@ class ResourceSkill : public Object,
     /** Updates the resource. This method can only be called on an instance. */
     void setResource(Resource* r)
     {
-      if (r) setPtrA(r,r->getSkills());
+      if (r) setPtrA(r, r->skills);
     }
 
     /** Returns the skill. */
@@ -5423,7 +5490,7 @@ class ResourceSkill : public Object,
     /** Updates the skill. This method can only be called on an instance. */
     void setSkill(Skill* s)
     {
-      if (s) setPtrB(s,s->getResources());
+      if (s) setPtrB(s, s->resources);
     }
 
     template<class Cls> static inline void registerFields(MetaClass* m)
@@ -5516,10 +5583,7 @@ class Load
 
     /** Updates the operation being loaded. This method can only be called
       * once for a load. */
-    void setOperation(Operation* o)
-    {
-      if (o) setPtrA(o,o->getLoads());
-    }
+    DECLARE_EXPORT void setOperation(Operation*);
 
     /** Returns the capacity resource being consumed. */
     Resource* getResource() const
@@ -5606,7 +5670,6 @@ class Load
     virtual double getLoadplanQuantity(const LoadPlan*) const;
 
     static int initialize();
-    static void writer(const MetaCategory*, Serializer*);
 
     bool getHidden() const
     {
@@ -5678,12 +5741,6 @@ class Load
   */
     }
 
-    typedef FlowIterator iterator;
-
-    static iterator begin();
-
-    static iterator end();
-
   private:
     /** This method is called to check the validity of the object.<br>
       * An exception is thrown if the load is invalid.
@@ -5731,136 +5788,6 @@ class LoadDefault : public Load
 
     virtual const MetaClass& getType() const {return *metadata;}
     static DECLARE_EXPORT const MetaClass* metadata;
-};
-
-
-
-/** @brief This is the (logical) top class of the complete model.
-  *
-  * This is a singleton class: only a single instance can be created.
-  * The data model has other limitations that make it not obvious to support
-  * building multiple models/plans in memory of the same application: e.g.
-  * the operations, resources, problems, operationplans... etc are all
-  * implemented in static, global lists. An entity can't be simply linked with
-  * a particular plan if multiple ones would exist.
-  */
-class Plan : public Plannable, public Object
-{
-  private:
-    /** Current Date of this plan. */
-    Date cur_Date;
-
-    /** A name for this plan. */
-    string name;
-
-    /** A getDescription of this plan. */
-    string descr;
-
-    /** Pointer to the singleton plan object. */
-    static DECLARE_EXPORT Plan* thePlan;
-
-    /** The only constructor of this class is made private. An object of this
-      * class is created by the instance() member function.
-      */
-    Plan() : cur_Date(Date::now()) {initType(metadata);}
-
-  public:
-    /** Return a pointer to the singleton plan object.
-      * The singleton object is created during the initialization of the
-      * library.
-      */
-    static Plan& instance()
-    {
-      return *thePlan;
-    }
-
-    /** Destructor.
-      * @warning In multi threaded applications, the destructor is never called
-      * and the plan object leaks when we exit the application.
-      * In single-threaded applications this function is called properly, when
-      * the static plan variable is deleted.
-      */
-    DECLARE_EXPORT ~Plan();
-
-    /** Returns the plan name. */
-    string getName() const
-    {
-      return name;
-    }
-
-    /** Updates the plan name. */
-    void setName(string s)
-    {
-      name = s;
-    }
-
-    /** Returns the current date of the plan. */
-    Date getCurrent() const
-    {
-      return cur_Date;
-    }
-
-    /** Updates the current date of the plan. This method can be relatively
-      * heavy in a plan where operationplans already exist, since the
-      * detection for BeforeCurrent problems needs to be rerun.
-      */
-    DECLARE_EXPORT void setCurrent(Date);
-
-    /** Returns the description of the plan. */
-    string getDescription() const
-    {
-      return descr;
-    }
-
-    /** Updates the description of the plan. */
-    void setDescription(string str)
-    {
-      descr = str;
-    }
-
-    void setLogFile(string s)
-    {
-      Environment::setLogFile(s);
-    }
-
-    string getLogFile() const
-    {
-      return Environment::getLogFile();
-    }
-
-    /** Initialize the class. */
-    static int initialize();
-
-    virtual void updateProblems() {};
-
-    /** This method basically solves the whole planning problem. */
-    virtual void solve(Solver &s, void* v = NULL) const {s.solve(this,v);}
-
-    const MetaClass& getType() const {return *metadata;}
-    static DECLARE_EXPORT const MetaCategory* metadata;
-
-    static inline void registerFields(MetaClass* m)
-    {
-      m->addStringField<Plan>(Tags::name, &Plan::getName, &Plan::setName);
-      m->addStringField<Plan>(Tags::description, &Plan::getDescription, &Plan::setDescription);
-      m->addDateField<Plan>(Tags::current, &Plan::getCurrent, &Plan::setCurrent);
-      m->addStringField<Plan>(Tags::logfile, &Plan::getLogFile, &Plan::setLogFile, MetaFieldBase::DONT_SERIALIZE);
-      Plannable::registerFields<Plan>(m);
-      m->addList2Field<Plan, Location>(Tags::locations, Tags::location);
-      m->addList2Field<Plan, Customer>(Tags::customers, Tags::customer);
-      m->addList2Field<Plan, Supplier>(Tags::suppliers, Tags::supplier);
-      m->addList2Field<Plan, Calendar>(Tags::calendars, Tags::calendar);
-      m->addList2Field<Plan, Operation>(Tags::operations, Tags::operation);
-      m->addList2Field<Plan, Item>(Tags::items, Tags::item);
-      m->addList2Field<Plan, Buffer>(Tags::buffers, Tags::buffer);
-      m->addList2Field<Plan, Demand>(Tags::demands, Tags::demand);
-      m->addList2Field<Plan, SetupMatrix>(Tags::setupmatrices, Tags::setupmatrix);
-      m->addList2Field<Plan, Skill>(Tags::skills, Tags::skill);
-      m->addList2Field<Plan, Resource>(Tags::resources, Tags::resource);
-      m->addList3Field<Plan, Load>(Tags::loads, Tags::load);
-      m->addList3Field<Plan, Flow>(Tags::flows, Tags::flow);
-      m->addList2Field<Plan, OperationPlan>(Tags::operationplans, Tags::operationplan);
-    }
 };
 
 
@@ -6403,6 +6330,370 @@ inline double Load::getLoadplanQuantity(const LoadPlan* lp) const
     return lp->isStart() ? getQuantity() : -getQuantity();
 }
 
+
+/** @brief This class models a iterator that walks over all available
+  * HasProblem entities.
+  *
+  * This list is containing hard-coding the classes that are implementing
+  * this class. It's not ideal, but we don't have an explicit container
+  * of the objects (and we don't want one either) and this allows us also
+  * to re-use the sorting used for the container classes.
+  */
+class HasProblems::EntityIterator
+{
+  private:
+    /** This union contains iterators through the different entity types.
+      * Only one of the different iterators will be active at a time, and
+      * can thus save memory by collapsing the iterators into a single
+      * union. */
+    union
+    {
+      Buffer::iterator *bufIter;
+      Resource::iterator *resIter;
+      OperationPlan::iterator *operIter;
+      Demand::iterator *demIter;
+    };
+
+    /** This type indicates which type of entity we are currently recursing
+      * through.
+      *  - 0: buffers
+      *  - 1: resources
+      *  - 2: operationplans
+      *  - 3: demands
+      */
+    unsigned short type;
+
+  public:
+    /** Default constructor, which creates an iterator to the first
+      * HasProblems object. */
+    explicit DECLARE_EXPORT EntityIterator();
+
+    /** Used to create an iterator pointing beyond the last HasProblems
+      * object. */
+    explicit EntityIterator(unsigned short i) : type(i) {}
+
+    /** Copy constructor. */
+    DECLARE_EXPORT EntityIterator(const EntityIterator& o);
+
+    /** Assignment operator. */
+    DECLARE_EXPORT EntityIterator& operator=(const EntityIterator& o);
+
+    /** Destructor. */
+    DECLARE_EXPORT ~EntityIterator();
+
+    /** Pre-increment operator. */
+    DECLARE_EXPORT EntityIterator& operator++();
+
+    /** Inequality operator.<br>
+      * Two iterators are different when they point to different objects.
+      */
+    DECLARE_EXPORT bool operator != (const EntityIterator& t) const;
+
+    /** Equality operator.<br>
+      * Two iterators are equal when they point to the same object.
+      */
+    bool operator == (const EntityIterator& t) const
+    {
+      return !(*this != t);
+    }
+
+    /** Dereference operator. */
+    DECLARE_EXPORT HasProblems& operator*() const;
+
+    /** Dereference operator. */
+    DECLARE_EXPORT HasProblems* operator->() const;
+};
+
+
+/** @brief This class models an STL-like iterator that allows us to iterate
+  * over the named entities in a simple and safe way.
+  *
+  * Objects of this class are returned by the begin() and end() functions.
+  * @see Problem::begin()
+  * @see Problem::begin(HasProblem*)
+  * @see Problem::end()
+  */
+class Problem::iterator
+{
+    friend class Problem;
+  private:
+    /** A pointer to the current problem. If this pointer is NULL, we are
+      * at the end of the list. */
+    Problem* iter;
+    HasProblems* owner;
+    HasProblems::EntityIterator eiter;
+
+  public:
+    /** Creates an iterator that will loop through the problems of a
+      * single entity only. <BR>
+      * This constructor is also used to create a end-iterator, when passed
+      * a NULL pointer as argument.
+      */
+    explicit iterator(HasProblems* o) : iter(o ? o->firstProblem : NULL),
+      owner(o), eiter(4) {}
+
+    /** Creates an iterator that will loop through the constraints of
+      * a demand.
+      */
+    explicit iterator(Problem* o) : iter(o),
+      owner(NULL), eiter(4) {}
+
+    /** Creates an iterator that will loop through the problems of all
+      * entities. */
+    explicit iterator() : owner(NULL)
+    {
+      // Update problems
+      Plannable::computeProblems();
+
+      // Loop till we find an entity with a problem
+      while (eiter!=HasProblems::endEntity() && !(eiter->firstProblem))
+        ++eiter;
+      // Found a first problem, or no problem at all
+      iter = (eiter!=HasProblems::endEntity()) ? eiter->firstProblem : NULL;
+    }
+
+    /** Pre-increment operator. */
+    DECLARE_EXPORT iterator& operator++();
+
+    /** Return current problem and advance the iterator. */
+    Problem* next()
+    {
+      Problem *tmp = iter;
+      operator++();
+      return tmp;
+    }
+
+    /** Inequality operator. */
+    bool operator != (const iterator& t) const
+    {
+      return iter!=t.iter;
+    }
+
+    /** Equality operator. */
+    bool operator == (const iterator& t) const
+    {
+      return iter==t.iter;
+    }
+
+    Problem& operator*() const
+    {
+      return *iter;
+    }
+
+    Problem* operator->() const
+    {
+      return iter;
+    }
+};
+
+
+/** Retrieve an iterator for the list. */
+inline Problem::iterator Problem::List::begin() const
+{
+  return Problem::iterator(first);
+}
+
+
+/** Stop iterator. */
+inline Problem::iterator Problem::List::end() const
+{
+  return Problem::iterator(static_cast<Problem*>(NULL));
+}
+
+
+/** @brief This is the (logical) top class of the complete model.
+  *
+  * This is a singleton class: only a single instance can be created.
+  * The data model has other limitations that make it not obvious to support
+  * building multiple models/plans in memory of the same application: e.g.
+  * the operations, resources, problems, operationplans... etc are all
+  * implemented in static, global lists. An entity can't be simply linked with
+  * a particular plan if multiple ones would exist.
+  */
+class Plan : public Plannable, public Object
+{
+  private:
+    /** Current Date of this plan. */
+    Date cur_Date;
+
+    /** A name for this plan. */
+    string name;
+
+    /** A getDescription of this plan. */
+    string descr;
+
+    /** Pointer to the singleton plan object. */
+    static DECLARE_EXPORT Plan* thePlan;
+
+    /** The only constructor of this class is made private. An object of this
+      * class is created by the instance() member function.
+      */
+    Plan() : cur_Date(Date::now())
+    {
+      initType(metadata);
+    }
+
+  public:
+    /** Return a pointer to the singleton plan object.
+      * The singleton object is created during the initialization of the
+      * library.
+      */
+    static Plan& instance()
+    {
+      return *thePlan;
+    }
+
+    /** Destructor.
+      * @warning In multi threaded applications, the destructor is never called
+      * and the plan object leaks when we exit the application.
+      * In single-threaded applications this function is called properly, when
+      * the static plan variable is deleted.
+      */
+    DECLARE_EXPORT ~Plan();
+
+    /** Returns the plan name. */
+    string getName() const
+    {
+      return name;
+    }
+
+    /** Updates the plan name. */
+    void setName(string s)
+    {
+      name = s;
+    }
+
+    /** Returns the current date of the plan. */
+    Date getCurrent() const
+    {
+      return cur_Date;
+    }
+
+    /** Updates the current date of the plan. This method can be relatively
+      * heavy in a plan where operationplans already exist, since the
+      * detection for BeforeCurrent problems needs to be rerun.
+      */
+    DECLARE_EXPORT void setCurrent(Date);
+
+    /** Returns the description of the plan. */
+    string getDescription() const
+    {
+      return descr;
+    }
+
+    /** Updates the description of the plan. */
+    void setDescription(string str)
+    {
+      descr = str;
+    }
+
+    void setLogFile(string s)
+    {
+      Environment::setLogFile(s);
+    }
+
+    string getLogFile() const
+    {
+      return Environment::getLogFile();
+    }
+
+    /** Initialize the class. */
+    static int initialize();
+
+    virtual void updateProblems() {};
+
+    /** This method basically solves the whole planning problem. */
+    virtual void solve(Solver &s, void* v = NULL) const {s.solve(this,v);}
+
+    Location::iterator getLocations() const
+    {
+      return Location::begin();
+    }
+
+    Customer::iterator getCustomers() const
+    {
+      return Customer::begin();
+    }
+
+    Supplier::iterator getSuppliers() const
+    {
+      return Supplier::begin();
+    }
+
+    Calendar::iterator getCalendars() const
+    {
+      return Calendar::begin();
+    }
+
+    Operation::iterator getOperations() const
+    {
+      return Operation::begin();
+    }
+
+    Item::iterator getItems() const
+    {
+      return Item::begin();
+    }
+
+    Buffer::iterator getBuffers() const
+    {
+      return Buffer::begin();
+    }
+
+    Demand::iterator getDemands() const
+    {
+      return Demand::begin();
+    }
+
+    SetupMatrix::iterator getSetupMatrices() const
+    {
+      return SetupMatrix::begin();
+    }
+
+    Skill::iterator getSkills() const
+    {
+      return Skill::begin();
+    }
+
+    Resource::iterator getResources() const
+    {
+      return Resource::begin();
+    }
+
+    Problem::iterator getProblems() const
+    {
+      return Problem::iterator();
+    }
+
+    const MetaClass& getType() const {return *metadata;}
+    static DECLARE_EXPORT const MetaCategory* metadata;
+
+    template<class Cls>static inline void registerFields(MetaClass* m)
+    {
+      m->addStringField<Plan>(Tags::name, &Plan::getName, &Plan::setName);
+      m->addStringField<Plan>(Tags::description, &Plan::getDescription, &Plan::setDescription);
+      m->addDateField<Plan>(Tags::current, &Plan::getCurrent, &Plan::setCurrent);
+      m->addStringField<Plan>(Tags::logfile, &Plan::getLogFile, &Plan::setLogFile, MetaFieldBase::DONT_SERIALIZE);
+      Plannable::registerFields<Plan>(m);
+      m->addIteratorField<Plan, Location::iterator, Location>(Tags::locations, Tags::location, &Plan::getLocations);
+      m->addIteratorField<Plan, Customer::iterator, Customer>(Tags::customers, Tags::customer, &Plan::getCustomers);
+      m->addIteratorField<Plan, Supplier::iterator, Supplier>(Tags::suppliers, Tags::supplier, &Plan::getSuppliers);
+      m->addIteratorField<Plan, Calendar::iterator, Calendar>(Tags::calendars, Tags::calendar, &Plan::getCalendars);
+      m->addIteratorField<Plan, Resource::iterator, Resource>(Tags::resources, Tags::resource, &Plan::getResources);
+      m->addIteratorField<Plan, Item::iterator, Item>(Tags::items, Tags::item, &Plan::getItems);
+      m->addIteratorField<Plan, Buffer::iterator, Buffer>(Tags::buffers, Tags::buffer, &Plan::getBuffers);
+      m->addIteratorField<Plan, Operation::iterator, Operation>(Tags::operations, Tags::operation, &Plan::getOperations);
+      m->addIteratorField<Plan, Demand::iterator, Demand>(Tags::demands, Tags::demand, &Plan::getDemands);
+      m->addIteratorField<Plan, SetupMatrix::iterator, SetupMatrix>(Tags::setupmatrices, Tags::setupmatrix, &Plan::getSetupMatrices);
+      m->addIteratorField<Plan, Skill::iterator, Skill>(Tags::skills, Tags::skill, &Plan::getSkills);
+      m->addList3Field<Plan, ResourceSkill>(Tags::resourceskills, Tags::resourceskill);
+      m->addList3Field<Plan, Load>(Tags::loads, Tags::load);
+      m->addList3Field<Plan, Flow>(Tags::flows, Tags::flow);
+      m->addList3Field<Plan, SupplierItem>(Tags::supplieritems, Tags::supplieritem);
+      m->addList2Field<Plan, OperationPlan>(Tags::operationplans, Tags::operationplan);
+      m->addIteratorField<Plan, Problem::iterator, Problem>(Tags::problems, Tags::problem, &Plan::getProblems);
+    }
+};
 
 
 /** @brief A problem of this class is created when an operationplan is being
@@ -7492,165 +7783,6 @@ class CommandMoveOperationPlan : public Command
 };
 
 
-/** @brief This class models a iterator that walks over all available
-  * HasProblem entities.
-  *
-  * This list is containing hard-coding the classes that are implementing
-  * this class. It's not ideal, but we don't have an explicit container
-  * of the objects (and we don't want one either) and this allows us also
-  * to re-use the sorting used for the container classes.
-  */
-class HasProblems::EntityIterator
-{
-  private:
-    /** This union contains iterators through the different entity types.
-      * Only one of the different iterators will be active at a time, and
-      * can thus save memory by collapsing the iterators into a single
-      * union. */
-    union
-    {
-      Buffer::iterator *bufIter;
-      Resource::iterator *resIter;
-      OperationPlan::iterator *operIter;
-      Demand::iterator *demIter;
-    };
-
-    /** This type indicates which type of entity we are currently recursing
-      * through.
-      *  - 0: buffers
-      *  - 1: resources
-      *  - 2: operationplans
-      *  - 3: demands
-      */
-    unsigned short type;
-
-  public:
-    /** Default constructor, which creates an iterator to the first
-      * HasProblems object. */
-    explicit DECLARE_EXPORT EntityIterator();
-
-    /** Used to create an iterator pointing beyond the last HasProblems
-      * object. */
-    explicit EntityIterator(unsigned short i) : type(i) {}
-
-    /** Copy constructor. */
-    DECLARE_EXPORT EntityIterator(const EntityIterator& o);
-
-    /** Assignment operator. */
-    DECLARE_EXPORT EntityIterator& operator=(const EntityIterator& o);
-
-    /** Destructor. */
-    DECLARE_EXPORT ~EntityIterator();
-
-    /** Pre-increment operator. */
-    DECLARE_EXPORT EntityIterator& operator++();
-
-    /** Inequality operator.<br>
-      * Two iterators are different when they point to different objects.
-      */
-    DECLARE_EXPORT bool operator != (const EntityIterator& t) const;
-
-    /** Equality operator.<br>
-      * Two iterators are equal when they point to the same object.
-      */
-    bool operator == (const EntityIterator& t) const
-    {
-      return !(*this != t);
-    }
-
-    /** Dereference operator. */
-    DECLARE_EXPORT HasProblems& operator*() const;
-
-    /** Dereference operator. */
-    DECLARE_EXPORT HasProblems* operator->() const;
-};
-
-
-/** @brief This class models an STL-like iterator that allows us to iterate
-  * over the named entities in a simple and safe way.
-  *
-  * Objects of this class are returned by the begin() and end() functions.
-  * @see Problem::begin()
-  * @see Problem::begin(HasProblem*)
-  * @see Problem::end()
-  */
-class Problem::const_iterator
-{
-    friend class Problem;
-  private:
-    /** A pointer to the current problem. If this pointer is NULL, we are
-      * at the end of the list. */
-    Problem* iter;
-    HasProblems* owner;
-    HasProblems::EntityIterator eiter;
-
-  public:
-    /** Creates an iterator that will loop through the problems of a
-      * single entity only. <BR>
-      * This constructor is also used to create a end-iterator, when passed
-      * a NULL pointer as argument.
-      */
-    explicit const_iterator(HasProblems* o) : iter(o ? o->firstProblem : NULL),
-      owner(o), eiter(4) {}
-
-    /** Creates an iterator that will loop through the constraints of
-      * a demand.
-      */
-    explicit const_iterator(Problem* o) : iter(o),
-      owner(NULL), eiter(4) {}
-
-    /** Creates an iterator that will loop through the problems of all
-      * entities. */
-    explicit const_iterator() : owner(NULL)
-    {
-      // Loop till we find an entity with a problem
-      while (eiter!=HasProblems::endEntity() && !(eiter->firstProblem))
-        ++eiter;
-      // Found a first problem, or no problem at all
-      iter = (eiter!=HasProblems::endEntity()) ? eiter->firstProblem : NULL;
-    }
-
-    /** Pre-increment operator. */
-    DECLARE_EXPORT const_iterator& operator++();
-
-    /** Inequality operator. */
-    bool operator != (const const_iterator& t) const
-    {
-      return iter!=t.iter;
-    }
-
-    /** Equality operator. */
-    bool operator == (const const_iterator& t) const
-    {
-      return iter==t.iter;
-    }
-
-    Problem& operator*() const
-    {
-      return *iter;
-    }
-
-    Problem* operator->() const
-    {
-      return iter;
-    }
-};
-
-
-/** Retrieve an iterator for the list. */
-inline Problem::const_iterator Problem::List::begin() const
-{
-  return Problem::const_iterator(first);
-}
-
-
-/** Stop iterator. */
-inline Problem::const_iterator Problem::List::end() const
-{
-  return Problem::const_iterator(static_cast<Problem*>(NULL));
-}
-
-
 /** @brief This class allows upstream and downstream navigation through
   * the plan.
   *
@@ -7961,222 +8093,6 @@ inline int OperationPlan::sizeLoadPlans() const
 }
 
 
-class ProblemIterator
-  : public FreppleIterator<ProblemIterator,Problem::const_iterator,Problem>
-{
-  public:
-    /** Constructor starting the iteration from a certain problem. */
-    ProblemIterator(Problem *x) :
-      FreppleIterator<ProblemIterator,Problem::const_iterator,Problem>(x) {}
-
-    /** Constructor starting the iteration from a certain problem. */
-    ProblemIterator(Problem &x) :
-      FreppleIterator<ProblemIterator,Problem::const_iterator,Problem>(&x) {}
-
-    /** Default constructor. */
-    ProblemIterator() :
-      FreppleIterator<ProblemIterator,Problem::const_iterator,Problem>() {}
-};
-
-
-class BufferIterator
-  : public FreppleIterator<BufferIterator,Buffer::memberIterator,Buffer>
-{
-  public:
-    BufferIterator(Buffer* b) : FreppleIterator<BufferIterator,Buffer::memberIterator,Buffer>(b) {}
-    BufferIterator() {}
-};
-
-
-class LocationIterator
-  : public FreppleIterator<LocationIterator,Location::memberIterator,Location>
-{
-  public:
-    LocationIterator(Location* b) : FreppleIterator<LocationIterator,Location::memberIterator,Location>(b) {}
-    LocationIterator() {}
-};
-
-
-class CustomerIterator
-  : public FreppleIterator<CustomerIterator,Customer::memberIterator,Customer>
-{
-  public:
-    CustomerIterator(Customer* b) : FreppleIterator<CustomerIterator,Customer::memberIterator,Customer>(b) {}
-    CustomerIterator() {}
-};
-
-
-class SupplierIterator
-  : public FreppleIterator<SupplierIterator,Supplier::memberIterator,Supplier>
-{
-  public:
-    SupplierIterator(Supplier* b) : FreppleIterator<SupplierIterator,Supplier::memberIterator,Supplier>(b) {}
-    SupplierIterator() {}
-};
-
-
-class ItemIterator
-  : public FreppleIterator<ItemIterator,Item::memberIterator,Item>
-{
-  public:
-    ItemIterator(Item* b) : FreppleIterator<ItemIterator,Item::memberIterator,Item>(b) {}
-    ItemIterator() {}
-};
-
-
-class DemandIterator
-  : public FreppleIterator<DemandIterator,Demand::memberIterator,Demand>
-{
-  public:
-    DemandIterator(Demand* b) : FreppleIterator<DemandIterator,Demand::memberIterator,Demand>(b) {}
-    DemandIterator() {}
-};
-
-
-class ResourceIterator
-  : public FreppleIterator<ResourceIterator,Resource::memberIterator,Resource>
-{
-  public:
-    ResourceIterator(Resource* b) : FreppleIterator<ResourceIterator,Resource::memberIterator,Resource>(b) {}
-    ResourceIterator() {}
-};
-
-
-class OperationIterator
-  : public FreppleIterator<OperationIterator,Operation::iterator,Operation>
-{
-};
-
-
-class SubOperationIterator : public PythonExtension<SubOperationIterator>
-{
-  public:
-    static int initialize();
-
-    SubOperationIterator(Operation* o) : oplist(o->getSubOperations())
-    {
-      iter = oplist.begin();
-    }
-
-  private:
-    const Operation::Operationlist& oplist;
-    Operation::Operationlist::const_iterator iter;
-    PyObject *iternext();
-};
-
-
-class CalendarIterator
-  : public FreppleIterator<CalendarIterator,Calendar::iterator,Calendar>
-{
-};
-
-
-class SetupMatrixIterator
-  : public FreppleIterator<SetupMatrixIterator,SetupMatrix::iterator,SetupMatrix>
-{
-};
-
-
-class SkillIterator
-  : public FreppleIterator<SkillIterator,Skill::iterator,Skill>
-{
-};
-
-
-class SetupMatrixRuleIterator : public PythonExtension<SetupMatrixRuleIterator>
-{
-  public:
-    static int initialize();
-
-    SetupMatrixRuleIterator(SetupMatrix* c) : matrix(c)
-    {
-      if (!c)
-        throw LogicException("Creating rule iterator for NULL matrix");
-      currule = c->getRules();
-    }
-
-  private:
-    SetupMatrix* matrix;
-    SetupMatrixRule::iterator currule;
-    PyObject *iternext();
-};
-
-
-class ResourceSkillIterator : public PythonExtension<ResourceSkillIterator>
-{
-  public:
-    static int initialize();
-
-    ResourceSkillIterator(Resource* r)
-      : res(r), ir(r ? r->getSkills().begin() : NULL), skill(NULL), is(NULL)
-    {
-      if (!r)
-        throw LogicException("Creating resourceskill iterator for NULL resource");
-    }
-
-    ResourceSkillIterator(Skill* s)
-      : res(NULL), ir(NULL), skill(s), is(s ? s->getResources().begin() : NULL)
-    {
-      if (!s)
-        throw LogicException("Creating resourceskill iterator for NULL skill");
-    }
-
-  private:
-    Resource* res;
-    Resource::skilllist::const_iterator ir;
-    Skill* skill;
-    Skill::resourcelist::const_iterator is;
-    PyObject *iternext();
-};
-
-
-class SupplierItemIterator : public PythonExtension<SupplierItemIterator>
-{
-  public:
-    static int initialize();
-
-    SupplierItemIterator(Supplier* r)
-      : sup(r), ir(r ? r->getItems().begin() : NULL), it(NULL), is(NULL)
-    {
-      if (!r)
-        throw LogicException("Creating supplieritem iterator for NULL supplier");
-    }
-
-    SupplierItemIterator(Item* s)
-      : sup(NULL), ir(NULL), it(s), is(s ? s->getSuppliers().begin() : NULL)
-    {
-      if (!s)
-        throw LogicException("Creating supplieritem iterator for NULL item");
-    }
-
-  private:
-    Supplier* sup;
-    Supplier::itemlist::const_iterator ir;
-    Item* it;
-    Item::supplierlist::const_iterator is;
-    PyObject *iternext();
-};
-
-
-class CalendarBucketIterator : public PythonExtension<CalendarBucketIterator>
-{
-  public:
-    static int initialize();
-
-    CalendarBucketIterator(Calendar* c) : cal(c)
-    {
-      if (!c)
-        throw LogicException("Creating bucket iterator for NULL calendar");
-      i = c->getBuckets();
-    }
-
-  private:
-    Calendar* cal;
-    CalendarBucket::iterator i;
-    PyObject *iternext();
-};
-
-
 class CalendarEventIterator
   : public PythonExtension<CalendarEventIterator>
 {
@@ -8191,25 +8107,6 @@ class CalendarEventIterator
     Calendar::EventIterator eventiter;
     bool forward;
     PyObject *iternext();
-};
-
-
-class OperationPlanIterator
-  : public FreppleIterator<OperationPlanIterator,OperationPlan::iterator,OperationPlan>
-{
-  public:
-    /** Constructor to iterate over all operationplans. */
-    OperationPlanIterator() {}
-
-    /** Constructor to iterate over the operationplans of a single operation. */
-    OperationPlanIterator(Operation* o)
-      : FreppleIterator<OperationPlanIterator,OperationPlan::iterator,OperationPlan>(o)
-    {}
-
-    /** Constructor to iterate over the suboperationplans of an operationplans. */
-    OperationPlanIterator(OperationPlan* opplan)
-      : FreppleIterator<OperationPlanIterator,OperationPlan::iterator,OperationPlan>(opplan)
-    {}
 };
 
 
@@ -8323,110 +8220,6 @@ class DemandPlanIterator : public PythonExtension<DemandPlanIterator>
   private:
     Demand* dem;
     Demand::OperationPlan_list::const_iterator i;
-    PyObject *iternext();
-};
-
-
-class LoadIterator : public PythonExtension<LoadIterator>  // TODO optimize storage and overhead
-{
-  public:
-    static int initialize();
-
-    LoadIterator(Resource* r)
-      : mode(1), res(r), ir(r ? r->getLoads().begin() : NULL),
-      oper(NULL), io(NULL), ioo(Operation::begin())
-    {
-      if (!r)
-        throw LogicException("Creating loadplan iterator for NULL resource");
-    }
-
-    LoadIterator(Operation* o)
-      : mode(2), res(NULL), ir(NULL), oper(o),
-      io(o ? o->getLoads().begin() : NULL), ioo(Operation::begin())
-    {
-      if (!o)
-        throw LogicException("Creating loadplan iterator for NULL operation");
-    }
-
-    LoadIterator()
-      : mode(3), res(NULL), ir(NULL),
-      oper(!Operation::empty() ? &*Operation::begin() : NULL),
-      io(!Operation::empty() ? Operation::begin()->getLoads().begin() : NULL),
-      ioo(Operation::begin())
-    {
-      while (io == oper->getLoads().end())
-      {
-        if (++ioo == Operation::end())
-          return;
-        oper = &*ioo;
-        io = Operation::loadlist::const_iterator(oper->getLoads().begin());
-      }
-    }
-
-  private:
-    /** Type of iteration:
-      *   1: loads of a resource
-      *   2: loads of an operation
-      *   3: all loads
-      */
-    unsigned short mode;
-    Resource* res;
-    Resource::loadlist::const_iterator ir;
-    Operation* oper;
-    Operation::loadlist::const_iterator io;
-    Operation::iterator ioo;
-    PyObject *iternext();
-};
-
-
-class FlowIterator : public PythonExtension<FlowIterator>  // TODO optimize storage and overhead
-{
-  public:
-    static int initialize();
-
-    FlowIterator(Buffer* b)
-      : mode(1), buf(b), ib(b ? b->getFlows().begin() : NULL),
-      oper(NULL), io(NULL), ioo(Operation::begin())
-    {
-      if (!b)
-        throw LogicException("Creating flowplan iterator for NULL buffer");
-    }
-
-    FlowIterator(Operation* o)
-      : mode(2), buf(NULL), ib(NULL), oper(o),
-      io(o ? o->getFlows().begin() : NULL), ioo(Operation::begin())
-    {
-      if (!o)
-        throw LogicException("Creating flowplan iterator for NULL operation");
-    }
-
-    FlowIterator()
-      : mode(3), buf(NULL), ib(NULL),
-      oper(!Operation::empty() ? &*Operation::begin() : NULL),
-      io(!Operation::empty() ? Operation::begin()->getFlows().begin() : NULL),
-      ioo(Operation::begin())
-    {
-      while (io == oper->getFlows().end())
-      {
-        if (++ioo == Operation::end())
-          return;
-        oper = &*ioo;
-        io = Operation::flowlist::const_iterator(oper->getFlows().begin());
-      }
-    }
-
-  private:
-    /** Type of iteration:
-      *   1: flows of a buffer
-      *   2: flows of an operation
-      *   3: all flows
-      */
-    unsigned short mode;
-    Buffer* buf;
-    Buffer::flowlist::const_iterator ib;
-    Operation* oper;
-    Operation::flowlist::const_iterator io;
-    Operation::iterator ioo;
     PyObject *iternext();
 };
 

@@ -45,17 +45,6 @@ int SubOperation::initialize()
 }
 
 
-int SubOperationIterator::initialize()
-{
-  // Initialize the type
-  PythonType& x = PythonExtension<SubOperationIterator>::getPythonType();
-  x.setName("suboperationIterator");
-  x.setDoc("frePPLe iterator for suboperations");
-  x.supportiter();
-  return x.typeReady();
-}
-
-
 DECLARE_EXPORT SubOperation::~SubOperation()
 {
   if (owner)
@@ -67,7 +56,13 @@ DECLARE_EXPORT SubOperation::~SubOperation()
 
 DECLARE_EXPORT void SubOperation::setOwner(Operation* o)
 {
-  if (o == owner) return;
+  if (o == owner)
+    // No change
+    return;
+
+  if (o && !o->hasSubOperations())
+    // Some operation types don't have suboperations
+    throw DataException("Operation '" + o->getName() + "' can't have suboperations");
 
   // Remove from previous owner
   if (oper && owner)
@@ -126,16 +121,6 @@ DECLARE_EXPORT void SubOperation::setPriority(int pr)
       ++iter;
     owner->getSubOperations().insert(iter, this);
   }
-}
-
-
-PyObject *SubOperationIterator::iternext()
-{
-  if (iter == oplist.end())
-    return NULL;
-  PyObject* result = *(iter++);
-  Py_INCREF(result);
-  return result;
 }
 
 

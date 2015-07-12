@@ -23,7 +23,7 @@ DECLARE_EXPORT const MetaClass* LoadDefault::metadata;
 int Load::initialize()
 {
   // Initialize the metadata
-  metadata = MetaCategory::registerCategory<Load>("load", "loads", MetaCategory::ControllerDefault, writer);
+  metadata = MetaCategory::registerCategory<Load>("load", "loads", MetaCategory::ControllerDefault);
   registerFields<Load>(const_cast<MetaCategory*>(metadata));
   LoadDefault::metadata = MetaClass::registerClass<LoadDefault>(
     "load", "load", Object::create<LoadDefault>, true
@@ -39,25 +39,6 @@ int Load::initialize()
   x.addMethod("toXML", toXML, METH_VARARGS, "return a XML representation");
   const_cast<MetaCategory*>(Load::metadata)->pythonClass = x.type_object();
   return x.typeReady();
-}
-
-
-void Load::writer(const MetaCategory* c, Serializer* o)
-{
-  bool firstload = true;
-  for (Operation::iterator i = Operation::begin(); i != Operation::end(); ++i)
-    for (Operation::loadlist::const_iterator j = i->getLoads().begin(); j != i->getLoads().end(); ++j)
-    {
-      if (firstload)
-      {
-        o->BeginList(Tags::loads);
-        firstload = false;
-      }
-      // We use the FULL mode, to force the loads being written regardless
-      // of the depth in the XML tree.
-      o->writeElement(Tags::load, &*j, FULL);
-    }
-  if (!firstload) o->EndList(Tags::loads);
 }
 
 
@@ -225,11 +206,31 @@ DECLARE_EXPORT void Load::setAlternateName(string n)
 }
 
 
+DECLARE_EXPORT void Load::setOperation(Operation* o)
+{
+  // Validate the input
+  if (!setup.empty() && o)
+  {
+    // Guarantuee that only a single load has a setup.
+    // Alternates of that load can have a setup as well.
+    for (Operation::loadlist::iterator i = o->loaddata.begin();
+        i != o->loaddata.end(); ++i)
+      if (&*i != this && !i->setup.empty()
+          && i->getAlternate() != this && getAlternate() != &*i
+          && i->getAlternate() != getAlternate())
+        throw DataException("Only a single load of an operation can specify a setup");
+  }
+
+  // Update the field
+  if (o)
+    setPtrA(o,o->getLoads());
+}
+
+
 DECLARE_EXPORT void Load::setSetup(string n)
 {
-  setup = n;
-
-  if (!setup.empty())
+  // Validate the input
+  if (!n.empty() && getOperation())
   {
     // Guarantuee that only a single load has a setup.
     // Alternates of that load can have a setup as well.
@@ -240,6 +241,9 @@ DECLARE_EXPORT void Load::setSetup(string n)
           && i->getAlternate() != getAlternate())
         throw DataException("Only a single load of an operation can specify a setup");
   }
+
+  // Update the field
+  setup = n;
 }
 
 
@@ -324,52 +328,5 @@ PyObject* Load::create(PyTypeObject* pytype, PyObject* args, PyObject* kwds)
   }
 }
 
-
-int LoadIterator::initialize()
-{
-  // Initialize the type
-  PythonType& x = PythonExtension<LoadIterator>::getPythonType();
-  x.setName("loadIterator");
-  x.setDoc("frePPLe iterator for loads");
-  x.supportiter();
-  return x.typeReady();
-}
-
-
-PyObject* LoadIterator::iternext()
-{
-  PyObject* result;
-  switch (mode)
-  {
-    case 1:
-      // Iterate over loads on a resource
-      if (ir == res->getLoads().end()) return NULL;
-      result = const_cast<Load*>(&*ir);
-      ++ir;
-      break;
-    case 2:
-      // Iterate over loads on an operation
-      if (io == oper->getLoads().end()) return NULL;
-      result = const_cast<Load*>(&*io);
-      ++io;
-      break;
-    case 3:
-      // Iterate over all loads
-      while (io == oper->getLoads().end())
-      {
-        if (++ioo == Operation::end())
-          return NULL;
-        oper = &*ioo;
-        io = Operation::loadlist::const_iterator(oper->getLoads().begin());
-      }
-      result = const_cast<Load*>(&*io);
-      ++io;
-      break;
-    default:
-      throw LogicException("Unknown iterator mode");
-  }
-  Py_INCREF(result);
-  return result;
-}
 
 } // end namespace

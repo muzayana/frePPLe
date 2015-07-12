@@ -87,7 +87,9 @@ void LicenseValidator::valid()
   static const Keyword tag_signature("signature");
   if (!metadata)
   {
-    metadata = MetaClass::registerClass<LicenseValidator>(Object::create<LicenseValidator>);
+    metadata = MetaClass::registerClass<LicenseValidator>(
+      "license", Object::create<LicenseValidator>
+      );
     const_cast<MetaClass*>(metadata)->addStringField<LicenseValidator>(
       tag_customer, &LicenseValidator::getCustomer, &LicenseValidator::setCustomer
       );
