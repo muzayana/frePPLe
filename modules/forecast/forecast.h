@@ -981,17 +981,6 @@ class Forecast : public Demand
       else pIn.setUserArea(new pair<DateRange,double>(DateRange(x,x),0));
     }
   }
-  if (attr.isA(Tags::startdate))
-    return PythonObject(getDueRange().getStart());
-  if (attr.isA(Tags::enddate))
-    return PythonObject(getDueRange().getEnd());
-  if (attr.isA(Forecast::tag_total))
-    return PythonObject(getTotal());
-  if (attr.isA(Forecast::tag_consumed))
-    return PythonObject(getConsumed());
-  if (attr.isA(Tags::weight))
-    return PythonObject(getWeight());
-  return Demand::getattro(attr);
   */
     }
 
@@ -1408,6 +1397,18 @@ class ForecastBucket : public Demand
       setQuantity(total>consumed ? total - consumed : 0.0);
     }
 
+    /** Return the start of the due date range for this bucket. */
+    Date getStartDate() const
+    {
+      return timebucket.getStart();
+    }
+
+    /** Return the end of the due date range for this bucket. */
+    Date getEndDate() const
+    {
+      return timebucket.getEnd();
+    }
+
     /** Return the date range for this bucket. */
     DateRange getDueRange() const
     {
@@ -1439,9 +1440,11 @@ class ForecastBucket : public Demand
 
     template<class Cls> static inline void registerFields(MetaClass* m)
     {
+      m->addDateField<Cls>(Tags::startdate, &Cls::getStartDate);
+      m->addDateField<Cls>(Tags::enddate, &Cls::getEndDate);
       m->addDoubleField<Cls>(Forecast::tag_weight, &Cls::getWeight, &Cls::setWeight);
       m->addDoubleField<Cls>(Forecast::tag_total, &Cls::getTotal, &Cls::setTotal);
-      m->addDoubleField<Cls>(Forecast::tag_consumed, &Cls::getConsumed, &Cls::setConsumed);
+      m->addDoubleField<Cls>(Forecast::tag_consumed, &Cls::getConsumed, &Cls::setConsumed, 1.0);
     }
 
   private:

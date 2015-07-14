@@ -22,6 +22,7 @@ bool WebServer::handleGet(CivetServer *server, struct mg_connection *conn)
   struct mg_request_info *request_info = mg_get_request_info(conn);
 
   // Write the complete model
+  // TODO use chunked output stream
   if (!strcmp(request_info->uri, "/"))
   {
     string format = "xml";
@@ -30,9 +31,11 @@ bool WebServer::handleGet(CivetServer *server, struct mg_connection *conn)
     {
       // JSON format
       mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n");
-      SerializerJSONString o;
+      JSONSerializerString o;
       o.writeString("{");
-      Plan::instance().writeElement(&o, Tags::plan);
+      Object *tmp = o.pushCurrentObject(&Plan::instance());
+      Plan::instance().writeElement(&o, Tags::plan);  // TODO cleaner code to do it from the serializer
+      o.pushCurrentObject(tmp);
       o.writeString("}");
       mg_printf(conn, "%s", o.getData().c_str());
     }
@@ -40,12 +43,9 @@ bool WebServer::handleGet(CivetServer *server, struct mg_connection *conn)
     {
       // XML format (default)
       mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/xml\r\n\r\n");
-      mg_printf(conn, "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n");
-      mg_printf(conn, "<plan xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n");
       XMLSerializerString o;
-      Plan::instance().writeElement(&o, Tags::plan);
+      o.writeElementWithHeader(Tags::plan, &Plan::instance());
       mg_printf(conn, "%s", o.getData().c_str());
-      mg_printf(conn, "</plan>\n");
     }
     return true;
   }
@@ -101,7 +101,7 @@ bool WebServer::handleGet(CivetServer *server, struct mg_connection *conn)
     {
       // JSON format
       mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n");
-      SerializerJSONString o;
+      JSONSerializerString o;
       o.writeString("{");
       fld->writeField(o);
       o.writeString("}");
@@ -141,10 +141,12 @@ bool WebServer::handleGet(CivetServer *server, struct mg_connection *conn)
     {
       // JSON format
       mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n");
-      SerializerJSONString o;
+      JSONSerializerString o;
       o.writeString("{");
       o.BeginList(*(cat->grouptag));
+      Object *tmp = o.pushCurrentObject(const_cast<Object*>(entity));
       entity->writeElement(&o, *(cat->typetag), FULL);
+      o.pushCurrentObject(tmp);
       o.EndList(*(cat->grouptag));
       o.writeString("}");
       mg_printf(conn, "%s", o.getData().c_str());
@@ -158,7 +160,9 @@ bool WebServer::handleGet(CivetServer *server, struct mg_connection *conn)
       mg_printf(conn, "<plan xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n");
       XMLSerializerString o;
       o.BeginList(*(cat->grouptag));
+      Object *tmp = o.pushCurrentObject(const_cast<Object*>(entity));
       entity->writeElement(&o, *(cat->typetag), FULL);
+      o.pushCurrentObject(tmp);
       o.EndList(*(cat->grouptag));
       mg_printf(conn, "%s", o.getData().c_str());
       mg_printf(conn, "</plan>\n");

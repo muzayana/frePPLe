@@ -39,14 +39,14 @@ namespace module_webserver
   * Subclasses implement writing to specific stream types, such as files
   * and strings.
   */
-class SerializerJSON : public Serializer
+class JSONSerializer : public Serializer
 {
   public:
     /** Constructor with a given stream. */
-    SerializerJSON(ostream& os) : Serializer(os), first(true) {}
+    JSONSerializer(ostream& os) : Serializer(os), first(true) {}
 
     /** Default constructor. */
-    SerializerJSON() : first(true) {}
+    JSONSerializer() : first(true) {}
 
     /** Tweak to toggle between the dictionary and array modes. */
     void setMode(bool f)
@@ -496,15 +496,15 @@ class SerializerJSON : public Serializer
 /** @brief This class writes JSON data to a flat file.
   *
   * Note that an object of this class can write only to a single file. If
-  * multiple files are required multiple SerializerJSONFile objects will be
+  * multiple files are required multiple JSONSerializerFile objects will be
   * required too.
   */
-class SerializerJSONFile : public SerializerJSON
+class JSONSerializerFile : public JSONSerializer
 {
   public:
     /** Constructor with a filename as argument. An exception will be
       * thrown if the output file can't be properly initialized. */
-    SerializerJSONFile(const string& chFilename)
+    JSONSerializerFile(const string& chFilename)
     {
       of.open(chFilename.c_str(), ios::out);
       if(!of) throw RuntimeException("Could not open output file");
@@ -512,7 +512,7 @@ class SerializerJSONFile : public SerializerJSON
     }
 
     /** Destructor. */
-    ~SerializerJSONFile() {of.close();}
+    ~JSONSerializerFile() {of.close();}
 
   private:
     ofstream of;
@@ -526,11 +526,11 @@ class SerializerJSONFile : public SerializerJSON
   * This class can consume a lot of memory if large sets of objects are
   * being saved in this way.
   */
-class SerializerJSONString : public SerializerJSON
+class JSONSerializerString : public JSONSerializer
 {
   public:
     /** Default constructor. */
-    SerializerJSONString() {setOutput(os);}
+    JSONSerializerString() {setOutput(os);}
 
     /** Return the output string. */
     const string getData() const {return os.str();}

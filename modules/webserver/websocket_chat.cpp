@@ -31,7 +31,7 @@ void WebServer::loadChatHistory(const string& c)
     "limit 100"));
   for (int i = res.countRows()-1; i >= 0; --i)
   {
-    SerializerJSONString o;
+    JSONSerializerString o;
     o.writeString("{");
     o.writeElement(Tags::name, res.getValueString(i, 0));
     o.writeElement(Tags::value, res.getValueString(i, 1));
@@ -47,7 +47,7 @@ int WebServer::websocket_chat(struct mg_connection *conn, int bits,
 {
   // Receive and serialize the chat message
   Date now = Date::now();
-  SerializerJSONString o1;
+  JSONSerializerString o1;
   o1.writeString("{");
   o1.writeElement(Tags::name, clnt->getUsername());
   o1.writeElement(Tags::value, data + 6);

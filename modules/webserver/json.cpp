@@ -30,15 +30,15 @@ PyObject* saveJSONfile(PyObject* self, PyObject* args)
   Py_BEGIN_ALLOW_THREADS   // Free Python interpreter for other threads
   try
   {
-    SerializerJSONFile o(filename);
+    JSONSerializerFile o(filename);
     if (content)
     {
-      if (!strcmp(content,"STANDARD"))
-        o.setContentType(Serializer::STANDARD);
-      else if (!strcmp(content,"PLAN"))
-        o.setContentType(Serializer::PLAN);
-      else if (!strcmp(content,"PLANDETAIL"))
-        o.setContentType(Serializer::PLANDETAIL);
+      if (!strcmp(content, "BASE"))
+        o.setContentType(MetaFieldBase::BASE);
+      else if (!strcmp(content, "PLAN"))
+        o.setContentType(MetaFieldBase::PLAN);
+      else if (!strcmp(content, "DETAIL"))
+        o.setContentType(MetaFieldBase::DETAIL);
       else
         throw DataException("Invalid content type '" + string(content) + "'");
     }
@@ -56,7 +56,7 @@ PyObject* saveJSONfile(PyObject* self, PyObject* args)
 }
 
 
-void SerializerJSON::escape(const string& x)
+void JSONSerializer::escape(const string& x)
 {
   *m_fp << "\"";
   for (const char* p = x.c_str(); *p; ++p)
