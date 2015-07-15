@@ -113,6 +113,7 @@ USE_TZ = False     # TODO Test with this parameter set to True
 ugettext = lambda s: s
 LANGUAGES = (
   ('en', ugettext('English')),
+  ('es', ugettext('Spanish')),
   ('fr', ugettext('French')),
   ('it', ugettext('Italian')),
   ('ja', ugettext('Japanese')),
