@@ -931,7 +931,7 @@ class Forecast : public Demand
       m->addStringField<Cls>(tag_method, &Cls::getMethod);
       m->addBoolField<Cls>(tag_planned, &Cls::getPlanned, &Cls::setPlanned, BOOL_TRUE);
       //m->addIteratorField<Cls, Demand::memberIterator, ForecastBucket>(
-      //  Tags::buckets, Tags::bucket, &Cls::getMembers, MetaFieldBase::DETAIL + MetaFieldBase::PARENT
+      //  Tags::buckets, Tags::bucket, &Cls::getMembers, DETAIL + PARENT
       //  );
       /*
       XXX TODO specific set for forecast buckets

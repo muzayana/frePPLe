@@ -145,7 +145,7 @@ bool WebServer::handleGet(CivetServer *server, struct mg_connection *conn)
       o.writeString("{");
       o.BeginList(*(cat->grouptag));
       Object *tmp = o.pushCurrentObject(const_cast<Object*>(entity));
-      entity->writeElement(&o, *(cat->typetag), FULL);
+      entity->writeElement(&o, *(cat->typetag), DETAIL);
       o.pushCurrentObject(tmp);
       o.EndList(*(cat->grouptag));
       o.writeString("}");
@@ -161,7 +161,7 @@ bool WebServer::handleGet(CivetServer *server, struct mg_connection *conn)
       XMLSerializerString o;
       o.BeginList(*(cat->grouptag));
       Object *tmp = o.pushCurrentObject(const_cast<Object*>(entity));
-      entity->writeElement(&o, *(cat->typetag), FULL);
+      entity->writeElement(&o, *(cat->typetag), DETAIL);
       o.pushCurrentObject(tmp);
       o.EndList(*(cat->grouptag));
       mg_printf(conn, "%s", o.getData().c_str());

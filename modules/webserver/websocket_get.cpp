@@ -23,7 +23,7 @@ int WebServer::websocket_get(struct mg_connection *conn, int bits,
 {
   static Keyword tag_messages("messages");
   JSONSerializerString o;
-  o.setContentType(MetaFieldBase::BASE);
+  o.setContentType(BASE);
   o.writeString("{\"category\": \"name\",");
 
   // Item
@@ -110,7 +110,7 @@ int WebServer::websocket_plan(struct mg_connection *conn, int bits,
   JSONSerializerString o;
   bool ok = true;
   o.setReferencesOnly(true);
-  o.setContentType(MetaFieldBase::DETAIL);
+  o.setContentType(DETAIL);
   o.writeString("{\"category\": \"plan\", ");
 
   if (!strncmp(data+6, "demand/", 7))
@@ -313,7 +313,7 @@ int WebServer::websocket_solve(struct mg_connection *conn, int bits,
     JSONSerializerString o;
     bool ok = true;
     o.setReferencesOnly(true);
-    o.setContentType(MetaFieldBase::DETAIL);
+    o.setContentType(DETAIL);
     o.writeString("{\"category\": \"plan\", ");
     bool first = true;
     for (WebClient::subscriptionlist::iterator j = i->second.getSubscriptions().begin();

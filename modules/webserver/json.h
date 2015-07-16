@@ -549,8 +549,8 @@ class JSONSerializerString : public JSONSerializer
   * very same model.<br>
   * The function takes the following arguments:
   *   - Name of the output file
-  *   - Type of output desired: STANDARD, PLAN or PLANDETAIL.
-  *     The default value is STANDARD.
+  *   - Type of output desired: BASE, PLAN or DETAIL.
+  *     The default value is BASE.
   */
 PyObject* saveJSONfile(PyObject* self, PyObject* args);
 

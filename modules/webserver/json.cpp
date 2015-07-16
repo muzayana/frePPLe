@@ -34,11 +34,11 @@ PyObject* saveJSONfile(PyObject* self, PyObject* args)
     if (content)
     {
       if (!strcmp(content, "BASE"))
-        o.setContentType(MetaFieldBase::BASE);
+        o.setContentType(BASE);
       else if (!strcmp(content, "PLAN"))
-        o.setContentType(MetaFieldBase::PLAN);
+        o.setContentType(PLAN);
       else if (!strcmp(content, "DETAIL"))
-        o.setContentType(MetaFieldBase::DETAIL);
+        o.setContentType(DETAIL);
       else
         throw DataException("Invalid content type '" + string(content) + "'");
     }
