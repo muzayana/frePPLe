@@ -43,7 +43,8 @@ DECLARE_EXPORT void Object::writeElement(
   ) const
 {
   // Don't serialize hidden objects
-  if (getHidden()) return;
+  if (getHidden() && !o->getWriteHidden())
+    return;
 
   const MetaClass& meta = getType();
 

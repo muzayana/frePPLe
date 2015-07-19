@@ -173,31 +173,58 @@ class DatabaseReader : public NonCopyable
         DatabaseResult(PGresult *r) : res(r) {}
 
         /** Destructor. */
-        ~DatabaseResult() {PQclear(res);}
+        ~DatabaseResult()
+        {
+          PQclear(res);
+        }
 
         /** Count the rows. */
-        int countRows() const { return PQntuples(res); }
+        int countRows() const
+        {
+          return PQntuples(res);
+        }
 
         /** Count the fields. */
-        int countFields() const { return PQnfields(res); }
+        int countFields() const
+        {
+          return PQnfields(res);
+        }
 
         /** Get a field name. */
-        string getFieldName(int i) { return PQfname(res, i); }
+        string getFieldName(int i)
+        {
+          return PQfname(res, i);
+        }
 
         /** Get a field value converted to a date. */
-        Date getValueDate(int i, int j) const {return Date(PQgetvalue(res, i, j), "%Y-%m-%d %H:%M:%S"); }
+        Date getValueDate(int i, int j) const
+        {
+          return Date(PQgetvalue(res, i, j), "%Y-%m-%d %H:%M:%S");
+        }
 
         /** Get a field value converted to a string. */
-        string getValueString(int i, int j) const {return PQgetvalue(res, i, j); }
+        string getValueString(int i, int j) const
+        {
+          return PQgetvalue(res, i, j);
+        }
 
         /** Get a field value converted to a double. */
-        double getValueDouble(int i, int j) const {return atof(PQgetvalue(res, i, j)); }
+        double getValueDouble(int i, int j) const
+        {
+          return atof(PQgetvalue(res, i, j));
+        }
 
         /** Get a field value converted to an integer. */
-        int getValueInt(int i, int j) const {return atoi(PQgetvalue(res, i, j)); }
+        int getValueInt(int i, int j) const
+        {
+          return atoi(PQgetvalue(res, i, j));
+        }
 
         /** Get a field value converted to a long. */
-        long getValueLong(int i, int j) const {return atol(PQgetvalue(res, i, j)); }
+        long getValueLong(int i, int j) const
+        {
+          return atol(PQgetvalue(res, i, j));
+        }
 
         /** Get a field value converted to a bool. */
         bool getValueBool(int i, int j) const

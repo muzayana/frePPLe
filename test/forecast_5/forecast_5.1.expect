@@ -14,331 +14,411 @@
   </description>
 	<current>2009-01-01T00:00:00</current>
 	<customers>
-		<customer name="customer">
+		<customer>
+			<name>customer</name>
 		</customer>
 	</customers>
 	<calendars>
-		<calendar name="planningbuckets">
+		<calendar>
+			<name>planningbuckets</name>
 			<buckets>
-				<bucket id="1" start="2009-01-01T00:00:00">
+				<bucket>
+					<id>1</id>
+					<start>2009-01-01T00:00:00</start>
 					<value>1</value>
 				</bucket>
-				<bucket id="2" start="2009-02-01T00:00:00">
+				<bucket>
+					<id>2</id>
+					<start>2009-02-01T00:00:00</start>
 					<value>1</value>
 				</bucket>
-				<bucket id="3" start="2009-03-01T00:00:00">
+				<bucket>
+					<id>3</id>
+					<start>2009-03-01T00:00:00</start>
 					<value>1</value>
 				</bucket>
-				<bucket id="4" start="2009-04-01T00:00:00">
+				<bucket>
+					<id>4</id>
+					<start>2009-04-01T00:00:00</start>
 					<value>1</value>
 				</bucket>
-				<bucket id="5" start="2009-05-01T00:00:00">
+				<bucket>
+					<id>5</id>
+					<start>2009-05-01T00:00:00</start>
 					<value>1</value>
 				</bucket>
-				<bucket id="6" start="2009-06-01T00:00:00">
+				<bucket>
+					<id>6</id>
+					<start>2009-06-01T00:00:00</start>
 					<value>1</value>
 				</bucket>
 			</buckets>
 		</calendar>
 	</calendars>
-	<operations>
-	</operations>
 	<items>
-		<item name="item">
+		<item>
+			<name>item</name>
 		</item>
 	</items>
+	<operations>
+	</operations>
 	<demands>
-		<demand name="constant plus trend" xsi:type="demand_forecast">
-			<item name="item"/>
-			<calendar name="planningbuckets"/>
+		<demand xsi:type="demand_forecast">
+			<name>constant plus trend</name>
+			<customer>
+				<name>customer</name>
+			</customer>
+			<item>
+				<name>item</name>
+			</item>
+			<calendar>
+				<name>planningbuckets</name>
+			</calendar>
 			<buckets>
-				<bucket start="2009-01-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-01-01T00:00:00</start>
+					<end>2009-02-01T00:00:00</end>
 					<total>60</total>
-					<quantity>60</quantity>
-					<consumed>0</consumed>
 				</bucket>
-				<bucket start="2009-02-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-02-01T00:00:00</start>
+					<end>2009-03-01T00:00:00</end>
 					<total>68</total>
-					<quantity>68</quantity>
-					<consumed>0</consumed>
 				</bucket>
-				<bucket start="2009-03-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-03-01T00:00:00</start>
+					<end>2009-04-01T00:00:00</end>
 					<total>74</total>
-					<quantity>74</quantity>
-					<consumed>0</consumed>
 				</bucket>
-				<bucket start="2009-04-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-04-01T00:00:00</start>
+					<end>2009-05-01T00:00:00</end>
 					<total>80</total>
-					<quantity>80</quantity>
-					<consumed>0</consumed>
 				</bucket>
-				<bucket start="2009-05-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-05-01T00:00:00</start>
+					<end>2009-06-01T00:00:00</end>
 					<total>84</total>
-					<quantity>84</quantity>
-					<consumed>0</consumed>
 				</bucket>
-				<bucket start="2009-06-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-06-01T00:00:00</start>
+					<end>2030-12-31T00:00:00</end>
 					<total>0</total>
-					<quantity>0</quantity>
-					<consumed>0</consumed>
 				</bucket>
 			</buckets>
 		</demand>
-		<demand name="flat demand" xsi:type="demand_forecast">
-			<item name="item"/>
-			<calendar name="planningbuckets"/>
+		<demand xsi:type="demand_forecast">
+			<name>flat demand</name>
+			<customer>
+				<name>customer</name>
+			</customer>
+			<item>
+				<name>item</name>
+			</item>
+			<calendar>
+				<name>planningbuckets</name>
+			</calendar>
 			<buckets>
-				<bucket start="2009-01-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-01-01T00:00:00</start>
+					<end>2009-02-01T00:00:00</end>
 					<total>100</total>
-					<quantity>100</quantity>
-					<consumed>0</consumed>
 				</bucket>
-				<bucket start="2009-02-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-02-01T00:00:00</start>
+					<end>2009-03-01T00:00:00</end>
 					<total>100</total>
-					<quantity>100</quantity>
-					<consumed>0</consumed>
 				</bucket>
-				<bucket start="2009-03-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-03-01T00:00:00</start>
+					<end>2009-04-01T00:00:00</end>
 					<total>100</total>
-					<quantity>100</quantity>
-					<consumed>0</consumed>
 				</bucket>
-				<bucket start="2009-04-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-04-01T00:00:00</start>
+					<end>2009-05-01T00:00:00</end>
 					<total>100</total>
-					<quantity>100</quantity>
-					<consumed>0</consumed>
 				</bucket>
-				<bucket start="2009-05-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-05-01T00:00:00</start>
+					<end>2009-06-01T00:00:00</end>
 					<total>100</total>
-					<quantity>100</quantity>
-					<consumed>0</consumed>
 				</bucket>
-				<bucket start="2009-06-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-06-01T00:00:00</start>
+					<end>2030-12-31T00:00:00</end>
 					<total>0</total>
-					<quantity>0</quantity>
-					<consumed>0</consumed>
 				</bucket>
 			</buckets>
 		</demand>
-		<demand name="intermittent" xsi:type="demand_forecast">
-			<item name="item"/>
-			<calendar name="planningbuckets"/>
+		<demand xsi:type="demand_forecast">
+			<name>intermittent</name>
+			<customer>
+				<name>customer</name>
+			</customer>
+			<item>
+				<name>item</name>
+			</item>
+			<calendar>
+				<name>planningbuckets</name>
+			</calendar>
 			<buckets>
-				<bucket start="2009-01-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-01-01T00:00:00</start>
+					<end>2009-02-01T00:00:00</end>
 					<total>1</total>
-					<quantity>1</quantity>
-					<consumed>0</consumed>
 				</bucket>
-				<bucket start="2009-02-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-02-01T00:00:00</start>
+					<end>2009-03-01T00:00:00</end>
 					<total>1</total>
-					<quantity>1</quantity>
-					<consumed>0</consumed>
 				</bucket>
-				<bucket start="2009-03-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-03-01T00:00:00</start>
+					<end>2009-04-01T00:00:00</end>
 					<total>1</total>
-					<quantity>1</quantity>
-					<consumed>0</consumed>
 				</bucket>
-				<bucket start="2009-04-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-04-01T00:00:00</start>
+					<end>2009-05-01T00:00:00</end>
 					<total>1</total>
-					<quantity>1</quantity>
-					<consumed>0</consumed>
 				</bucket>
-				<bucket start="2009-05-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-05-01T00:00:00</start>
+					<end>2009-06-01T00:00:00</end>
 					<total>1</total>
-					<quantity>1</quantity>
-					<consumed>0</consumed>
 				</bucket>
-				<bucket start="2009-06-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-06-01T00:00:00</start>
+					<end>2030-12-31T00:00:00</end>
 					<total>0</total>
-					<quantity>0</quantity>
-					<consumed>0</consumed>
 				</bucket>
 			</buckets>
 		</demand>
-		<demand name="irregular demand" xsi:type="demand_forecast">
-			<item name="item"/>
-			<calendar name="planningbuckets"/>
+		<demand xsi:type="demand_forecast">
+			<name>irregular demand</name>
+			<customer>
+				<name>customer</name>
+			</customer>
+			<item>
+				<name>item</name>
+			</item>
+			<calendar>
+				<name>planningbuckets</name>
+			</calendar>
 			<buckets>
-				<bucket start="2009-01-01T00:00:00">
-					<total>66</total>
-					<quantity>66</quantity>
-					<consumed>0</consumed>
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-01-01T00:00:00</start>
+					<end>2009-02-01T00:00:00</end>
+					<total>43</total>
 				</bucket>
-				<bucket start="2009-02-01T00:00:00">
-					<total>70</total>
-					<quantity>70</quantity>
-					<consumed>0</consumed>
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-02-01T00:00:00</start>
+					<end>2009-03-01T00:00:00</end>
+					<total>43</total>
 				</bucket>
-				<bucket start="2009-03-01T00:00:00">
-					<total>73</total>
-					<quantity>73</quantity>
-					<consumed>0</consumed>
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-03-01T00:00:00</start>
+					<end>2009-04-01T00:00:00</end>
+					<total>43</total>
 				</bucket>
-				<bucket start="2009-04-01T00:00:00">
-					<total>76</total>
-					<quantity>76</quantity>
-					<consumed>0</consumed>
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-04-01T00:00:00</start>
+					<end>2009-05-01T00:00:00</end>
+					<total>43</total>
 				</bucket>
-				<bucket start="2009-05-01T00:00:00">
-					<total>78</total>
-					<quantity>78</quantity>
-					<consumed>0</consumed>
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-05-01T00:00:00</start>
+					<end>2009-06-01T00:00:00</end>
+					<total>43</total>
 				</bucket>
-				<bucket start="2009-06-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-06-01T00:00:00</start>
+					<end>2030-12-31T00:00:00</end>
 					<total>0</total>
-					<quantity>0</quantity>
-					<consumed>0</consumed>
 				</bucket>
 			</buckets>
 		</demand>
-		<demand name="little history" xsi:type="demand_forecast">
-			<item name="item"/>
-			<calendar name="planningbuckets"/>
+		<demand xsi:type="demand_forecast">
+			<name>little history</name>
+			<customer>
+				<name>customer</name>
+			</customer>
+			<item>
+				<name>item</name>
+			</item>
+			<calendar>
+				<name>planningbuckets</name>
+			</calendar>
 			<buckets>
-				<bucket start="2009-01-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-01-01T00:00:00</start>
+					<end>2009-02-01T00:00:00</end>
 					<total>15</total>
-					<quantity>15</quantity>
-					<consumed>0</consumed>
 				</bucket>
-				<bucket start="2009-02-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-02-01T00:00:00</start>
+					<end>2009-03-01T00:00:00</end>
 					<total>15</total>
-					<quantity>15</quantity>
-					<consumed>0</consumed>
 				</bucket>
-				<bucket start="2009-03-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-03-01T00:00:00</start>
+					<end>2009-04-01T00:00:00</end>
 					<total>15</total>
-					<quantity>15</quantity>
-					<consumed>0</consumed>
 				</bucket>
-				<bucket start="2009-04-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-04-01T00:00:00</start>
+					<end>2009-05-01T00:00:00</end>
 					<total>15</total>
-					<quantity>15</quantity>
-					<consumed>0</consumed>
 				</bucket>
-				<bucket start="2009-05-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-05-01T00:00:00</start>
+					<end>2009-06-01T00:00:00</end>
 					<total>15</total>
-					<quantity>15</quantity>
-					<consumed>0</consumed>
 				</bucket>
-				<bucket start="2009-06-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-06-01T00:00:00</start>
+					<end>2030-12-31T00:00:00</end>
 					<total>0</total>
-					<quantity>0</quantity>
-					<consumed>0</consumed>
 				</bucket>
 			</buckets>
 		</demand>
-		<demand name="seasonal demand" xsi:type="demand_forecast">
-			<item name="item"/>
-			<calendar name="planningbuckets"/>
+		<demand xsi:type="demand_forecast">
+			<name>seasonal demand</name>
+			<customer>
+				<name>customer</name>
+			</customer>
+			<item>
+				<name>item</name>
+			</item>
+			<calendar>
+				<name>planningbuckets</name>
+			</calendar>
 			<buckets>
-				<bucket start="2009-01-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-01-01T00:00:00</start>
+					<end>2009-02-01T00:00:00</end>
 					<total>10</total>
-					<quantity>10</quantity>
-					<consumed>0</consumed>
 				</bucket>
-				<bucket start="2009-02-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-02-01T00:00:00</start>
+					<end>2009-03-01T00:00:00</end>
 					<total>10</total>
-					<quantity>10</quantity>
-					<consumed>0</consumed>
 				</bucket>
-				<bucket start="2009-03-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-03-01T00:00:00</start>
+					<end>2009-04-01T00:00:00</end>
 					<total>20</total>
-					<quantity>20</quantity>
-					<consumed>0</consumed>
 				</bucket>
-				<bucket start="2009-04-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-04-01T00:00:00</start>
+					<end>2009-05-01T00:00:00</end>
 					<total>31</total>
-					<quantity>31</quantity>
-					<consumed>0</consumed>
 				</bucket>
-				<bucket start="2009-05-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-05-01T00:00:00</start>
+					<end>2009-06-01T00:00:00</end>
 					<total>22</total>
-					<quantity>22</quantity>
-					<consumed>0</consumed>
 				</bucket>
-				<bucket start="2009-06-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-06-01T00:00:00</start>
+					<end>2030-12-31T00:00:00</end>
 					<total>0</total>
-					<quantity>0</quantity>
-					<consumed>0</consumed>
 				</bucket>
 			</buckets>
 		</demand>
-		<demand name="test" xsi:type="demand_forecast">
-			<calendar name="planningbuckets"/>
+		<demand xsi:type="demand_forecast">
+			<name>test</name>
+			<calendar>
+				<name>planningbuckets</name>
+			</calendar>
 			<discrete>false</discrete>
-			<buckets>
-			</buckets>
 		</demand>
-		<demand name="trend plus constant" xsi:type="demand_forecast">
-			<item name="item"/>
-			<calendar name="planningbuckets"/>
+		<demand xsi:type="demand_forecast">
+			<name>trend plus constant</name>
+			<customer>
+				<name>customer</name>
+			</customer>
+			<item>
+				<name>item</name>
+			</item>
+			<calendar>
+				<name>planningbuckets</name>
+			</calendar>
 			<buckets>
-				<bucket start="2009-01-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-01-01T00:00:00</start>
+					<end>2009-02-01T00:00:00</end>
 					<total>70</total>
-					<quantity>70</quantity>
-					<consumed>0</consumed>
 				</bucket>
-				<bucket start="2009-02-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-02-01T00:00:00</start>
+					<end>2009-03-01T00:00:00</end>
 					<total>70</total>
-					<quantity>70</quantity>
-					<consumed>0</consumed>
 				</bucket>
-				<bucket start="2009-03-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-03-01T00:00:00</start>
+					<end>2009-04-01T00:00:00</end>
 					<total>70</total>
-					<quantity>70</quantity>
-					<consumed>0</consumed>
 				</bucket>
-				<bucket start="2009-04-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-04-01T00:00:00</start>
+					<end>2009-05-01T00:00:00</end>
 					<total>70</total>
-					<quantity>70</quantity>
-					<consumed>0</consumed>
 				</bucket>
-				<bucket start="2009-05-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-05-01T00:00:00</start>
+					<end>2009-06-01T00:00:00</end>
 					<total>70</total>
-					<quantity>70</quantity>
-					<consumed>0</consumed>
 				</bucket>
-				<bucket start="2009-06-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-06-01T00:00:00</start>
+					<end>2030-12-31T00:00:00</end>
 					<total>0</total>
-					<quantity>0</quantity>
-					<consumed>0</consumed>
 				</bucket>
 			</buckets>
 		</demand>
-		<demand name="trended demand" xsi:type="demand_forecast">
-			<item name="item"/>
-			<calendar name="planningbuckets"/>
+		<demand xsi:type="demand_forecast">
+			<name>trended demand</name>
+			<customer>
+				<name>customer</name>
+			</customer>
+			<item>
+				<name>item</name>
+			</item>
+			<calendar>
+				<name>planningbuckets</name>
+			</calendar>
 			<buckets>
-				<bucket start="2009-01-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-01-01T00:00:00</start>
+					<end>2009-02-01T00:00:00</end>
 					<total>160</total>
-					<quantity>160</quantity>
-					<consumed>0</consumed>
 				</bucket>
-				<bucket start="2009-02-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-02-01T00:00:00</start>
+					<end>2009-03-01T00:00:00</end>
 					<total>167</total>
-					<quantity>167</quantity>
-					<consumed>0</consumed>
 				</bucket>
-				<bucket start="2009-03-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-03-01T00:00:00</start>
+					<end>2009-04-01T00:00:00</end>
 					<total>173</total>
-					<quantity>173</quantity>
-					<consumed>0</consumed>
 				</bucket>
-				<bucket start="2009-04-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-04-01T00:00:00</start>
+					<end>2009-05-01T00:00:00</end>
 					<total>178</total>
-					<quantity>178</quantity>
-					<consumed>0</consumed>
 				</bucket>
-				<bucket start="2009-05-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-05-01T00:00:00</start>
+					<end>2009-06-01T00:00:00</end>
 					<total>182</total>
-					<quantity>182</quantity>
-					<consumed>0</consumed>
 				</bucket>
-				<bucket start="2009-06-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-06-01T00:00:00</start>
+					<end>2030-12-31T00:00:00</end>
 					<total>0</total>
-					<quantity>0</quantity>
-					<consumed>0</consumed>
 				</bucket>
 			</buckets>
 		</demand>
@@ -454,35 +534,35 @@
 			<description>Demand &apos;irregular demand - 2009-01-01T00:00:00&apos; is not planned</description>
 			<start>2009-01-01T00:00:00</start>
 			<end>2009-01-01T00:00:00</end>
-			<weight>66</weight>
+			<weight>43</weight>
 		</problem>
 		<problem>
 			<name>unplanned</name>
 			<description>Demand &apos;irregular demand - 2009-02-01T00:00:00&apos; is not planned</description>
 			<start>2009-02-01T00:00:00</start>
 			<end>2009-02-01T00:00:00</end>
-			<weight>70</weight>
+			<weight>43</weight>
 		</problem>
 		<problem>
 			<name>unplanned</name>
 			<description>Demand &apos;irregular demand - 2009-03-01T00:00:00&apos; is not planned</description>
 			<start>2009-03-01T00:00:00</start>
 			<end>2009-03-01T00:00:00</end>
-			<weight>73</weight>
+			<weight>43</weight>
 		</problem>
 		<problem>
 			<name>unplanned</name>
 			<description>Demand &apos;irregular demand - 2009-04-01T00:00:00&apos; is not planned</description>
 			<start>2009-04-01T00:00:00</start>
 			<end>2009-04-01T00:00:00</end>
-			<weight>76</weight>
+			<weight>43</weight>
 		</problem>
 		<problem>
 			<name>unplanned</name>
 			<description>Demand &apos;irregular demand - 2009-05-01T00:00:00&apos; is not planned</description>
 			<start>2009-05-01T00:00:00</start>
 			<end>2009-05-01T00:00:00</end>
-			<weight>78</weight>
+			<weight>43</weight>
 		</problem>
 		<problem>
 			<name>unplanned</name>

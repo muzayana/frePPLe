@@ -16,21 +16,28 @@
 namespace module_forecast
 {
 
+Forecast::MapOfForecasts Forecast::ForecastDictionary;
+unsigned long Forecast::Forecast_Iterations(15L);
+double Forecast::Forecast_SmapeAlfa(0.95);
+unsigned long Forecast::Forecast_Skip(5);
+
 const Keyword Forecast::tag_weight("weight");
 const Keyword Forecast::tag_total("total");
 const Keyword Forecast::tag_consumed("consumed");
 const Keyword Forecast::tag_planned("planned");
 const Keyword Forecast::tag_methods("methods");
 const Keyword Forecast::tag_method("method");
+const Keyword Forecast::tag_forecast("forecast");
 const MetaClass *Forecast::metadata;
 const MetaClass *ForecastBucket::metadata;
+const MetaCategory* ForecastBucket::metacategory;
 bool ForecastBucket::DueAtEndOfBucket = false;
 
 
 int Forecast::initialize()
 {
   // Initialize the metadata
-  metadata = MetaClass::registerClass<BufferDefault>(
+  metadata = MetaClass::registerClass<Forecast>(
     "demand", "demand_forecast", Object::create<Forecast>
     );
   registerFields<Forecast>(const_cast<MetaClass*>(metadata));
@@ -51,8 +58,11 @@ int ForecastBucket::initialize()
 {
   // Initialize the metadata
   // No factory method for this class
+  metacategory = MetaCategory::registerCategory<ForecastBucket>(
+    "forecastbucket", "forecastbuckets", reader
+    );
   metadata = MetaClass::registerClass<ForecastBucket>(
-    "demand", "demand_forecastbucket"
+    "forecastbucket", "demand_forecastbucket"
     );
   registerFields<ForecastBucket>(const_cast<MetaClass*>(metadata));
 
@@ -69,6 +79,64 @@ int ForecastBucket::initialize()
   x.addMethod("toXML", toXML, METH_VARARGS, "return a XML representation");
   const_cast<MetaClass*>(metadata)->pythonClass = x.type_object();
   return x.typeReady();
+}
+
+
+Object* ForecastBucket::reader(const MetaClass* cat, const DataValueDict& in)
+{
+  // Pick up the action attribute
+  Action act = MetaClass::decodeAction(in);
+
+  // Pick up the forecast attribute. An error is reported if it's missing.
+  const DataValue* fcstElement = in.get(Forecast::tag_forecast);
+  if (!fcstElement)
+    throw DataException("Missing forecast field");
+  Object* fcstobject = fcstElement->getObject();
+  if (!fcstobject || fcstobject->getType() != *Forecast::metadata)
+    throw DataException("Invalid forecast field");
+
+  // Pick up the start and end date. At least one of these needs to be
+  // provided.
+  const DataValue* strtElement = in.get(Tags::start);
+  const DataValue* ndElement = in.get(Tags::end);
+  Date strt;
+  Date nd;
+  if (strtElement)
+    strt = strtElement->getDate();
+  if (ndElement)
+    nd = ndElement->getDate();
+  if (!strt && !nd)
+    throw DataException("Start and/or end date must be provided");
+
+  // Pick up the total value
+  const DataValue* totalElement = in.get(Forecast::tag_total);
+  if (totalElement)
+  {
+    static_cast<Forecast*>(fcstobject)->setTotalQuantity(
+      DateRange(strt, nd),
+      totalElement->getDouble()
+      );
+  }
+  return NULL;
+}
+
+
+ForecastBucket::ForecastBucket(Forecast* f, Date d, Date e, double w, ForecastBucket* p)
+  : weight(w), consumed(0.0), total(0.0), timebucket(d, e),
+  prev(p), next(NULL)
+{
+  setName(f->getName() + " - " + string(d));
+  if (p) p->next = this;
+  setOwner(f);
+  setHidden(true);  // Avoid the subdemands show up in the list of demands
+  setItem(f->getItem());
+  setCustomer(f->getCustomer());
+  setDue(DueAtEndOfBucket ? e : d);
+  setPriority(f->getPriority());
+  setMaxLateness(f->getMaxLateness());
+  setMinShipment(f->getMinShipment());
+  setOperation(f->getOperation());
+  initType(metadata);
 }
 
 
@@ -99,49 +167,29 @@ Forecast::~Forecast()
     }
 
   // Delete all children demands
-  for(memberIterator i = getMembers(); i != end(); )
-  {
-    Demand *tmp = &*i;
-    ++i;
-    delete tmp;
-  }
+  ForecastBucket::bucketiterator iter(this);
+  while (ForecastBucket* bckt = iter.next())
+    delete bckt;
 }
 
 
 void Forecast::instantiate()
 {
-  if (!calptr) throw DataException("Missing forecast calendar");
+  if (!calptr)
+    throw DataException("Missing forecast calendar");
 
-  // Create a demand for every bucket. The weight value depends on the
-  // calendar type: double, integer, bool or other
-  const Calendar* c = dynamic_cast<const Calendar*>(calptr);
+  // Create a demand for every bucket
   ForecastBucket* prev = NULL;
   Date prevDate;
   double prevValue(0.0);
-  if (c)
+  for (Calendar::EventIterator i(calptr); i.getDate() <= Date::infiniteFuture; ++i)
   {
-    // Double calendar
-    for (Calendar::EventIterator i(c); i.getDate()<=Date::infiniteFuture; ++i)
-    {
-      if ((prevDate || i.getDate() == Date::infiniteFuture) && prevValue > 0.0)
-        prev = new ForecastBucket(this, prevDate, i.getDate(), prevValue, prev);
-      if (i.getDate() == Date::infiniteFuture) break;
-      prevDate = i.getDate();
-      prevValue = i.getValue();
-    }
-  }
-  else
-  {
-    // Other calendar
-    for (Calendar::EventIterator i(calptr); true; ++i)
-    {
-      if (prevDate || i.getDate() == Date::infiniteFuture)
-      {
-        prev = new ForecastBucket(this, prevDate, i.getDate(), 1.0, prev);
-        if (i.getDate() == Date::infiniteFuture) break;
-      }
-      prevDate = i.getDate();
-    }
+    if ((prevDate || i.getDate() == Date::infiniteFuture) && prevValue > 0.0)
+      prev = new ForecastBucket(this, prevDate, i.getDate(), prevValue, prev);
+    if (i.getDate() == Date::infiniteFuture)
+      break;
+    prevDate = i.getDate();
+    prevValue = i.getValue();
   }
 }
 

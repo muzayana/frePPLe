@@ -48,7 +48,6 @@
   </demands>
 
 <?python
-from __future__ import print_function
 import csv
 
 theitem = frepple.item(name="item")

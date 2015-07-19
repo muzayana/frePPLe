@@ -273,11 +273,185 @@ namespace module_forecast
 {
 
 // Forward declarations
+class Forecast;
 class ForecastSolver;
 class ForecastBucket;
 
 /** Initialization routine for the library. */
 MODULE_EXPORT const char* initialize(const Environment::ParameterList&);
+
+
+/** @brief This class represents a forecast value in a time bucket.
+  *
+  * A forecast bucket is never manipulated or created directly. Instead,
+  * the owning forecast manages the buckets.
+  */
+class ForecastBucket : public Demand
+{
+  public:
+    // Forward declaration of inner class
+    class bucketiterator;
+
+    /** Constructor. */
+    ForecastBucket(Forecast*, Date, Date, double, ForecastBucket*);
+
+    virtual const MetaClass& getType() const {return *metadata;}
+    static const MetaClass *metadata;
+    static const MetaCategory *metacategory;
+
+    Forecast* getForecast() const;
+
+    /** Returns the relative weight of this forecast bucket when distributing
+      * forecast over different buckets.
+      */
+    double getWeight() const
+    {
+      return weight;
+    }
+
+    /** Returns the total, gross forecast. */
+    double getTotal() const
+    {
+      return total;
+    }
+
+    /** Returns the consumed forecast. */
+    double getConsumed() const
+    {
+      return consumed;
+    }
+
+    /** Update the weight of this forecasting bucket. */
+    void setWeight(double n)
+    {
+      if (n<0)
+        throw DataException("Forecast bucket weight must be greater or equal to 0");
+      weight = n;
+    }
+
+    /** Increment the total, gross forecast. */
+    void incTotal(double n)
+    {
+      total += n;
+      if (total<0) total = 0.0;
+      setQuantity(total>consumed ? total - consumed : 0.0);
+    }
+
+    /** Update the total, gross forecast. */
+    void setTotal(double n)
+    {
+      if (total == n)
+        return;
+      if (n<0)
+        throw DataException("Gross forecast must be greater or equal to 0");
+      total = n;
+      setQuantity(total>consumed ? total - consumed : 0.0);
+    }
+
+    /** Increment the consumed forecast. */
+    void incConsumed(double n)
+    {
+      consumed += n;
+      if (consumed<0)
+        consumed = 0.0;
+      setQuantity(total>consumed ? total - consumed : 0.0);
+    }
+
+    /** Update the consumed forecast.<br>
+      * This field is normally updated through the forecast netting solver, but
+      * you can use this method to update it directly.
+      */
+    void setConsumed(double n)
+    {
+      if (consumed == n)
+        return;
+      if (n<0)
+        throw DataException("Consumed forecast must be greater or equal to 0");
+      consumed = n;
+      setQuantity(total>consumed ? total - consumed : 0.0);
+    }
+
+    /** Return the start of the due date range for this bucket. */
+    Date getStartDate() const
+    {
+      return timebucket.getStart();
+    }
+
+    /** Return the end of the due date range for this bucket. */
+    Date getEndDate() const
+    {
+      return timebucket.getEnd();
+    }
+
+    /** Return the date range for this bucket. */
+    DateRange getDueRange() const
+    {
+      return timebucket;
+    }
+
+    /** Return a pointer to the next forecast bucket. */
+    ForecastBucket* getNextBucket() const
+    {
+      return next;
+    }
+
+    /** Return a pointer to the previous forecast bucket. */
+    ForecastBucket* getPreviousBucket() const
+    {
+      return prev;
+    }
+
+    /** A flag to mark whether forecast is due at the start or at the end of a
+      * bucket.<br>
+      * The default is false, ie due at the start of the bucket.
+      */
+    static void setDueAtEndOfBucket(bool b)
+    {
+      DueAtEndOfBucket = b;
+    }
+
+    static bool getDueAtEndOfBucket()
+    {
+      return DueAtEndOfBucket;
+    }
+
+    static int initialize();
+
+    template<class Cls> static inline void registerFields(MetaClass* m)
+    {
+      m->addDateField<Cls>(Tags::start, &Cls::getStartDate);
+      m->addDateField<Cls>(Tags::end, &Cls::getEndDate);
+      m->addDoubleField<Cls>(Forecast::tag_weight, &Cls::getWeight, &Cls::setWeight, 1.0, DETAIL);
+      m->addDoubleField<Cls>(Forecast::tag_total, &Cls::getTotal, &Cls::setTotal, -1.0);
+      m->addDoubleField<Cls>(Forecast::tag_consumed, &Cls::getConsumed, &Cls::setConsumed, 0.0, DETAIL);
+      m->addDoubleField<Cls>(Tags::quantity, &Cls::getQuantity, NULL, 0.0, DETAIL);
+      m->addPointerField<Cls, Forecast>(Forecast::tag_forecast, &Cls::getForecast, NULL, DONT_SERIALIZE + PARENT);
+    }
+
+  private:
+    double weight;
+    double consumed;
+    double total;
+    DateRange timebucket;
+    ForecastBucket* prev;
+    ForecastBucket* next;
+
+    /** A flag to mark whether forecast is due at the start or at the end of a
+      * bucket.
+      * Note this is a static field, and all forecastbuckets thus automatically
+      * use the same value.
+      */
+    static bool DueAtEndOfBucket;
+
+    /** Reader function to create the forecastbucket objects.
+      * This method is quite different from the other reader functions, since
+      * it doesn't directly find or create an object. Instead it calls
+      * special methods on the forecast model to manipulate the forecast
+      * buckets.
+      */
+    static Object* reader (const MetaClass*, const DataValueDict&);
+};
+
 
 /** @brief This class represents a bucketized demand signal.
   *
@@ -299,6 +473,7 @@ class Forecast : public Demand
     static const Keyword tag_methods;
     static const Keyword tag_method;
     static const Keyword tag_planned;
+    static const Keyword tag_forecast;
 
     /** Constants for each forecast method. */
     static const unsigned long METHOD_CONSTANT = 1;
@@ -367,7 +542,15 @@ class Forecast : public Demand
           defaultorder = x;
         }
 
-        string getName() {return "moving average";}
+        static int getDefaultOrder()
+        {
+          return defaultorder;
+        }
+
+        string getName()
+        {
+          return "moving average";
+        }
     };
 
     /** @brief A class to perform single exponential smoothing on a time series. */
@@ -420,6 +603,11 @@ class Forecast : public Demand
           initial_alfa = x;
         }
 
+        static double getInitialAlfa()
+        {
+          return initial_alfa;
+        }
+
         /** Update the minimum value for the alfa parameter. */
         static void setMinAlfa(double x)
         {
@@ -428,12 +616,22 @@ class Forecast : public Demand
           min_alfa = x;
         }
 
+        static double getMinAlfa()
+        {
+          return min_alfa;
+        }
+
         /** Update the maximum value for the alfa parameter. */
         static void setMaxAlfa(double x)
         {
           if (x<0 || x>1.0) throw DataException(
               "Parameter SingleExponential.maxAlfa must be between 0 and 1");
           max_alfa = x;
+        }
+
+        static double getMaxAlfa()
+        {
+          return max_alfa;
         }
 
         string getName() {return "single exponential";}
@@ -516,6 +714,11 @@ class Forecast : public Demand
           initial_alfa = x;
         }
 
+        static double getInitialAlfa()
+        {
+          return initial_alfa;
+        }
+
         /** Update the minimum value for the alfa parameter. */
         static void setMinAlfa(double x)
         {
@@ -524,12 +727,22 @@ class Forecast : public Demand
           min_alfa = x;
         }
 
+        static double getMinAlfa()
+        {
+          return min_alfa;
+        }
+
         /** Update the maximum value for the alfa parameter. */
         static void setMaxAlfa(double x)
         {
           if (x<0 || x>1.0) throw DataException(
               "Parameter DoubleExponential.maxAlfa must be between 0 and 1");
           max_alfa = x;
+        }
+
+        static double getMaxAlfa()
+        {
+          return max_alfa;
         }
 
         /** Update the initial value for the alfa parameter.<br>
@@ -546,12 +759,22 @@ class Forecast : public Demand
           initial_gamma = x;
         }
 
+        static double getInitialGamma()
+        {
+          return initial_gamma;
+        }
+
         /** Update the minimum value for the alfa parameter. */
         static void setMinGamma(double x)
         {
           if (x<0 || x>1.0) throw DataException(
               "Parameter DoubleExponential.minGamma must be between 0 and 1");
           min_gamma = x;
+        }
+
+        static double getMinGamma()
+        {
+          return min_gamma;
         }
 
         /** Update the maximum value for the alfa parameter. */
@@ -562,6 +785,11 @@ class Forecast : public Demand
           max_gamma = x;
         }
 
+        static double getMaxGamma()
+        {
+          return max_gamma;
+        }
+
         /** Update the dampening factor for the trend. */
         static void setDampenTrend(double x)
         {
@@ -570,7 +798,15 @@ class Forecast : public Demand
           dampenTrend = x;
         }
 
-        string getName() {return "double exponential";}
+        static double getDampenTrend()
+        {
+          return dampenTrend;
+        }
+
+        string getName()
+        {
+          return "double exponential";
+        }
     };
 
     /** @brief A class to perform seasonal forecasting on a time
@@ -695,12 +931,22 @@ class Forecast : public Demand
           min_period = x;
         }
 
+        static int getMinPeriod()
+        {
+          return min_period;
+        }
+
         /** Update the maximum period that can be detected. */
         static void setMaxPeriod(int x)
         {
           if (x <= 1 || x > 24) throw DataException(
               "Parameter Seasonal.maxPeriod must be between 1 and 24");
           max_period = x;
+        }
+
+        static int getMaxPeriod()
+        {
+          return max_period;
         }
 
         /** Update the autocorrelation value below which a seasonal forecast
@@ -711,6 +957,11 @@ class Forecast : public Demand
           if (d <= 0.0 || d > 1.0) throw DataException(
               "Parameter Seasonal.minAutocorrelation must be between 0.0 and 1.0");
           min_autocorrelation = d;
+        }
+
+        static double getMinAutocorrelation()
+        {
+          return min_autocorrelation;
         }
 
         /** Update the autocorrelation value above which a seasonal forecast
@@ -725,12 +976,22 @@ class Forecast : public Demand
           max_autocorrelation = d;
         }
 
+        static double getMaxAutocorrelation()
+        {
+          return max_autocorrelation;
+        }
+
         /** Update the initial value for the alfa parameter. */
         static void setInitialAlfa(double x)
         {
           if (x<0 || x>1.0) throw DataException(
               "Parameter Seasonal.initialAlfa must be between 0 and 1");
           initial_alfa = x;
+        }
+
+        static double getInitialAlfa()
+        {
+          return initial_alfa;
         }
 
         /** Update the minimum value for the alfa parameter. */
@@ -741,12 +1002,22 @@ class Forecast : public Demand
           min_alfa = x;
         }
 
+        static double getMinAlfa()
+        {
+          return min_alfa;
+        }
+
         /** Update the maximum value for the alfa parameter. */
         static void setMaxAlfa(double x)
         {
           if (x<0 || x>1.0) throw DataException(
               "Parameter Seasonal.maxAlfa must be between 0 and 1");
           max_alfa = x;
+        }
+
+        static double getMaxAlfa()
+        {
+          return max_alfa;
         }
 
         /** Update the initial value for the beta parameter. */
@@ -757,6 +1028,11 @@ class Forecast : public Demand
           initial_beta = x;
         }
 
+        static double getInitialBeta()
+        {
+          return initial_beta;
+        }
+
         /** Update the minimum value for the beta parameter. */
         static void setMinBeta(double x)
         {
@@ -765,12 +1041,22 @@ class Forecast : public Demand
           min_beta = x;
         }
 
+        static double getMinBeta()
+        {
+          return min_beta;
+        }
+
         /** Update the maximum value for the beta parameter. */
         static void setMaxBeta(double x)
         {
           if (x<0 || x>1.0) throw DataException(
               "Parameter Seasonal.maxBeta must be between 0 and 1");
           max_beta = x;
+        }
+
+        static double getMaxBeta()
+        {
+          return max_beta;
         }
 
         /** Update the value for the gamma parameter.<br>
@@ -783,6 +1069,11 @@ class Forecast : public Demand
           gamma = x;
         }
 
+        static double getGamma()
+        {
+          return gamma;
+        }
+
         /** Update the dampening factor for the trend. */
         static void setDampenTrend(double x)
         {
@@ -791,7 +1082,15 @@ class Forecast : public Demand
           dampenTrend = x;
         }
 
-        string getName() {return "seasonal";}
+        static double getDampenTrend()
+        {
+          return dampenTrend;
+        }
+
+        string getName()
+        {
+          return "seasonal";
+        }
     };
 
     /** @brief A class to calculate a forecast with Croston's method. */
@@ -847,6 +1146,11 @@ class Forecast : public Demand
           initial_alfa = x;
         }
 
+        static double getInitialAlfa()
+        {
+          return initial_alfa;
+        }
+
         /** Update the minimum value for the alfa parameter. */
         static void setMinAlfa(double x)
         {
@@ -855,12 +1159,22 @@ class Forecast : public Demand
           min_alfa = x;
         }
 
+        static double getMinAlfa()
+        {
+          return min_alfa;
+        }
+
         /** Update the maximum value for the alfa parameter. */
         static void setMaxAlfa(double x)
         {
           if (x<0 || x>1.0) throw DataException(
               "Parameter Croston.maxAlfa must be between 0 and 1");
           max_alfa = x;
+        }
+
+        static double getMaxAlfa()
+        {
+          return max_alfa;
         }
 
         /** Update the minimum intermittence before applying this method. */
@@ -872,9 +1186,15 @@ class Forecast : public Demand
         }
 
         /** Return the minimum intermittence before applying this method. */
-        static double getMinIntermittence() { return min_intermittence; }
+        static double getMinIntermittence()
+        {
+          return min_intermittence;
+        }
 
-        string getName() {return "croston";}
+        string getName()
+        {
+          return "croston";
+        }
     };
 
   public:
@@ -926,62 +1246,13 @@ class Forecast : public Demand
     template<class Cls> static inline void registerFields(MetaClass* m)
     {
       m->addPointerField<Cls, Calendar>(Tags::calendar, &Cls::getCalendar, &Cls::setCalendar);
-      m->addBoolField<Cls>(Tags::discrete, &Cls::getDiscrete, &Cls::setDiscrete);
+      m->addBoolField<Cls>(Tags::discrete, &Cls::getDiscrete, &Cls::setDiscrete, BOOL_TRUE);
       m->addUnsignedLongField<Cls>(tag_methods, &Cls::getMethods, &Cls::setMethods, METHOD_ALL);
-      m->addStringField<Cls>(tag_method, &Cls::getMethod);
+      m->addStringField<Cls>(tag_method, &Cls::getMethod, NULL, DETAIL);
       m->addBoolField<Cls>(tag_planned, &Cls::getPlanned, &Cls::setPlanned, BOOL_TRUE);
-      //m->addIteratorField<Cls, Demand::memberIterator, ForecastBucket>(
-      //  Tags::buckets, Tags::bucket, &Cls::getMembers, DETAIL + PARENT
-      //  );
-      /*
-      XXX TODO specific set for forecast buckets
-        else if (pAttr.isA(Tags::bucket))
-  {
-    pair<DateRange,double> *d =
-      static_cast< pair<DateRange,double>* >(pIn.getUserArea());
-    if (d)
-    {
-      // Update the forecast quantities
-      setTotalQuantity(d->first, d->second);
-      // Clear the read buffer
-      d->first.setStart(Date());
-      d->first.setEnd(Date());
-      d->second = 0;
-    }
-  }
-  else if (pIn.getParentElement().isA(Tags::bucket))
-  {
-    pair<DateRange,double> *d =
-      static_cast< pair<DateRange,double>* >(pIn.getUserArea());
-    if (pAttr.isA(tag_total))
-    {
-      if (d) d->second = pElement.getDouble();
-      else pIn.setUserArea(
-          new pair<DateRange,double>(DateRange(),pElement.getDouble())
+      m->addIteratorField<Cls, ForecastBucket::bucketiterator, ForecastBucket>(
+        Tags::buckets, Tags::bucket, &Cls::getBuckets, BASE + WRITE_FULL + WRITE_HIDDEN
         );
-    }
-    else if (pAttr.isA(Tags::start))
-    {
-      Date x = pElement.getDate();
-      if (d)
-      {
-        if (!d->first.getStart()) d->first.setStartAndEnd(x,x);
-        else d->first.setStart(x);
-      }
-      else pIn.setUserArea(new pair<DateRange,double>(DateRange(x,x),0));
-    }
-    else if (pAttr.isA(Tags::end))
-    {
-      Date x = pElement.getDate();
-      if (d)
-      {
-        if (!d->first.getStart()) d->first.setStartAndEnd(x,x);
-        else d->first.setEnd(x);
-      }
-      else pIn.setUserArea(new pair<DateRange,double>(DateRange(x,x),0));
-    }
-  }
-  */
     }
 
     static int initialize();
@@ -1096,57 +1367,8 @@ class Forecast : public Demand
           + 6 * sizeof(void*); // Approx. size of an entry in forecast dictionary
     }
 
-    /** Updates the value of the Customer_Then_Item_Hierarchy module
-      * parameter. */
-    static void setCustomerThenItemHierarchy(bool b)
-    {
-      Customer_Then_Item_Hierarchy = b;
-    }
-
-    /** Returns the value of the Customer_Then_Item_Hierarchy module
-      * parameter. */
-    static bool getCustomerThenItemHierarchy()
-    {
-      return Customer_Then_Item_Hierarchy;
-    }
-
-    /** Updates the value of the Match_Using_Delivery_Operation module
-      * parameter. */
-    static void setMatchUsingDeliveryOperation(bool b)
-    {
-      Match_Using_Delivery_Operation = b;
-    }
-
-    /** Returns the value of the Match_Using_Delivery_Operation module
-      * parameter. */
-    static bool getMatchUsingDeliveryOperation()
-    {
-      return Match_Using_Delivery_Operation;
-    }
-
-    /** Updates the value of the Net_Early module parameter. */
-    static void setNetEarly(Duration t)
-    {
-      Net_Early = t;
-    }
-
-    /** Returns the value of the Net_Early module parameter. */
-    static Duration getNetEarly()
-    {
-      return Net_Early;
-    }
-
-    /** Updates the value of the Net_Late module parameter. */
-    static void setNetLate(Duration t)
-    {
-      Net_Late = t;
-    }
-
-    /** Returns the value of the Net_Late module parameter. */
-    static Duration getNetLate()
-    {
-      return Net_Late;
-    }
+    /** Iterator over all forecasting buckets. */
+    ForecastBucket::bucketiterator getBuckets() const;
 
     /** Updates the value of the Forecast.smapeAlfa module parameter. */
     static void setForecastSmapeAlfa(double t)
@@ -1166,9 +1388,10 @@ class Forecast : public Demand
     /** Updates the value of the Forecast_Iterations module parameter. */
     static void setForecastIterations(unsigned long t)
     {
-      if (t<=0) throw DataException(
+      if (t<=0)
+        throw DataException(
           "Parameter Forecast.Iterations must be bigger than 0"
-        );
+          );
       Forecast_Iterations = t;
     }
 
@@ -1248,30 +1471,6 @@ class Forecast : public Demand
     /** A dictionary of all forecasts. */
     static MapOfForecasts ForecastDictionary;
 
-    /** Controls how we search the customer and item levels when looking for a
-      * matching forecast for a demand.
-      */
-    static bool Customer_Then_Item_Hierarchy;
-
-    /** Controls whether or not a matching delivery operation is required
-      * between a matching order and its forecast.
-      */
-    static bool Match_Using_Delivery_Operation;
-
-    /** Store the maximum time difference between an order due date and a
-      * forecast bucket to net from.<br>
-      * The default value is 0, meaning that only netting from the due
-      * bucket is allowed.
-      */
-    static Duration Net_Late;
-
-    /** Store the maximum time difference between an order due date and a
-      * forecast bucket to net from.<br>
-      * The default value is 0, meaning that only netting from the due
-      * bucket is allowed.
-      */
-    static Duration Net_Early;
-
     /** Specifies the maximum number of iterations allowed for a forecast
       * method to tune its parameters.<br>
       * Only positive values are allowed and the default value is 10.<br>
@@ -1300,171 +1499,37 @@ class Forecast : public Demand
 };
 
 
-/** @brief This class represents a forecast value in a time bucket.
-  *
-  * A forecast bucket is never manipulated or created directly. Instead,
-  * the owning forecast manages the buckets.
-  */
-class ForecastBucket : public Demand
+inline Forecast* ForecastBucket::getForecast() const
 {
-  public:
-    ForecastBucket(Forecast* f, Date d, Date e, double w, ForecastBucket* p)
-      : weight(w), consumed(0.0), total(0.0), timebucket(d, e),
-      prev(p), next(NULL)
-    {
-      setName(f->getName() + " - " + string(d));
-      if (p) p->next = this;
-      setOwner(f);
-      setHidden(true);  // Avoid the subdemands show up in the output
-      setItem(&*(f->getItem()));
-      setCustomer(&*(f->getCustomer()));
-      setDue(DueAtEndOfBucket ? e : d);
-      setPriority(f->getPriority());
-      setMaxLateness(f->getMaxLateness());
-      setMinShipment(f->getMinShipment());
-      setOperation(&*(f->getOperation()));
-      initType(metadata);
-    }
-
-    virtual const MetaClass& getType() const {return *metadata;}
-    static const MetaClass *metadata;
+  return static_cast<Forecast*>(getOwner());
+}
 
 
-    /** Returns the relative weight of this forecast bucket when distributing
-      * forecast over different buckets.
-      */
-    double getWeight() const
-    {
-      return weight;
-    }
-
-    /** Returns the total, gross forecast. */
-    double getTotal() const
-    {
-      return total;
-    }
-
-    /** Returns the consumed forecast. */
-    double getConsumed() const
-    {
-      return consumed;
-    }
-
-    /** Update the weight of this forecasting bucket. */
-    void setWeight(double n)
-    {
-      if (n<0)
-        throw DataException("Forecast bucket weight must be greater or equal to 0");
-      weight = n;
-    }
-
-    /** Increment the total, gross forecast. */
-    void incTotal(double n)
-    {
-      total += n;
-      if (total<0) total = 0.0;
-      setQuantity(total>consumed ? total - consumed : 0.0);
-    }
-
-    /** Update the total, gross forecast. */
-    void setTotal(double n)
-    {
-      if (n<0)
-        throw DataException("Gross forecast must be greater or equal to 0");
-      if (total == n) return;
-      total = n;
-      setQuantity(total>consumed ? total - consumed : 0.0);
-    }
-
-    /** Increment the consumed forecast. */
-    void incConsumed(double n)
-    {
-      consumed += n;
-      if (consumed<0) consumed = 0.0;
-      setQuantity(total>consumed ? total - consumed : 0.0);
-    }
-
-    /** Update the consumed forecast.<br>
-      * This field is normally updated through the forecast netting solver, but
-      * you can use this method to update it directly.
-      */
-    void setConsumed(double n)
-    {
-      if (n<0)
-        throw DataException("Consumed forecast must be greater or equal to 0");
-      if (consumed == n) return;
-      consumed = n;
-      setQuantity(total>consumed ? total - consumed : 0.0);
-    }
-
-    /** Return the start of the due date range for this bucket. */
-    Date getStartDate() const
-    {
-      return timebucket.getStart();
-    }
-
-    /** Return the end of the due date range for this bucket. */
-    Date getEndDate() const
-    {
-      return timebucket.getEnd();
-    }
-
-    /** Return the date range for this bucket. */
-    DateRange getDueRange() const
-    {
-      return timebucket;
-    }
-
-    /** Return a pointer to the next forecast bucket. */
-    ForecastBucket* getNextBucket() const
-    {
-      return next;
-    }
-
-    /** Return a pointer to the previous forecast bucket. */
-    ForecastBucket* getPreviousBucket() const
-    {
-      return prev;
-    }
-
-    /** A flag to mark whether forecast is due at the start or at the end of a
-      * bucket.<br>
-      * The default is false, ie due at the start of the bucket.
-      */
-    static void setDueAtEndOfBucket(bool b)
-    {
-      DueAtEndOfBucket = b;
-    }
-
-    static int initialize();
-
-    template<class Cls> static inline void registerFields(MetaClass* m)
-    {
-      m->addDateField<Cls>(Tags::startdate, &Cls::getStartDate);
-      m->addDateField<Cls>(Tags::enddate, &Cls::getEndDate);
-      m->addDoubleField<Cls>(Forecast::tag_weight, &Cls::getWeight, &Cls::setWeight);
-      m->addDoubleField<Cls>(Forecast::tag_total, &Cls::getTotal, &Cls::setTotal);
-      m->addDoubleField<Cls>(Forecast::tag_consumed, &Cls::getConsumed, &Cls::setConsumed, 1.0);
-    }
-
+class ForecastBucket::bucketiterator
+{
   private:
-    double weight;
-    double consumed;
-    double total;
-    DateRange timebucket;
-    ForecastBucket* prev;
-    ForecastBucket* next;
+    Demand::memberIterator iter;
 
-    /** A flag to mark whether forecast is due at the start or at the end of a
-      * bucket.
-      * Note this is a static field, and all forecastbuckets thus automatically
-      * use the same value.
-      */
-    static bool DueAtEndOfBucket;
+  public:
+    // Constructor
+    bucketiterator(const Forecast* f) : iter(f) {}
+
+    // Return current value and advance the iterator
+    ForecastBucket* next()
+    {
+      return static_cast<ForecastBucket*>(iter.next());
+    }
 };
 
 
-/** @brief Implementation of a forecast netting algorithm.
+inline ForecastBucket::bucketiterator Forecast::getBuckets() const
+{
+  return ForecastBucket::bucketiterator(this);
+}
+
+
+/** @brief Implementation of a forecast netting algorithm, and a proxy
+  * for any configuration setting on the forecasting module.
   *
   * As customer orders are being received they need to be deducted from
   * the forecast to avoid double-counting demand.
@@ -1519,93 +1584,438 @@ class ForecastSolver : public Solver
     /** Callback function, used for netting orders against the forecast. */
     bool callback(Demand* l, const Signal a);
 
+    bool getDueAtEndOfBucket() const
+    {
+      return ForecastBucket::getDueAtEndOfBucket();
+    }
+
+    void setDueAtEndOfBucket(bool b)
+    {
+      ForecastBucket::setDueAtEndOfBucket(b);
+    }
+
+    void setCustomerThenItemHierarchy(bool b)
+    {
+      Customer_Then_Item_Hierarchy = b;
+    }
+
+    bool getCustomerThenItemHierarchy() const
+    {
+      return Customer_Then_Item_Hierarchy;
+    }
+
+    void setMatchUsingDeliveryOperation(bool b)
+    {
+      Match_Using_Delivery_Operation = b;
+    }
+
+    bool getMatchUsingDeliveryOperation() const
+    {
+      return Match_Using_Delivery_Operation;
+    }
+
+    void setNetEarly(Duration t)
+    {
+      Net_Early = t;
+    }
+
+    Duration getNetEarly() const
+    {
+      return Net_Early;
+    }
+
+    void setNetLate(Duration t)
+    {
+      Net_Late = t;
+    }
+
+    Duration getNetLate() const
+    {
+      return Net_Late;
+    }
+
+    void setForecastIterations(unsigned long i)
+    {
+      Forecast::setForecastIterations(i);
+    }
+
+    unsigned long getForecastIterations() const
+    {
+      return Forecast::getForecastIterations();
+    }
+
+    double getForecastSmapeAlfa() const
+    {
+      return Forecast::getForecastSmapeAlfa();
+    }
+
+    void setForecastSmapeAlfa(double i)
+    {
+      Forecast::setForecastSmapeAlfa(i);
+    }
+
+    unsigned long getForecastSkip() const
+    {
+      return Forecast::getForecastSkip();
+    }
+
+    void setForecastSkip(unsigned long i)
+    {
+      Forecast::setForecastSkip(i);
+    }
+
+    double getForecastMaxDeviation() const
+    {
+      return Forecast::getForecastMaxDeviation();
+    }
+
+    void setForecastMaxDeviation(double i)
+    {
+      Forecast::setForecastMaxDeviation(i);
+    }
+
+    int getMovingAverageDefaultOrder() const
+    {
+      return Forecast::MovingAverage::getDefaultOrder();
+    }
+
+    void setMovingAverageDefaultOrder(int i)
+    {
+      Forecast::MovingAverage::setDefaultOrder(i);
+    }
+
+    double getSingleExponentialInitialAlfa() const
+    {
+      return Forecast::SingleExponential::getInitialAlfa();
+    }
+
+    void setSingleExponentialInitialAlfa(double i)
+    {
+      Forecast::SingleExponential::setInitialAlfa(i);
+    }
+
+    double getSingleExponentialMinAlfa() const
+    {
+      return Forecast::SingleExponential::getMinAlfa();
+    }
+
+    void setSingleExponentialMinAlfa(double i)
+    {
+      Forecast::SingleExponential::setMinAlfa(i);
+    }
+
+    double getSingleExponentialMaxAlfa() const
+    {
+      return Forecast::SingleExponential::getMaxAlfa();
+    }
+
+    void setSingleExponentialMaxAlfa(double i)
+    {
+      Forecast::SingleExponential::setMaxAlfa(i);
+    }
+
+    double getDoubleExponentialInitialAlfa() const
+    {
+      return Forecast::DoubleExponential::getInitialAlfa();
+    }
+
+    void setDoubleExponentialInitialAlfa(double i)
+    {
+      Forecast::DoubleExponential::setInitialAlfa(i);
+    }
+
+    double getDoubleExponentialMinAlfa() const
+    {
+      return Forecast::DoubleExponential::getMinAlfa();
+    }
+
+    void setDoubleExponentialMinAlfa(double i)
+    {
+      Forecast::DoubleExponential::setMinAlfa(i);
+    }
+
+    double getDoubleExponentialMaxAlfa() const
+    {
+      return Forecast::DoubleExponential::getMaxAlfa();
+    }
+
+    void setDoubleExponentialMaxAlfa(double i)
+    {
+      Forecast::DoubleExponential::setMaxAlfa(i);
+    }
+
+    double getDoubleExponentialInitialGamma() const
+    {
+      return Forecast::DoubleExponential::getInitialGamma();
+    }
+
+    void setDoubleExponentialInitialGamma(double i)
+    {
+      Forecast::DoubleExponential::setInitialGamma(i);
+    }
+
+    double getDoubleExponentialMinGamma() const
+    {
+      return Forecast::DoubleExponential::getMinGamma();
+    }
+
+    void setDoubleExponentialMinGamma(double i)
+    {
+      Forecast::DoubleExponential::setMinGamma(i);
+    }
+
+    double getDoubleExponentialMaxGamma() const
+    {
+      return Forecast::DoubleExponential::getMaxGamma();
+    }
+
+    void setDoubleExponentialMaxGamma(double i)
+    {
+      Forecast::DoubleExponential::setMaxGamma(i);
+    }
+
+    double getDoubleExponentialDampenTrend() const
+    {
+      return Forecast::DoubleExponential::getDampenTrend();
+    }
+
+    void setDoubleExponentialDampenTrend(double i)
+    {
+      Forecast::DoubleExponential::setDampenTrend(i);
+    }
+    double getSeasonalInitialAlfa() const
+    {
+      return Forecast::Seasonal::getInitialAlfa();
+    }
+
+    void setSeasonalInitialAlfa(double i)
+    {
+      Forecast::Seasonal::setInitialAlfa(i);
+    }
+
+    double getSeasonalMinAlfa() const
+    {
+      return Forecast::Seasonal::getMinAlfa();
+    }
+
+    void setSeasonalMinAlfa(double i)
+    {
+      Forecast::Seasonal::setMinAlfa(i);
+    }
+
+    double getSeasonalMaxAlfa() const
+    {
+      return Forecast::Seasonal::getMaxAlfa();
+    }
+
+    void setSeasonalMaxAlfa(double i)
+    {
+      Forecast::Seasonal::setMaxAlfa(i);
+    }
+
+    double getSeasonalInitialBeta() const
+    {
+      return Forecast::Seasonal::getInitialBeta();
+    }
+
+    void setSeasonalInitialBeta(double i)
+    {
+      Forecast::Seasonal::setInitialBeta(i);
+    }
+
+    double getSeasonalMinBeta() const
+    {
+      return Forecast::Seasonal::getMinBeta();
+    }
+
+    void setSeasonalMinBeta(double i)
+    {
+      Forecast::Seasonal::setMinBeta(i);
+    }
+
+    double getSeasonalMaxBeta() const
+    {
+      return Forecast::Seasonal::getMaxBeta();
+    }
+
+    void setSeasonalMaxBeta(double i)
+    {
+      Forecast::Seasonal::setMaxBeta(i);
+    }
+
+    double getSeasonalGamma() const
+    {
+      return Forecast::Seasonal::getGamma();
+    }
+
+    void setSeasonalGamma(double i)
+    {
+      Forecast::Seasonal::setGamma(i);
+    }
+
+    double getSeasonalDampenTrend() const
+    {
+      return Forecast::Seasonal::getDampenTrend();
+    }
+
+    void setSeasonalDampenTrend(double i)
+    {
+      Forecast::Seasonal::setDampenTrend(i);
+    }
+
+    int getSeasonalMinPeriod() const
+    {
+      return Forecast::Seasonal::getMinPeriod();
+    }
+
+    void setSeasonalMinPeriod(int i)
+    {
+      Forecast::Seasonal::setMinPeriod(i);
+    }
+
+    int getSeasonalMaxPeriod() const
+    {
+      return Forecast::Seasonal::getMaxPeriod();
+    }
+
+    void setSeasonalMaxPeriod(int i)
+    {
+      Forecast::Seasonal::setMaxPeriod(i);
+    }
+
+    double getSeasonalMinAutocorrelation() const
+    {
+      return Forecast::Seasonal::getMinAutocorrelation();
+    }
+
+    void setSeasonalMinAutocorrelation(double i)
+    {
+      Forecast::Seasonal::setMinAutocorrelation(i);
+    }
+
+    double getSeasonalMaxAutocorrelation() const
+    {
+      return Forecast::Seasonal::getMaxAutocorrelation();
+    }
+
+    void setSeasonalMaxAutocorrelation(double i)
+    {
+      Forecast::Seasonal::setMaxAutocorrelation(i);
+    }
+
+    double getCrostonInitialAlfa() const
+    {
+      return Forecast::Croston::getInitialAlfa();
+    }
+
+    void setCrostonInitialAlfa(double i)
+    {
+      Forecast::Croston::setInitialAlfa(i);
+    }
+
+    double getCrostonMinAlfa() const
+    {
+      return Forecast::Croston::getMinAlfa();
+    }
+
+    void setCrostonMinAlfa(double i)
+    {
+      Forecast::Croston::setMinAlfa(i);
+    }
+
+    double getCrostonMaxAlfa() const
+    {
+      return Forecast::Croston::getMaxAlfa();
+    }
+
+    void setCrostonMaxAlfa(double i)
+    {
+      Forecast::Croston::setMaxAlfa(i);
+    }
+
+    double getCrostonMinIntermittence() const
+    {
+      return Forecast::Croston::getMinIntermittence();
+    }
+
+    void setCrostonMinIntermittence(double i)
+    {
+      Forecast::Croston::setMinIntermittence(i);
+    }
+
     template<class Cls> static inline void registerFields(MetaClass* m)
     {
-      //m->addShortField<Cls>(Tags::constraints, &Cls::getConstraints, &Cls::setConstraints);
-/* XXX
-  if (attr.isA(tag_DueAtEndOfBucket))
-    ForecastBucket::setDueAtEndOfBucket(field.getBool());
-  // Netting
-  else if (attr.isA(tag_Net_CustomerThenItemHierarchy))
-    Forecast::setCustomerThenItemHierarchy(field.getBool());
-  else if (attr.isA(tag_Net_MatchUsingDeliveryOperation))
-    Forecast::setMatchUsingDeliveryOperation(field.getBool());
-  else if (attr.isA(tag_Net_NetEarly))
-    Forecast::setNetEarly(field.getDuration());
-  else if (attr.isA(tag_Net_NetLate))
-    Forecast::setNetLate(field.getDuration());
-  // Forecasting
-  else if (attr.isA(tag_Iterations))
-    Forecast::setForecastIterations(field.getInt());
-  else if (attr.isA(tag_SmapeAlfa))
-    Forecast::setForecastSmapeAlfa(field.getDouble());
-  else if (attr.isA(tag_Skip))
-    Forecast::setForecastSkip(field.getUnsignedLong());
-  else if (attr.isA(tag_Outlier_maxDeviation))
-    Forecast::setForecastMaxDeviation(field.getDouble());
-  // Moving average forecast method
-  else if (attr.isA(tag_MovingAverage_order))
-    Forecast::MovingAverage::setDefaultOrder(field.getInt());
-  // Single exponential forecast method
-  else if (attr.isA(tag_SingleExponential_initialAlfa))
-    Forecast::SingleExponential::setInitialAlfa(field.getDouble());
-  else if (attr.isA(tag_SingleExponential_minAlfa))
-    Forecast::SingleExponential::setMinAlfa(field.getDouble());
-  else if (attr.isA(tag_SingleExponential_maxAlfa))
-    Forecast::SingleExponential::setMaxAlfa(field.getDouble());
-  // Double exponential forecast method
-  else if (attr.isA(tag_DoubleExponential_initialAlfa))
-    Forecast::DoubleExponential::setInitialAlfa(field.getDouble());
-  else if (attr.isA(tag_DoubleExponential_minAlfa))
-    Forecast::DoubleExponential::setMinAlfa(field.getDouble());
-  else if (attr.isA(tag_DoubleExponential_maxAlfa))
-    Forecast::DoubleExponential::setMaxAlfa(field.getDouble());
-  else if (attr.isA(tag_DoubleExponential_initialGamma))
-    Forecast::DoubleExponential::setInitialGamma(field.getDouble());
-  else if (attr.isA(tag_DoubleExponential_minGamma))
-    Forecast::DoubleExponential::setMinGamma(field.getDouble());
-  else if (attr.isA(tag_DoubleExponential_maxGamma))
-    Forecast::DoubleExponential::setMaxGamma(field.getDouble());
-  else if (attr.isA(tag_DoubleExponential_dampenTrend))
-    Forecast::DoubleExponential::setDampenTrend(field.getDouble());
-  // Seasonal forecast method
-  else if (attr.isA(tag_Seasonal_initialAlfa))
-    Forecast::Seasonal::setInitialAlfa(field.getDouble());
-  else if (attr.isA(tag_Seasonal_minAlfa))
-    Forecast::Seasonal::setMinAlfa(field.getDouble());
-  else if (attr.isA(tag_Seasonal_maxAlfa))
-    Forecast::Seasonal::setMaxAlfa(field.getDouble());
-  else if (attr.isA(tag_Seasonal_initialBeta))
-    Forecast::Seasonal::setInitialBeta(field.getDouble());
-  else if (attr.isA(tag_Seasonal_minBeta))
-    Forecast::Seasonal::setMinBeta(field.getDouble());
-  else if (attr.isA(tag_Seasonal_maxBeta))
-    Forecast::Seasonal::setMaxBeta(field.getDouble());
-  else if (attr.isA(tag_Seasonal_gamma))
-    Forecast::Seasonal::setGamma(field.getDouble());
-  else if (attr.isA(tag_Seasonal_dampenTrend))
-    Forecast::Seasonal::setDampenTrend(field.getDouble());
-  else if (attr.isA(tag_Seasonal_minPeriod))
-    Forecast::Seasonal::setMinPeriod(field.getInt());
-  else if (attr.isA(tag_Seasonal_maxPeriod))
-    Forecast::Seasonal::setMaxPeriod(field.getInt());
-  else if (attr.isA(tag_Seasonal_minAutocorrelation))
-    Forecast::Seasonal::setMinAutocorrelation(field.getDouble());
-  else if (attr.isA(tag_Seasonal_maxAutocorrelation))
-    Forecast::Seasonal::setMaxAutocorrelation(field.getDouble());
-  // Croston forecast method
-  else if (attr.isA(tag_Croston_initialAlfa))
-    Forecast::Croston::setInitialAlfa(field.getDouble());
-  else if (attr.isA(tag_Croston_minAlfa))
-    Forecast::Croston::setMinAlfa(field.getDouble());
-  else if (attr.isA(tag_Croston_maxAlfa))
-    Forecast::Croston::setMaxAlfa(field.getDouble());
-  else if (attr.isA(tag_Croston_minIntermittence))
-    Forecast::Croston::setMinIntermittence(field.getDouble());
-*/
+      // Forecast buckets
+      m->addBoolField<Cls>(ForecastSolver::tag_DueAtEndOfBucket, &Cls::getDueAtEndOfBucket, &Cls::setDueAtEndOfBucket);
+      // Netting
+      m->addBoolField<Cls>(ForecastSolver::tag_Net_CustomerThenItemHierarchy, &Cls::getCustomerThenItemHierarchy, &Cls::setCustomerThenItemHierarchy);
+      m->addBoolField<Cls>(ForecastSolver::tag_Net_MatchUsingDeliveryOperation, &Cls::getMatchUsingDeliveryOperation, &Cls::setMatchUsingDeliveryOperation);
+      m->addDurationField<Cls>(ForecastSolver::tag_Net_NetEarly, &Cls::getNetEarly, &Cls::setNetEarly);
+      m->addDurationField<Cls>(ForecastSolver::tag_Net_NetLate, &Cls::getNetLate, &Cls::setNetLate);
+      // Forecasting
+      m->addUnsignedLongField<Cls>(ForecastSolver::tag_Iterations, &Cls::getForecastIterations, &Cls::setForecastIterations);
+      m->addDoubleField<Cls>(ForecastSolver::tag_SmapeAlfa, &Cls::getForecastSmapeAlfa, &Cls::setForecastSmapeAlfa);
+      m->addUnsignedLongField<Cls>(ForecastSolver::tag_Skip, &Cls::getForecastSkip, &Cls::setForecastSkip);
+      m->addDoubleField<Cls>(ForecastSolver::tag_Outlier_maxDeviation, &Cls::getForecastMaxDeviation, &Cls::setForecastMaxDeviation);
+      // Moving average forecast method
+      m->addIntField<Cls>(ForecastSolver::tag_MovingAverage_order, &Cls::getMovingAverageDefaultOrder, &Cls::setMovingAverageDefaultOrder);
+      // Single exponential forecast method
+      m->addDoubleField<Cls>(ForecastSolver::tag_SingleExponential_initialAlfa, &Cls::getSingleExponentialInitialAlfa, &Cls::setSingleExponentialInitialAlfa);
+      m->addDoubleField<Cls>(ForecastSolver::tag_SingleExponential_minAlfa, &Cls::getSingleExponentialMinAlfa, &Cls::setSingleExponentialMinAlfa);
+      m->addDoubleField<Cls>(ForecastSolver::tag_SingleExponential_maxAlfa, &Cls::getSingleExponentialMaxAlfa, &Cls::setSingleExponentialMaxAlfa);
+      // Double exponential forecast method
+      m->addDoubleField<Cls>(ForecastSolver::tag_DoubleExponential_initialAlfa, &Cls::getDoubleExponentialInitialAlfa, &Cls::setDoubleExponentialInitialAlfa);
+      m->addDoubleField<Cls>(ForecastSolver::tag_DoubleExponential_minAlfa, &Cls::getDoubleExponentialMinAlfa, &Cls::setDoubleExponentialMinAlfa);
+      m->addDoubleField<Cls>(ForecastSolver::tag_DoubleExponential_maxAlfa, &Cls::getDoubleExponentialMaxAlfa, &Cls::setDoubleExponentialMaxAlfa);
+      m->addDoubleField<Cls>(ForecastSolver::tag_DoubleExponential_initialGamma, &Cls::getDoubleExponentialInitialGamma, &Cls::setDoubleExponentialInitialGamma);
+      m->addDoubleField<Cls>(ForecastSolver::tag_DoubleExponential_minGamma, &Cls::getDoubleExponentialMinGamma, &Cls::setDoubleExponentialMinGamma);
+      m->addDoubleField<Cls>(ForecastSolver::tag_DoubleExponential_maxGamma, &Cls::getDoubleExponentialMaxGamma, &Cls::setDoubleExponentialMaxGamma);
+      m->addDoubleField<Cls>(ForecastSolver::tag_DoubleExponential_dampenTrend, &Cls::getDoubleExponentialDampenTrend, &Cls::setDoubleExponentialDampenTrend);
+      // Seasonal forecast method
+      m->addDoubleField<Cls>(ForecastSolver::tag_Seasonal_initialAlfa, &Cls::getSeasonalInitialAlfa, &Cls::setSeasonalInitialAlfa);
+      m->addDoubleField<Cls>(ForecastSolver::tag_Seasonal_minAlfa, &Cls::getSeasonalMinAlfa, &Cls::setSeasonalMinAlfa);
+      m->addDoubleField<Cls>(ForecastSolver::tag_Seasonal_maxAlfa, &Cls::getSeasonalMaxAlfa, &Cls::setSeasonalMaxAlfa);
+      m->addDoubleField<Cls>(ForecastSolver::tag_Seasonal_initialBeta, &Cls::getSeasonalInitialBeta, &Cls::setSeasonalInitialBeta);
+      m->addDoubleField<Cls>(ForecastSolver::tag_Seasonal_minBeta, &Cls::getSeasonalMinBeta, &Cls::setSeasonalMinBeta);
+      m->addDoubleField<Cls>(ForecastSolver::tag_Seasonal_maxBeta, &Cls::getSeasonalMaxBeta, &Cls::setSeasonalMaxBeta);
+      m->addDoubleField<Cls>(ForecastSolver::tag_Seasonal_gamma, &Cls::getSeasonalGamma, &Cls::setSeasonalGamma);
+      m->addDoubleField<Cls>(ForecastSolver::tag_Seasonal_dampenTrend, &Cls::getSeasonalDampenTrend, &Cls::setSeasonalDampenTrend);
+      m->addIntField<Cls>(ForecastSolver::tag_Seasonal_minPeriod, &Cls::getSeasonalMinPeriod, &Cls::setSeasonalMinPeriod);
+      m->addIntField<Cls>(ForecastSolver::tag_Seasonal_maxPeriod, &Cls::getSeasonalMaxPeriod, &Cls::setSeasonalMaxPeriod);
+      m->addDoubleField<Cls>(ForecastSolver::tag_Seasonal_minAutocorrelation, &Cls::getSeasonalMinAutocorrelation, &Cls::setSeasonalMinAutocorrelation);
+      m->addDoubleField<Cls>(ForecastSolver::tag_Seasonal_maxAutocorrelation, &Cls::getSeasonalMaxAutocorrelation, &Cls::setSeasonalMaxAutocorrelation);
+      // Croston forecast method
+      m->addDoubleField<Cls>(ForecastSolver::tag_Croston_initialAlfa, &Cls::getCrostonInitialAlfa, &Cls::setCrostonInitialAlfa);
+      m->addDoubleField<Cls>(ForecastSolver::tag_Croston_minAlfa, &Cls::getCrostonMinAlfa, &Cls::setCrostonMinAlfa);
+      m->addDoubleField<Cls>(ForecastSolver::tag_Croston_maxAlfa, &Cls::getCrostonMaxAlfa, &Cls::setCrostonMaxAlfa);
+      m->addDoubleField<Cls>(ForecastSolver::tag_Croston_minIntermittence, &Cls::getCrostonMinIntermittence, &Cls::setCrostonMinIntermittence);
     }
 
   private:
+    /** Controls how we search the customer and item levels when looking for a
+      * matching forecast for a demand.
+      */
+    static bool Customer_Then_Item_Hierarchy;
+
+    /** Controls whether or not a matching delivery operation is required
+      * between a matching order and its forecast.
+      */
+    static bool Match_Using_Delivery_Operation;
+
+    /** Store the maximum time difference between an order due date and a
+      * forecast bucket to net from.<br>
+      * The default value is 0, meaning that only netting from the due
+      * bucket is allowed.
+      */
+    static Duration Net_Late;
+
+    /** Store the maximum time difference between an order due date and a
+      * forecast bucket to net from.<br>
+      * The default value is 0, meaning that only netting from the due
+      * bucket is allowed.
+      */
+    static Duration Net_Early;
+
     /** Given a demand, this function will identify the forecast model it
       * links to.
       */

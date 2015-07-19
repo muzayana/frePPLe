@@ -12,129 +12,127 @@
   </description>
 	<current>2009-01-01T00:00:00</current>
 	<customers>
-		<customer name="A customer">
-			<owner name="A parent customer"/>
+		<customer>
+			<name>A customer</name>
+			<owner>
+				<name>A parent customer</name>
+			</owner>
 		</customer>
-		<customer name="A grandparent customer">
-			<members>
-				<customer name="A parent customer"/>
-			</members>
+		<customer>
+			<name>A grandparent customer</name>
 		</customer>
-		<customer name="A parent customer">
-			<owner name="A grandparent customer"/>
-			<members>
-				<customer name="A customer"/>
-			</members>
+		<customer>
+			<name>A parent customer</name>
+			<owner>
+				<name>A grandparent customer</name>
+			</owner>
 		</customer>
-		<customer name="B customer">
-			<owner name="B parent customer"/>
+		<customer>
+			<name>B customer</name>
+			<owner>
+				<name>B parent customer</name>
+			</owner>
 		</customer>
-		<customer name="B grandparent customer">
-			<members>
-				<customer name="B parent customer"/>
-			</members>
+		<customer>
+			<name>B grandparent customer</name>
 		</customer>
-		<customer name="B parent customer">
-			<owner name="B grandparent customer"/>
-			<members>
-				<customer name="B customer"/>
-			</members>
+		<customer>
+			<name>B parent customer</name>
+			<owner>
+				<name>B grandparent customer</name>
+			</owner>
 		</customer>
-		<customer name="C customer">
-			<owner name="C parent customer"/>
+		<customer>
+			<name>C customer</name>
+			<owner>
+				<name>C parent customer</name>
+			</owner>
 		</customer>
-		<customer name="C grandparent customer">
-			<members>
-				<customer name="C parent customer"/>
-			</members>
+		<customer>
+			<name>C grandparent customer</name>
 		</customer>
-		<customer name="C parent customer">
-			<owner name="C grandparent customer"/>
-			<members>
-				<customer name="C customer"/>
-			</members>
+		<customer>
+			<name>C parent customer</name>
+			<owner>
+				<name>C grandparent customer</name>
+			</owner>
 		</customer>
-		<customer name="D customer">
-			<owner name="D parent customer"/>
+		<customer>
+			<name>D customer</name>
+			<owner>
+				<name>D parent customer</name>
+			</owner>
 		</customer>
-		<customer name="D grandparent customer">
-			<members>
-				<customer name="D parent customer"/>
-			</members>
+		<customer>
+			<name>D grandparent customer</name>
 		</customer>
-		<customer name="D parent customer">
-			<owner name="D grandparent customer"/>
-			<members>
-				<customer name="D customer"/>
-			</members>
+		<customer>
+			<name>D parent customer</name>
+			<owner>
+				<name>D grandparent customer</name>
+			</owner>
 		</customer>
-		<customer name="E customer">
-			<owner name="E parent customer"/>
+		<customer>
+			<name>E customer</name>
+			<owner>
+				<name>E parent customer</name>
+			</owner>
 		</customer>
-		<customer name="E grandparent customer">
-			<members>
-				<customer name="E parent customer"/>
-			</members>
+		<customer>
+			<name>E grandparent customer</name>
 		</customer>
-		<customer name="E parent customer">
-			<owner name="E grandparent customer"/>
-			<members>
-				<customer name="E customer"/>
-			</members>
+		<customer>
+			<name>E parent customer</name>
+			<owner>
+				<name>E grandparent customer</name>
+			</owner>
 		</customer>
 	</customers>
 	<calendars>
-		<calendar name="Months">
+		<calendar>
+			<name>Months</name>
 			<buckets>
-				<bucket id="1" start="2009-01-01T00:00:00" end="2009-02-01T00:00:00">
+				<bucket>
+					<id>1</id>
+					<start>2009-01-01T00:00:00</start>
+					<end>2009-02-01T00:00:00</end>
 					<value>1</value>
 				</bucket>
-				<bucket id="2" start="2009-02-01T00:00:00" end="2009-03-01T00:00:00">
+				<bucket>
+					<id>2</id>
+					<start>2009-02-01T00:00:00</start>
+					<end>2009-03-01T00:00:00</end>
 					<value>1</value>
 				</bucket>
-				<bucket id="3" start="2009-03-01T00:00:00" end="2009-04-01T00:00:00">
+				<bucket>
+					<id>3</id>
+					<start>2009-03-01T00:00:00</start>
+					<end>2009-04-01T00:00:00</end>
 					<value>1</value>
 				</bucket>
 			</buckets>
 		</calendar>
 	</calendars>
-	<operations>
-		<operation name="A delivery" xsi:type="operation_fixed_time">
-			<duration>P1D</duration>
-		</operation>
-		<operation name="B delivery" xsi:type="operation_fixed_time">
-			<duration>P1D</duration>
-		</operation>
-		<operation name="C delivery" xsi:type="operation_fixed_time">
-			<duration>P1D</duration>
-		</operation>
-		<operation name="D delivery" xsi:type="operation_fixed_time">
-			<duration>P1D</duration>
-		</operation>
-		<operation name="E delivery" xsi:type="operation_fixed_time">
-			<duration>P1D</duration>
-		</operation>
-	</operations>
 	<items>
-		<item name="A grandparent item">
-			<members>
-				<item name="A parent item"/>
-			</members>
+		<item>
+			<name>A grandparent item</name>
 		</item>
-		<item name="A item">
-			<owner name="A parent item"/>
-			<operation name="A delivery" xsi:type="operation_fixed_time"/>
+		<item>
+			<name>A item</name>
+			<owner>
+				<name>A parent item</name>
+			</owner>
+			<operation>
+				<name>A delivery</name>
+			</operation>
 		</item>
-		<item name="A parent item">
-			<owner name="A grandparent item"/>
-			<members>
-				<item name="A item"/>
-			</members>
+		<item>
+			<name>A parent item</name>
+			<owner>
+				<name>A grandparent item</name>
+			</owner>
 		</item>
 		<item name="B grandparent item">
-			<members>
-				<item name="B parent item"/>
-			</members>
 		</item>
 		<item name="B item">
 			<owner name="B parent item"/>
@@ -142,14 +140,8 @@
 		</item>
 		<item name="B parent item">
 			<owner name="B grandparent item"/>
-			<members>
-				<item name="B item"/>
-			</members>
 		</item>
 		<item name="C grandparent item">
-			<members>
-				<item name="C parent item"/>
-			</members>
 		</item>
 		<item name="C item">
 			<owner name="C parent item"/>
@@ -157,14 +149,8 @@
 		</item>
 		<item name="C parent item">
 			<owner name="C grandparent item"/>
-			<members>
-				<item name="C item"/>
-			</members>
 		</item>
 		<item name="D grandparent item">
-			<members>
-				<item name="D parent item"/>
-			</members>
 		</item>
 		<item name="D item">
 			<owner name="D parent item"/>
@@ -172,14 +158,8 @@
 		</item>
 		<item name="D parent item">
 			<owner name="D grandparent item"/>
-			<members>
-				<item name="D item"/>
-			</members>
 		</item>
 		<item name="E grandparent item">
-			<members>
-				<item name="E parent item"/>
-			</members>
 		</item>
 		<item name="E item">
 			<owner name="E parent item"/>
@@ -187,177 +167,281 @@
 		</item>
 		<item name="E parent item">
 			<owner name="E grandparent item"/>
-			<members>
-				<item name="E item"/>
-			</members>
 		</item>
 	</items>
+	<operations>
+		<operation>
+			<name>A delivery</name>
+			<duration>P1D</duration>
+		</operation>
+		<operation>
+			<name>B delivery</name>
+			<duration>P1D</duration>
+		</operation>
+		<operation>
+			<name>C delivery</name>
+			<duration>P1D</duration>
+		</operation>
+		<operation>
+			<name>D delivery</name>
+			<duration>P1D</duration>
+		</operation>
+		<operation>
+			<name>E delivery</name>
+			<duration>P1D</duration>
+		</operation>
+	</operations>
 	<demands>
-		<demand name="A forecast" xsi:type="demand_forecast">
-			<item name="A item"/>
-			<calendar name="Months"/>
+		<demand xsi:type="demand_forecast">
+			<name>A forecast</name>
+			<customer>
+				<name>A customer</name>
+			</customer>
+			<item>
+				<name>A item</name>
+			</item>
+			<calendar>
+				<name>Months</name>
+			</calendar>
 			<buckets>
-				<bucket start="2009-01-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-01-01T00:00:00</start>
+					<end>2009-02-01T00:00:00</end>
 					<total>100</total>
-					<quantity>90</quantity>
-					<consumed>10</consumed>
 				</bucket>
-				<bucket start="2009-02-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-02-01T00:00:00</start>
+					<end>2009-03-01T00:00:00</end>
 					<total>0</total>
-					<quantity>0</quantity>
-					<consumed>0</consumed>
 				</bucket>
-				<bucket start="2009-03-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-03-01T00:00:00</start>
+					<end>2009-04-01T00:00:00</end>
 					<total>0</total>
-					<quantity>0</quantity>
-					<consumed>0</consumed>
 				</bucket>
 			</buckets>
 		</demand>
-		<demand name="A forecast not selected" xsi:type="demand_forecast">
-			<item name="A parent item"/>
-			<calendar name="Months"/>
-			<buckets>
-			</buckets>
+		<demand xsi:type="demand_forecast">
+			<name>A forecast not selected</name>
+			<description>This forecast is not selected because lower level
+      matches take precedence.</description>
+			<customer>
+				<name>A parent customer</name>
+			</customer>
+			<item>
+				<name>A parent item</name>
+			</item>
+			<calendar>
+				<name>Months</name>
+			</calendar>
 		</demand>
-		<demand name="A order">
-			<customer name="A customer"/>
+		<demand>
+			<name>A order</name>
+			<customer>
+				<name>A customer</name>
+			</customer>
 			<quantity>10</quantity>
-			<item name="A item"/>
+			<item>
+				<name>A item</name>
+			</item>
 			<due>2009-01-02T00:00:00</due>
 		</demand>
-		<demand name="B forecast" xsi:type="demand_forecast">
-			<item name="B item"/>
-			<calendar name="Months"/>
+		<demand xsi:type="demand_forecast">
+			<name>B forecast</name>
+			<item>
+				<name>B item</name>
+			</item>
+			<calendar>
+				<name>Months</name>
+			</calendar>
 			<buckets>
-				<bucket start="2009-01-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-01-01T00:00:00</start>
+					<end>2009-02-01T00:00:00</end>
 					<total>100</total>
-					<quantity>80</quantity>
-					<consumed>20</consumed>
 				</bucket>
-				<bucket start="2009-02-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-02-01T00:00:00</start>
+					<end>2009-03-01T00:00:00</end>
 					<total>0</total>
-					<quantity>0</quantity>
-					<consumed>0</consumed>
 				</bucket>
-				<bucket start="2009-03-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-03-01T00:00:00</start>
+					<end>2009-04-01T00:00:00</end>
 					<total>0</total>
-					<quantity>0</quantity>
-					<consumed>0</consumed>
 				</bucket>
 			</buckets>
 		</demand>
-		<demand name="B order 1">
-			<customer name="B customer"/>
+		<demand>
+			<name>B order 1</name>
+			<customer>
+				<name>B customer</name>
+			</customer>
 			<quantity>10</quantity>
-			<item name="B item"/>
+			<item>
+				<name>B item</name>
+			</item>
 			<due>2009-01-02T00:00:00</due>
 		</demand>
-		<demand name="B order 2">
+		<demand>
+			<name>B order 2</name>
 			<quantity>10</quantity>
-			<item name="B item"/>
+			<item>
+				<name>B item</name>
+			</item>
 			<due>2009-01-02T00:00:00</due>
 		</demand>
-		<demand name="C forecast" xsi:type="demand_forecast">
-			<item name="C item"/>
-			<calendar name="Months"/>
+		<demand xsi:type="demand_forecast">
+			<name>C forecast</name>
+			<customer>
+				<name>C parent customer</name>
+			</customer>
+			<item>
+				<name>C item</name>
+			</item>
+			<calendar>
+				<name>Months</name>
+			</calendar>
 			<buckets>
-				<bucket start="2009-01-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-01-01T00:00:00</start>
+					<end>2009-02-01T00:00:00</end>
 					<total>100</total>
-					<quantity>90</quantity>
-					<consumed>10</consumed>
 				</bucket>
-				<bucket start="2009-02-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-02-01T00:00:00</start>
+					<end>2009-03-01T00:00:00</end>
 					<total>0</total>
-					<quantity>0</quantity>
-					<consumed>0</consumed>
 				</bucket>
-				<bucket start="2009-03-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-03-01T00:00:00</start>
+					<end>2009-04-01T00:00:00</end>
 					<total>0</total>
-					<quantity>0</quantity>
-					<consumed>0</consumed>
 				</bucket>
 			</buckets>
 		</demand>
-		<demand name="C forecast not selected" xsi:type="demand_forecast">
-			<item name="C parent item"/>
-			<calendar name="Months"/>
+		<demand xsi:type="demand_forecast">
+			<name>C forecast not selected</name>
+			<description>This forecast is not selected since we search higher
+      levels in the customer dimension first.
+      Switching the flag Customer_Then_Item_Hierarchy to false will
+      flip the search order around.</description>
+			<customer>
+				<name>C customer</name>
+			</customer>
+			<item>
+				<name>C parent item</name>
+			</item>
+			<calendar>
+				<name>Months</name>
+			</calendar>
 			<buckets>
-				<bucket start="2009-01-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-01-01T00:00:00</start>
+					<end>2009-02-01T00:00:00</end>
 					<total>100</total>
-					<quantity>100</quantity>
-					<consumed>0</consumed>
 				</bucket>
-				<bucket start="2009-02-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-02-01T00:00:00</start>
+					<end>2009-03-01T00:00:00</end>
 					<total>0</total>
-					<quantity>0</quantity>
-					<consumed>0</consumed>
 				</bucket>
-				<bucket start="2009-03-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-03-01T00:00:00</start>
+					<end>2009-04-01T00:00:00</end>
 					<total>0</total>
-					<quantity>0</quantity>
-					<consumed>0</consumed>
 				</bucket>
 			</buckets>
 		</demand>
-		<demand name="C order">
-			<customer name="C customer"/>
+		<demand>
+			<name>C order</name>
+			<customer>
+				<name>C customer</name>
+			</customer>
 			<quantity>10</quantity>
-			<item name="C item"/>
+			<item>
+				<name>C item</name>
+			</item>
 			<due>2009-01-02T00:00:00</due>
 		</demand>
-		<demand name="D forecast" xsi:type="demand_forecast">
-			<item name="D parent item"/>
-			<calendar name="Months"/>
+		<demand xsi:type="demand_forecast">
+			<name>D forecast</name>
+			<customer>
+				<name>D customer</name>
+			</customer>
+			<item>
+				<name>D parent item</name>
+			</item>
+			<calendar>
+				<name>Months</name>
+			</calendar>
 			<buckets>
-				<bucket start="2009-01-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-01-01T00:00:00</start>
+					<end>2009-02-01T00:00:00</end>
 					<total>100</total>
-					<quantity>90</quantity>
-					<consumed>10</consumed>
 				</bucket>
-				<bucket start="2009-02-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-02-01T00:00:00</start>
+					<end>2009-03-01T00:00:00</end>
 					<total>0</total>
-					<quantity>0</quantity>
-					<consumed>0</consumed>
 				</bucket>
-				<bucket start="2009-03-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-03-01T00:00:00</start>
+					<end>2009-04-01T00:00:00</end>
 					<total>0</total>
-					<quantity>0</quantity>
-					<consumed>0</consumed>
 				</bucket>
 			</buckets>
 		</demand>
-		<demand name="D order">
-			<customer name="D customer"/>
+		<demand>
+			<name>D order</name>
+			<customer>
+				<name>D customer</name>
+			</customer>
 			<quantity>10</quantity>
-			<item name="D item"/>
+			<item>
+				<name>D item</name>
+			</item>
 			<due>2009-01-02T00:00:00</due>
 		</demand>
-		<demand name="E forecast" xsi:type="demand_forecast">
-			<item name="E parent item"/>
-			<calendar name="Months"/>
+		<demand xsi:type="demand_forecast">
+			<name>E forecast</name>
+			<customer>
+				<name>E parent customer</name>
+			</customer>
+			<item>
+				<name>E parent item</name>
+			</item>
+			<calendar>
+				<name>Months</name>
+			</calendar>
 			<buckets>
-				<bucket start="2009-01-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-01-01T00:00:00</start>
+					<end>2009-02-01T00:00:00</end>
 					<total>100</total>
-					<quantity>90</quantity>
-					<consumed>10</consumed>
 				</bucket>
-				<bucket start="2009-02-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-02-01T00:00:00</start>
+					<end>2009-03-01T00:00:00</end>
 					<total>0</total>
-					<quantity>0</quantity>
-					<consumed>0</consumed>
 				</bucket>
-				<bucket start="2009-03-01T00:00:00">
+				<bucket xsi:type="demand_forecastbucket">
+					<start>2009-03-01T00:00:00</start>
+					<end>2009-04-01T00:00:00</end>
 					<total>0</total>
-					<quantity>0</quantity>
-					<consumed>0</consumed>
 				</bucket>
 			</buckets>
 		</demand>
-		<demand name="E order">
-			<customer name="E customer"/>
+		<demand>
+			<name>E order</name>
+			<customer>
+				<name>E customer</name>
+			</customer>
 			<quantity>10</quantity>
-			<item name="E item"/>
+			<item>
+				<name>E item</name>
+			</item>
 			<due>2009-01-02T00:00:00</due>
 		</demand>
 	</demands>
