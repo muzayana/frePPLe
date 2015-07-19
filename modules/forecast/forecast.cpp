@@ -21,13 +21,13 @@ unsigned long Forecast::Forecast_Iterations(15L);
 double Forecast::Forecast_SmapeAlfa(0.95);
 unsigned long Forecast::Forecast_Skip(5);
 
-const Keyword Forecast::tag_weight("weight");
-const Keyword Forecast::tag_total("total");
-const Keyword Forecast::tag_consumed("consumed");
 const Keyword Forecast::tag_planned("planned");
 const Keyword Forecast::tag_methods("methods");
 const Keyword Forecast::tag_method("method");
-const Keyword Forecast::tag_forecast("forecast");
+const Keyword ForecastBucket::tag_weight("weight");
+const Keyword ForecastBucket::tag_total("total");
+const Keyword ForecastBucket::tag_consumed("consumed");
+const Keyword ForecastBucket::tag_forecast("forecast");
 const MetaClass *Forecast::metadata;
 const MetaClass *ForecastBucket::metadata;
 const MetaCategory* ForecastBucket::metacategory;
@@ -88,7 +88,7 @@ Object* ForecastBucket::reader(const MetaClass* cat, const DataValueDict& in)
   Action act = MetaClass::decodeAction(in);
 
   // Pick up the forecast attribute. An error is reported if it's missing.
-  const DataValue* fcstElement = in.get(Forecast::tag_forecast);
+  const DataValue* fcstElement = in.get(ForecastBucket::tag_forecast);
   if (!fcstElement)
     throw DataException("Missing forecast field");
   Object* fcstobject = fcstElement->getObject();
@@ -109,7 +109,7 @@ Object* ForecastBucket::reader(const MetaClass* cat, const DataValueDict& in)
     throw DataException("Start and/or end date must be provided");
 
   // Pick up the total value
-  const DataValue* totalElement = in.get(Forecast::tag_total);
+  const DataValue* totalElement = in.get(ForecastBucket::tag_total);
   if (totalElement)
   {
     static_cast<Forecast*>(fcstobject)->setTotalQuantity(

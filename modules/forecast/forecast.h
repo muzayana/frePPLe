@@ -289,6 +289,12 @@ MODULE_EXPORT const char* initialize(const Environment::ParameterList&);
 class ForecastBucket : public Demand
 {
   public:
+
+    static const Keyword tag_forecast;
+    static const Keyword tag_weight;
+    static const Keyword tag_total;
+    static const Keyword tag_consumed;
+
     // Forward declaration of inner class
     class bucketiterator;
 
@@ -421,11 +427,11 @@ class ForecastBucket : public Demand
     {
       m->addDateField<Cls>(Tags::start, &Cls::getStartDate);
       m->addDateField<Cls>(Tags::end, &Cls::getEndDate);
-      m->addDoubleField<Cls>(Forecast::tag_weight, &Cls::getWeight, &Cls::setWeight, 1.0, DETAIL);
-      m->addDoubleField<Cls>(Forecast::tag_total, &Cls::getTotal, &Cls::setTotal, -1.0);
-      m->addDoubleField<Cls>(Forecast::tag_consumed, &Cls::getConsumed, &Cls::setConsumed, 0.0, DETAIL);
+      m->addDoubleField<Cls>(ForecastBucket::tag_weight, &Cls::getWeight, &Cls::setWeight, 1.0, DETAIL);
+      m->addDoubleField<Cls>(ForecastBucket::tag_total, &Cls::getTotal, &Cls::setTotal, -1.0);
+      m->addDoubleField<Cls>(ForecastBucket::tag_consumed, &Cls::getConsumed, &Cls::setConsumed, 0.0, DETAIL);
       m->addDoubleField<Cls>(Tags::quantity, &Cls::getQuantity, NULL, 0.0, DETAIL);
-      m->addPointerField<Cls, Forecast>(Forecast::tag_forecast, &Cls::getForecast, NULL, DONT_SERIALIZE + PARENT);
+      m->addPointerField<Cls, Forecast>(ForecastBucket::tag_forecast, &Cls::getForecast, NULL, DONT_SERIALIZE + PARENT);
     }
 
   private:
@@ -467,13 +473,9 @@ class Forecast : public Demand
     friend class ForecastSolver;
   public:
 
-    static const Keyword tag_weight;
-    static const Keyword tag_total;
-    static const Keyword tag_consumed;
     static const Keyword tag_methods;
     static const Keyword tag_method;
     static const Keyword tag_planned;
-    static const Keyword tag_forecast;
 
     /** Constants for each forecast method. */
     static const unsigned long METHOD_CONSTANT = 1;

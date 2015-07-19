@@ -37,10 +37,10 @@ MODULE_EXPORT const char* initialize(const Environment::ParameterList& z)
   try
   {
     // Register new Python data types
-    if (Forecast::initialize())
-      throw RuntimeException("Error registering forecast");
     if (ForecastBucket::initialize())
       throw RuntimeException("Error registering forecastbucket");
+    if (Forecast::initialize())
+      throw RuntimeException("Error registering forecast");
     if (ForecastSolver::initialize())
       throw RuntimeException("Error registering forecastsolver");
     PyGILState_Release(state);
