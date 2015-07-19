@@ -673,7 +673,7 @@ class JSONInput : public NonCopyable
 
       public:
         JsonAllocator() : head(NULL) {}
-        /*TODO
+        /* TODO
         JsonAllocator(const JsonAllocator &) = delete;
         JsonAllocator &operator=(const JsonAllocator &) = delete;
         JsonAllocator(JsonAllocator &&x) : head(x.head) {
@@ -681,7 +681,7 @@ class JSONInput : public NonCopyable
         }
         JsonAllocator &operator=(JsonAllocator &&x) {
             head = x.head;
-            x.head = nullptr;
+            x.head = NULL;
             return *this;
         }
         */
@@ -731,11 +731,11 @@ class JSONInput : public NonCopyable
     {
       if (tail)
       {
-          auto head = tail->next;
-          tail->next = nullptr;
+          JsonNode *head = tail->next;
+          tail->next = NULL;
           return JsonValue(tag, head);
       }
-      return JsonValue(tag, nullptr);
+      return JsonValue(tag, NULL);
     }
 
     /** Parsing routine. */

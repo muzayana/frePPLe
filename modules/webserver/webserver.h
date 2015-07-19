@@ -166,7 +166,7 @@ class DatabaseReader : public NonCopyable
       * Its sole purpose is to assure the PQclear method is called
       * correctly to avoid memory leaks.
       */
-    class DatabaseResult : public NonCopyable
+    class DatabaseResult // TODO NOT GOOD : public NonCopyable
     {
       public:
         /** Constructor. */

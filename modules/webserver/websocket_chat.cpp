@@ -23,12 +23,13 @@ list<string> WebServer::history;
 void WebServer::loadChatHistory(const string& c)
 {
   DatabaseReader db(c);
-  DatabaseReader::DatabaseResult res = db.fetchSQL(DatabaseStatement(
+  DatabaseStatement stmt(
     "select username, message, planningboard_chat.lastmodified::timestamp without time zone "
     "from planningboard_chat "
     "inner join common_user on planningboard_chat.user_id = common_user.id "
     "order by planningboard_chat.id desc "
-    "limit 100"));
+    "limit 100");
+  DatabaseReader::DatabaseResult res = db.fetchSQL(stmt);
   for (int i = res.countRows()-1; i >= 0; --i)
   {
     JSONSerializerString o;

@@ -14,6 +14,31 @@
 #include "json.h"
 #include <iomanip>
 
+// With VC++ we use the Win32 functions to browse a directory
+#ifdef _MSC_VER
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#else
+// With Unix-like systems we use a check suggested by the autoconf tools
+#if HAVE_DIRENT_H
+# include <dirent.h>
+# define NAMLEN(dirent) strlen((dirent)->d_name)
+#else
+# define dirent direct
+# define NAMLEN(dirent) (dirent)->d_namlen
+# if HAVE_SYS_NDIR_H
+#  include <sys/ndir.h>
+# endif
+# if HAVE_SYS_DIR_H
+#  include <sys/dir.h>
+# endif
+# if HAVE_NDIR_H
+#  include <ndir.h>
+# endif
+#endif
+#endif
+
+
 namespace module_webserver
 {
 
@@ -167,7 +192,7 @@ void JSONInputFile::parse(Object *pRoot)
       if (n > 4 && !strcmp(".xml", dir_entry_p->d_name + n - 4))
       {
         string f = filename + '/' + dir_entry_p->d_name;
-        JSONInputFile(f.c_str()).parse(pRoot, validate);
+        JSONInputFile(f.c_str()).parse(pRoot);
       }
     }
     closedir(dir_p);
@@ -180,7 +205,7 @@ void JSONInputFile::parse(Object *pRoot)
     // Normal file
     // Read the complete file in a memory buffer
     ifstream t;
-    t.open(filename);
+    t.open(filename.c_str());
     t.seekg(0, ios::end);
     ifstream::pos_type length = t.tellg();
     if (length > 100000000)
@@ -429,7 +454,7 @@ void JSONInput::parse(char *s, JSONInput::JsonValue *value, JSONInput::JsonAlloc
           throw DataException("Invalid JSON data: stack underflow at position " + (s - firstChar));
         if (tags[pos] != JSON_OBJECT)
           throw DataException("Invalid JSON data: bracket mismatch at position " + (s - firstChar));
-        if (keys[pos] != nullptr)
+        if (keys[pos] != NULL)
           throw DataException("Invalid JSON data: unexpected character at position " + (s - firstChar));
         o = listToValue(JSON_OBJECT, tails[pos--]);
         break;
@@ -450,12 +475,12 @@ void JSONInput::parse(char *s, JSONInput::JsonValue *value, JSONInput::JsonAlloc
         separator = true;
         continue;
       case ':':
-        if (separator || keys[pos] == nullptr)
+        if (separator || keys[pos] == NULL)
           throw DataException("Invalid JSON data: unexpected character at position " + (s - firstChar));
         separator = true;
         continue;
       case ',':
-        if (separator || keys[pos] != nullptr)
+        if (separator || keys[pos] != NULL)
           throw DataException("Invalid JSON data: unexpected character at position " + (s - firstChar));
         separator = true;
         continue;
