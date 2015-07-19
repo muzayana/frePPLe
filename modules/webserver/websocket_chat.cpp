@@ -29,7 +29,7 @@ void WebServer::loadChatHistory(const string& c)
     "inner join common_user on planningboard_chat.user_id = common_user.id "
     "order by planningboard_chat.id desc "
     "limit 100");
-  DatabaseReader::DatabaseResult res = db.fetchSQL(stmt);
+  DatabaseReader::DatabaseResult res(db, stmt);
   for (int i = res.countRows()-1; i >= 0; --i)
   {
     JSONSerializerString o;

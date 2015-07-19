@@ -166,11 +166,14 @@ class DatabaseReader : public NonCopyable
       * Its sole purpose is to assure the PQclear method is called
       * correctly to avoid memory leaks.
       */
-    class DatabaseResult // TODO NOT GOOD : public NonCopyable
+    class DatabaseResult : public NonCopyable
     {
       public:
         /** Constructor. */
         DatabaseResult(PGresult *r) : res(r) {}
+
+        /** Constructor which runs asn SQL statement. */
+        DatabaseResult(DatabaseReader& db, DatabaseStatement& stmt); 
 
         /** Destructor. */
         ~DatabaseResult()
@@ -249,8 +252,17 @@ class DatabaseReader : public NonCopyable
     /** Execute a command query that doesn't return a result. */
     void executeSQL(DatabaseStatement&);
 
-    /** Execute a command query that returns a result set. */
-    DatabaseResult fetchSQL(DatabaseStatement&);
+    /** Return the error string of the connection. */
+    char* getError()
+    {
+      return PQerrorMessage(conn);
+    }
+
+    /** Return the database connection. TODO keep the connection internal to the class... */
+    PGconn* getConnection()
+    {
+      return conn;
+    }
 
   private:
     /** Connection arguments. */

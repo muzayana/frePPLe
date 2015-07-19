@@ -89,18 +89,17 @@ void DatabaseReader::executeSQL(DatabaseStatement& stmt)
 }
 
 
-DatabaseReader::DatabaseResult DatabaseReader::fetchSQL(DatabaseStatement& stmt)
+DatabaseReader::DatabaseResult::DatabaseResult (DatabaseReader& db, DatabaseStatement& stmt)
 {
-  PGresult *res = stmt.execute(conn);
+  PGresult *res = stmt.execute(db.getConnection());
   if (PQresultStatus(res) != PGRES_TUPLES_OK)
   {
     stringstream o;
-    o << "Database error: " << PQerrorMessage(conn) << endl
+    o << "Database error: " << db.getError() << endl
       << "   statement: " << stmt << endl;
     PQclear(res);
     throw RuntimeException(o.str());
   }
-  return DatabaseResult(res);
 }
 
 
