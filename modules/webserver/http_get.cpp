@@ -21,35 +21,6 @@ bool WebServer::handleGet(CivetServer *server, struct mg_connection *conn)
 {
   struct mg_request_info *request_info = mg_get_request_info(conn);
 
-  // Write the complete model
-  // TODO use chunked output stream
-  if (!strcmp(request_info->uri, "/"))
-  {
-    string format = "xml";
-    CivetServer::getParam(conn, "format", format);
-    if (format == "json")
-    {
-      // JSON format
-      mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n");
-      JSONSerializerString o;
-      o.writeString("{");
-      Object *tmp = o.pushCurrentObject(&Plan::instance());
-      Plan::instance().writeElement(&o, Tags::plan);  // TODO cleaner code to do it from the serializer
-      o.pushCurrentObject(tmp);
-      o.writeString("}");
-      mg_printf(conn, "%s", o.getData().c_str());
-    }
-    else
-    {
-      // XML format (default)
-      mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/xml\r\n\r\n");
-      XMLSerializerString o;
-      o.writeElementWithHeader(Tags::plan, &Plan::instance());
-      mg_printf(conn, "%s", o.getData().c_str());
-    }
-    return true;
-  }
-
   // Return the index page
   if (!strcmp(request_info->uri, "/index.html"))
   {
@@ -75,6 +46,43 @@ bool WebServer::handleGet(CivetServer *server, struct mg_connection *conn)
     return false;
   }
 
+  // Get requested output format
+  string format;
+  string content_type;
+  CivetServer::getParam(conn, "format", format);
+  CivetServer::getParam(conn, "type", content_type);
+  if (format.empty())
+    format = "xml";
+  if (content_type.empty())
+    content_type = "base";
+
+  // CASE 1: Write the complete model
+  // TODO use chunked output stream
+  if (!strcmp(request_info->uri, "/"))
+  {
+    if (format == "json")
+    {
+      // CASE 1a: JSON format
+      mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n");
+      JSONSerializerString o;
+      o.setContentType(content_type);
+      Object *tmp = o.pushCurrentObject(&Plan::instance());
+      Plan::instance().writeElement(&o, Tags::plan, o.getContentType());  // TODO cleaner code to do it from the serializer
+      o.pushCurrentObject(tmp);
+      mg_printf(conn, "%s", o.getData().c_str());
+    }
+    else
+    {
+      // CASE 1b: XML format (default)
+      mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/xml\r\n\r\n");
+      XMLSerializerString o;
+      o.setContentType(content_type);
+      o.writeElementWithHeader(Tags::plan, &Plan::instance());
+      mg_printf(conn, "%s", o.getData().c_str());
+    }
+    return true;
+  }
+
   // Check if the first section of the URL is a category name
   const char* slash = strchr(request_info->uri + 1, '/');
   string categoryname;
@@ -87,22 +95,21 @@ bool WebServer::handleGet(CivetServer *server, struct mg_connection *conn)
     // We don't handle this URL, and it will be interpreted as a static file.
     return false;
 
-  // Get requested output format
-  string format = "xml";
-  CivetServer::getParam(conn, "format", format);
-
   // Find the matching field
   const MetaFieldBase *fld = Plan::metadata->findField(*(cat->grouptag));
 
   if (fld && (!slash || strncmp(request_info->uri + 1, cat->type.c_str(), slash - request_info->uri - 1)))
   {
-    // Return all objects of a single category
+    // CASE 2: Return all objects of a single category
     if (format == "json")
     {
-      // JSON format
+      // CASE 2a: JSON format
       mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n");
       JSONSerializerString o;
+      o.setContentType(content_type);
+      o.incParents();  // Fake a parent object to make sure we write only 1 more level of info
       o.writeString("{");
+
       fld->writeField(o);
       o.writeString("}");
       mg_printf(conn, "%s", o.getData().c_str());
@@ -110,11 +117,13 @@ bool WebServer::handleGet(CivetServer *server, struct mg_connection *conn)
     }
     else
     {
-      // XML format (default)
+      // CASE 2b: XML format (default)
       mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/xml\r\n\r\n");
       mg_printf(conn, "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n");
       mg_printf(conn, "<plan xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n");
       XMLSerializerString o;
+      o.setContentType(content_type);
+      o.incParents();  // Fake a parent object to make sure we write only 1 more level of info
       fld->writeField(o);
       mg_printf(conn, "%s", o.getData().c_str());
       mg_printf(conn, "</plan>\n");
@@ -123,7 +132,7 @@ bool WebServer::handleGet(CivetServer *server, struct mg_connection *conn)
   }
   else
   {
-    // Return a single object
+    // CASE 3: Return a single object
     string entitykey = slash + 1;
     const Object* entity = cat->find(entitykey);
     if (!entity)
@@ -139,13 +148,15 @@ bool WebServer::handleGet(CivetServer *server, struct mg_connection *conn)
     // Return a single object objects in JSON format
     if (format == "json")
     {
-      // JSON format
+      // CASE 3a: JSON format
       mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n");
       JSONSerializerString o;
+      o.setContentType(content_type);
+      o.setReferencesOnly(true);
       o.writeString("{");
       o.BeginList(*(cat->grouptag));
       Object *tmp = o.pushCurrentObject(const_cast<Object*>(entity));
-      entity->writeElement(&o, *(cat->typetag), DETAIL);
+      entity->writeElement(&o, *(cat->typetag), o.getContentType());
       o.pushCurrentObject(tmp);
       o.EndList(*(cat->grouptag));
       o.writeString("}");
@@ -154,14 +165,16 @@ bool WebServer::handleGet(CivetServer *server, struct mg_connection *conn)
     }
     else
     {
-      // Return a single object in XML format
+      // CASE 3b: Return a single object in XML format
       mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/xml\r\n\r\n");
       mg_printf(conn, "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n");
       mg_printf(conn, "<plan xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n");
       XMLSerializerString o;
+      o.setContentType(content_type);
+      o.setReferencesOnly(true);
       o.BeginList(*(cat->grouptag));
       Object *tmp = o.pushCurrentObject(const_cast<Object*>(entity));
-      entity->writeElement(&o, *(cat->typetag), DETAIL);
+      entity->writeElement(&o, *(cat->typetag), o.getContentType());
       o.pushCurrentObject(tmp);
       o.EndList(*(cat->grouptag));
       mg_printf(conn, "%s", o.getData().c_str());

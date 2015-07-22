@@ -91,7 +91,7 @@ void DatabaseReader::executeSQL(DatabaseStatement& stmt)
 
 DatabaseReader::DatabaseResult::DatabaseResult (DatabaseReader& db, DatabaseStatement& stmt)
 {
-  PGresult *res = stmt.execute(db.getConnection());
+  res = stmt.execute(db.getConnection());
   if (PQresultStatus(res) != PGRES_TUPLES_OK)
   {
     stringstream o;
