@@ -841,7 +841,7 @@ DECLARE_EXPORT void XMLSerializer::writeElementWithHeader(const Keyword& tag, co
   ++numParents;
   BeginObject(tag, getHeaderAtts());
   skipHead();
-  object->writeElement(this, tag, BASE);
+  object->writeElement(this, tag, getContentType());
 
   // Adjust current and parent object pointer
   currentObject = NULL;
