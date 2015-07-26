@@ -3520,9 +3520,11 @@ class ItemDefault : public Item
 class SupplierItem : public Object,
   public Association<Supplier,Item,SupplierItem>::Node, public HasSource
 {
+  friend class OperationSupplierItem;
   public:
     /** Default constructor. */
-    explicit SupplierItem() : size_minimum(1.0), size_multiple(0.0), cost(0.0)
+    explicit SupplierItem() : size_minimum(1.0), size_multiple(0.0),
+      cost(0.0), firstOperation(NULL)
     {
       initType(metadata);
     }
@@ -3625,6 +3627,9 @@ class SupplierItem : public Object,
       leadtime = p;
     }
 
+    /** Remove all purchasing operationplans. */
+    DECLARE_EXPORT void deleteOperationPlans(bool deleteLockedOpplans = false);
+
     virtual const MetaClass& getType() const {return *metadata;}
     static DECLARE_EXPORT const MetaClass* metadata;
     static DECLARE_EXPORT const MetaCategory* metacategory;
@@ -3663,6 +3668,9 @@ class SupplierItem : public Object,
 
     /** Procurement cost. */
     double cost;
+
+    /** Pointer to the head of the auto-generated purchase operation list.*/
+    OperationSupplierItem* firstOperation;
 };
 
 
@@ -3671,8 +3679,13 @@ class SupplierItem : public Object,
   */
 class OperationSupplierItem : public OperationFixedTime
 {
+  friend class SupplierItem;
   private:
+    /** Pointer to the supplier item that 'owns' this operation. */
     SupplierItem* supitem;
+
+    /** Pointer to the next operation of the supplier item. */
+    OperationSupplierItem* nextOperation;
 
   public:
     SupplierItem* getSupplierItem() const
@@ -3680,7 +3693,11 @@ class OperationSupplierItem : public OperationFixedTime
       return supitem;
     }
 
+    /** Constructor. */
     explicit DECLARE_EXPORT OperationSupplierItem(SupplierItem*, Buffer*);
+
+    /** Destructor. */
+    virtual DECLARE_EXPORT ~OperationSupplierItem();
 
     static int initialize();
 

@@ -84,9 +84,6 @@ int ForecastBucket::initialize()
 
 Object* ForecastBucket::reader(const MetaClass* cat, const DataValueDict& in)
 {
-  // Pick up the action attribute
-  Action act = MetaClass::decodeAction(in);
-
   // Pick up the forecast attribute. An error is reported if it's missing.
   const DataValue* fcstElement = in.get(ForecastBucket::tag_forecast);
   if (!fcstElement)

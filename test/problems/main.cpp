@@ -20,7 +20,8 @@ using namespace frepple;
 void reportProblems(string when)
 {
   logger << "Problems after " << when << ":" << endl;
-  for (Problem::const_iterator i = Problem::begin(); i != Problem::end(); ++i)
+  Problem::iterator iter;
+  while (Problem* i = iter.next())
     logger << "   " << i->getDates() << " - " << i->getDescription() << endl;
   logger << endl;
 }

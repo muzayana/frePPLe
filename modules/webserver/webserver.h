@@ -108,23 +108,23 @@ class DatabaseStatement
   public:
     /** Constructor. */
     DatabaseStatement(string s)
-      : args(0), sql(s) {};
+      : sql(s), args(0) {};
 
     /** Constructor. */
     DatabaseStatement(string s, string a1)
-      : args(1), sql(s), arg1(a1) {};
+      : sql(s), args(1), arg1(a1) {};
 
     /** Constructor. */
     DatabaseStatement(string s, string a1, string a2)
-      : args(2), sql(s), arg1(a1), arg2(a2) {};
+      : sql(s), args(2), arg1(a1), arg2(a2) {};
 
     /** Constructor. */
     DatabaseStatement(string s, string a1, string a2, string a3)
-      : args(3), sql(s), arg1(a1), arg2(a2), arg3(a3) {};
+      : sql(s), args(3), arg1(a1), arg2(a2), arg3(a3) {};
 
     /** Constructor. */
     DatabaseStatement(string s, string a1, string a2, string a3, string a4)
-      : args(4), sql(s), arg1(a1), arg2(a2), arg3(a3), arg4(a4) {};
+      : sql(s), args(4), arg1(a1), arg2(a2), arg3(a3), arg4(a4) {};
 
     /** Execute the statement on a database connection. */
     PGresult *execute(PGconn*) const;

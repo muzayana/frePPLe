@@ -110,7 +110,7 @@ int WebServer::websocket_plan(struct mg_connection *conn, int bits,
   JSONSerializerString o;
   bool ok = true;
   o.setReferencesOnly(true);
-  o.setContentType(PLAN);
+  o.setContentType(DETAIL);
   o.writeString("{\"category\": \"plan\", ");
 
   if (!strncmp(data+6, "demand/", 7))
@@ -121,7 +121,7 @@ int WebServer::websocket_plan(struct mg_connection *conn, int bits,
     {
       o.BeginList(Tags::demands);
       Object *tmp = o.pushCurrentObject(dmd);
-      dmd->writeElement(&o, Tags::demand, PLAN);
+      dmd->writeElement(&o, Tags::demand);
       o.pushCurrentObject(tmp);
       o.EndList(Tags::demands);
     }
@@ -137,7 +137,7 @@ int WebServer::websocket_plan(struct mg_connection *conn, int bits,
     {
       o.BeginList(Tags::resources);
       Object *tmp = o.pushCurrentObject(res);
-      res->writeElement(&o, Tags::resource, PLAN);
+      res->writeElement(&o, Tags::resource);
       o.pushCurrentObject(tmp);
       o.EndList(Tags::resources);
     }
@@ -153,7 +153,7 @@ int WebServer::websocket_plan(struct mg_connection *conn, int bits,
     {
       o.BeginList(Tags::buffers);
       Object *tmp = o.pushCurrentObject(buf);
-      buf->writeElement(&o, Tags::buffer, PLAN);
+      buf->writeElement(&o, Tags::buffer);
       o.pushCurrentObject(tmp);      
       o.EndList(Tags::buffers);
     }
@@ -169,7 +169,7 @@ int WebServer::websocket_plan(struct mg_connection *conn, int bits,
     {
       o.BeginList(Tags::operations);
       Object *tmp = o.pushCurrentObject(oper);
-      oper->writeElement(&o, Tags::operation, PLAN);
+      oper->writeElement(&o, Tags::operation);
       o.pushCurrentObject(tmp);           
       o.EndList(Tags::operations);
     }
@@ -309,11 +309,10 @@ int WebServer::websocket_solve(struct mg_connection *conn, int bits,
   WebClient::lock();
   for (WebClient::clientmap::iterator i = WebClient::getClients().begin(); i != WebClient::getClients().end(); ++i)
   {
-    struct mg_request_info *rq = mg_get_request_info(i->first);
+    //struct mg_request_info *rq = mg_get_request_info(i->first);
     JSONSerializerString o;
-    bool ok = true;
     o.setReferencesOnly(true);
-    o.setContentType(PLAN);
+    o.setContentType(DETAIL);
     o.writeString("{\"category\": \"plan\", ");
     bool first = true;
     for (WebClient::subscriptionlist::iterator j = i->second.getSubscriptions().begin();
@@ -327,7 +326,7 @@ int WebServer::websocket_solve(struct mg_connection *conn, int bits,
         first = false;
       }
       Object *tmp = o.pushCurrentObject(static_cast<Resource*>(j->getPublisher()->getOwner()));
-      static_cast<Resource*>(j->getPublisher()->getOwner())->writeElement(&o, Tags::resource, PLAN);
+      static_cast<Resource*>(j->getPublisher()->getOwner())->writeElement(&o, Tags::resource);
       o.pushCurrentObject(tmp);
     }
     if (!first)
@@ -344,7 +343,7 @@ int WebServer::websocket_solve(struct mg_connection *conn, int bits,
         first = false;
       }
       Object *tmp = o.pushCurrentObject(static_cast<Buffer*>(j->getPublisher()->getOwner()));
-      static_cast<Buffer*>(j->getPublisher()->getOwner())->writeElement(&o, Tags::buffer, PLAN);
+      static_cast<Buffer*>(j->getPublisher()->getOwner())->writeElement(&o, Tags::buffer);
       o.pushCurrentObject(tmp);
     }
     if (!first)
@@ -361,7 +360,7 @@ int WebServer::websocket_solve(struct mg_connection *conn, int bits,
         first = false;
       }
       Object* tmp = o.pushCurrentObject(static_cast<Operation*>(j->getPublisher()->getOwner()));
-      static_cast<Operation*>(j->getPublisher()->getOwner())->writeElement(&o, Tags::operation, PLAN);
+      static_cast<Operation*>(j->getPublisher()->getOwner())->writeElement(&o, Tags::operation);
       o.pushCurrentObject(tmp);
     }
     if (!first)
@@ -382,7 +381,7 @@ int WebServer::websocket_solve(struct mg_connection *conn, int bits,
         }
         Demand * dm = static_cast<Demand*>(j->getPublisher()->getOwner());
         Object* tmp = o.pushCurrentObject(dm);
-        dm->writeElement(&o, Tags::demand, PLAN);
+        dm->writeElement(&o, Tags::demand);
         o.pushCurrentObject(tmp);
         if (changedDemand == dm)
           changedDemand = NULL;
@@ -410,7 +409,7 @@ int WebServer::websocket_solve(struct mg_connection *conn, int bits,
           first = false;
         }
         Object* tmp = o.pushCurrentObject(&*d);
-        d->writeElement(&o, Tags::demand, PLAN);
+        d->writeElement(&o, Tags::demand);
         o.pushCurrentObject(tmp);
       }
     }

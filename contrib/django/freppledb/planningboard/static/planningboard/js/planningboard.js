@@ -310,11 +310,11 @@ function displayResource()
   // Parse JSON data
   var data = [];
   var layer = [];
-  $(this.operationplans).each(function() {
+  $(this.loadplans).each(function() {
     if (this.quantity > 0) {
       var row = 0;
-      var strt = new Date(Date.parse(this.start));
-      var nd = new Date(Date.parse(this.end));
+      var strt = new Date(Date.parse(this.operationplan.start));
+      var nd = new Date(Date.parse(this.operationplan.end));
       for (; row < layer.length; ++row)
       {
         if (strt >= layer[row])
@@ -326,12 +326,12 @@ function displayResource()
       if (row >= layer.length)
         layer.push(nd);
       data.push([
-        this.operation.name,
+        this.operationplan.operation,
         strt,
         nd,
         this.quantity,
         row,
-        this.criticality
+        this.operationplan.criticality
         ]);
       }
     });
@@ -523,11 +523,9 @@ function displayDemand()
   var layer = [];
   $(this.operationplans).each(function() {
     if (this.quantity > 0) {
-      if (this.operationplan === undefined)  // TODO This shouldn't really happen
-    	  return true;
       var row = 0;
-      var strt = new Date(Date.parse(this.operationplan.start));
-      var nd = new Date(Date.parse(this.operationplan.end));
+      var strt = new Date(Date.parse(this.start));
+      var nd = new Date(Date.parse(this.end));
       for (; row < layer.length; ++row)
       {
         if (nd <= layer[row])
@@ -539,13 +537,13 @@ function displayDemand()
       if (row >= layer.length)
         layer.push(strt);
       data.push([
-        this.operationplan.operation.name,
+        this.operation,
         strt,
         nd,
         this.quantity,
         row,
-        this.quantity,
-        this.operationplan.criticality
+        this.pegging,
+        this.criticality
         ]);
       }
     });
