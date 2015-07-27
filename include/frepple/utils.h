@@ -3815,10 +3815,10 @@ class Object : public PyObject
     // TODO Only required to keep pointerfield to Object valid, used in problem.getOwner()
     static DECLARE_EXPORT const MetaCategory* metadata;
 
+    DECLARE_EXPORT static PythonType* registerPythonType(int, const type_info*);
+
   protected:
     static vector<PythonType*> table;
-
-    DECLARE_EXPORT static PythonType* registerPythonType(int, const type_info*);
 
   private:
     PyObject* dict;

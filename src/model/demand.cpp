@@ -75,7 +75,7 @@ DECLARE_EXPORT void Demand::deleteOperationPlans
   {
     // Find a candidate to delete
     OperationPlan *candidate = NULL;
-    for (OperationPlan_list::iterator i = deli.begin(); i!=deli.end(); ++i)
+    for (OperationPlanList::iterator i = deli.begin(); i!=deli.end(); ++i)
       if (deleteLocked || !(*i)->getLocked())
       {
         candidate = *i;
@@ -110,7 +110,7 @@ DECLARE_EXPORT void Demand::removeDelivery(OperationPlan * o)
   o->setDemand(NULL);
 
   // Find in the list of deliveries
-  OperationPlan_list::iterator j = deli.begin();
+  OperationPlanList::iterator j = deli.begin();
   while (j!=deli.end() && *j!=o) ++j;
 
   // Check that the operation is found
@@ -126,7 +126,7 @@ DECLARE_EXPORT void Demand::removeDelivery(OperationPlan * o)
 }
 
 
-DECLARE_EXPORT const Demand::OperationPlan_list& Demand::getDelivery() const
+DECLARE_EXPORT const Demand::OperationPlanList& Demand::getDelivery() const
 {
   // We need to check the sorting order of the list first! It could be disturbed
   // when operationplans are being moved around.
@@ -135,9 +135,9 @@ DECLARE_EXPORT const Demand::OperationPlan_list& Demand::getDelivery() const
   // disturbed very often.
   for (bool swapped(!deli.empty()); swapped; swapped=false)
   {
-    OperationPlan_list::iterator j = const_cast<Demand*>(this)->deli.begin();
+    OperationPlanList::iterator j = const_cast<Demand*>(this)->deli.begin();
     ++j;
-    for (OperationPlan_list::iterator i =
+    for (OperationPlanList::iterator i =
         const_cast<Demand*>(this)->deli.begin();
         j!=const_cast<Demand*>(this)->deli.end(); ++j)
     {
@@ -145,8 +145,6 @@ DECLARE_EXPORT const Demand::OperationPlan_list& Demand::getDelivery() const
       {
         // Oh yes, the ordering was disrupted indeed...
         iter_swap(i,j);
-        // The Borland compiler doesn't understand that this variable is used.
-        // It gives a incorrect warning message...
         swapped = true;
         break;
       }
@@ -160,16 +158,16 @@ DECLARE_EXPORT const Demand::OperationPlan_list& Demand::getDelivery() const
 
 DECLARE_EXPORT OperationPlan* Demand::getLatestDelivery() const
 {
-  const Demand::OperationPlan_list& l = getDelivery();
+  const Demand::OperationPlanList& l = getDelivery();
   return l.empty() ? NULL : *(l.begin());
 }
 
 
 DECLARE_EXPORT OperationPlan* Demand::getEarliestDelivery() const
 {
-  const Demand::OperationPlan_list& l = getDelivery();
+  const Demand::OperationPlanList& l = getDelivery();
   OperationPlan *last = NULL;
-  for (Demand::OperationPlan_list::const_iterator i = l.begin(); i!=l.end(); ++i)
+  for (Demand::OperationPlanList::const_iterator i = l.begin(); i!=l.end(); ++i)
     last = *i;
   return last;
 }
@@ -183,7 +181,7 @@ DECLARE_EXPORT void Demand::addDelivery (OperationPlan * o)
   // Check if it is already in the list.
   // If it is, simply exit the function. No need to give a warning message
   // since it's harmless.
-  for (OperationPlan_list::iterator i = deli.begin(); i!=deli.end(); ++i)
+  for (OperationPlanList::iterator i = deli.begin(); i!=deli.end(); ++i)
     if (*i == o) return;
 
   // Add to the list of delivery operationplans. The insertion is such
@@ -193,7 +191,7 @@ DECLARE_EXPORT void Demand::addDelivery (OperationPlan * o)
   // method. Operation plans dates could have changed, thus disturbing the
   // original order.
   getDelivery();
-  OperationPlan_list::iterator j = deli.begin();
+  OperationPlanList::iterator j = deli.begin();
   while (j!=deli.end() && (*j)->getDates().getEnd()>o->getDates().getEnd()) ++j;
   deli.insert(j, o);
 
@@ -226,7 +224,7 @@ DECLARE_EXPORT Operation* Demand::getDeliveryOperation() const
 DECLARE_EXPORT double Demand::getPlannedQuantity() const
 {
   double delivered(0.0);
-  for (OperationPlan_list::const_iterator i=deli.begin(); i!=deli.end(); ++i)
+  for (OperationPlanList::const_iterator i=deli.begin(); i!=deli.end(); ++i)
     delivered += (*i)->getQuantity();
   return delivered;
 }
