@@ -15,6 +15,16 @@ supplier        supplier          | Reference to the supplier.
                                   | This is a key field and a required attribute.
 item            item              | Reference to the item.
                                   | This is a key field and a required attribute.
+                                  | The item can point to a parent level in the item 
+                                    hierarchy. The supplier can then be used for any item
+                                    belonging to that group.
+location        location          | Reference to the location where the supplier can be used
+                                    to purchase this item.
+                                  | The location can point to a higher level in the location
+                                    hierarchy. The supplier can then be used at any of the 
+                                    child locations.
+                                  | The default value of this field is empty. In such case
+                                    the supplier is valid at any location.
 cost            positive double   Purchasing cost.
 leadtime        duration          Procurement lead time.
 size_minimum    positive double   | Minimum size for procurements.

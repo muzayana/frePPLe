@@ -196,7 +196,7 @@ DECLARE_EXPORT void Load::setAlternate(Load *f)
 }
 
 
-DECLARE_EXPORT void Load::setAlternateName(string n)
+DECLARE_EXPORT void Load::setAlternateName(const string& n)
 {
   if (!getOperation())
     throw LogicException("Can't set an alternate load before setting the operation");
@@ -227,7 +227,7 @@ DECLARE_EXPORT void Load::setOperation(Operation* o)
 }
 
 
-DECLARE_EXPORT void Load::setSetup(string n)
+DECLARE_EXPORT void Load::setSetup(const string& n)
 {
   // Validate the input
   if (!n.empty() && getOperation())

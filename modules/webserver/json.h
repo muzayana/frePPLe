@@ -778,7 +778,7 @@ class JSONElement : public DataValue
 
     virtual Date getDate() const;
 
-    virtual string getString() const;
+    virtual const string& getString() const;
 
     virtual bool getBool() const;
 };

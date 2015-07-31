@@ -425,13 +425,27 @@ class ForecastBucket : public Demand
 
     template<class Cls> static inline void registerFields(MetaClass* m)
     {
-      m->addDateField<Cls>(Tags::start, &Cls::getStartDate);
-      m->addDateField<Cls>(Tags::end, &Cls::getEndDate);
+      m->addStringField<Cls>(Tags::name, &Cls::getName, NULL, DONT_SERIALIZE);
+      m->addPointerField<Cls, Demand>(Tags::owner, &Cls::getOwner, NULL, DONT_SERIALIZE);
+      m->addPointerField<Cls, Operation>(Tags::operation, &Cls::getOperation, NULL, DONT_SERIALIZE);
+      m->addPointerField<Cls, Customer>(Tags::customer, &Cls::getCustomer, NULL, DONT_SERIALIZE);
+      m->addDoubleField<Cls>(Tags::quantity, &Cls::getQuantity, NULL, DONT_SERIALIZE);
+      m->addPointerField<Cls, Item>(Tags::item, &Cls::getItem, NULL, DONT_SERIALIZE);
+      m->addDateField<Cls>(Tags::due, &Cls::getDue, NULL, Date::infinitePast, DONT_SERIALIZE);
+      m->addIntField<Cls>(Tags::priority, &Cls::getPriority, NULL, 0, DONT_SERIALIZE);
+      m->addDurationField<Cls>(Tags::maxlateness, &Cls::getMaxLateness, 0, Duration::MAX, DONT_SERIALIZE);
+      m->addDoubleField<Cls>(Tags::minshipment, &Cls::getMinShipment, 0, 1, DONT_SERIALIZE);
+      m->addDateField<Cls>(Tags::startdate, &Cls::getStartDate);
+      m->addDateField<Cls>(Tags::enddate, &Cls::getEndDate);
       m->addDoubleField<Cls>(ForecastBucket::tag_weight, &Cls::getWeight, &Cls::setWeight, 1.0, DETAIL);
       m->addDoubleField<Cls>(ForecastBucket::tag_total, &Cls::getTotal, &Cls::setTotal, -1.0);
       m->addDoubleField<Cls>(ForecastBucket::tag_consumed, &Cls::getConsumed, &Cls::setConsumed, 0.0, DETAIL);
       m->addDoubleField<Cls>(Tags::quantity, &Cls::getQuantity, NULL, 0.0, DETAIL);
       m->addPointerField<Cls, Forecast>(ForecastBucket::tag_forecast, &Cls::getForecast, NULL, DONT_SERIALIZE + PARENT);
+      m->addBoolField<Cls>(Tags::hidden, &Cls::getHidden, &Cls::setHidden, BOOL_FALSE, DONT_SERIALIZE);
+      m->addIteratorField<Cls, PeggingIterator, PeggingIterator>(Tags::pegging, Tags::pegging, &Cls::getPegging, PLAN + WRITE_FULL);
+      m->addIteratorField<Cls, DeliveryIterator, OperationPlan>(Tags::operationplans, Tags::operationplan, &Cls::getOperationPlans, DETAIL + WRITE_FULL);
+      m->addIteratorField<Cls, Problem::List::iterator, Problem>(Tags::constraints, Tags::problem, &Cls::getConstraintIterator, DETAIL);
     }
 
   private:

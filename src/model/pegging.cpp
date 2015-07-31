@@ -189,9 +189,9 @@ DECLARE_EXPORT PeggingIterator* PeggingIterator::next()
   if (firstIteration)
     firstIteration = false;
   else if (downstream)
-    operator++();
+    ++*this;
   else
-    operator--();
+    --*this;
   if (!operator bool())
     return NULL;
   else

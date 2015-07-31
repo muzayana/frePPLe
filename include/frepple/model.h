@@ -2094,9 +2094,9 @@ class OperationPlan
 
     static inline OperationPlan::iterator begin();
 
-    inline PeggingIterator getPeggingDownstream() const;
+    DECLARE_EXPORT PeggingIterator getPeggingDownstream() const;
 
-    inline PeggingIterator getPeggingUpstream() const;
+    DECLARE_EXPORT PeggingIterator getPeggingUpstream() const;
 
     template<class Cls> static inline void registerFields(MetaClass* m)
     {
@@ -2601,21 +2601,13 @@ class Operation : public HasName<Operation>,
 
     /** Register a super-operation, i.e. an operation having this one as a
       * sub-operation. */
-    void addSuperOperation(Operation * o)
+    DECLARE_EXPORT void addSuperOperation(Operation * o)
     {
       superoplist.push_front(o);
     }
 
-    /** Removes a sub-operation from the list. This method will need to be
-      * overridden by all operation types that acts as a super-operation. */
-    virtual void removeSubOperation(Operation *o) {}
-
     /** Removes a super-operation from the list. */
-    void removeSuperOperation(Operation *o)
-    {
-      superoplist.remove(o);
-      o->removeSubOperation(this);
-    }
+    DECLARE_EXPORT void removeSuperOperation(Operation*);
 
     /** Return the release fence of this operation. */
     Duration getFence() const
@@ -3523,7 +3515,7 @@ class SupplierItem : public Object,
   friend class OperationSupplierItem;
   public:
     /** Default constructor. */
-    explicit SupplierItem() : size_minimum(1.0), size_multiple(0.0),
+    explicit SupplierItem() : loc(NULL), size_minimum(1.0), size_multiple(0.0),
       cost(0.0), firstOperation(NULL)
     {
       initType(metadata);
@@ -3604,7 +3596,7 @@ class SupplierItem : public Object,
       return cost;
     }
 
-    /** Update the cost of using 1 unit of this resource for 1 hour. */
+    /** Update the cost of purchasing 1 unit. */
     void setCost(const double c)
     {
       if (c >= 0)
@@ -3613,13 +3605,31 @@ class SupplierItem : public Object,
         throw DataException("Supplieritem cost must be positive");
     }
 
+    /** Return the applicable location. */
+    Location *getLocation() const
+    {
+      return loc;
+    }
+
+    /** Update the applicable locations.
+      * Note that any already existing purchase operations and their
+      * operationplans are NOT updated.
+      */
+    void setLocation(Location* l)
+    {
+      loc = l;
+    }
+
     /** Return the purchasing leadtime. */
     Duration getLeadTime() const
     {
       return leadtime;
     }
 
-    /** Update the procurement leadtime. */
+    /** Update the procurement leadtime.<br>
+      * Note that any already existing purchase operations and their
+      * operationplans are NOT updated.
+      */
     void setLeadTime(Duration p)
     {
       if (p<0L)
@@ -3638,6 +3648,7 @@ class SupplierItem : public Object,
     {
       m->addPointerField<Cls, Supplier>(Tags::supplier, &Cls::getSupplier, &Cls::setSupplier, MANDATORY + PARENT);
       m->addPointerField<Cls, Item>(Tags::item, &Cls::getItem, &Cls::setItem, MANDATORY + PARENT);
+      m->addPointerField<Cls, Location>(Tags::location, &Cls::getLocation, &Cls::setLocation);
       m->addDurationField<Cls>(Tags::leadtime, &Cls::getLeadTime, &Cls::setLeadTime);
       m->addDoubleField<Cls>(Tags::size_minimum, &Cls::getSizeMinimum, &Cls::setSizeMinimum, 1.0);
       m->addDoubleField<Cls>(Tags::size_multiple, &Cls::getSizeMultiple, &Cls::setSizeMultiple);
@@ -3656,6 +3667,9 @@ class SupplierItem : public Object,
       * An exception is thrown if the supplieritem is invalid.
       */
     DECLARE_EXPORT void validate(Action action);
+
+    /** Location where the supplier item applies to. */
+    Location* loc;
 
     /** Procurement lead time. */
     Duration leadtime;
@@ -4516,7 +4530,7 @@ class Flow : public Object, public Association<Operation,Buffer,Flow>::Node,
     }
 
     /** Define the flow of which this one is an alternate. */
-    DECLARE_EXPORT void setAlternateName(string n);
+    DECLARE_EXPORT void setAlternateName(const string&);
 
     /** Return the search mode. */
     SearchMode getSearch() const
@@ -4921,7 +4935,7 @@ class SetupMatrixRule : public Object
     }
 
     /** Update the from setup. */
-    void setFromSetup(string f)
+    void setFromSetup(const string& f)
     {
       from = f;
     }
@@ -4933,7 +4947,7 @@ class SetupMatrixRule : public Object
     }
 
     /** Update the from setup. */
-    void setToSetup(string f)
+    void setToSetup(const string& f)
     {
       to = f;
     }
@@ -5416,7 +5430,7 @@ class Resource : public HasHierarchy<Resource>,
     }
 
     /** Update the current setup. */
-    void setSetup(string s)
+    DECLARE_EXPORT void setSetup(const string& s)
     {
       setup = s;
     }
@@ -5797,10 +5811,10 @@ class Load
     }
 
     /** Define the load of which this one is an alternate. */
-    DECLARE_EXPORT void setAlternateName(string n);
+    DECLARE_EXPORT void setAlternateName(const string&);
 
     /** Update the required resource setup. */
-    DECLARE_EXPORT void setSetup(string);
+    DECLARE_EXPORT void setSetup(const string&);
 
     /** Return the required resource setup. */
     string getSetup() const
@@ -6199,7 +6213,7 @@ class Demand
     virtual const MetaClass& getType() const {return *metadata;}
     static DECLARE_EXPORT const MetaCategory* metadata;
 
-    inline PeggingIterator getPegging() const;
+    DECLARE_EXPORT PeggingIterator getPegging() const;
 
     template<class Cls> static inline void registerFields(MetaClass* m)
     {
@@ -6749,7 +6763,7 @@ class Plan : public Plannable, public Object
     }
 
     /** Updates the plan name. */
-    void setName(string s)
+    DECLARE_EXPORT void setName(const string& s)
     {
       name = s;
     }
@@ -6773,12 +6787,12 @@ class Plan : public Plannable, public Object
     }
 
     /** Updates the description of the plan. */
-    void setDescription(string str)
+    DECLARE_EXPORT void setDescription(const string& str)
     {
       descr = str;
     }
 
-    void setLogFile(string s)
+    DECLARE_EXPORT void setLogFile(const string& s)
     {
       Environment::setLogFile(s);
     }
@@ -8011,6 +8025,9 @@ class PeggingIterator : public Object
       return const_cast<OperationPlan*>(states.back().opplan);
     }
 
+    /** Destructor. */
+    DECLARE_EXPORT virtual ~PeggingIterator() {}
+
     /** Return true if this is a downstream iterator. */
     inline bool isDownstream() const
     {
@@ -8034,28 +8051,6 @@ class PeggingIterator : public Object
 
     /** Move the iterator upstream. */
     DECLARE_EXPORT PeggingIterator& operator--();
-
-    /** Move the iterator forward to the next downstream flowplan.<br>
-      * This post-increment operator is less efficient than the pre-increment
-      * operator.
-      */
-    PeggingIterator operator++(int)
-    {
-      PeggingIterator tmp = *this;
-      ++*this;
-      return tmp;
-    }
-
-    /** Move the iterator forward to the next upstream flowplan.<br>
-      * This post-increment operator is less efficient than the pre-decrement
-      * operator.
-      */
-    PeggingIterator operator--(int)
-    {
-      PeggingIterator tmp = *this;  // Very inefficient because of the vector copy
-      --*this;
-      return tmp;
-    }
 
     /** Conversion operator to a boolean value.
       * The return value is true when the iterator still has next elements to
@@ -8108,11 +8103,11 @@ class PeggingIterator : public Object
     /* Auxilary function to make recursive code possible. */
     DECLARE_EXPORT void followPegging(const OperationPlan*, double, double, short);
 
-    /** Follow the pegging upstream or downstream. */
-    bool downstream;
-
     /** Store a list of all operations still to peg. */
     statestack states;
+
+    /** Follow the pegging upstream or downstream. */
+    bool downstream;
 
     /** Used by the Python iterator to mark the first call. */
     bool firstIteration;
@@ -8120,24 +8115,6 @@ class PeggingIterator : public Object
     /** Optimization to reuse elements on the stack. */
     bool first;
 };
-
-
-inline PeggingIterator Demand::getPegging() const
-{
-  return PeggingIterator(this);
-}
-
-
-inline PeggingIterator OperationPlan::getPeggingDownstream() const
-{
-  return PeggingIterator(this, true);
-}
-
-
-inline PeggingIterator OperationPlan::getPeggingUpstream() const
-{
-  return PeggingIterator(this, false);
-}
 
 
 /** @brief An iterator class to go through all flowplans of an operationplan.
@@ -8432,25 +8409,6 @@ class LoadPlanIterator : public PythonExtension<LoadPlanIterator>
       * operationplan. */
     bool resource_or_opplan;
 
-    PyObject *iternext();
-};
-
-
-class DemandPlanIterator : public PythonExtension<DemandPlanIterator>
-{
-  public:
-    static int initialize();
-
-    DemandPlanIterator(Demand* r) : dem(r)
-    {
-      if (!r)
-        throw LogicException("Creating demandplan iterator for NULL demand");
-      i = r->getDelivery().begin();
-    }
-
-  private:
-    Demand* dem;
-    Demand::OperationPlanList::const_iterator i;
     PyObject *iternext();
 };
 
