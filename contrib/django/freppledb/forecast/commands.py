@@ -260,12 +260,12 @@ def generateBaseline(solver_fcst, cursor):
     ''', [
       (
         round(i.total, settings.DECIMAL_PLACES),
-        round(i.total*i.item.price, settings.DECIMAL_PLACES),
-        i.owner.method,
-        i.owner.name, str(i.startdate)
+        round(i.total * i.forecast.item.price, settings.DECIMAL_PLACES),
+        i.forecast.method,
+        i.forecast.name, str(i.startdate)
       )
       for i in frepple.demands()
-      if isinstance(i, frepple.demand_forecastbucket) and i.owner.methods != 0 and i.total != 0.0
+      if isinstance(i, frepple.demand_forecastbucket) and i.forecast.methods != 0 and i.total != 0.0
     ])
 
 
@@ -769,6 +769,8 @@ def generate_plan():
     print("\nStart exporting static model to the database with filter \"source = 'odoo'\" at", datetime.now().strftime("%H:%M:%S"))
     from freppledb.execute.export_database_static import exportStaticModel
     exportStaticModel(database=db, source='odoo').run()
+  from freppledb.execute.export_database_static import exportStaticModel
+  exportStaticModel(database=db).run()
 
   if not 'noproduction' in os.environ:
     print("\nStart exporting plan to the database at", datetime.now().strftime("%H:%M:%S"))

@@ -3139,7 +3139,7 @@ class Environment
   * code that provided us the PyObject pointer should have incremented the
   * reference count already.
   *
-  * TODO: the getString member uses a static string value. This makes this 
+  * TODO: the getString member uses a static string value. This makes this
   * class nonreentrant, ie it is not possible to use multiple values simultaneously.
   */
 class PythonData : public DataValue
@@ -3220,7 +3220,7 @@ class PythonData : public DataValue
     /** Convert a Python string into a C++ string. */
     inline const string& getString() const
     {
-      static string result; 
+      static string result;
       if (obj == Py_None)
         result = "";
       else if (PyUnicode_Check(obj))
@@ -6972,6 +6972,25 @@ template <class Cls, class Iter, class PyIter, class Ptr> class MetaFieldIterato
 
     virtual void writeField(Serializer& output) const
     {
+      switch (output.getContentType())
+      {
+        case MANDATORY:
+          if (!getFlag(MANDATORY))
+            return;
+          break;
+        case BASE:
+          if (getFlag(DETAIL) || getFlag(PLAN))
+            return;
+          break;
+        case DETAIL:
+          if (!getFlag(DETAIL))
+            return;
+          break;
+        case PLAN:
+          if (!getFlag(PLAN))
+            return;
+          break;
+      }
       if (getFlag(DONT_SERIALIZE) || !getf)
         return;
       if (getFlag(WRITE_FULL))
