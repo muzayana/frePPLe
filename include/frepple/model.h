@@ -52,7 +52,7 @@ class OperationTimePer;
 class OperationRouting;
 class OperationAlternate;
 class OperationSplit;
-class OperationSupplierItem;
+class OperationItemSupplier;
 class SubOperation;
 class Buffer;
 class BufferInfinite;
@@ -71,7 +71,7 @@ class PeggingIterator;
 class Skill;
 class ResourceSkill;
 class Supplier;
-class SupplierItem;
+class ItemSupplier;
 class SetupMatrix;
 class SetupMatrixRule;
 
@@ -1413,9 +1413,9 @@ class CustomerDefault : public Customer
 /** @brief This abstracts class represents a supplier. */
 class Supplier : public HasHierarchy<Supplier>, public HasDescription
 {
-  friend class SupplierItem;
+  friend class ItemSupplier;
   public:
-    typedef Association<Supplier,Item,SupplierItem>::ListA itemlist;
+    typedef Association<Supplier,Item,ItemSupplier>::ListA itemlist;
 
     /** Default constructor. */
     explicit DECLARE_EXPORT Supplier() {}
@@ -1443,7 +1443,7 @@ class Supplier : public HasHierarchy<Supplier>, public HasDescription
     {
       HasHierarchy<Cls>:: template registerFields<Cls>(m);
       HasDescription::registerFields<Cls>(m);
-      m->addIteratorField<Cls, itemlist::const_iterator, SupplierItem>(Tags::supplieritems, Tags::supplieritem, &Cls::getItemIterator, DETAIL);
+      m->addIteratorField<Cls, itemlist::const_iterator, ItemSupplier>(Tags::itemsuppliers, Tags::itemsupplier, &Cls::getItemIterator, DETAIL);
       m->addBoolField<Cls>(Tags::hidden, &Cls::getHidden, &Cls::setHidden, BOOL_FALSE, DONT_SERIALIZE);
     }
 
@@ -3396,9 +3396,9 @@ class OperationAlternate : public Operation
   */
 class Item : public HasHierarchy<Item>, public HasDescription
 {
-  friend class SupplierItem;
+  friend class ItemSupplier;
   public:
-    typedef Association<Supplier,Item,SupplierItem>::ListB supplierlist;
+    typedef Association<Supplier,Item,ItemSupplier>::ListB supplierlist;
 
     /** Default constructor. */
     explicit DECLARE_EXPORT Item() : deliveryOperation(NULL), price(0.0) {}
@@ -3475,7 +3475,7 @@ class Item : public HasHierarchy<Item>, public HasDescription
       m->addDoubleField<Cls>(Tags::price, &Cls::getPrice, &Cls::setPrice, 0);
       m->addPointerField<Cls, Operation>(Tags::operation, &Cls::getOperation, &Cls::setOperation);
       m->addBoolField<Cls>(Tags::hidden, &Cls::getHidden, &Cls::setHidden, BOOL_FALSE, DONT_SERIALIZE);
-      m->addIteratorField<Cls, supplierlist::const_iterator, SupplierItem>(Tags::supplieritems, Tags::supplieritem, &Cls::getSupplierIterator, BASE + WRITE_FULL);
+      m->addIteratorField<Cls, supplierlist::const_iterator, ItemSupplier>(Tags::itemsuppliers, Tags::itemsupplier, &Cls::getSupplierIterator, BASE + WRITE_FULL);
     }
 
   private:
@@ -3510,26 +3510,26 @@ class ItemDefault : public Item
 
 
 /** @brief This class represents an item that can be purchased from a supplier. */
-class SupplierItem : public Object,
-  public Association<Supplier,Item,SupplierItem>::Node, public HasSource
+class ItemSupplier : public Object,
+  public Association<Supplier,Item,ItemSupplier>::Node, public HasSource
 {
-  friend class OperationSupplierItem;
+  friend class OperationItemSupplier;
   public:
     /** Default constructor. */
-    explicit SupplierItem() : loc(NULL), size_minimum(1.0), size_multiple(0.0),
+    explicit ItemSupplier() : loc(NULL), size_minimum(1.0), size_multiple(0.0),
       cost(0.0), firstOperation(NULL)
     {
       initType(metadata);
     }
 
     /** Constructor. */
-    explicit DECLARE_EXPORT SupplierItem(Supplier*, Item*, int);
+    explicit DECLARE_EXPORT ItemSupplier(Supplier*, Item*, int);
 
     /** Constructor. */
-    explicit DECLARE_EXPORT SupplierItem(Supplier*, Item*, int, DateRange);
+    explicit DECLARE_EXPORT ItemSupplier(Supplier*, Item*, int, DateRange);
 
     /** Destructor. */
-    DECLARE_EXPORT ~SupplierItem();
+    DECLARE_EXPORT ~ItemSupplier();
 
     /** Initialize the class. */
     static int initialize();
@@ -3565,7 +3565,7 @@ class SupplierItem : public Object,
     void setSizeMinimum(double f)
     {
       if (f<0)
-        throw DataException("Supplieritem can't have a negative minimum size");
+        throw DataException("ItemSupplier can't have a negative minimum size");
       size_minimum = f;
     }
 
@@ -3579,7 +3579,7 @@ class SupplierItem : public Object,
     void setSizeMultiple(double f)
     {
       if (f<0)
-        throw DataException("Supplieritem can't have a negative multiple size");
+        throw DataException("ItemSupplier can't have a negative multiple size");
       size_multiple = f;
     }
 
@@ -3603,7 +3603,7 @@ class SupplierItem : public Object,
       if (c >= 0)
         cost = c;
       else
-        throw DataException("Supplieritem cost must be positive");
+        throw DataException("ItemSupplier cost must be positive");
     }
 
     /** Return the applicable location. */
@@ -3634,7 +3634,7 @@ class SupplierItem : public Object,
     void setLeadTime(Duration p)
     {
       if (p<0L)
-        throw DataException("Supplieritem can't have a negative lead time");
+        throw DataException("ItemSupplier can't have a negative lead time");
       leadtime = p;
     }
 
@@ -3665,7 +3665,7 @@ class SupplierItem : public Object,
     static PyObject* create(PyTypeObject*, PyObject*, PyObject*);
 
     /** This method is called to check the validity of the object.<br>
-      * An exception is thrown if the supplieritem is invalid.
+      * An exception is thrown if the ItemSupplier is invalid.
       */
     DECLARE_EXPORT void validate(Action action);
 
@@ -3685,34 +3685,34 @@ class SupplierItem : public Object,
     double cost;
 
     /** Pointer to the head of the auto-generated purchase operation list.*/
-    OperationSupplierItem* firstOperation;
+    OperationItemSupplier* firstOperation;
 };
 
 
 /** @brief An internally generated operation that supplies procured material
   * into a buffer.
   */
-class OperationSupplierItem : public OperationFixedTime
+class OperationItemSupplier : public OperationFixedTime
 {
-  friend class SupplierItem;
+  friend class ItemSupplier;
   private:
     /** Pointer to the supplier item that 'owns' this operation. */
-    SupplierItem* supitem;
+    ItemSupplier* supitem;
 
     /** Pointer to the next operation of the supplier item. */
-    OperationSupplierItem* nextOperation;
+    OperationItemSupplier* nextOperation;
 
   public:
-    SupplierItem* getSupplierItem() const
+    ItemSupplier* getItemSupplier() const
     {
       return supitem;
     }
 
     /** Constructor. */
-    explicit DECLARE_EXPORT OperationSupplierItem(SupplierItem*, Buffer*);
+    explicit DECLARE_EXPORT OperationItemSupplier(ItemSupplier*, Buffer*);
 
     /** Destructor. */
-    virtual DECLARE_EXPORT ~OperationSupplierItem();
+    virtual DECLARE_EXPORT ~OperationItemSupplier();
 
     static int initialize();
 
@@ -3723,7 +3723,7 @@ class OperationSupplierItem : public OperationFixedTime
 
     template<class Cls> static inline void registerFields(MetaClass* m)
     {
-      m->addPointerField<Cls, SupplierItem>(Tags::supplieritem, &Cls::getSupplierItem, NULL);
+      m->addPointerField<Cls, ItemSupplier>(Tags::itemsupplier, &Cls::getItemSupplier, NULL);
     }
 };
 
@@ -6900,7 +6900,7 @@ class Plan : public Plannable, public Object
       m->addList3Field<Plan, ResourceSkill>(Tags::resourceskills, Tags::resourceskill);
       m->addList3Field<Plan, Load>(Tags::loads, Tags::load);
       m->addList3Field<Plan, Flow>(Tags::flows, Tags::flow);
-      m->addList3Field<Plan, SupplierItem>(Tags::supplieritems, Tags::supplieritem);
+      m->addList3Field<Plan, ItemSupplier>(Tags::itemsuppliers, Tags::itemsupplier);
       m->addIteratorField<Cls, OperationPlan::iterator, OperationPlan>(Tags::operationplans, Tags::operationplan, &Plan::getOperationPlans);
       m->addIteratorField<Plan, Problem::iterator, Problem>(Tags::problems, Tags::problem, &Plan::getProblems);
     }

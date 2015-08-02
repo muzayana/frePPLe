@@ -167,7 +167,7 @@ class Supplier(AuditModel, HierarchyModel):
     ordering = ['name']
 
 
-class SupplierItem(AuditModel):
+class ItemSupplier(AuditModel):
 
   # Database fields
   id = models.AutoField(_('identifier'), primary_key=True)
@@ -181,7 +181,7 @@ class SupplierItem(AuditModel):
     )
   location = models.ForeignKey(
     Location, verbose_name=_('location'), null=True, blank=True,
-    db_index=True, related_name='supplieritems'
+    db_index=True, related_name='itemsuppliers'
     )
   leadtime = DurationField(
     _('lead time'), null=True, blank=True,
@@ -224,10 +224,10 @@ class SupplierItem(AuditModel):
       )
 
   class Meta(AuditModel.Meta):
-    db_table = 'supplieritem'
+    db_table = 'itemsupplier'
     unique_together = (('supplier', 'item', 'location'),)  # TODO also include effectivity in this
-    verbose_name = _('supplieritem')
-    verbose_name_plural = _('supplieritems')
+    verbose_name = _('item supplier')
+    verbose_name_plural = _('item suppliers')
 
 
 class Operation(AuditModel):
