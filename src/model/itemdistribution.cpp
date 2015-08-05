@@ -17,95 +17,122 @@
 namespace frepple
 {
 
-DECLARE_EXPORT const MetaCategory* ItemSupplier::metacategory;
-DECLARE_EXPORT const MetaClass* ItemSupplier::metadata;
-DECLARE_EXPORT const MetaClass* OperationItemSupplier::metadata;
+DECLARE_EXPORT const MetaCategory* ItemDistribution::metacategory;
+DECLARE_EXPORT const MetaClass* ItemDistribution::metadata;
+DECLARE_EXPORT const MetaClass* OperationItemDistribution::metadata;
 
 
-int ItemSupplier::initialize()
+int ItemDistribution::initialize()
 {
   // Initialize the metadata
-  metacategory = MetaCategory::registerCategory<ItemSupplier>(
-	  "itemsupplier", "itemsuppliers", MetaCategory::ControllerDefault
+  metacategory = MetaCategory::registerCategory<ItemDistribution>(
+	  "itemdistribution", "itemdistributions", MetaCategory::ControllerDefault
 	  );
-  metadata = MetaClass::registerClass<ItemSupplier>(
-    "itemsupplier", "itemsupplier", Object::create<ItemSupplier>, true
+  metadata = MetaClass::registerClass<ItemDistribution>(
+    "itemdistribution", "itemdistribution", Object::create<ItemDistribution>, true
   );
-  registerFields<ItemSupplier>(const_cast<MetaClass*>(metadata));
+  registerFields<ItemDistribution>(const_cast<MetaClass*>(metadata));
 
   // Initialize the Python class
-  PythonType& x = FreppleCategory<ItemSupplier>::getPythonType();
-  x.setName("itemsupplier");
-  x.setDoc("frePPLe itemsupplier");
+  PythonType& x = FreppleCategory<ItemDistribution>::getPythonType();
+  x.setName("itemdistribution");
+  x.setDoc("frePPLe itemdistribution");
   x.supportgetattro();
   x.supportsetattro();
   x.supportcreate(create);
   x.addMethod("toXML", toXML, METH_VARARGS, "return a XML representation");
-  const_cast<MetaClass*>(ItemSupplier::metadata)->pythonClass = x.type_object();
+  const_cast<MetaClass*>(ItemDistribution::metadata)->pythonClass = x.type_object();
   return x.typeReady();
 }
 
 
-DECLARE_EXPORT ItemSupplier::~ItemSupplier()
+DECLARE_EXPORT ItemDistribution::ItemDistribution() : it(NULL),
+  size_minimum(1.0), size_multiple(0.0), cost(0.0), firstOperation(NULL),
+  next(NULL)
+{
+  initType(metadata);
+}
+
+
+DECLARE_EXPORT ItemDistribution::~ItemDistribution()
 {
   // Delete the association from the related objects
-  if (getSupplier())
-    getSupplier()->items.erase(this);
-  if (getItem())
-    getItem()->suppliers.erase(this);
+  if (getOrigin())
+    getOrigin()->origins.erase(this);
+  if (getDestination())
+    getDestination()->destinations.erase(this);
 
-  // Delete all owned purchase operations
+  // Delete all owned distribution operations
   while (firstOperation)
     delete firstOperation;
+
+  // Unlink from previous item
+  if (it)
+  {
+    if (it->firstItemDistribution == this)
+      // Remove from head
+      it->firstItemDistribution = next;
+    else
+    {
+      // Remove from middle
+      ItemDistribution *j = it->firstItemDistribution;
+      while (j->next && j->next != this)
+        j = j->next;
+      if (j)
+        j->next = next;
+      else
+        throw LogicException("Corrupted ItemDistribution list");
+    }
+  }
 }
 
 
-DECLARE_EXPORT ItemSupplier::ItemSupplier() : loc(NULL),
-  size_minimum(1.0), size_multiple(0.0), cost(0.0), firstOperation(NULL)
+DECLARE_EXPORT void ItemDistribution::setItem(Item* i)
 {
-  initType(metadata);
+  // Unlink from previous item
+  if (it)
+  {
+    if (it->firstItemDistribution == this)
+      // Remove from head
+      it->firstItemDistribution = next;
+    else
+    {
+      // Remove from middle
+      ItemDistribution *j = it->firstItemDistribution;
+      while (j->next && j->next != this)
+        j = j->next;
+      if (j)
+        j->next = next;
+      else
+        throw LogicException("Corrupted ItemDistribution list");
+    }
+  }
+
+  // Update item
+  it = i;
+
+  // Link at the new owner.
+  // We insert ourself at the head of the list.
+  if (it)
+  {
+    next = it->firstItemDistribution;
+    it->firstItemDistribution = this;
+  }
 }
 
 
-DECLARE_EXPORT ItemSupplier::ItemSupplier(Supplier* s, Item* r, int u)
-  : loc(NULL), size_minimum(1.0), size_multiple(0.0), cost(0.0), firstOperation(NULL)
-{
-  setSupplier(s);
-  setItem(r);
-  setPriority(u);
-  initType(metadata);
-}
-
-
-DECLARE_EXPORT ItemSupplier::ItemSupplier(Supplier* s, Item* r, int u, DateRange e)
-  : loc(NULL), size_minimum(1.0), size_multiple(0.0), cost(0.0), firstOperation(NULL)
-{
-  setSupplier(s);
-  setItem(r);
-  setPriority(u);
-  setEffective(e);
-  initType(metadata);
-}
-
-
-PyObject* ItemSupplier::create(PyTypeObject* pytype, PyObject* args, PyObject* kwds)
+PyObject* ItemDistribution::create(PyTypeObject* pytype, PyObject* args, PyObject* kwds)
 {
   try
   {
-    // Pick up the supplier
-    PyObject* sup = PyDict_GetItemString(kwds,"supplier");
-    if (!sup)
-      throw DataException("missing supplier on ItemSupplier");
-    if (!PyObject_TypeCheck(sup, Supplier::metadata->pythonClass))
-      throw DataException("ItemSupplier supplier must be of type supplier");
-
     // Pick up the item
     PyObject* it = PyDict_GetItemString(kwds,"item");
     if (!it)
-      throw DataException("missing item on ItemSupplier");
+      throw DataException("missing item on ItemDistribution");
     if (!PyObject_TypeCheck(it, Item::metadata->pythonClass))
-      throw DataException("ItemSupplier item must be of type item");
+      throw DataException("ItemDistribution item must be of type item");
 
+    /*
     // Pick up the priority
     PyObject* q1 = PyDict_GetItemString(kwds,"priority");
     int q2 = q1 ? PythonData(q1).getInt() : 1;
@@ -124,13 +151,11 @@ PyObject* ItemSupplier::create(PyTypeObject* pytype, PyObject* args, PyObject* k
       PythonData d(eff_end);
       eff.setEnd(d.getDate());
     }
+    */
 
-    // Create the ItemSupplier
-    ItemSupplier *l = new ItemSupplier(
-      static_cast<Supplier*>(sup),
-      static_cast<Item*>(it),
-      q2, eff
-    );
+    // Create the ItemDistribution
+    ItemDistribution *l = new ItemDistribution();
+    l->setItem(static_cast<Item*>(it));
 
     // Iterate over extra keywords, and set attributes.   @todo move this responsibility to the readers...
     if (l)
@@ -143,9 +168,8 @@ PyObject* ItemSupplier::create(PyTypeObject* pytype, PyObject* args, PyObject* k
         PyObject* key_utf8 = PyUnicode_AsUTF8String(key);
         DataKeyword attr(PyBytes_AsString(key_utf8));
         Py_DECREF(key_utf8);
-        if (!attr.isA(Tags::effective_end) && !attr.isA(Tags::effective_start)
-          && !attr.isA(Tags::supplier) && !attr.isA(Tags::item)
-          && !attr.isA(Tags::type) && !attr.isA(Tags::action))
+        if (!attr.isA(Tags::item) && !attr.isA(Tags::type)
+          && !attr.isA(Tags::action))
         {
           const MetaFieldBase* fmeta = l->getType().findField(attr.getHash());
           if (!fmeta && l->getType().category)
@@ -173,28 +197,17 @@ PyObject* ItemSupplier::create(PyTypeObject* pytype, PyObject* args, PyObject* k
 }
 
 
-DECLARE_EXPORT void ItemSupplier::validate(Action action)
+DECLARE_EXPORT void ItemDistribution::validate(Action action)
 {
   // Catch null supplier and item pointers
-  Supplier *sup = getSupplier();
   Item *it = getItem();
-  Location *loc = getLocation();
-  if (!sup || !it)
-  {
-    // Invalid ItemSupplier model
-    if (!sup && !it)
-      throw DataException("Missing supplier and item on a itemsupplier");
-    else if (!sup)
-      throw DataException("Missing supplier on a itemsupplier on item '"
-          + it->getName() + "'");
-    else if (!it)
-      throw DataException("Missing item on a itemsupplier on supplier '"
-          + sup->getName() + "'");
-  }
+  if (!it)
+    throw DataException("Missing item on a ItemDistribution");
 
-  // Check if a ItemSupplier with 1) identical supplier, 2) identical item
-  // 3) identical location, and 4) overlapping effectivity dates already exists
-  Supplier::itemlist::const_iterator i = sup->getItems().begin();
+  /* YYY
+  // Check if an ItemDistribution with 1) identical item, 2) identical origin
+  // 3) identical destination, and 4) overlapping effectivity dates already exists
+  Location::distributionoriginlist::const_iterator i = sup->getItems().begin();
   for (; i != sup->getItems().end(); ++i)
     if (i->getItem() == it
         && i->getEffective().overlap(getEffective())
@@ -213,72 +226,74 @@ DECLARE_EXPORT void ItemSupplier::validate(Action action)
       }
       break;
     case CHANGE:
-      throw DataException("Can't update a itemsupplier");
+      throw DataException("Can't update a ItemSupplier");
     case ADD_CHANGE:
       // ADD is handled in the code after the switch statement
       if (i == sup->getItems().end()) break;
-      throw DataException("Can't update a itemsupplier");
+      throw DataException("Can't update a ItemSupplier");
     case REMOVE:
       // This ItemSupplier was only used temporarily during the reading process
       delete this;
       if (i == sup->getItems().end())
         // Nothing to delete
-        throw DataException("Can't remove nonexistent itemsupplier of '"
+        throw DataException("Can't remove nonexistent ItemSupplier of '"
             + sup->getName() + "' and '" + it->getName() + "'");
       delete &*i;
       return;
   }
+  */
 }
 
 
-DECLARE_EXPORT void ItemSupplier::deleteOperationPlans(bool b)
+DECLARE_EXPORT void ItemDistribution::deleteOperationPlans(bool b)
 {
-  for (OperationItemSupplier* i = firstOperation; i; i = i->nextOperation)
+  for (OperationItemDistribution* i = firstOperation; i; i = i->nextOperation)
     i->deleteOperationPlans(b);
 }
 
 
-int OperationItemSupplier::initialize()
+int OperationItemDistribution::initialize()
 {
   // Initialize the metadata
-  metadata = MetaClass::registerClass<OperationItemSupplier>(
-    "operation", "operation_itemsupplier"
+  metadata = MetaClass::registerClass<OperationItemDistribution>(
+    "operation", "operation_itemdistribution"
     );
-  registerFields<OperationItemSupplier>(const_cast<MetaClass*>(metadata));
+  registerFields<OperationItemDistribution>(const_cast<MetaClass*>(metadata));
 
   // Initialize the Python class
-  PythonType& x = FreppleCategory<OperationItemSupplier>::getPythonType();
-  x.setName("operation_itemsupplier");
-  x.setDoc("frePPLe operation_itemsupplier");
+  PythonType& x = FreppleCategory<OperationItemDistribution>::getPythonType();
+  x.setName("operation_itemdistribution");
+  x.setDoc("frePPLe operation_itemdistribution");
   x.supportgetattro();
   const_cast<MetaClass*>(metadata)->pythonClass = x.type_object();
   return x.typeReady();
 }
 
 
-DECLARE_EXPORT OperationItemSupplier::OperationItemSupplier(
-  ItemSupplier* i, Buffer *b
-  ) : supitem(i)
+DECLARE_EXPORT OperationItemDistribution::OperationItemDistribution(
+  ItemDistribution* i, Buffer *src, Buffer* dest
+  ) : itemdist(i)
 {
-  if (!i || !b || !i->getSupplier())
+  if (!i || !src || !dest)
     throw LogicException(
-      "An OperationItemSupplier always needs to point to "
-      "a itemsupplier and a buffer"
+      "An OperationItemDistribution always needs to point to "
+      "a ItemDistribution, a source buffer and a destination buffer"
       );
   stringstream o;
-  o << "Purchase '" << b->getName() << "' from '" << i->getSupplier()->getName() << "' (*)";
+  o << "Ship '" << dest->getItem()->getName() << "' from '" << src->getName() << "' to '" << dest->getName() << "' (*)";
   setName(o.str());
   setDuration(i->getLeadTime());
   setSizeMultiple(i->getSizeMultiple());
   setSizeMinimum(i->getSizeMinimum());
-  setLocation(b->getLocation());
+  setLocation(dest->getLocation());
   setSource(i->getSource());
   setCost(i->getCost());
   setHidden(true);
-  FlowEnd* fl = new FlowEnd(this, b, 1);
+  new FlowEnd(this, dest, 1);
+  new FlowStart(this, src, -1);
   initType(metadata);
 
-  // Insert in the list of ItemSupplier operations.
+  // Insert in the list of ItemDistribution operations.
   // We keep the list sorted by the operation name.
   if (!i->firstOperation || getName() < i->firstOperation->getName())
   {
@@ -289,10 +304,10 @@ DECLARE_EXPORT OperationItemSupplier::OperationItemSupplier(
   else
   {
     // Insert in the middle or at the tail
-    OperationItemSupplier* o = i->firstOperation;
+    OperationItemDistribution* o = i->firstOperation;
     while (o->nextOperation)
     {
-      if (b->getName() < o->nextOperation->getName())
+      if (getName() < o->nextOperation->getName())
         break;
       o = o->nextOperation;
     }
@@ -302,22 +317,22 @@ DECLARE_EXPORT OperationItemSupplier::OperationItemSupplier(
 }
 
 
-OperationItemSupplier::~OperationItemSupplier()
+OperationItemDistribution::~OperationItemDistribution()
 {
   // Remove from the list of operations of this supplier item
-  if (supitem->firstOperation == this)
+  if (itemdist->firstOperation == this)
   {
     // We were at the head
-    supitem->firstOperation = nextOperation;
+    itemdist->firstOperation = nextOperation;
   }
   else
   {
     // We were in the middle
-    OperationItemSupplier* i = supitem->firstOperation;
+    OperationItemDistribution* i = itemdist->firstOperation;
     while (i->nextOperation != this && i->nextOperation)
       i = i->nextOperation;
     if (!i)
-      throw LogicException("ItemSupplier operation list corrupted");
+      throw LogicException("ItemDistribution operation list corrupted");
     else
       i->nextOperation = nextOperation;
   }

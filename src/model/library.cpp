@@ -36,6 +36,7 @@ void LibraryModel::initialize()
   int nok = 0;
   nok += Solver::initialize();
   nok += Problem::initialize();
+  nok += ItemDistribution::initialize();
   nok += Location::initialize();
   nok += LocationDefault::initialize();
   nok += Customer::initialize();
@@ -63,6 +64,7 @@ void LibraryModel::initialize()
   nok += OperationTimePer::initialize();
   nok += OperationRouting::initialize();
   nok += OperationItemSupplier::initialize();
+  nok += OperationItemDistribution::initialize();
   nok += OperationSetup::initialize();
   nok += Item::initialize();
   nok += ItemDefault::initialize();
