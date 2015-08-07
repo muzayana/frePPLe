@@ -435,8 +435,8 @@ class ForecastBucket : public Demand
       m->addIntField<Cls>(Tags::priority, &Cls::getPriority, NULL, 0, DONT_SERIALIZE);
       m->addDurationField<Cls>(Tags::maxlateness, &Cls::getMaxLateness, 0, Duration::MAX, DONT_SERIALIZE);
       m->addDoubleField<Cls>(Tags::minshipment, &Cls::getMinShipment, 0, 1, DONT_SERIALIZE);
-      m->addDateField<Cls>(Tags::startdate, &Cls::getStartDate);
-      m->addDateField<Cls>(Tags::enddate, &Cls::getEndDate);
+      m->addDateField<Cls>(Tags::start, &Cls::getStartDate);
+      m->addDateField<Cls>(Tags::end, &Cls::getEndDate);
       m->addDoubleField<Cls>(ForecastBucket::tag_weight, &Cls::getWeight, &Cls::setWeight, 1.0, DETAIL);
       m->addDoubleField<Cls>(ForecastBucket::tag_total, &Cls::getTotal, &Cls::setTotal, -1.0);
       m->addDoubleField<Cls>(ForecastBucket::tag_consumed, &Cls::getConsumed, &Cls::setConsumed, 0.0, DETAIL);
