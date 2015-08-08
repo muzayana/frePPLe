@@ -844,13 +844,4 @@
 			<quantity>60</quantity>
 		</operationplan>
 	</operationplans>
-	<problems>
-		<problem>
-			<name>before current</name>
-			<description>Operation &apos;delivery 1&apos; planned in the past</description>
-			<start>2008-12-31T00:00:00</start>
-			<end>2009-01-01T00:00:00</end>
-			<weight>24</weight>
-		</problem>
-	</problems>
 </plan>
