@@ -986,7 +986,7 @@ class exportStaticModel(object):
         values(%s,%s,%s,%s,%s)''',
         [
          (
-           i.owner.name, str(i.startdate.date()), str(i.enddate.date()),
+           i.owner.name, str(i.start.date()), str(i.end.date()),
            round(i.total, settings.DECIMAL_PLACES), self.timestamp
          )
          for i in frepple.demands()

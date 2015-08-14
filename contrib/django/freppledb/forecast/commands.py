@@ -262,7 +262,7 @@ def generateBaseline(solver_fcst, cursor):
         round(i.total, settings.DECIMAL_PLACES),
         round(i.total * i.forecast.item.price, settings.DECIMAL_PLACES),
         i.forecast.method,
-        i.forecast.name, str(i.startdate)
+        i.forecast.name, str(i.start)
       )
       for i in frepple.demands()
       if isinstance(i, frepple.demand_forecastbucket) and i.forecast.methods != 0 and i.total != 0.0
@@ -610,7 +610,7 @@ def exportForecastValues(cursor):
       (
         round(i.total, settings.DECIMAL_PLACES),
         round(i.total*i.item.price, settings.DECIMAL_PLACES),
-        i.owner.name, str(i.startdate)
+        i.owner.name, str(i.start)
       )
       for i in generator(cursor)
     ])
