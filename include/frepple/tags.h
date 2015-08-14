@@ -24,6 +24,7 @@ class Tags
     static DECLARE_EXPORT const Keyword action;
     static DECLARE_EXPORT const Keyword alternate;
     static DECLARE_EXPORT const Keyword alternate_name;
+    static DECLARE_EXPORT const Keyword approved;
     static DECLARE_EXPORT const Keyword autocommit;
     static DECLARE_EXPORT const Keyword available;
     static DECLARE_EXPORT const Keyword booleanproperty;
@@ -36,6 +37,7 @@ class Tags
     static DECLARE_EXPORT const Keyword carrying_cost;
     static DECLARE_EXPORT const Keyword category;
     static DECLARE_EXPORT const Keyword cluster;
+    static DECLARE_EXPORT const Keyword confirmed;
     static DECLARE_EXPORT const Keyword constraints;
     static DECLARE_EXPORT const Keyword consume_material;
     static DECLARE_EXPORT const Keyword consume_capacity;
@@ -135,6 +137,7 @@ class Tags
     static DECLARE_EXPORT const Keyword producing;
     static DECLARE_EXPORT const Keyword producing_date;
     static DECLARE_EXPORT const Keyword property;
+    static DECLARE_EXPORT const Keyword proposed;
     static DECLARE_EXPORT const Keyword quantity;
     static DECLARE_EXPORT const Keyword quantity_buffer;
     static DECLARE_EXPORT const Keyword quantity_demand;
@@ -160,6 +163,7 @@ class Tags
     static DECLARE_EXPORT const Keyword startorend;
     static DECLARE_EXPORT const Keyword startdate;
     static DECLARE_EXPORT const Keyword starttime;
+    static DECLARE_EXPORT const Keyword status;
     static DECLARE_EXPORT const Keyword stringproperty;
     static DECLARE_EXPORT const Keyword subcategory;
     static DECLARE_EXPORT const Keyword suboperation;

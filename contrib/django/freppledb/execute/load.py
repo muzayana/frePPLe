@@ -314,9 +314,9 @@ class loadData(object):
     self.cursor.execute('''
       SELECT
         supplier_id, item_id, location_id, sizeminimum, sizemultiple,
-        cost, priority, effective_start, effective_end, source
+        cost, priority, effective_start, effective_end, source, leadtime
       FROM itemsupplier %s
-      ORDER BY supplier_id, item_id, priority desc, location_id
+      ORDER BY supplier_id, item_id, location_id, priority desc
       ''' % self.filter_where)
     cursuppliername = None
     curitemname = None
@@ -329,7 +329,7 @@ class loadData(object):
         if i[1] != curitemname:
           curitemname = i[1]
           curitem = frepple.item(name=curitemname)
-        curitemsupplier = frepple.itemsupplier(supplier=cursupplier, item=curitem, source=i[9])
+        curitemsupplier = frepple.itemsupplier(supplier=cursupplier, item=curitem, source=i[9], leadtime=i[10] or 0)
         if i[2]:
           curitemsupplier.location = frepple.location(name=i[2])
         if i[3]:
@@ -347,6 +347,48 @@ class loadData(object):
       except Exception as e:
         print("Error:", e)
     print('Loaded %d item suppliers in %.2f seconds' % (cnt, time() - starttime))
+
+
+  def loadItemDistributions(self):
+    print('Importing item distributions...')
+    cnt = 0
+    starttime = time()
+    self.cursor.execute('''
+      SELECT
+        origin_id, item_id, location_id, sizeminimum, sizemultiple,
+        cost, priority, effective_start, effective_end, source, leadtime
+      FROM itemdistribution %s
+      ORDER BY origin_id, item_id, location_id, priority desc
+      ''' % self.filter_where)
+    curoriginname = None
+    curitemname = None
+    for i in self.cursor.fetchall():
+      cnt += 1
+      try:
+        if i[0] != curoriginname:
+          curoriginname = i[0]
+          curorigin = frepple.location(name=curoriginname)
+        if i[1] != curitemname:
+          curitemname = i[1]
+          curitem = frepple.item(name=curitemname)
+        curitemdistribution = frepple.itemdistribution(origin=curorigin, item=curitem, source=i[9], leadtime=i[10] or 0)
+        if i[2]:
+          curitemdistribution.destination = frepple.location(name=i[2])
+        if i[3]:
+          curitemdistribution.size_minimum = i[3]
+        if i[4]:
+          curitemdistribution.size_multiple = i[4]
+        if i[5]:
+          curitemdistribution.cost = i[5]
+        if i[6]:
+          curitemdistribution.priority = i[6]
+        if i[7]:
+          curitemdistribution.effective_start = i[7]
+        if i[8]:
+          curitemdistribution.effective_end = i[8]
+      except Exception as e:
+        print("Error:", e)
+    print('Loaded %d item itemdistributions in %.2f seconds' % (cnt, time() - starttime))
 
 
   def loadBuffers(self):
@@ -668,7 +710,7 @@ class loadData(object):
     starttime = time()
     self.cursor.execute('''
       SELECT
-        operation_id, id, quantity, startdate, enddate, locked, source
+        operation_id, id, quantity, startdate, enddate, status, source
       FROM operationplan
       WHERE owner_id IS NULL and quantity >= 0 %s
       ORDER BY id ASC
@@ -678,11 +720,11 @@ class loadData(object):
       frepple.operationplan(
         operation=frepple.operation(name=i[0]),
         id=i[1], quantity=i[2], start=i[3], end=i[4],
-        locked=i[5], source=i[6]
+        status=i[5], source=i[6]
         ).quantity = i[2]
     self.cursor.execute('''
       SELECT
-        operation_id, id, quantity, startdate, enddate, locked, owner_id, source
+        operation_id, id, quantity, startdate, enddate, status, owner_id, source
       FROM operationplan
       WHERE owner_id IS NOT NULL and quantity >= 0 %s
       ORDER BY id ASC
@@ -692,7 +734,7 @@ class loadData(object):
       frepple.operationplan(
         operation=frepple.operation(name=i[0]),
         id=i[1], start=i[3], end=i[4], quantity=i[2],
-        locked=i[5], source=i[7],
+        status=i[5], source=i[7],
         owner=frepple.operationplan(id=i[6])
         ).quantity = i[2]
     print('Loaded %d operationplans in %.2f seconds' % (cnt, time() - starttime))
@@ -706,7 +748,7 @@ class loadData(object):
       SELECT
         name, due, quantity, priority, item_id,
         operation_id, customer_id, owner_id, minshipment, maxlateness,
-        category, subcategory, source
+        category, subcategory, source, location_id
       FROM demand
       WHERE (status IS NULL OR status ='open' OR status = 'quote') %s
       ''' % self.filter_and)
@@ -727,6 +769,8 @@ class loadData(object):
           x.minshipment = i[8]
         if i[9] is not None:
           x.maxlateness = i[9]
+        if i[13]:
+          x.location = frepple.location(name=i[13])
       except Exception as e:
         print("Error:", e)
     print('Loaded %d demands in %.2f seconds' % (cnt, time() - starttime))
@@ -761,6 +805,7 @@ class loadData(object):
     self.loadSuboperations()
     self.loadItems()
     self.loadItemSuppliers()
+    self.loadItemDistributions()
     self.loadBuffers()
     self.loadSetupMatrices()
     self.loadResources()
