@@ -2,4 +2,4 @@
 # Process this file with automake to produce Makefile.in
 #
 
-SUBDIRS = forecast webserver
+SUBDIRS = forecast webserver inventoryplanning

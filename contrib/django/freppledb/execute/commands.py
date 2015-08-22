@@ -85,6 +85,25 @@ def createPlan(database=DEFAULT_DB_ALIAS):
     else:
       solver.loglevel = 0
 
+  # <<<<<<<<<<<< START EXTRA FOR INVENTORY PLANNING
+
+  print("Start inventory planning")
+  # Load the inventory planning module
+  frepple.loadmodule("mod_inventoryplanning.so")
+
+  # Create an unconstrained plan to propagate demand across all dependent levels.
+  # TODO: we only want to propagate the forecasted demand, excluding any actual sales orders already received.
+  frepple.solver_mrp(name="Unconstrained", plantype=2, constraints=0, loglevel=0).solve()
+
+  # Run the inventory planning solver to compute the safety stock and reorder quantities
+  frepple.solver_inventoryplanning(name="IPsolver", loglevel=2).solve()
+
+  # Erase the plan again
+  frepple.erase(False)
+  print("Finished inventory planning")
+
+  # <<<<<<<<<<<< END EXTRA FOR INVENTORY PLANNING
+
   # Create a solver where the plan type are defined by an environment variable
   try:
     plantype = int(os.environ['FREPPLE_PLANTYPE'])

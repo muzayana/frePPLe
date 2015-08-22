@@ -28,6 +28,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "module_forecast", "module_f
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "module_webserver", "module_webserver.vcxproj", "{27BD6E1A-2532-4798-B131-E7C77735C44D}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "module_inventoryplanning", "module_inventoryplanning.vcxproj", "{40DA0BFC-4317-47D3-96A4-D5D5D03D1D7E}"
+	ProjectSection(ProjectDependencies) = postProject
+		{36145D08-F369-4F6E-8BB6-13B1416CEA66} = {36145D08-F369-4F6E-8BB6-13B1416CEA66}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -108,6 +113,14 @@ Global
 		{27BD6E1A-2532-4798-B131-E7C77735C44D}.Release|Win32.Build.0 = Release|Win32
 		{27BD6E1A-2532-4798-B131-E7C77735C44D}.Release|x64.ActiveCfg = Release|x64
 		{27BD6E1A-2532-4798-B131-E7C77735C44D}.Release|x64.Build.0 = Release|x64
+		{40DA0BFC-4317-47D3-96A4-D5D5D03D1D7E}.Debug|Win32.ActiveCfg = Debug|Win32
+		{40DA0BFC-4317-47D3-96A4-D5D5D03D1D7E}.Debug|Win32.Build.0 = Debug|Win32
+		{40DA0BFC-4317-47D3-96A4-D5D5D03D1D7E}.Debug|x64.ActiveCfg = Debug|x64
+		{40DA0BFC-4317-47D3-96A4-D5D5D03D1D7E}.Debug|x64.Build.0 = Debug|x64
+		{40DA0BFC-4317-47D3-96A4-D5D5D03D1D7E}.Release|Win32.ActiveCfg = Release|Win32
+		{40DA0BFC-4317-47D3-96A4-D5D5D03D1D7E}.Release|Win32.Build.0 = Release|Win32
+		{40DA0BFC-4317-47D3-96A4-D5D5D03D1D7E}.Release|x64.ActiveCfg = Release|x64
+		{40DA0BFC-4317-47D3-96A4-D5D5D03D1D7E}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
