@@ -28,7 +28,8 @@ from django.http import Http404, HttpResponseRedirect, HttpResponseServerError, 
 from django.contrib import messages
 from django.utils.encoding import force_text
 
-from freppledb.execute.models import Task, Scenario
+from freppledb.execute.models import Task
+from freppledb.common.models import Scenario
 from freppledb.common.auth import basicauthentication
 from freppledb.common.report import exportWorkbook, importWorkbook
 from freppledb.common.report import GridReport, GridFieldDateTime, GridFieldText, GridFieldInteger
