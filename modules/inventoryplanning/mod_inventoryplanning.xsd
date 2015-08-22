@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ Copyright (C) 2015 by frePPLe bvba
+
+ All information contained herein is, and remains the property of frePPLe.
+ You are allowed to use and modify the source code, as long as the
+ software is used within your company.
+ You are not allowed to distribute the software, either in the form of
+ source code or in the form of compiled binaries.
+-->
+<xsd:schema xmlns:xsd='http://www.w3.org/2001/XMLSchema'
+  elementFormDefault="unqualified" attributeFormDefault="unqualified"
+  version="1.0">
+
+  <!-- Define the buffer type -->
+  <xsd:complexType name="buffer_inventoryplanning">
+    <xsd:complexContent>
+      <xsd:extension base="buffer_inventoryplanning">
+        <xsd:choice minOccurs="0" maxOccurs="unbounded">
+          <xsd:element name="calendar" type="calendar" />
+          <xsd:element name="discrete" type="xsd:boolean" />
+          <xsd:element name="planned" type="xsd:boolean" />
+          <xsd:element name="methods" type="xsd:unsignedLong" />
+          <xsd:element name="buckets" type="demand_forecastbucketlist" />
+        </xsd:choice>
+        <xsd:attribute name="discrete" type="xsd:boolean" />
+        <xsd:attribute name="planned" type="xsd:boolean" />
+        <xsd:attribute name="methods" type="xsd:unsignedLong" />
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+</xsd:schema>

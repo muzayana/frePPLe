@@ -16,6 +16,7 @@
   
   <!-- For each module we want to use the extra schema definitions need to be included. -->
   <xsd:include schemaLocation="mod_forecast.xsd" />
+  <xsd:include schemaLocation="mod_inventoryplanning.xsd" />
 
   <!-- Define the root element and its contents. -->
   <xsd:element name="plan">

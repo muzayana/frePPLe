@@ -28,5 +28,8 @@ frepple.loadmodule("mod_forecast.so",
 
 # Web server module
 frepple.loadmodule("mod_webserver.so");
+
+# Inventory planning module
+frepple.loadmodule("mod_inventoryplanning.so");
 ?>
 </plan>
