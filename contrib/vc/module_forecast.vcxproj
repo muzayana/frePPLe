@@ -114,6 +114,7 @@
       <RuntimeTypeInfo>
       </RuntimeTypeInfo>
       <AdditionalIncludeDirectories>..\..\include</AdditionalIncludeDirectories>
+      <StringPooling>true</StringPooling>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -140,6 +141,7 @@
       <RuntimeTypeInfo>
       </RuntimeTypeInfo>
       <AdditionalIncludeDirectories>..\..\include</AdditionalIncludeDirectories>
+      <StringPooling>true</StringPooling>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -165,7 +167,7 @@
       <RuntimeTypeInfo>
       </RuntimeTypeInfo>
       <AdditionalIncludeDirectories>..\..\include</AdditionalIncludeDirectories>
-      <StringPooling>Yes</StringPooling>
+      <StringPooling>true</StringPooling>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -189,7 +191,7 @@
       <RuntimeTypeInfo>
       </RuntimeTypeInfo>
       <AdditionalIncludeDirectories>..\..\include</AdditionalIncludeDirectories>
-      <StringPooling>Yes</StringPooling>
+      <StringPooling>true</StringPooling>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

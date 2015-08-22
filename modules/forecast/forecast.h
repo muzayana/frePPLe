@@ -263,6 +263,7 @@
   *     The default value is 0.33.
   */
 
+#pragma once
 #ifndef FORECAST_H
 #define FORECAST_H
 
@@ -425,7 +426,7 @@ class ForecastBucket : public Demand
 
     template<class Cls> static inline void registerFields(MetaClass* m)
     {
-      m->addStringField<Cls>(Tags::name, &Cls::getName, NULL, DONT_SERIALIZE);
+      m->addStringField<Cls>(Tags::name, &Cls::getName, NULL, "", DONT_SERIALIZE);
       m->addPointerField<Cls, Demand>(Tags::owner, &Cls::getOwner, NULL, DONT_SERIALIZE);
       m->addPointerField<Cls, Operation>(Tags::operation, &Cls::getOperation, NULL, DONT_SERIALIZE);
       m->addPointerField<Cls, Customer>(Tags::customer, &Cls::getCustomer, NULL, DONT_SERIALIZE);
@@ -1264,7 +1265,7 @@ class Forecast : public Demand
       m->addPointerField<Cls, Calendar>(Tags::calendar, &Cls::getCalendar, &Cls::setCalendar);
       m->addBoolField<Cls>(Tags::discrete, &Cls::getDiscrete, &Cls::setDiscrete, BOOL_TRUE);
       m->addUnsignedLongField<Cls>(tag_methods, &Cls::getMethods, &Cls::setMethods, METHOD_ALL);
-      m->addStringField<Cls>(tag_method, &Cls::getMethod, NULL, DETAIL);
+      m->addStringField<Cls>(tag_method, &Cls::getMethod, NULL, "", DETAIL);
       m->addBoolField<Cls>(tag_planned, &Cls::getPlanned, &Cls::setPlanned, BOOL_TRUE);
       m->addIteratorField<Cls, ForecastBucket::bucketiterator, ForecastBucket>(
         Tags::buckets, Tags::bucket, &Cls::getBuckets, BASE + WRITE_FULL + WRITE_HIDDEN
