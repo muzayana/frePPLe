@@ -63,12 +63,12 @@
 	<demands>
 		<demand xsi:type="demand_forecast">
 			<name>constant plus trend</name>
-			<customer>
-				<name>customer</name>
-			</customer>
 			<item>
 				<name>item</name>
 			</item>
+			<customer>
+				<name>customer</name>
+			</customer>
 			<calendar>
 				<name>planningbuckets</name>
 			</calendar>
@@ -113,12 +113,12 @@
 		</demand>
 		<demand xsi:type="demand_forecast">
 			<name>flat demand</name>
-			<customer>
-				<name>customer</name>
-			</customer>
 			<item>
 				<name>item</name>
 			</item>
+			<customer>
+				<name>customer</name>
+			</customer>
 			<calendar>
 				<name>planningbuckets</name>
 			</calendar>
@@ -163,12 +163,12 @@
 		</demand>
 		<demand xsi:type="demand_forecast">
 			<name>intermittent</name>
-			<customer>
-				<name>customer</name>
-			</customer>
 			<item>
 				<name>item</name>
 			</item>
+			<customer>
+				<name>customer</name>
+			</customer>
 			<calendar>
 				<name>planningbuckets</name>
 			</calendar>
@@ -213,12 +213,12 @@
 		</demand>
 		<demand xsi:type="demand_forecast">
 			<name>irregular demand</name>
-			<customer>
-				<name>customer</name>
-			</customer>
 			<item>
 				<name>item</name>
 			</item>
+			<customer>
+				<name>customer</name>
+			</customer>
 			<calendar>
 				<name>planningbuckets</name>
 			</calendar>
@@ -263,12 +263,12 @@
 		</demand>
 		<demand xsi:type="demand_forecast">
 			<name>little history</name>
-			<customer>
-				<name>customer</name>
-			</customer>
 			<item>
 				<name>item</name>
 			</item>
+			<customer>
+				<name>customer</name>
+			</customer>
 			<calendar>
 				<name>planningbuckets</name>
 			</calendar>
@@ -313,12 +313,12 @@
 		</demand>
 		<demand xsi:type="demand_forecast">
 			<name>seasonal demand</name>
-			<customer>
-				<name>customer</name>
-			</customer>
 			<item>
 				<name>item</name>
 			</item>
+			<customer>
+				<name>customer</name>
+			</customer>
 			<calendar>
 				<name>planningbuckets</name>
 			</calendar>
@@ -370,12 +370,12 @@
 		</demand>
 		<demand xsi:type="demand_forecast">
 			<name>trend plus constant</name>
-			<customer>
-				<name>customer</name>
-			</customer>
 			<item>
 				<name>item</name>
 			</item>
+			<customer>
+				<name>customer</name>
+			</customer>
 			<calendar>
 				<name>planningbuckets</name>
 			</calendar>
@@ -420,12 +420,12 @@
 		</demand>
 		<demand xsi:type="demand_forecast">
 			<name>trended demand</name>
-			<customer>
-				<name>customer</name>
-			</customer>
 			<item>
 				<name>item</name>
 			</item>
+			<customer>
+				<name>customer</name>
+			</customer>
 			<calendar>
 				<name>planningbuckets</name>
 			</calendar>

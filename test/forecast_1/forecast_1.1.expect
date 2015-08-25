@@ -230,12 +230,12 @@
 	<demands>
 		<demand xsi:type="demand_forecast">
 			<name>A forecast</name>
-			<customer>
-				<name>A customer</name>
-			</customer>
 			<item>
 				<name>A item</name>
 			</item>
+			<customer>
+				<name>A customer</name>
+			</customer>
 			<calendar>
 				<name>Months</name>
 			</calendar>
@@ -264,25 +264,25 @@
 			<name>A forecast not selected</name>
 			<description>This forecast is not selected because lower level
       matches take precedence.</description>
-			<customer>
-				<name>A parent customer</name>
-			</customer>
 			<item>
 				<name>A parent item</name>
 			</item>
+			<customer>
+				<name>A parent customer</name>
+			</customer>
 			<calendar>
 				<name>Months</name>
 			</calendar>
 		</demand>
 		<demand>
 			<name>A order</name>
-			<customer>
-				<name>A customer</name>
-			</customer>
 			<quantity>10</quantity>
 			<item>
 				<name>A item</name>
 			</item>
+			<customer>
+				<name>A customer</name>
+			</customer>
 			<due>2009-01-02T00:00:00</due>
 		</demand>
 		<demand xsi:type="demand_forecast">
@@ -316,13 +316,13 @@
 		</demand>
 		<demand>
 			<name>B order 1</name>
-			<customer>
-				<name>B customer</name>
-			</customer>
 			<quantity>10</quantity>
 			<item>
 				<name>B item</name>
 			</item>
+			<customer>
+				<name>B customer</name>
+			</customer>
 			<due>2009-01-02T00:00:00</due>
 		</demand>
 		<demand>
@@ -335,12 +335,12 @@
 		</demand>
 		<demand xsi:type="demand_forecast">
 			<name>C forecast</name>
-			<customer>
-				<name>C parent customer</name>
-			</customer>
 			<item>
 				<name>C item</name>
 			</item>
+			<customer>
+				<name>C parent customer</name>
+			</customer>
 			<calendar>
 				<name>Months</name>
 			</calendar>
@@ -371,12 +371,12 @@
       levels in the customer dimension first.
       Switching the flag Customer_Then_Item_Hierarchy to false will
       flip the search order around.</description>
-			<customer>
-				<name>C customer</name>
-			</customer>
 			<item>
 				<name>C parent item</name>
 			</item>
+			<customer>
+				<name>C customer</name>
+			</customer>
 			<calendar>
 				<name>Months</name>
 			</calendar>
@@ -403,23 +403,23 @@
 		</demand>
 		<demand>
 			<name>C order</name>
-			<customer>
-				<name>C customer</name>
-			</customer>
 			<quantity>10</quantity>
 			<item>
 				<name>C item</name>
 			</item>
+			<customer>
+				<name>C customer</name>
+			</customer>
 			<due>2009-01-02T00:00:00</due>
 		</demand>
 		<demand xsi:type="demand_forecast">
 			<name>D forecast</name>
-			<customer>
-				<name>D customer</name>
-			</customer>
 			<item>
 				<name>D parent item</name>
 			</item>
+			<customer>
+				<name>D customer</name>
+			</customer>
 			<calendar>
 				<name>Months</name>
 			</calendar>
@@ -446,23 +446,23 @@
 		</demand>
 		<demand>
 			<name>D order</name>
-			<customer>
-				<name>D customer</name>
-			</customer>
 			<quantity>10</quantity>
 			<item>
 				<name>D item</name>
 			</item>
+			<customer>
+				<name>D customer</name>
+			</customer>
 			<due>2009-01-02T00:00:00</due>
 		</demand>
 		<demand xsi:type="demand_forecast">
 			<name>E forecast</name>
-			<customer>
-				<name>E parent customer</name>
-			</customer>
 			<item>
 				<name>E parent item</name>
 			</item>
+			<customer>
+				<name>E parent customer</name>
+			</customer>
 			<calendar>
 				<name>Months</name>
 			</calendar>
@@ -489,13 +489,13 @@
 		</demand>
 		<demand>
 			<name>E order</name>
-			<customer>
-				<name>E customer</name>
-			</customer>
 			<quantity>10</quantity>
 			<item>
 				<name>E item</name>
 			</item>
+			<customer>
+				<name>E customer</name>
+			</customer>
 			<due>2009-01-02T00:00:00</due>
 		</demand>
 	</demands>
