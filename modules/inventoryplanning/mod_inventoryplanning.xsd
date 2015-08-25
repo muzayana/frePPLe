@@ -15,7 +15,7 @@
   <!-- Define the buffer type -->
   <xsd:complexType name="buffer_inventoryplanning">
     <xsd:complexContent>
-      <xsd:extension base="buffer_inventoryplanning">
+      <xsd:extension base="buffer">
         <xsd:choice minOccurs="0" maxOccurs="unbounded">
           <xsd:element name="calendar" type="calendar" />
           <xsd:element name="discrete" type="xsd:boolean" />

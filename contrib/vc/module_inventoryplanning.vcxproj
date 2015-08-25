@@ -109,7 +109,12 @@
       <DataExecutionPrevention>true</DataExecutionPrevention>
       <ImportLibrary>../../bin/module_inventoryplanning_debug.lib</ImportLibrary>
       <TargetMachine>NotSet</TargetMachine>
+      <EnableCOMDATFolding>false</EnableCOMDATFolding>
     </Link>
+    <PostBuildEvent>
+      <Message>Copy mod_inventoryplanning to the bin folder</Message>
+      <Command>copy "$(TargetPath)" ..\..\bin &amp;&amp; copy ..\..\modules\inventoryplanning\mod_inventoryplanning.xsd ..\..\bin</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -126,7 +131,12 @@
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <RandomizedBaseAddress>true</RandomizedBaseAddress>
       <DataExecutionPrevention>true</DataExecutionPrevention>
+      <EnableCOMDATFolding>false</EnableCOMDATFolding>
     </Link>
+    <PostBuildEvent>
+      <Message>Copy mod_inventoryplanning to the bin folder</Message>
+      <Command>copy "$(TargetPath)" ..\..\bin &amp;&amp; copy ..\..\modules\inventoryplanning\mod_inventoryplanning.xsd ..\..\bin</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -149,6 +159,10 @@
       <RandomizedBaseAddress>true</RandomizedBaseAddress>
       <DataExecutionPrevention>true</DataExecutionPrevention>
     </Link>
+    <PostBuildEvent>
+      <Message>Copy mod_inventoryplanning to the bin folder</Message>
+      <Command>copy "$(TargetPath)" ..\..\bin &amp;&amp; copy ..\..\modules\inventoryplanning\mod_inventoryplanning.xsd ..\..\bin</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -171,13 +185,19 @@
       <Version>
       </Version>
       <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
-      <OptimizeReferences>true</OptimizeReferences>
+      <OptimizeReferences>
+      </OptimizeReferences>
       <RandomizedBaseAddress>true</RandomizedBaseAddress>
       <DataExecutionPrevention>true</DataExecutionPrevention>
       <TargetMachine>MachineX64</TargetMachine>
       <AdditionalDependencies>
       </AdditionalDependencies>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PostBuildEvent>
+      <Command>copy "$(TargetPath)" ..\..\bin &amp;&amp; copy ..\..\modules\inventoryplanning\mod_inventoryplanning.xsd ..\..\bin</Command>
+      <Message>Copy mod_inventoryplanning to the bin folder</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <Reference Include="System">
@@ -201,6 +221,11 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\src\dll.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="dll.vcxproj">
+      <Project>{36145d08-f369-4f6e-8bb6-13b1416cea66}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
