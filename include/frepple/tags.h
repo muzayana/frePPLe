@@ -141,6 +141,7 @@ class Tags
     static DECLARE_EXPORT const Keyword quantity;
     static DECLARE_EXPORT const Keyword quantity_buffer;
     static DECLARE_EXPORT const Keyword quantity_demand;
+    static DECLARE_EXPORT const Keyword reference;
     static DECLARE_EXPORT const Keyword resource;
     static DECLARE_EXPORT const Keyword resources;
     static DECLARE_EXPORT const Keyword resourceskill;
