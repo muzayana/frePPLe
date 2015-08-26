@@ -843,7 +843,7 @@ class DistributionOrderList(GridReport):
     GridFieldDateTime('enddate', title=_('end date')),
     GridFieldNumber('quantity', title=_('quantity')),
     GridFieldBool('consume_material', title=_('consume material')),
-    GridFieldNumber('criticality', title=_('criticality')),
+    GridFieldNumber('criticality', title=_('criticality'), editable=False),
     GridFieldText('source', title=_('source')),
     GridFieldLastModified('lastmodified'),
     )
@@ -868,7 +868,7 @@ class PurchaseOrderList(GridReport):
     GridFieldDateTime('startdate', title=_('start date')),
     GridFieldDateTime('enddate', title=_('end date')),
     GridFieldNumber('quantity', title=_('quantity')),
-    GridFieldNumber('criticality', title=_('criticality')),
+    GridFieldNumber('criticality', title=_('criticality'), editable=False),
     GridFieldText('source', title=_('source')),
     GridFieldLastModified('lastmodified'),
     )

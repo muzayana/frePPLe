@@ -2228,21 +2228,6 @@ class OperationPlan
       m->addIteratorField<Cls, loadplanlist::const_iterator, LoadPlan>(Tags::loadplans, Tags::loadplan, &Cls::getLoadPlans, DONT_SERIALIZE);
       m->addIteratorField<Cls, PeggingIterator, PeggingIterator>(Tags::pegging_downstream, Tags::pegging, &Cls::getPeggingDownstream, DONT_SERIALIZE);
       m->addIteratorField<Cls, PeggingIterator, PeggingIterator>(Tags::pegging_upstream, Tags::pegging, &Cls::getPeggingUpstream, DONT_SERIALIZE);
-      /* TODO XXX
-      from endelement:
-        else if (pAttr.isA(Tags::owner) && !pIn.isObjectEnd())
-  {
-    OperationPlan* o = dynamic_cast<OperationPlan*>(pIn.getPreviousObject());
-    if (o) setOwner(o, false); // Extra argument is used to trigger validation of the new owner
-  }
-  else if (pIn.isObjectEnd())
-  {
-    // Initialize the operationplan
-    if (!activate())
-      // Initialization failed and the operationplan is deleted
-      pIn.invalidateCurrentObject();
-  }
-      */
     }
 
     DECLARE_EXPORT static PyObject* createIterator(PyObject* self, PyObject* args);
@@ -4041,6 +4026,10 @@ class OperationItemDistribution : public OperationFixedTime
       return itemdist;
     }
 
+    DECLARE_EXPORT Buffer* getOrigin() const;
+
+    DECLARE_EXPORT Buffer* getDestination() const;
+
     /** Constructor. */
     explicit DECLARE_EXPORT OperationItemDistribution(ItemDistribution*, Buffer*, Buffer*);
 
@@ -4057,6 +4046,8 @@ class OperationItemDistribution : public OperationFixedTime
     template<class Cls> static inline void registerFields(MetaClass* m)
     {
       m->addPointerField<Cls, ItemDistribution>(Tags::itemdistribution, &Cls::getItemDistribution, NULL);
+      m->addPointerField<Cls, Buffer>(Tags::origin, &Cls::getOrigin, NULL, DONT_SERIALIZE);
+      m->addPointerField<Cls, Buffer>(Tags::destination, &Cls::getDestination, NULL, DONT_SERIALIZE);
     }
 
     /** Create a new transfer operationplan.
@@ -4097,6 +4088,8 @@ class OperationItemSupplier : public OperationFixedTime
       return supitem;
     }
 
+    DECLARE_EXPORT Buffer* getBuffer() const;
+
     static DECLARE_EXPORT OperationItemSupplier* findOrCreate(ItemSupplier*, Buffer*);
 
     /** Constructor. */
@@ -4115,6 +4108,7 @@ class OperationItemSupplier : public OperationFixedTime
     template<class Cls> static inline void registerFields(MetaClass* m)
     {
       m->addPointerField<Cls, ItemSupplier>(Tags::itemsupplier, &Cls::getItemSupplier, NULL);
+      m->addPointerField<Cls, Buffer>(Tags::buffer, &Cls::getBuffer, NULL, DONT_SERIALIZE);
     }
 
     /** Create a new purchase operationplan.
@@ -5840,7 +5834,7 @@ class Resource : public HasHierarchy<Resource>,
       HasHierarchy<Cls>:: template registerFields<Cls>(m);
       HasDescription::registerFields<Cls>(m);
       m->addDoubleField<Cls>(Tags::maximum, &Cls::getMaximum, &Cls::setMaximum, 1);
-      m->addPointerField<Cls, CalendarDefault>(Tags::maximum_calendar, &Cls::getMaximumCalendar, &Cls::setMaximumCalendar); // XXX TODO test: resourcebucket has an override for this method. Test if it is called!!!
+      m->addPointerField<Cls, CalendarDefault>(Tags::maximum_calendar, &Cls::getMaximumCalendar, &Cls::setMaximumCalendar);
       m->addDurationField<Cls>(Tags::maxearly, &Cls::getMaxEarly, &Cls::setMaxEarly, defaultMaxEarly);
       m->addDoubleField<Cls>(Tags::cost, &Cls::getCost, &Cls::setCost);
       m->addPointerField<Cls, Location>(Tags::location, &Cls::getLocation, &Cls::setLocation);
@@ -6287,29 +6281,6 @@ class Load
       m->addPointerField<Cls, Skill>(Tags::skill, &Cls::getSkill, &Cls::setSkill);
       HasSource::registerFields<Cls>(m);
       m->addBoolField<Cls>(Tags::hidden, &Cls::getHidden, &Cls::setHidden, BOOL_FALSE, DONT_SERIALIZE);
-      /* XXX TODO from endement
-      else if (pAttr.isA(Tags::action))
-  {
-    delete static_cast<Action*>(pIn.getUserArea());
-    pIn.setUserArea(
-      new Action(MetaClass::decodeAction(pElement.getString().c_str()))
-    );
-  }
-    else if (pIn.isObjectEnd())
-  {
-    // The load data is now all read in. See if it makes sense now...
-    Action a = pIn.getUserArea() ?
-        *static_cast<Action*>(pIn.getUserArea()) :
-        ADD_CHANGE;
-    delete static_cast<Action*>(pIn.getUserArea());
-    try { validate(a); }
-    catch (...)
-    {
-      delete this;
-      throw;
-    }
-  }
-  */
     }
 
   private:
@@ -7342,11 +7313,11 @@ class Plan : public Plannable, public Object
       m->addIteratorField<Plan, Demand::iterator, Demand>(Tags::demands, Tags::demand, &Plan::getDemands);
       m->addIteratorField<Plan, SetupMatrix::iterator, SetupMatrix>(Tags::setupmatrices, Tags::setupmatrix, &Plan::getSetupMatrices);
       m->addIteratorField<Plan, Skill::iterator, Skill>(Tags::skills, Tags::skill, &Plan::getSkills);
-      m->addList3Field<Plan, ResourceSkill>(Tags::resourceskills, Tags::resourceskill);
-      m->addList3Field<Plan, Load>(Tags::loads, Tags::load);
-      m->addList3Field<Plan, Flow>(Tags::flows, Tags::flow);
-      m->addList3Field<Plan, ItemSupplier>(Tags::itemsuppliers, Tags::itemsupplier);
-      m->addList3Field<Plan, ItemDistribution>(Tags::itemdistributions, Tags::itemdistribution);
+      m->addIteratorField<Plan, Resource::skilllist::iterator, ResourceSkill>(Tags::resourceskills, Tags::resourceskill); // Only for XML import
+      m->addIteratorField<Plan, Operation::loadlist::iterator, Load>(Tags::loads, Tags::load); // Only for XML import
+      m->addIteratorField<Plan, Operation::flowlist::iterator, Flow>(Tags::flows, Tags::flow); // Only for XML import
+      m->addIteratorField<Plan, Item::supplierlist::iterator, ItemSupplier>(Tags::itemsuppliers, Tags::itemsupplier); // Only for XML import
+      m->addIteratorField<Plan, Location::distributionoriginlist::iterator, ItemDistribution>(Tags::itemdistributions, Tags::itemdistribution);
       m->addIteratorField<Cls, OperationPlan::iterator, OperationPlan>(Tags::operationplans, Tags::operationplan, &Plan::getOperationPlans);
       m->addIteratorField<Plan, Problem::iterator, Problem>(Tags::problems, Tags::problem, &Plan::getProblems, PLAN + DETAIL);
     }
