@@ -93,6 +93,10 @@ class OverviewReport(GridPivot):
   model = Forecast
   permissions = (('view_forecast_report', 'Can view forecast report'),)
   editable = True
+  # Limit visibility to months and higher time granularity
+  # TODO this should be configurable with a parameter. The parameter should control
+  # the time buckets to be used for all forecasting.
+  maxBucketLevel = 3
   rows = (
     GridFieldText('forecast', title=_('forecast'), key=True, field_name='name', formatter='forecast', editable=False),
     GridFieldText('item', title=_('item'), field_name='item__name', formatter='item', editable=False),
