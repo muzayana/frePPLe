@@ -806,7 +806,7 @@ class Forecast(AuditModel):
         'forecastadjustment', 'ordersadjustment', 'forecasttotal',
         'forecastadjustmentvalue', 'ordersadjustmentvalue', 'forecasttotalvalue'
         ])
-    for i in parents.itervalues():
+    for i in parents.values():
       i.save(update_fields=[
         'forecastadjustment', 'ordersadjustment', 'forecasttotal',
         'forecastadjustmentvalue', 'ordersadjustmentvalue', 'forecasttotalvalue'

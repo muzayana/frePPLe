@@ -276,7 +276,7 @@ class OverviewReport(GridPivot):
   def parseCSVupload(reportclass, request):    # TODO also support uploads in pivot format
     # Check permissions
     if not request.user.has_perm('input.change_forecastdemand'):
-      yield force_unicode(_('Permission denied')) + '\n '
+      yield force_text(_('Permission denied')) + '\n '
     else:
 
       # Choose the right delimiter and language
@@ -288,7 +288,7 @@ class OverviewReport(GridPivot):
       colindexes = [-1, -1, -1, -1, -1, -1]
       rownumber = 0
       prefs = request.user.getPreference(OverviewReport.getKey())
-      units = prefs and prefs.get('units', 'unit') == 'value'
+      units = prefs.get('units', 'unit') != 'value' if prefs else True
 
       # Handle the complete upload as a single database transaction
       with transaction.atomic(using=request.database):
@@ -317,16 +317,16 @@ class OverviewReport(GridPivot):
               colnum += 1
             errors = False
             if colindexes[0] < 0:
-              yield force_unicode(_('Missing primary key field %(key)s') % {'key': 'forecast'}) + '\n '
+              yield force_text(_('Missing primary key field %(key)s') % {'key': 'forecast'}) + '\n '
               errors = True
             if colindexes[1] < 0 and colindexes[2] < 0 and colindexes[3] < 0:
-              yield force_unicode(_('No time field specified')) + '\n '
+              yield force_text(_('No time field specified')) + '\n '
               errors = True
             if colindexes[4] < 0 and colindexes[5] < 0:
-              yield force_unicode(_('No adjustment field specified')) + '\n '
+              yield force_text(_('No adjustment field specified')) + '\n '
               errors = True
             if errors:
-              yield force_unicode(_('Allowed fields: forecast, bucket, start date, end date, forecast adjustment, orders adjustment')) + '\n '
+              yield force_text(_('Allowed fields: forecast, bucket, start date, end date, forecast adjustment, orders adjustment')) + '\n '
               break
 
           ### Case 2: Skip empty rows and comments rows
@@ -348,13 +348,13 @@ class OverviewReport(GridPivot):
                   request
                   )
             except Exception as e:
-              yield force_unicode(
+              yield force_text(
                 _('Row %(rownum)s: %(message)s') % {
                   'rownum': rownumber, 'message': e
                   }) + '\n '
 
       # Report all failed records
-      yield force_unicode(
+      yield force_text(
           _('Uploaded data successfully: processed %d records') % rownumber
           ) + '\n '
 
@@ -363,7 +363,7 @@ class OverviewReport(GridPivot):
   def parseSpreadsheetUpload(reportclass, request):    # TODO also support uploads in pivot format
     # Check permissions
     if not request.user.has_perm('input.change_forecastdemand'):
-      yield force_unicode(_('Permission denied')) + '\n '
+      yield force_text(_('Permission denied')) + '\n '
     else:
       # Choose the right language
       if translation.get_language() != request.LANGUAGE_CODE:
@@ -373,7 +373,7 @@ class OverviewReport(GridPivot):
       colindexes = [-1, -1, -1, -1, -1, -1]
       rownumber = 0
       prefs = request.user.getPreference(OverviewReport.getKey())
-      units = prefs and prefs.get('units', 'unit') == 'value'
+      units = prefs.get('units', 'unit') != 'value' if prefs else True
 
       # Handle the complete upload as a single database transaction
       with transaction.atomic(using=request.database):
@@ -388,7 +388,7 @@ class OverviewReport(GridPivot):
           if rownumber == 1:
             colnum = 0
             for col in row:
-              col = unicode(col.value).strip().strip('#').lower()
+              col = str(col.value).strip().strip('#').lower()
               if col == _('forecast').lower():
                 colindexes[0] = colnum
               elif col == _('start date').lower():
@@ -404,16 +404,16 @@ class OverviewReport(GridPivot):
               colnum += 1
             errors = False
             if colindexes[0] < 0:
-              yield force_unicode(_('Missing primary key field %(key)s') % {'key': 'forecast'}) + '\n '
+              yield force_text(_('Missing primary key field %(key)s') % {'key': 'forecast'}) + '\n '
               errors = True
             if colindexes[1] < 0 and colindexes[2] < 0 and colindexes[3] < 0:
-              yield force_unicode(_('No time field specified')) + '\n '
+              yield force_text(_('No time field specified')) + '\n '
               errors = True
             if colindexes[4] < 0 and colindexes[5] < 0:
-              yield force_unicode(_('No adjustment field specified')) + '\n '
+              yield force_text(_('No adjustment field specified')) + '\n '
               errors = True
             if errors:
-              yield force_unicode(_('Allowed fields: forecast, bucket, start date, end date, forecast adjustment, orders adjustment')) + '\n '
+              yield force_text(_('Allowed fields: forecast, bucket, start date, end date, forecast adjustment, orders adjustment')) + '\n '
               break
 
           ### Case 2: Skip empty rows and comments rows
@@ -435,13 +435,13 @@ class OverviewReport(GridPivot):
                   request
                   )
             except Exception as e:
-              yield force_unicode(
+              yield force_text(
                 _('Row %(rownum)s: %(message)s') % {
                   'rownum': rownumber, 'message': e
                   }) + '\n '
 
       # Report all failed records
-      yield force_unicode(
+      yield force_text(
           _('Uploaded data successfully: processed %d records') % rownumber
           ) + '\n '
 
