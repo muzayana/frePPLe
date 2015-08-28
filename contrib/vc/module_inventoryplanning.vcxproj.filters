@@ -18,6 +18,9 @@
     <ClCompile Include="..\..\modules\inventoryplanning\inventoryplanning.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\modules\inventoryplanning\module.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\modules\inventoryplanning\inventoryplanning.h">

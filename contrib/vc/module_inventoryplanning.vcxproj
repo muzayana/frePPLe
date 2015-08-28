@@ -215,6 +215,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\modules\inventoryplanning\inventoryplanning.cpp" />
+    <ClCompile Include="..\..\modules\inventoryplanning\module.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\modules\inventoryplanning\inventoryplanning.h" />

@@ -2,7 +2,7 @@
 # Process this file with automake to produce Makefile.in
 #
 
-sources = inventoryplanning.cpp inventoryplanning.h
+sources = inventoryplanning.cpp module.cpp inventoryplanning.h
 
 EXTRA_DIST = mod_inventoryplanning.xsd $(sources)
 

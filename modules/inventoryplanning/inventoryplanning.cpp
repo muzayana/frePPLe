@@ -16,48 +16,15 @@
 namespace module_inventoryplanning
 {
 
+const Keyword InventoryPlanningSolver::tag_fixed_order_cost("fixed_order_cost");
+const Keyword InventoryPlanningSolver::tag_holding_cost("holding_cost");
+
 const MetaClass *InventoryPlanningSolver::metadata;
-
-
-MODULE_EXPORT const char* initialize(const Environment::ParameterList& z)
-{
-  // Initialize only once
-  static bool init = false;
-  static const char* name = "inventoryplanning";
-  if (init)
-  {
-    logger << "Warning: Initializing module inventoryplanning more than once." << endl;
-    return name;
-  }
-  init = true;
-
-  // Verify you have an enterprise license.
-  // This specific value of the flag is when the customer name is "Community Edition users".
-  if (flags == 269264) return "";
-
-  // Register the Python extensions
-  PyGILState_STATE state = PyGILState_Ensure();
-  try
-  {
-    // Register new Python data types
-    if (InventoryPlanningSolver::initialize())
-      throw RuntimeException("Error registering inventoryplanningsolver");
-    PyGILState_Release(state);
-  }
-  catch (const exception &e)
-  {
-    PyGILState_Release(state);
-    logger << "Error: " << e.what() << endl;
-  }
-  catch (...)
-  {
-    PyGILState_Release(state);
-    logger << "Error: unknown exception" << endl;
-  }
-
-  // Return the name of the module
-  return name;
-}
+Calendar *InventoryPlanningSolver::cal = NULL;
+Date InventoryPlanningSolver::startdate;
+Date InventoryPlanningSolver::enddate;
+double InventoryPlanningSolver::fixed_order_cost = 0.0;
+double InventoryPlanningSolver::holding_cost = 0.0;
 
 
 int InventoryPlanningSolver::initialize()
@@ -125,59 +92,186 @@ PyObject* InventoryPlanningSolver::create(PyTypeObject* pytype, PyObject* args, 
 
 void InventoryPlanningSolver::solve(void* v)
 {
-  if (getLogLevel()>0)
-    logger << "Calling inventory planning solver" << endl;
+  if (getLogLevel() > 0)
+    logger << "Start inventory planning solver" << endl;
 
-  // For classic inventory planning, simply call the solve method for each
-  // indivudual buffer.
-  // For mulit-echelon optimization, this loop needs to be
-  // replaced with something else.
+  // Validate the solver is initialised correctly
+  if (!cal)
+    throw DataException("Inventory planning solver requires a calendar to be specified");
+  if (!startdate && !enddate)
+    throw DataException("Inventory planning solver requires a planning horizon to be specified");
+  if (!holding_cost)
+    throw DataException("Inventory planning solver requires a holding cost percentage to be specified");
+  if (!fixed_order_cost)
+    throw DataException("Inventory planning solver requires a fixed order cost to be specified");
+
+  // Call the solve method for each buffer
   for (Buffer::iterator i = Buffer::begin(); i != Buffer::end(); ++i)
-    solve(&*i);
+    if (i->getType() != *BufferInfinite::metadata)
+      solve(&*i);
+
+  if (getLogLevel() > 0)
+    logger << "End inventory planning solver" << endl;
 }
 
 
 void InventoryPlanningSolver::solve(const Buffer* b, void* v)
 {
-  logger << "Inventory planning solver on buffer " << b << endl;
+  short loglevel = getLogLevel();
+  if (loglevel > 1)
+    logger << "Inventory planning solver on buffer " << b << endl;
 
-  // Calculation below applies to a single period.
-  // For SAIC I'll need to compute it for each period.
+  // Inventory planning parameters of this buffer
+  double leadtime_deviation = 0;
+  double demand_deviation = 0;
+  bool nostock = false;
+  double roq_min_qty = 0.0;
+  double roq_max_qty = DBL_MAX;
+  Duration roq_min_poc;
+  Duration roq_max_poc(10 * 365 * 86400);
+  double roq_multiple = 1.0;
+  string distribution = "normal";
+  double service_level = 0.0;
+  double ss_min_qty = 0.0;
+  double ss_max_qty = DBL_MAX;
+  double ss_multiple = 1.0;
+  Duration ss_min_poc;
+  Duration ss_max_poc(10 * 365 * 86400);
+  double price = 0.0;
+  if (b->getItem())
+    price = b->getItem()->getPrice();
 
   // Get the lead time from the operation replenishing this buffer
   Duration leadtime;
   Operation *oper = b->getProducingOperation();
   if (!oper)
-    logger << "     No replenishing operation defined" << endl;
+  {
+    if (loglevel > 1)
+      logger << "   No replenishing operation defined" << endl;
+    return;
+  }
   else if (oper->getType() != *OperationFixedTime::metadata)
-    logger << "     Replenishing operation should be of type fixed_time" << endl;
+    logger << "   Replenishing operation should be of type fixed_time" << endl; // TODO Make more generic
   else
     leadtime = static_cast<OperationFixedTime*>(oper)->getDuration();
-  logger << "     Lead time: " << leadtime << endl;
 
-  // Get the demand.
-  // We take the average demand seen on the buffer for the next 3 lead time periods.
-  // To be thought through more carefully... MCA calculations are based on a single
-  // point in time, while the distribution type of industries frePPLe is dealing with
-  // have a time aspect as well in the forecast: a peak in a seasonal forecast must
-  // have an influence on the safety stock upstream in periods that properly offset
-  // with the lead time.
-  double consumption = 0.0;
-  Date fence = Plan::instance().getCurrent() + Duration(leadtime * 3);
-  for (Buffer::flowplanlist::const_iterator i = b->getFlowPlans().begin();
-    i != b->getFlowPlans().end(); ++i)
+  // Report parameter settings
+  if (loglevel > 1)
   {
-    if (i->getQuantity() < 0)
-      consumption -= i->getQuantity();
-    if (i->getDate() > fence)
-      break;
+    logger << "   lead time: " << leadtime
+      << ", lead time std deviation: " << leadtime_deviation
+      << ", demand std deviation: " << demand_deviation
+      << ", price: " << price << endl;
+
+    logger << "   ROQ: min quantity: " << roq_min_qty
+      << ", max quantity: " << roq_max_qty
+      << ", min cover: " << roq_min_poc
+      << ", max cover: " << roq_max_poc
+      << ", multiple: " << roq_multiple << endl;
+    logger << "   SS: min quantity: " << ss_min_qty
+      << ", max quantity: " << ss_max_qty
+      << ", min cover: " << ss_min_poc
+      << ", max cover: " << ss_max_poc
+      << ", multiple: " << ss_multiple << endl;
+    logger << "   don't stock: " << nostock
+      << ", distribution: " << distribution
+      << ", service level: " << service_level << endl;
   }
-  logger << "     Consumption over lead time: " << consumption / 3 << endl;
+
+  // Loop over all buckets in the horizon
+  for (Calendar::EventIterator bucket(cal, startdate, true);
+    bucket.getDate() < enddate; ++bucket)
+  {
+    if (loglevel > 2)
+      logger << "     Bucket " << bucket.getDate() << ": ";
+
+    // Get the demand per day, measured over the lead time.
+    // TODO NOT CORRECT: fence not implemented right, round for complete buckets, etc...
+    double demand = 0.0;
+    Date fence = bucket.getDate() + Duration(leadtime);
+    for (Buffer::flowplanlist::const_iterator i = b->getFlowPlans().begin();
+      i != b->getFlowPlans().end(); ++i)
+    {
+      if (i->getQuantity() < 0)
+        demand -= i->getQuantity();
+      if (i->getDate() > fence)
+        break;
+    }
+
+    // Compute the reorder quantity
+    // 1. start with the wilson formula for the optimal reorder quantity
+    // 2. apply the minimum constraints in quantity and period of cover
+    // 3. round up to the next roq_multiple, if specified
+    // 4. apply the maximum constraints in quantity and period of cover, and
+    //    round down when doing so.
+    double roq = 1.0;
+    if (price)
+      roq = sqrt(2 * 365 * demand * fixed_order_cost / holding_cost / price);
+    if (roq < roq_min_qty)
+      roq = roq_min_qty;
+    if (roq < demand * roq_min_poc)
+      roq = demand * roq_min_poc;
+    if (roq_multiple > 0)
+      roq = roq_multiple * static_cast<int>(roq / roq_multiple + 0.99999999);
+    if (roq > roq_max_qty)
+    {
+      roq = roq_max_qty;
+      if (roq_multiple > 0)
+        roq = roq_multiple * static_cast<int>(roq / roq_multiple);
+    }
+    if (roq > demand * roq_max_poc)
+    {
+      roq = demand * roq_max_poc;
+      if (roq_multiple > 0)
+        roq = roq_multiple * static_cast<int>(roq / roq_multiple);
+    }
+
+    // Compute the safety stock
+    // 1. start with the value based on the desired service level
+    // 2. apply the minimum constraints in quantity and period of cover
+    // 3. round up to the next roq_multiple, if specified
+    // 4. apply the maximum constraints in quantity and period of cover, and
+    //    round down when doing so.
+    double ss = 0.0;
+    if (service_level > 0)
+    {
+      if (demand_deviation && leadtime_deviation)
+        ss = 1.0 * sqrt(demand * demand_deviation * demand_deviation + demand * demand * leadtime_deviation * leadtime_deviation);
+      else if (demand_deviation)
+        ss = 1.0 * sqrt(demand) * demand_deviation;
+      else if (leadtime_deviation)
+        ss = 1.0 * demand * leadtime_deviation;
+    }
+    if (ss < ss_min_qty)
+      ss = ss_min_qty;
+    if (ss < demand * ss_min_poc)
+      ss = demand * ss_min_poc;
+    if (ss_multiple > 0)
+      ss = ss_multiple * static_cast<int>(ss / ss_multiple + 0.99999999);
+    if (ss > ss_max_qty)
+    {
+      ss = ss_max_qty;
+      if (ss_multiple > 0)
+        ss = ss_multiple * static_cast<int>(ss / ss_multiple);
+    }
+    if (ss > demand * ss_max_poc)
+    {
+      ss = demand * ss_max_poc;
+      if (ss_multiple > 0)
+        ss = ss_multiple * static_cast<int>(ss / ss_multiple);
+    }
+
+    // Final result
+    if (loglevel > 2)
+      logger << "demand: " << demand
+        << ", roq: " << roq
+        << ", ss: " << ss
+        << ", rop: " << (ss + leadtime * demand) << endl;
+  }
 
   // Final result will go here:
-  //    b->setMinimum()
   //    b->setMinimumCalendar()
-
+  //    oper->setSizeMinimumCalendar()
 }
 
 }       // end namespace
