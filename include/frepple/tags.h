@@ -34,7 +34,6 @@ class Tags
     static DECLARE_EXPORT const Keyword buffers;
     static DECLARE_EXPORT const Keyword calendar;
     static DECLARE_EXPORT const Keyword calendars;
-    static DECLARE_EXPORT const Keyword carrying_cost;
     static DECLARE_EXPORT const Keyword category;
     static DECLARE_EXPORT const Keyword cluster;
     static DECLARE_EXPORT const Keyword confirmed;
@@ -154,6 +153,7 @@ class Tags
     static DECLARE_EXPORT const Keyword setupmatrix;
     static DECLARE_EXPORT const Keyword size_maximum;
     static DECLARE_EXPORT const Keyword size_minimum;
+    static DECLARE_EXPORT const Keyword size_minimum_calendar;
     static DECLARE_EXPORT const Keyword size_multiple;
     static DECLARE_EXPORT const Keyword skill;
     static DECLARE_EXPORT const Keyword skills;

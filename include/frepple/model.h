@@ -1760,7 +1760,7 @@ class OperationPlan
       * plans should pass on a call to the parent operationplan.
       */
     inline double setQuantity(double f, bool roundDown,
-      bool update = true, bool execute = true);
+      bool update = true, bool execute = true, Date start = Date::infinitePast);
 
     /** Returns a pointer to the demand for which this operationplan is a delivery.
       * If the operationplan isn't a delivery, this is a NULL pointer.
@@ -2390,8 +2390,9 @@ class Operation : public HasName<Operation>,
   public:
     /** Default constructor. */
     explicit DECLARE_EXPORT Operation() :
-      loc(NULL), size_minimum(1.0), size_multiple(0.0), size_maximum(DBL_MAX),
-      cost(0.0), hidden(false), first_opplan(NULL), last_opplan(NULL)
+      loc(NULL), size_minimum(1.0), size_minimum_calendar(NULL),
+      size_multiple(0.0), size_maximum(DBL_MAX), cost(0.0), hidden(false),
+      first_opplan(NULL), last_opplan(NULL)
       {}
 
     /** Destructor. */
@@ -2537,8 +2538,10 @@ class Operation : public HasName<Operation>,
       * This method considers the lot size constraints and also propagates
       * the new quantity to child operationplans.
       */
-    virtual DECLARE_EXPORT double setOperationPlanQuantity
-      (OperationPlan* oplan, double f, bool roundDown, bool upd, bool execute) const;
+    virtual DECLARE_EXPORT double setOperationPlanQuantity(
+      OperationPlan* oplan, double f, bool roundDown, bool upd,
+      bool execute, Date start
+      ) const;
 
     /** Returns the location of the operation, which is used to model the
       * working hours and holidays. */
@@ -2620,12 +2623,25 @@ class Operation : public HasName<Operation>,
       return size_minimum;
     }
 
+    /** Returns the calendar defining the minimum size of operationplans. */
+    Calendar* getSizeMinimumCalendar() const
+    {
+      return size_minimum_calendar;
+    }
+
     /** Sets the multiple size of operationplans. */
     void setSizeMultiple(double f)
     {
       if (f<0)
         throw DataException("Operation can't have a negative multiple size");
       size_multiple = f;
+      setChanged();
+    }
+
+    /** Sets a calendar to defining the minimum size of operationplans. */
+    virtual void setSizeMinimumCalendar(Calendar *c)
+    {
+      size_minimum_calendar = c;
       setChanged();
     }
 
@@ -2743,6 +2759,7 @@ class Operation : public HasName<Operation>,
       m->addDoubleField<Cls>(Tags::cost, &Cls::getCost, &Cls::setCost);
       m->addDurationField<Cls>(Tags::fence, &Cls::getFence, &Cls::setFence);
       m->addDoubleField<Cls>(Tags::size_minimum, &Cls::getSizeMinimum, &Cls::setSizeMinimum, 1);
+      m->addPointerField<Cls>(Tags::size_minimum_calendar, &Cls::getSizeMinimumCalendar, &Cls::setSizeMinimumCalendar);
       m->addDoubleField<Cls>(Tags::size_multiple, &Cls::getSizeMultiple, &Cls::setSizeMultiple);
       m->addDoubleField<Cls>(Tags::size_maximum, &Cls::getSizeMaximum, &Cls::setSizeMaximum, DBL_MAX);
       m->addPointerField<Cls, Location>(Tags::location, &Cls::getLocation, &Cls::setLocation);
@@ -2793,6 +2810,11 @@ class Operation : public HasName<Operation>,
       */
     double size_minimum;
 
+    /** Minimum size for operationplans when this size varies over time.
+      * If this field is specified, the size_minimum field is ignored.
+      */
+    Calendar *size_minimum_calendar;
+
     /** Multiple size for operationplans. */
     double size_multiple;
 
@@ -2822,10 +2844,10 @@ class Operation : public HasName<Operation>,
 
 
 inline double OperationPlan::setQuantity(double f, bool roundDown,
-  bool update, bool execute)
+  bool update, bool execute, Date start)
 {
   return oper ?
-    oper->setOperationPlanQuantity(this, f, roundDown, update, execute) :
+    oper->setOperationPlanQuantity(this, f, roundDown, update, execute, start) :
     f;
 }
 
@@ -3120,7 +3142,7 @@ class OperationSetup : public Operation
 
 
 /** @brief Models an operation whose duration is the sum of a constant time,
-  * plus a cetain time per unit.
+  * plus a certain time per unit.
   */
 class OperationTimePer : public Operation
 {
@@ -3154,9 +3176,21 @@ class OperationTimePer : public Operation
     /** Sets the time per unit of the operation time. */
     void setDurationPer(double t)
     {
-      if(t<0.0)
+      if(t < 0.0)
         throw DataException("TimePer operation can't have a negative duration-per");
       duration_per = t;
+    }
+
+    /** Sets a calendar to defining the minimum size of operationplans.
+      * It overrides the method defined at the base class by printing an
+      * additional warning.
+      */
+    virtual void setSizeMinimumCalendar(Calendar *c)
+    {
+      logger << "Warning: using a minimum size calendar on an operation of "
+         << "type timeper is tricky. Planning results can be incorrect "
+         << "around changes of the minimum size." << endl;
+      Operation::setSizeMinimumCalendar(c);
     }
 
     /** A operation of this type enforces the following rules on its
@@ -3171,6 +3205,10 @@ class OperationTimePer : public Operation
       *     compute an end date based on the quantity.
       *   - If no date is specified, we respect the quantity and the end
       *     date of the operation. A new start date is being computed.
+      *
+      * Tricky situations can arise when the minimum size is varying over
+      * time, ie min_size_calendar field is used.
+      *
       * @see Operation::setOperationPlanParameters
       */
     DECLARE_EXPORT OperationPlanState setOperationPlanParameters
@@ -3240,8 +3278,10 @@ class OperationRouting : public Operation
     DECLARE_EXPORT OperationPlanState setOperationPlanParameters
     (OperationPlan*, double, Date, Date, bool=true, bool=true) const;
 
-    DECLARE_EXPORT double setOperationPlanQuantity
-      (OperationPlan* oplan, double f, bool roundDown, bool upd, bool execute) const;
+    DECLARE_EXPORT double setOperationPlanQuantity(
+      OperationPlan* oplan, double f, bool roundDown, bool upd,
+      bool execute, Date start
+      ) const;
 
     /** Add a new child operationplan.
       * A routing operationplan has a series of suboperationplans:
@@ -4138,7 +4178,7 @@ class Buffer : public HasHierarchy<Buffer>, public HasLevel,
     explicit DECLARE_EXPORT Buffer() :
       hidden(false), producing_operation(uninitializedProducing), loc(NULL), it(NULL),
       min_val(0), max_val(default_max), min_cal(NULL), max_cal(NULL),
-      min_interval(-1), carrying_cost(0.0), tool(false) {}
+      min_interval(-1), tool(false) {}
 
     /** Builds a producing operation for a buffer.
       * The logic used is based on the following:
@@ -4248,28 +4288,6 @@ class Buffer : public HasHierarchy<Buffer>, public HasLevel,
 
     /** Updates the minimum inventory target for the buffer. */
     DECLARE_EXPORT void setMaximumCalendar(CalendarDefault*);
-
-    /** Return the carrying cost.<br>
-      * The cost of carrying inventory in this buffer. The value is a
-      * percentage of the item sales price, per year and per unit.
-      */
-    double getCarryingCost() const
-    {
-      return carrying_cost;
-    }
-
-    /** Return the carrying cost.<br>
-      * The cost of carrying inventory in this buffer. The value is a
-      * percentage of the item sales price, per year and per unit.<br>
-      * The default value is 0.0.
-      */
-    void setCarryingCost(const double c)
-    {
-      if (c >= 0)
-        carrying_cost = c;
-      else
-        throw DataException("Buffer carrying_cost must be positive");
-    }
 
     /** Initialize the class. */
     static int initialize();
@@ -4410,7 +4428,6 @@ class Buffer : public HasHierarchy<Buffer>, public HasLevel,
       m->addPointerField<Cls, CalendarDefault>(Tags::minimum_calendar, &Cls::getMinimumCalendar, &Cls::setMinimumCalendar);
       m->addDoubleField<Cls>(Tags::maximum, &Cls::getMaximum, &Cls::setMaximum, default_max);
       m->addPointerField<Cls, CalendarDefault>(Tags::maximum_calendar, &Cls::getMaximumCalendar, &Cls::setMaximumCalendar);
-      m->addDoubleField<Cls>(Tags::carrying_cost, &Cls::getCarryingCost, &Cls::setCarryingCost);
       m->addDurationField<Cls>(Tags::mininterval, &Cls::getMinimumInterval, &Cls::setMinimumInterval, -1);
       m->addDurationField<Cls>(Tags::maxinterval, &Cls::getMaximumInterval, &Cls::setMaximumInterval);
       m->addIteratorField<Cls, flowlist::const_iterator, Flow>(Tags::flows, Tags::flow, &Cls::getFlowIterator, DETAIL);
@@ -4483,12 +4500,6 @@ class Buffer : public HasHierarchy<Buffer>, public HasLevel,
 
     /** Maximum time interval between purchasing operations. */
     Duration max_interval;
-
-    /** Carrying cost.<br>
-      * The cost of carrying inventory in this buffer. The value is a
-      * percentage of the item sales price, per year and per unit.
-      */
-    double carrying_cost;
 
     /** A flag that marks whether this buffer represents a tool or not. */
     bool tool;
