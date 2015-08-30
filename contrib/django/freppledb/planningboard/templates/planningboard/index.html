@@ -45,7 +45,7 @@ var x = d3.time.scale().domain([horizonstart, horizonend]);
 var y = d3.scale.linear().rangeRound([rowheight-3, 3]);
 
 var service_url = ('https:' == document.location.protocol ? 'wss://' : 'ws://') + document.location.hostname
-  + ':{{port}}/planningboard/?username={{request.user.username|urlencode}}&userid={{request.user.id}}&time={{time}}&token={{token}}';
+  + ':{{port}}/ws/?username={{request.user.username|urlencode}}&userid={{request.user.id}}&time={{time}}&token={{token}}';
 
 $(function() {
   $(".fa-lg").tooltip({show: {effect: "fade", delay: 500}});

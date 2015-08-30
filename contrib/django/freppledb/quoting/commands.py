@@ -74,12 +74,22 @@ if __name__ == "__main__":
     #runWebService(database=db)
     frepple.runWebServer(
       document_root = ".",
+      # Note on port numbers: add a 's' after the port number to mark ssl ports
       listening_ports = "8001",
       num_threads = "10",
       enable_directory_listing = "no",
       request_timeout_ms = "7200000", # 2 hours timeout
-      access_log_file = "server_access.log",
-      error_log_file = "server_error.log",
+      access_log_file = os.path.join(
+        settings.FREPPLE_LOGDIR,
+        "server_access%s.log" % (("_%s" % db) if db != DEFAULT_DB_ALIAS else '')
+        ),
+      error_log_file = os.path.join(
+        settings.FREPPLE_LOGDIR,
+        "server_error%s.log" % (("_%s" % db) if db != DEFAULT_DB_ALIAS else '')
+        ),
+      # For details on an SSL certificate, see:
+      #    https://github.com/civetweb/civetweb/blob/master/docs/OpenSSL.md
+      #ssl_certificate = "use absolute path to a .pem file",
       max_websocket_clients = "20",
       secret_key = settings.SECRET_KEY,
       database_connection=getConnection(db)

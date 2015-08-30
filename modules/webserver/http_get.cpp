@@ -24,12 +24,12 @@ bool WebServer::handleGet(CivetServer *server, struct mg_connection *conn)
   // Return the index page
   if (!strcmp(request_info->uri, "/index.html"))
   {
-    static string::size_type indexlength = 0;
+    static int indexlength = 0;
     static string index;
     if (!indexlength)
     {
       buildIndex(index);
-      indexlength = index.size();
+      indexlength = static_cast<int>(index.size());
     }
     mg_printf(conn,
       "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: %d\r\n\r\n%s",

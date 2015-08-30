@@ -39,8 +39,8 @@ PyObject* runWebServer (PyObject* self, PyObject* args, PyObject* kwds)
     "enable_directory_listing", "no",
     "request_timeout_ms", "600000",
     "error_log_file", "server_error.log",
-    "access_log_file", 0,
-    //"ssl_certificate", "frepple_cert.pem",
+    "access_log_file", "access_log",
+    "ssl_certificate", 0,
     0
     };
   string document_root;
@@ -101,17 +101,15 @@ PyObject* runWebServer (PyObject* self, PyObject* args, PyObject* kwds)
     access_log_file = d.getString();
     options[13] = access_log_file.c_str();
   }
-  else
-    options[12] = NULL;
-  /*
   pyobj = PyDict_GetItemString(kwds,"ssl_certificate");
   if (pyobj)
   {
-    PythonObject d(pyobj);
+    PythonData d(pyobj);
     ssl_certificate = d.getString();
     options[15] = ssl_certificate.c_str();
   }
-  */
+  else
+    options[14] = NULL;
   pyobj = PyDict_GetItemString(kwds,"max_websocket_clients");
   if (pyobj)
   {

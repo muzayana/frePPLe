@@ -61,7 +61,7 @@ bool WebServer::handlePost(CivetServer *server, struct mg_connection *conn)
       "HTTP/1.1 500 Server error\r\n"
       "Content-Length: %d\r\n\r\n"
       "%s",
-      strlen(e.what()), e.what()
+      static_cast<int>(strlen(e.what())), e.what()
       );
   }
   catch(...)
