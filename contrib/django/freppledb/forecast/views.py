@@ -207,28 +207,6 @@ class OverviewReport(GridPivot):
         }
 
 
-  @staticmethod
-  def processUpload(fcst, startdate, enddate, bucket, fcstadj, ordersadj, units, request):
-    fcst = Forecast.objects.all().using(request.database).get(name=fcst)
-    ok = False
-    if fcstadj != '' and fcstadj is not None:
-      fcstadj = Decimal(fcstadj)
-      ok = True
-    else:
-      fcstadj = None
-    if ordersadj != '' and ordersadj is not None:
-      ordersadj = Decimal(ordersadj)
-      ok = True
-    else:
-      ordersadj = None
-    if ok:
-      if bucket:
-        buck = BucketDetail.objects.all().using(request.database).get(name=bucket)  #TODO cache the buckets to avoid db queries
-        startdate = buck.startdate
-        enddate = buck.enddate
-      fcst.updatePlan(startdate, enddate, fcstadj, ordersadj, units, request.database)
-
-
   @classmethod
   def parseJSONupload(reportclass, request):
     # Check permissions
@@ -280,15 +258,22 @@ class OverviewReport(GridPivot):
     else:
 
       # Choose the right delimiter and language
-      delimiter = get_format('DECIMAL_SEPARATOR', request.LANGUAGE_CODE, True) == ',' and ';' or ','
+      delimiter = ';' if get_format('DECIMAL_SEPARATOR', request.LANGUAGE_CODE, True) == ',' else ','
       if translation.get_language() != request.LANGUAGE_CODE:
         translation.activate(request.LANGUAGE_CODE)
 
       # Init
-      colindexes = [-1, -1, -1, -1, -1, -1]
+      colindexes = [-1, -1, -1, -1, -1, -1, -1]
       rownumber = 0
       prefs = request.user.getPreference(OverviewReport.getKey())
       units = prefs.get('units', 'unit') != 'value' if prefs else True
+      pivotbuckets = []
+
+      # Read the name of all buckets in memory
+      bucket_names = {
+        i.name.lower() : (i.startdate, i.enddate)
+        for i in BucketDetail.objects.all().using(request.database).only('name', 'startdate', 'enddate')
+        }
 
       # Handle the complete upload as a single database transaction
       with transaction.atomic(using=request.database):
@@ -314,19 +299,31 @@ class OverviewReport(GridPivot):
                 colindexes[4] = colnum
               elif col == _('orders adjustment').lower():
                 colindexes[5] = colnum
+              elif col == _("data field").lower():
+                # This marks the difference between the pivot and list layout
+                colindexes[6] = colnum
+              elif colindexes[6] > 0:
+                # All columns after 'data field' are assumed to be bucket names
+                pivotbuckets.append(col)
               colnum += 1
             errors = False
             if colindexes[0] < 0:
               yield force_text(_('Missing primary key field %(key)s') % {'key': 'forecast'}) + '\n '
               errors = True
-            if colindexes[1] < 0 and colindexes[2] < 0 and colindexes[3] < 0:
-              yield force_text(_('No time field specified')) + '\n '
-              errors = True
-            if colindexes[4] < 0 and colindexes[5] < 0:
-              yield force_text(_('No adjustment field specified')) + '\n '
-              errors = True
+            if colindexes[6] > 0:
+              if not pivotbuckets:
+                yield force_text(_('No time field specified')) + '\n '
+                errors = True
+            else:
+              if colindexes[1] < 0 and colindexes[2] < 0 and colindexes[3] < 0:
+                yield force_text(_('No time field specified')) + '\n '
+                errors = True
+              if colindexes[4] < 0 and colindexes[5] < 0:
+                yield force_text(_('No adjustment field specified')) + '\n '
+                errors = True
             if errors:
-              yield force_text(_('Allowed fields: forecast, bucket, start date, end date, forecast adjustment, orders adjustment')) + '\n '
+              yield force_text(_('Recognized fields for list layout: forecast, bucket, start date, end date, forecast adjustment, orders adjustment')) + '\n '
+              yield force_text(_('Recognized fields for pivot layout: forecast, data field, [bucket names*]')) + '\n '
               break
 
           ### Case 2: Skip empty rows and comments rows
@@ -337,20 +334,70 @@ class OverviewReport(GridPivot):
           else:
             try:
               with transaction.atomic(using=request.database):
-                reportclass.processUpload(
-                  row[colindexes[0]] if colindexes[0] < len(row) else None,
-                  row[colindexes[1]] if colindexes[1] > 0 and colindexes[1] < len(row) else None,
-                  row[colindexes[2]] if colindexes[2] > 0 and colindexes[1] < len(row) else None,
-                  row[colindexes[3]] if colindexes[3] > 0 and colindexes[1] < len(row) else None,
-                  row[colindexes[4]] if colindexes[4] > 0 and colindexes[1] < len(row) else None,
-                  row[colindexes[5]] if colindexes[5] > 0 and colindexes[1] < len(row) else None,
-                  units,
-                  request
-                  )
+                fcstname = row[colindexes[0]] if colindexes[0] < len(row) else None
+                fcst = Forecast.objects.all().using(request.database).get(name=fcstname)
+                if colindexes[6] > 0:
+                  # Case 3a: data row in pivot layout
+                  field = row[colindexes[6]].lower() if colindexes[6] > 0 and colindexes[6] < len(row) else None
+                  cnt = 0
+                  for b in row[colindexes[6] + 1:]:
+                    # Loop over data buckets
+                    if b:
+                      try:
+                        (startdate, enddate) = bucket_names[pivotbuckets[cnt]]
+                      except KeyError:
+                        raise Exception(force_text(_("Bucket '%(name)s' not found") % {'name': pivotbuckets[cnt]}))
+                      if field == _('orders adjustment').lower():
+                        try:
+                          ordersadj = Decimal(b)
+                        except:
+                          raise Exception(force_text(_("Invalid number: %(value)s") % {'value': b}))
+                        fcst.updatePlan(
+                          startdate, enddate, None, ordersadj, units, request.database
+                          )
+                      elif field == _('forecast adjustment').lower():
+                        try:
+                          fcstadj = Decimal(b)
+                        except:
+                          raise Exception(force_text(_("Invalid number: %(value)s") % {'value': b}))
+                        fcst.updatePlan(
+                          startdate, enddate, fcstadj, None, units, request.database
+                          )
+                    cnt += 1
+                else:
+                  # Case 3b: data row in list layout
+                  startdate = row[colindexes[1]] if colindexes[1] > 0 and colindexes[1] < len(row) else None
+                  enddate = row[colindexes[2]] if colindexes[2] > 0 and colindexes[1] < len(row) else None
+                  bucket = row[colindexes[3]] if colindexes[3] > 0 and colindexes[1] < len(row) else None
+                  if bucket:
+                    try:
+                      (startdate, enddate) = bucket_names[bucket.lower()]
+                    except KeyError:
+                      raise Exception(force_text(_("Bucket '%(name)s' not found") % {'name': bucket}))
+                  if row[colindexes[5]] and colindexes[4] > 0 and colindexes[1] < len(row):
+                    try:
+                      fcstadj = Decimal(row[colindexes[4]])
+                    except:
+                      raise Exception(force_text(_("Invalid number: %(value)s") % {'value': row[colindexes[4]]}))
+                  else:
+                    fcstadj = None
+                  if row[colindexes[5]] and colindexes[5] > 0 and colindexes[5] < len(row):
+                    try:
+                      ordersadj = Decimal(row[colindexes[5]])
+                    except:
+                      raise Exception(force_text(_("Invalid number: %(value)s") % {'value': row[colindexes[5]]}))
+                  else:
+                    ordersadj = None
+                  if fcstadj or ordersadj:
+                    if not startdate and not enddate:
+                      raise Exception(force_text(_("No time bucket specified")))
+                    fcst.updatePlan(
+                      startdate, enddate, fcstadj, ordersadj, units, request.database
+                      )
             except Exception as e:
               yield force_text(
                 _('Row %(rownum)s: %(message)s') % {
-                  'rownum': rownumber, 'message': e
+                  'rownum': rownumber, 'message': str(e)
                   }) + '\n '
 
       # Report all failed records
@@ -370,10 +417,17 @@ class OverviewReport(GridPivot):
         translation.activate(request.LANGUAGE_CODE)
 
       # Init
-      colindexes = [-1, -1, -1, -1, -1, -1]
+      colindexes = [-1, -1, -1, -1, -1, -1, -1]
       rownumber = 0
       prefs = request.user.getPreference(OverviewReport.getKey())
       units = prefs.get('units', 'unit') != 'value' if prefs else True
+      pivotbuckets = []
+
+      # Read the name of all buckets in memory
+      bucket_names = {
+        i.name.lower() : (i.startdate, i.enddate)
+        for i in BucketDetail.objects.all().using(request.database).only('name', 'startdate', 'enddate')
+        }
 
       # Handle the complete upload as a single database transaction
       with transaction.atomic(using=request.database):
@@ -401,19 +455,31 @@ class OverviewReport(GridPivot):
                 colindexes[4] = colnum
               elif col == _('orders adjustment').lower():
                 colindexes[5] = colnum
+              elif col == _("data field").lower():
+                # This marks the difference between the pivot and list layout
+                colindexes[6] = colnum
+              elif colindexes[6] > 0:
+                # All columns after 'data field' are assumed to be bucket names
+                pivotbuckets.append(col)
               colnum += 1
             errors = False
             if colindexes[0] < 0:
               yield force_text(_('Missing primary key field %(key)s') % {'key': 'forecast'}) + '\n '
               errors = True
-            if colindexes[1] < 0 and colindexes[2] < 0 and colindexes[3] < 0:
-              yield force_text(_('No time field specified')) + '\n '
-              errors = True
-            if colindexes[4] < 0 and colindexes[5] < 0:
-              yield force_text(_('No adjustment field specified')) + '\n '
-              errors = True
+            if colindexes[6] > 0:
+              if not pivotbuckets:
+                yield force_text(_('No time field specified')) + '\n '
+                errors = True
+            else:
+              if colindexes[1] < 0 and colindexes[2] < 0 and colindexes[3] < 0:
+                yield force_text(_('No time field specified')) + '\n '
+                errors = True
+              if colindexes[4] < 0 and colindexes[5] < 0:
+                yield force_text(_('No adjustment field specified')) + '\n '
+                errors = True
             if errors:
-              yield force_text(_('Allowed fields: forecast, bucket, start date, end date, forecast adjustment, orders adjustment')) + '\n '
+              yield force_text(_('Recognized fields for list layout: forecast, bucket, start date, end date, forecast adjustment, orders adjustment')) + '\n '
+              yield force_text(_('Recognized fields for pivot layout: forecast, data field, [bucket names*]')) + '\n '
               break
 
           ### Case 2: Skip empty rows and comments rows
@@ -424,16 +490,66 @@ class OverviewReport(GridPivot):
           else:
             try:
               with transaction.atomic(using=request.database):
-                reportclass.processUpload(
-                  row[colindexes[0]].value if colindexes[0] < len(row) else None,
-                  row[colindexes[1]].value if colindexes[1] > 0 and colindexes[1] < len(row) else None,
-                  row[colindexes[2]].value if colindexes[2] > 0 and colindexes[1] < len(row) else None,
-                  row[colindexes[3]].value if colindexes[3] > 0 and colindexes[1] < len(row) else None,
-                  row[colindexes[4]].value if colindexes[4] > 0 and colindexes[1] < len(row) else None,
-                  row[colindexes[5]].value if colindexes[5] > 0 and colindexes[1] < len(row) else None,
-                  units,
-                  request
-                  )
+                fcstname = row[colindexes[0]].value if colindexes[0] < len(row) else None
+                fcst = Forecast.objects.all().using(request.database).get(name=fcstname)
+                if colindexes[6] > 0:
+                  # Case 3a: data row in pivot layout
+                  field = row[colindexes[6]].value.lower() if colindexes[6] > 0 and colindexes[6] < len(row) else None
+                  cnt = 0
+                  for b in row[colindexes[6] + 1:]:
+                    # Loop over data buckets
+                    if b.value is not None:
+                      try:
+                        (startdate, enddate) = bucket_names[pivotbuckets[cnt]]
+                      except KeyError:
+                        raise Exception(force_text(_("Bucket '%(name)s' not found") % {'name': pivotbuckets[cnt]}))
+                      if field == _('orders adjustment').lower():
+                        try:
+                          ordersadj = Decimal(b.value)
+                        except:
+                          raise Exception(force_text(_("Invalid number: %(value)s") % {'value': b.value}))
+                        fcst.updatePlan(
+                          startdate, enddate, None, ordersadj, units, request.database
+                          )
+                      elif field == _('forecast adjustment').lower():
+                        try:
+                          fcstadj = Decimal(b.value)
+                        except:
+                          raise Exception(force_text(_("Invalid number: %(value)s") % {'value': b.value}))
+                        fcst.updatePlan(
+                          startdate, enddate, fcstadj, None, units, request.database
+                          )
+                    cnt += 1
+                else:
+                  # Case 3b: data row in list layout
+                  startdate = row[colindexes[1]].value if colindexes[1] > 0 and colindexes[1] < len(row) else None
+                  enddate = row[colindexes[2]].value if colindexes[2] > 0 and colindexes[2] < len(row) else None
+                  bucket = row[colindexes[3]].value if colindexes[3] > 0 and colindexes[3] < len(row) else None
+                  if bucket:
+                    try:
+                      (startdate, enddate) = bucket_names[bucket.lower()]
+                    except KeyError:
+                      raise Exception(force_text(_("Bucket '%(name)s' not found") % {'name': bucket}))
+                  if row[colindexes[4]].value is not None and colindexes[4] > 0 and colindexes[4] < len(row):
+                    try:
+                      fcstadj = Decimal(row[colindexes[4]].value)
+                    except:
+                      raise Exception(force_text(_("Invalid number: %(value)s") % {'value': row[colindexes[4]].value}))
+                  else:
+                    fcstadj = None
+                  if row[colindexes[5]].value is not None and colindexes[5] > 0 and colindexes[5] < len(row):
+                    try:
+                      ordersadj = Decimal(row[colindexes[5]].value)
+                    except:
+                      raise Exception(force_text(_("Invalid number: %(value)s") % {'value': row[colindexes[5]].value}))
+                  else:
+                    ordersadj = None
+                  if fcstadj or ordersadj:
+                    if not startdate and not enddate:
+                      raise Exception(force_text(_("No time bucket specified")))
+                    fcst.updatePlan(
+                      startdate, enddate, fcstadj, ordersadj, units, request.database
+                      )
             except Exception as e:
               yield force_text(
                 _('Row %(rownum)s: %(message)s') % {
