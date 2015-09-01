@@ -44,7 +44,6 @@ class Migration(migrations.Migration):
                 ('type', models.CharField(max_length=20, choices=[('default', 'Default'), ('infinite', 'Infinite'), ('procure', 'Procure')], blank=True, verbose_name='type', default='default', null=True)),
                 ('onhand', models.DecimalField(blank=True, max_digits=15, decimal_places=4, help_text='current inventory', verbose_name='onhand', default='0.00', null=True)),
                 ('minimum', models.DecimalField(blank=True, max_digits=15, decimal_places=4, help_text='Safety stock', verbose_name='minimum', default='0.00', null=True)),
-                ('carrying_cost', models.DecimalField(blank=True, decimal_places=4, help_text='Cost of holding inventory in this buffer, expressed as an annual percentage of the item price.', verbose_name='carrying cost', max_digits=15, null=True)),
                 ('leadtime', freppledb.common.fields.DurationField(blank=True, decimal_places=4, help_text='Leadtime for supplier of a procure buffer', verbose_name='leadtime', max_digits=15, null=True)),
                 ('fence', freppledb.common.fields.DurationField(blank=True, decimal_places=4, help_text='Frozen fence for creating new procurements', verbose_name='fence', max_digits=15, null=True)),
                 ('min_inventory', models.DecimalField(blank=True, decimal_places=4, help_text='Inventory level that triggers replenishment of a procure buffer', verbose_name='min_inventory', max_digits=15, null=True)),

@@ -399,7 +399,7 @@ class loadData(object):
       SELECT name, description, location_id, item_id, onhand,
         minimum, minimum_calendar_id, producing_id, type, leadtime, min_inventory,
         max_inventory, min_interval, max_interval, size_minimum,
-        size_multiple, size_maximum, fence, carrying_cost,
+        size_multiple, size_maximum, fence,
         category, subcategory, source
       FROM buffer %s
       ''' % self.filter_where)
@@ -408,7 +408,7 @@ class loadData(object):
       if i[8] == "procure":
         b = frepple.buffer_procure(
           name=i[0], description=i[1], item=frepple.item(name=i[3]), onhand=i[4],
-          category=i[19], subcategory=i[20], source=i[21]
+          category=i[18], subcategory=i[19], source=i[20]
           )
         if i[9]:
           b.leadtime = i[9]
@@ -427,16 +427,16 @@ class loadData(object):
       elif i[8] == "infinite":
         b = frepple.buffer_infinite(
           name=i[0], description=i[1], item=frepple.item(name=i[3]), onhand=i[4],
-          category=i[19], subcategory=i[20], source=i[21]
+          category=i[18], subcategory=i[19], source=i[20]
           )
       elif not i[8] or i[8] == "default":
         b = frepple.buffer(
           name=i[0], description=i[1], item=frepple.item(name=i[3]), onhand=i[4],
-          category=i[19], subcategory=i[20], source=i[21]
+          category=i[18], subcategory=i[19], source=i[20]
           )
       else:
         raise ValueError("Buffer type '%s' not recognized" % i[8])
-      if i[20] == 'tool':
+      if i[19] == 'tool':
         b.tool = True
       if i[2]:
         b.location = frepple.location(name=i[2])
@@ -446,8 +446,6 @@ class loadData(object):
         b.minimum_calendar = frepple.calendar(name=i[6])
       if i[7]:
         b.producing = frepple.operation(name=i[7])
-      if i[18]:
-        b.carrying_cost = i[18]
       if i[12]:
         b.mininterval = i[12]
       if i[13]:
