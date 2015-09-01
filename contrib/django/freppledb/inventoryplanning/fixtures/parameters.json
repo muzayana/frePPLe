@@ -1,0 +1,8 @@
+[
+{"pk": "inventoryplanning.calendar", "model": "common.parameter", "fields": {"value": "", "description": "Name of a calendar model to define the granularity of the time buckets for inventory planning."}},
+{"pk": "inventoryplanning.horizon_start", "model": "common.parameter", "fields": {"value": "0", "description": "Specifies the number of days in the past for which we generate safety stock and reorder quantity values. Default: 0"}},
+{"pk": "inventoryplanning.horizon_end", "model": "common.parameter", "fields": {"value": "365", "description": "Specifies the number of days in the future for which we generate safety stock and reorder quantity values. Default: 365"}},
+{"pk": "inventoryplanning.holding_cost", "model": "common.parameter", "fields": {"value": "20", "description": "Fixed order cost to compute the economic reorder quantity. Default value: 20"}},
+{"pk": "inventoryplanning.fixed_order_cost", "model": "common.parameter", "fields": {"value": "0.05", "description": "Holding cost percentage to compute economic reorder quantity. Default value: 0.05"}},
+{"pk": "inventoryplanning.loglevel", "model": "common.parameter", "fields": {"value": "localhost:8001", "description": "Controls the verbosity of the inventory planning solver. Accepted values are 0(silent - default), 1 and 2 (verbose)"}}
+]

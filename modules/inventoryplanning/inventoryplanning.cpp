@@ -18,13 +18,15 @@ namespace module_inventoryplanning
 
 const Keyword InventoryPlanningSolver::tag_fixed_order_cost("fixed_order_cost");
 const Keyword InventoryPlanningSolver::tag_holding_cost("holding_cost");
+const Keyword InventoryPlanningSolver::tag_horizon_start("horizon_start");
+const Keyword InventoryPlanningSolver::tag_horizon_end("horizon_end");
 
 const MetaClass *InventoryPlanningSolver::metadata;
 Calendar *InventoryPlanningSolver::cal = NULL;
-Date InventoryPlanningSolver::startdate;
-Date InventoryPlanningSolver::enddate;
-double InventoryPlanningSolver::fixed_order_cost = 0.0;
-double InventoryPlanningSolver::holding_cost = 0.0;
+int InventoryPlanningSolver::horizon_start = 0;
+int InventoryPlanningSolver::horizon_end = 365;
+double InventoryPlanningSolver::fixed_order_cost = 20;
+double InventoryPlanningSolver::holding_cost = 0.05;
 
 
 int InventoryPlanningSolver::initialize()
@@ -98,12 +100,6 @@ void InventoryPlanningSolver::solve(void* v)
   // Validate the solver is initialised correctly
   if (!cal)
     throw DataException("Inventory planning solver requires a calendar to be specified");
-  if (!startdate && !enddate)
-    throw DataException("Inventory planning solver requires a planning horizon to be specified");
-  if (!holding_cost)
-    throw DataException("Inventory planning solver requires a holding cost percentage to be specified");
-  if (!fixed_order_cost)
-    throw DataException("Inventory planning solver requires a fixed order cost to be specified");
 
   // Call the solve method for each buffer
   for (Buffer::iterator i = Buffer::begin(); i != Buffer::end(); ++i)
@@ -179,6 +175,8 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
   }
 
   // Loop over all buckets in the horizon
+  Date startdate = Plan::instance().getCurrent() - Duration(horizon_start * 86400L);
+  Date enddate = Plan::instance().getCurrent() + Duration(horizon_end * 86400L);
   for (Calendar::EventIterator bucket(cal, startdate, true);
     bucket.getDate() < enddate; ++bucket)
   {

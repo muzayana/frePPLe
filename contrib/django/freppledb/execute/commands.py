@@ -7,6 +7,7 @@
 # You are not allowed to distribute the software, either in the form of source code
 # or in the form of compiled binaries.
 #
+import inspect
 import os
 import sys
 from datetime import datetime
@@ -85,24 +86,28 @@ def createPlan(database=DEFAULT_DB_ALIAS):
     else:
       solver.loglevel = 0
 
-  # <<<<<<<<<<<< START EXTRA FOR INVENTORY PLANNING
+  # TODO: move this properly into the inventory planning app
+  with_inventoryplanning = 'solver_inventoryplanning' in [ a[0] for a in inspect.getmembers(frepple) ]
+  if with_inventoryplanning:
+    print("Start inventory planning")
 
-  print("Start inventory planning")
-  # Load the inventory planning module
-  frepple.loadmodule("mod_inventoryplanning.so")
+    # Create an unconstrained plan to propagate demand across all dependent levels.
+    # TODO: we only want to propagate the forecasted demand, excluding any actual sales orders already received.
+    frepple.solver_mrp(plantype=2, constraints=0, loglevel=0).solve()
 
-  # Create an unconstrained plan to propagate demand across all dependent levels.
-  # TODO: we only want to propagate the forecasted demand, excluding any actual sales orders already received.
-  frepple.solver_mrp(name="Unconstrained", plantype=2, constraints=0, loglevel=0).solve()
+    # Run the inventory planning solver to compute the safety stock and reorder quantities
+    frepple.solver_inventoryplanning(
+      calendar=frepple.calendar(name=Parameter.getValue('inventoryplanning.calendar', database), action='C'),
+      horizon_start=int(Parameter.getValue('inventoryplanning.horizon_start', database, 0)),
+      horizon_end=int(Parameter.getValue('inventoryplanning.horizon_end', database, 365)),
+      holding_cost=float(Parameter.getValue('inventoryplanning.holding_cost', database, 0.05)),
+      fixed_order_cost=float(Parameter.getValue('inventoryplanning.fixed_order_cost', database, 20)),
+      loglevel=int(Parameter.getValue('inventoryplanning.loglevel', database, 0)),
+      ).solve()
 
-  # Run the inventory planning solver to compute the safety stock and reorder quantities
-  frepple.solver_inventoryplanning(name="IPsolver", loglevel=2).solve()
-
-  # Erase the plan again
-  frepple.erase(False)
-  print("Finished inventory planning")
-
-  # <<<<<<<<<<<< END EXTRA FOR INVENTORY PLANNING
+    # Erase the plan again
+    frepple.erase(False)
+    print("Finished inventory planning")
 
   # Create a solver where the plan type are defined by an environment variable
   try:

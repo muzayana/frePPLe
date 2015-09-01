@@ -34,10 +34,10 @@ class InventoryPlanningSolver : public Solver
     static Calendar *cal;
 
     /** Start date of the horizon for which to compute the SS & ROQ. */
-    static Date startdate;
+    static int horizon_start;
 
     /** End date of the horizon for which to compute the SS and ROQ. */
-    static Date enddate;
+    static int horizon_end;
 
     static double fixed_order_cost;
 
@@ -46,6 +46,8 @@ class InventoryPlanningSolver : public Solver
   public:
     static const Keyword tag_fixed_order_cost;
     static const Keyword tag_holding_cost;
+    static const Keyword tag_horizon_start;
+    static const Keyword tag_horizon_end;
 
     Calendar* getCalendar() const
     {
@@ -57,24 +59,24 @@ class InventoryPlanningSolver : public Solver
       cal = c;
     }
 
-    Date getStart() const
+    int getHorizonStart() const
     {
-      return startdate;
+      return horizon_start;
     }
 
-    void setStart(Date d)
+    void setHorizonStart(int d)
     {
-      startdate = d;
+      horizon_start = d;
     }
 
-    Date getEnd() const
+    int getHorizonEnd() const
     {
-      return enddate;
+      return horizon_end;
     }
 
-    void setEnd(Date d)
+    void setHorizonEnd(int d)
     {
-      enddate = d;
+      horizon_end = d;
     }
 
     double getFixedOrderCost() const
@@ -123,8 +125,8 @@ class InventoryPlanningSolver : public Solver
     template<class Cls> static inline void registerFields(MetaClass* m)
     {
       m->addPointerField<Cls, Calendar>(Tags::calendar, &Cls::getCalendar, &Cls::setCalendar);
-      m->addDateField<Cls>(Tags::start, &Cls::getStart, &Cls::setStart);
-      m->addDateField<Cls>(Tags::end, &Cls::getEnd, &Cls::setEnd);
+      m->addIntField<Cls>(tag_horizon_start, &Cls::getHorizonStart, &Cls::setHorizonStart);
+      m->addIntField<Cls>(tag_horizon_end, &Cls::getHorizonEnd, &Cls::setHorizonEnd);
       m->addDoubleField<Cls>(tag_fixed_order_cost, &Cls::getFixedOrderCost, &Cls::setFixedOrderCost);
       m->addDoubleField<Cls>(tag_holding_cost, &Cls::getHoldingCost, &Cls::setHoldingCost);
     }
