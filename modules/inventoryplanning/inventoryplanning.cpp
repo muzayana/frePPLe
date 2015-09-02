@@ -158,7 +158,6 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
       << ", lead time std deviation: " << leadtime_deviation
       << ", demand std deviation: " << demand_deviation
       << ", price: " << price << endl;
-
     logger << "   ROQ: min quantity: " << roq_min_qty
       << ", max quantity: " << roq_max_qty
       << ", min cover: " << roq_min_poc
@@ -174,27 +173,98 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
       << ", service level: " << service_level << endl;
   }
 
+  // Prepare the calendars to retrieve the results
+  Calendar *roq_calendar = oper->getSizeMinimumCalendar();
+  Calendar *ss_calendar = b->getMinimumCalendar();
+  if (roq_calendar)
+  {
+    // Erase existing calendar buckets
+    while (true)
+    {
+      CalendarBucket::iterator i = roq_calendar->getBuckets();
+      if (i == roq_calendar->getBuckets().end())
+        break;
+      roq_calendar->removeBucket(&*i);
+    }
+  }
+  else
+  {
+    // Create a brand new calendar
+    roq_calendar = new Calendar();
+    roq_calendar->setName("Reorder quantities for " + b->getName());
+    roq_calendar->setSource("Inventory planning");
+  }
+  if (ss_calendar)
+  {
+    // Erase existing calendar buckets
+    while (true)
+    {
+      CalendarBucket::iterator i = ss_calendar->getBuckets();
+      if (i == ss_calendar->getBuckets().end())
+        break;
+      ss_calendar->removeBucket(&*i);
+    }
+  }
+  else
+  {
+    // Create a brand new calendar
+    ss_calendar = new Calendar();
+    ss_calendar->setName("Safety stock for " + b->getName());
+    ss_calendar->setSource("Inventory planning");
+  }
+  CalendarBucket *roq_calendar_bucket = NULL;
+  CalendarBucket *ss_calendar_bucket = NULL;
+
   // Loop over all buckets in the horizon
   Date startdate = Plan::instance().getCurrent() - Duration(horizon_start * 86400L);
   Date enddate = Plan::instance().getCurrent() + Duration(horizon_end * 86400L);
+  Date bucketstart;
   for (Calendar::EventIterator bucket(cal, startdate, true);
     bucket.getDate() < enddate; ++bucket)
   {
+    if (!bucketstart)
+    {
+      bucketstart = bucket.getDate();
+      continue;
+    }
+    Date bucketend = bucket.getDate();
     if (loglevel > 2)
-      logger << "     Bucket " << bucket.getDate() << ": ";
+      logger << "     Bucket " << bucketstart << " - " << bucketend << ": ";
 
     // Get the demand per day, measured over the lead time.
-    // TODO NOT CORRECT: fence not implemented right, round for complete buckets, etc...
+    // Demand in buckets which are completely within the lead time is all added.
+    // The last bucket will be only partially within the lead time. We take the
+    // complete demand in that last bucket and add a proportion of it to the
+    // lead time demand.
     double demand = 0.0;
-    Date fence = bucket.getDate() + Duration(leadtime);
+    double lastdemand = 0.0;
+    Date fence = bucketstart + Duration(leadtime);
+    Date last_bucket_start;
+    Date last_bucket_end;
+    for (Calendar::EventIterator tmp(cal, startdate, true);
+      tmp.getDate() < enddate; ++tmp)
+    {
+      last_bucket_start = last_bucket_end;
+      last_bucket_end = tmp.getDate();
+      if (last_bucket_end > fence)
+        break;
+    }
     for (Buffer::flowplanlist::const_iterator i = b->getFlowPlans().begin();
       i != b->getFlowPlans().end(); ++i)
     {
       if (i->getQuantity() < 0)
-        demand -= i->getQuantity();
-      if (i->getDate() > fence)
+      {
+        if (i->getDate() > last_bucket_start)
+          lastdemand -= i->getQuantity();
+        else if (i->getDate() > bucketstart)
+          demand -= i->getQuantity();
+      }
+      if (i->getDate() >= last_bucket_end)
         break;
     }
+    if (lastdemand > 0)
+      demand += lastdemand * (fence - last_bucket_start) / (last_bucket_end - last_bucket_start);
+    demand = demand / leadtime * 86400;
 
     // Compute the reorder quantity
     // 1. start with the wilson formula for the optimal reorder quantity
@@ -264,12 +334,31 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
       logger << "demand: " << demand
         << ", roq: " << roq
         << ", ss: " << ss
-        << ", rop: " << (ss + leadtime * demand) << endl;
-  }
+        << ", rop: " << (ss + leadtime * demand / 86400) << endl;
 
-  // Final result will go here:
-  //    b->setMinimumCalendar()
-  //    oper->setSizeMinimumCalendar()
+    // Store the result on the ROQ and SS calendars
+    if (!ss_calendar_bucket || fabs(ss_calendar_bucket->getValue() - ss) > ROUNDING_ERROR)
+    {
+      if (ss_calendar_bucket)
+        ss_calendar_bucket->setEnd(bucketstart);
+      ss_calendar_bucket = new CalendarBucket();
+      ss_calendar_bucket->setStart(bucketstart);
+      ss_calendar_bucket->setCalendar(ss_calendar);
+      ss_calendar_bucket->setValue(ss);
+    }
+    if (!roq_calendar_bucket || fabs(roq_calendar_bucket->getValue() - roq) > ROUNDING_ERROR)
+    {
+      if (roq_calendar_bucket)
+        roq_calendar_bucket->setEnd(bucketstart);
+      roq_calendar_bucket = new CalendarBucket();
+      roq_calendar_bucket->setStart(bucketstart);
+      roq_calendar_bucket->setCalendar(roq_calendar);
+      roq_calendar_bucket->setValue(roq);
+    }
+
+    // Prepare for the next bucket
+    bucketstart = bucket.getDate();
+  }
 }
 
 }       // end namespace

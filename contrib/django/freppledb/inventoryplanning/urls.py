@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013 by frePPLe bvba
+# Copyright (C) 2015 by frePPLe bvba
 #
 # All information contained herein is, and remains the property of frePPLe.
 # You are allowed to use and modify the source code, as long as the software is used
@@ -10,11 +10,13 @@
 
 from django.conf.urls import patterns
 
+import freppledb.inventoryplanning.views
+
 # Automatically add these URLs when the application is installed
 autodiscover = True
 
-#urlpatterns = patterns(
-#  '',  # Prefix
-#  (r'^inventoryplanning/$', freppledb.inventoryplanning.views.QuoteReport.as_view()),
-#  (r'^inventoryplanning/([^/]+)/$', freppledb.inventoryplanning.views.InfoView),
-#  )
+urlpatterns = patterns(
+  '',  # Prefix
+  # Model list reports, which override standard admin screens
+  (r'^data/inventoryplanning/inventoryplanning/$', freppledb.inventoryplanning.views.InventoryPlanningList.as_view()),
+  )
