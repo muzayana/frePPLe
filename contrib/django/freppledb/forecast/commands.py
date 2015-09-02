@@ -769,8 +769,6 @@ def generate_plan():
     print("\nStart exporting static model to the database with filter \"source = 'odoo'\" at", datetime.now().strftime("%H:%M:%S"))
     from freppledb.execute.export_database_static import exportStaticModel
     exportStaticModel(database=db, source='odoo').run()
-  from freppledb.execute.export_database_static import exportStaticModel
-  exportStaticModel(database=db).run()
 
   if not 'noproduction' in os.environ:
     print("\nStart exporting plan to the database at", datetime.now().strftime("%H:%M:%S"))
