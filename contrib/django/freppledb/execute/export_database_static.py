@@ -988,7 +988,7 @@ class exportStaticModel(object):
            round(i.total, settings.DECIMAL_PLACES), self.timestamp
          )
          for i in frepple.demands()
-         if isinstance(i, frepple.demand_forecastbucket) and (i.owner.name, i.startdate.date(), i.enddate.date()) not in primary_keys
+         if isinstance(i, frepple.demand_forecastbucket) and (i.owner.name, i.start.date(), i.end.date()) not in primary_keys
         ])
       cursor.executemany(
         '''update forecastdemand
@@ -1000,7 +1000,7 @@ class exportStaticModel(object):
             i.owner.name, str(i.startdate.date()), str(i.enddate.date()),
           )
           for i in frepple.demands()
-          if isinstance(i, frepple.demand_forecastbucket) and (i.owner.name, i.startdate.date(), i.enddate.date()) in primary_keys
+          if isinstance(i, frepple.demand_forecastbucket) and (i.owner.name, i.start.date(), i.end.date()) in primary_keys
         ])
       print('Exported forecast demands in %.2f seconds' % (time() - starttime))
 
