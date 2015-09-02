@@ -227,7 +227,12 @@ def generateBaseline(solver_fcst, cursor):
        AND calendarbucket.startdate = forecastplan.startdate
      WHERE calendarbucket.startdate >= '%s'
       AND calendarbucket.startdate < '%s'
-     ORDER BY forecast.name, calendarbucket.startdate''' % (frepple.settings.current - timedelta(days=horizon_history), frepple.settings.current))
+      AND forecast.planned = 't'
+     ORDER BY forecast.name, calendarbucket.startdate''' % (
+       frepple.settings.current - timedelta(days=horizon_history),
+       frepple.settings.current
+       )
+     )
   first = True
   for rec in cursor.fetchall():
     fcst = frepple.demand(name=rec[0])
@@ -252,6 +257,7 @@ def generateBaseline(solver_fcst, cursor):
     set forecastbaseline=0, forecastbaselinevalue=0, method=null
     where startdate>='%s'
       and (forecastbaseline<>0 or forecastbaselinevalue<>0 or method is not null)
+      and exists (select 1 from forecast where name = forecastplan.forecast_id and forecast.planned = 't')
     ''' % frepple.settings.current)
   cursor.executemany('''
     update forecastplan
@@ -265,7 +271,7 @@ def generateBaseline(solver_fcst, cursor):
         i.forecast.name, str(i.start)
       )
       for i in frepple.demands()
-      if isinstance(i, frepple.demand_forecastbucket) and i.forecast.methods != 0 and i.total != 0.0
+      if isinstance(i, frepple.demand_forecastbucket) and i.total != 0.0
     ])
 
 
@@ -301,6 +307,7 @@ def loadForecastValues(cursor):
      where calendarbucket.enddate >= '%s'
        and calendarbucket.startdate < '%s'
        and forecastplan.forecasttotal > 0
+       and forecast.planned = 't'
      order by forecast.name, calendarbucket.startdate''' % (frepple.settings.current, frepple.settings.current + timedelta(days=horizon_future)))
   for fcstname, start, qty in cursor.fetchall():
     frepple.demand(name=fcstname).setQuantity(qty, start, start, False)
@@ -353,7 +360,7 @@ def exportForecastFull(cursor):
         round(i.total*i.item.price, settings.DECIMAL_PLACES),
         round(i.quantity*i.item.price, settings.DECIMAL_PLACES),
         round(i.consumed*i.item.price, settings.DECIMAL_PLACES),
-        i.owner.name, str(i.startdate)
+        i.owner.name, str(i.start)
       )
       for i in generator(cursor)
     ])
@@ -492,7 +499,7 @@ def exportForecastPlanned(cursor):
         round(i.consumed, settings.DECIMAL_PLACES),
         round(i.quantity*i.item.price, settings.DECIMAL_PLACES),
         round(i.consumed*i.item.price, settings.DECIMAL_PLACES),
-        i.owner.name, str(i.startdate)
+        i.owner.name, str(i.start)
       )
       for i in generator(cursor)
     ])
@@ -729,6 +736,9 @@ def generate_plan():
     Customer.rebuildHierarchy(database=db)
     logProgress(33, db)
 
+    # Note: demand aggrgation is run, even when we choose not to run the
+    # forecast calculation. We want to assure that the forecast report shows
+    # the latest order information.
     print("\nStart aggregating demand at", datetime.now().strftime("%H:%M:%S"))
     aggregateDemand(cursor)
     logProgress(50, db)
