@@ -18,7 +18,7 @@ from uuid import uuid4
 from xml.etree.cElementTree import iterparse
 
 from django.core.management.base import BaseCommand, CommandError
-from django.db import transaction, connections, DEFAULT_DB_ALIAS
+from django.db import connections, DEFAULT_DB_ALIAS
 from django.conf import settings
 
 from freppledb.common.models import Parameter
@@ -60,7 +60,7 @@ class Command(BaseCommand):
       self.database = options['database'] or DEFAULT_DB_ALIAS
     else:
       self.database = DEFAULT_DB_ALIAS
-    if not self.database in settings.DATABASES.keys():
+    if self.database not in settings.DATABASES.keys():
       raise CommandError("No database settings known for '%s'" % self.database )
 
     # Pick up configuration parameters
@@ -380,7 +380,7 @@ class Command(BaseCommand):
         if self.verbosity > 0 and count % 500 == 1:
           print('.', end="")
       if self.verbosity > 0:
-        print ('')
+        print('')
       body.append('</ob:Openbravo>')
       self.post_data('/openbravo/ws/dal/ManufacturingWorkRequirement', '\n'.join(body))
       if self.verbosity > 0:

@@ -9,7 +9,6 @@
 #
 
 import os.path
-from io import StringIO
 
 from django.conf import settings
 from django.core import management
