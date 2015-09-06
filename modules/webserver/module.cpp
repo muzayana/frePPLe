@@ -66,6 +66,9 @@ MODULE_EXPORT const char* initialize(const Environment::ParameterList& params)
     logger << "Error: unknown exception" << endl;
   }
 
+  // Initialize the web token class
+  WebToken::initialize();
+
   // Return the name of the module
   return name;
 }

@@ -225,6 +225,7 @@
     <ClCompile Include="..\..\modules\webserver\webserver.cpp" />
     <ClCompile Include="..\..\modules\webserver\websocket_chat.cpp" />
     <ClCompile Include="..\..\modules\webserver\websocket_get.cpp" />
+    <ClCompile Include="..\..\modules\webserver\webtoken.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="dll.vcxproj">

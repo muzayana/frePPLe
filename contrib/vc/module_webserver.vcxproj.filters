@@ -67,5 +67,8 @@
     <ClCompile Include="..\..\modules\webserver\http_delete.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\modules\webserver\webtoken.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

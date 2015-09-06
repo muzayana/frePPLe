@@ -173,7 +173,7 @@ class DatabaseReader : public NonCopyable
         DatabaseResult(PGresult *r) : res(r) {}
 
         /** Constructor which runs asn SQL statement. */
-        DatabaseResult(DatabaseReader& db, DatabaseStatement& stmt); 
+        DatabaseResult(DatabaseReader& db, DatabaseStatement& stmt);
 
         /** Destructor. */
         ~DatabaseResult()
@@ -635,6 +635,166 @@ class WebServer : public CivetHandler
 
     /** Builds the main index page. */
     static void buildIndex(string&);
+};
+
+
+/** This class allows generation and verification of JSON Web Tokens,
+  * aka JWT, as specified in RFC 7519.
+  * Full information can be found in https://tools.ietf.org/html/rfc7519
+  * The website http://jwt.io is usefull to verify the correctness of the
+  * generated tokens.
+  *
+  * FrePPLe implements the following token fields:
+  *   - Header:
+  *       - alg: supported algorithms are "HS256", "HS384", "HS512",
+  *          TODO    "RS256", "RS384", "RS512", "ES256", "ES384" and "ES512".
+  *   - Claims/payload:
+  *       - sub: user name of the authenticated frePPLe user.
+  *       - exp: expiration date of the token.
+  *       - aud: scenario names for which the token is valid.
+  *   - Unsecured tokens are rejected.
+  *   - Nested tokens are not supported.
+  *   - Encrypted content is not supported.
+  */
+class WebToken {
+  public:
+    static void setSecret(string s)
+    {
+      secret = s;
+    }
+
+    void setAlg(string& s);
+
+    void setToken(string s)
+    {
+      tokenchanged = true;
+      token = s;
+    }
+
+    void setSub(string s)
+    {
+      claimschanged = true;
+      sub = s;
+    }
+
+    void setExp(Date s)
+    {
+      claimschanged = true;
+      exp = s;
+    }
+
+    void setAud(string s)
+    {
+      claimschanged = true;
+      aud = s;
+    }
+
+    string getToken() const
+    {
+      if (claimschanged)
+        const_cast<WebToken*>(this)->encode();
+      return token;
+    }
+
+    string getSub() const
+    {
+      if (tokenchanged)
+        const_cast<WebToken*>(this)->decode();
+      return sub;
+    }
+
+    string getAud() const
+    {
+      if (tokenchanged)
+        const_cast<WebToken*>(this)->decode();
+      return aud;
+    }
+
+    Date getExp() const
+    {
+      if (tokenchanged)
+        const_cast<WebToken*>(this)->decode();
+      return exp;
+    }
+
+    /** Parse the token and populate the claim fields.
+      * An exception will be thrown if the decoding fails.
+      */
+    void decode();
+
+    /** Use the claim fields to populate the token. */
+    void encode();
+
+    /** Constructor. */
+    WebToken() : tokenchanged(true), claimschanged(true), alg("HS256") {}
+
+    /** Initialize the class. */
+    static void initialize();
+
+    /** Copy constructor. */
+    WebToken(const string& s) : tokenchanged(true), claimschanged(false),
+      token(s), alg("HS256") {}
+
+    /** Compare tokens.
+      * This also triggers validation of the token if required.
+      */
+    bool operator ==(const WebToken &b) const
+    {
+      return getToken() == b.getToken();
+    }
+
+  private:
+    typedef void (WebToken::*signFunc)(stringstream&, const string&);
+
+    typedef basic_string<unsigned char> ustring;
+
+    /** Array with signature algorithms and their signature function. */
+    static map<string, signFunc> algorithms;
+
+    /** Shared secret to create signatures. */
+    static string secret;
+
+    /** Track when the decode method needs to be called before accessing
+      * the claims.
+      */
+    bool tokenchanged;
+
+    /** Track when the encode method needs to be called before reading the
+      * token.
+      */
+    bool claimschanged;
+
+    /** Web token. */
+    string token;
+
+    /** Claims. */
+    string sub;
+    Date exp;
+    string aud;
+
+    /** Algorithm. */
+    string alg;
+
+    /** Signature functions. */
+    void signHS256(stringstream&, const string&);
+    void signHS384(stringstream&, const string&);
+    void signHS512(stringstream&, const string&);
+
+    /** Base64 encoding function.
+      * Borrowed from http://www.adp-gmbh.ch/cpp/common/base64.html
+      * Changes from normal encoding:
+      *   - url safe encoding to use the characters "-" and "_" instead
+      *     of the regular "+" and "/".
+      *   - no padding
+      */
+    static void base64(stringstream&, const unsigned char*, unsigned int);
+
+    static const string WebToken::base64_chars;
+
+    static inline bool is_base64(unsigned char c)
+    {
+      return isalnum(c) || (c == '-') || (c == '_');
+    }
 };
 
 }   // End namespace
