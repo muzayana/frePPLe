@@ -981,7 +981,8 @@ var grid = {
     if (col == undefined) return "";
 
     // Find operator
-    var operands = $.jgrid.search.odata;
+    for (var firstKey in $.jgrid.locales)
+      var operands = $.jgrid.locales[firstKey].search.odata;
     for (i = 0; i < operands.length; i++)
       if (operands[i].oper == rule.op)
       {
