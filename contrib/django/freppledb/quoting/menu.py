@@ -12,4 +12,4 @@ from freppledb.menu import menu
 from freppledb.quoting.views import QuoteReport
 
 # Adding reports. We use an index value to keep the same order of the entries in all languages.
-menu.addItem("reports", "quote report", url="/quote/", report=QuoteReport, index=1200)
+menu.addItem("sales", "quote report", url="/quote/", report=QuoteReport, index=450)

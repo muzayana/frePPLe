@@ -12,4 +12,4 @@ from django.utils.translation import ugettext_lazy as _
 
 from freppledb.menu import menu
 
-menu.addItem("reports", "planning board", url="/planningboard/", label=_('Planning board'), index=1300)
+menu.addItem("capacity", "planning board", url="/planningboard/", label=_('Planning board'), index=175)

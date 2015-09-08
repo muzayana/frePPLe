@@ -76,7 +76,7 @@ class Forecast(AuditModel):
     verbose_name_plural = _('forecasts')
     ordering = ['name']
 
-  def __unicode__(self):
+  def __str__(self):
     return self.name
 
   def setTotal(self, startdate, enddate, quantity):
@@ -821,7 +821,7 @@ class ForecastDemand(AuditModel):
   enddate = models.DateField(_('end date'), null=False)
   quantity = models.DecimalField(_('quantity'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default=0)
 
-  def __unicode__(self):
+  def __str__(self):
     return self.forecast.name + " " + str(self.startdate) + " - " + str(self.enddate)
 
   class Meta(AuditModel.Meta):
@@ -860,7 +860,7 @@ class ForecastPlan(models.Model):
   forecastplannedvalue = models.DecimalField(_('planned forecast'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
   method = models.CharField(_('method'), max_length=60, editable=False, db_index=True, null=True)
 
-  def __unicode__(self):
+  def __str__(self):
     return "%s - %s" % (self.forecast.name, str(self.startdate))
 
   class Meta:
