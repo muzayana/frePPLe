@@ -57,7 +57,7 @@
 {% for widget in col.widgets %}
   <div class="ui-widget ui-widget-content ui-helper-clearfix ui-corner-all portlet">
     <div class="portlet-header ui-widget-header ui-corner-all" title="{{widget.tooltip|escape}}">
-    {% comment %}<div class="portlet-config" data-name="{{widget.name}}" data-value="{{widget}}"></div>{% endcomment %}
+    <div class="portlet-config" data-name="{{widget.name}}" data-value="{{widget}}"></div>
     {% if widget.exporturl %}<a href="{{request.prefix}}{{widget.url}}&amp;format=spreadsheet">
     <span class='fa fa-arrow-down portlet-export'></span></a>{% endif %}
     <span class='fa fa-times portlet-close'></span>
