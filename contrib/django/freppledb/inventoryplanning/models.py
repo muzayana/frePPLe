@@ -87,10 +87,43 @@ class InventoryPlanning(AuditModel):
   nostock = models.BooleanField(_("Do not stock"), blank=True, default=False)
 
   class Meta(AuditModel.Meta):
-    db_table = 'inventory_planning'
+    db_table = 'inventoryplanning'
     verbose_name = _('inventory planning parameter')
     verbose_name_plural = _('inventory planning parameters')
     ordering = ['buffer']
 
-  def __unicode__(self):
-    return self.buffer
+  def __str__(self):
+    return self.buffer.name
+
+
+class InventoryPlanningOutput(models.Model):
+  # Database fields
+  buffer = models.OneToOneField(Buffer, primary_key=True)
+  leadtime = models.DurationField(_('lead time'), db_index=True, null=True)
+  servicelevel = models.DecimalField(_('service level'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True)
+  localforecast = models.DecimalField(_('local forecast'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True)
+  localorders = models.DecimalField(_('local orders'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True)
+  localbackorders = models.DecimalField(_('local backorders'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True)
+  dependentforecast = models.DecimalField(_('dependent forecast'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True)
+  totaldemand = models.DecimalField(_('total demand'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True)
+  safetystock = models.DecimalField(_('safety stock'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True)
+  reorderquantity = models.DecimalField(_('reorder quantity'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True)
+  proposedpurchases = models.DecimalField(_('proposed purchases'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True)
+  proposedtransfers = models.DecimalField(_('proposed transfers'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True)
+  localforecastvalue = models.DecimalField(_('local forecast value'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True)
+  localordersvalue = models.DecimalField(_('local orders value'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True)
+  localbackordersvalue = models.DecimalField(_('local backorders value'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True)
+  dependentforecastvalue = models.DecimalField(_('dependent forecast value'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True)
+  totaldemandvalue = models.DecimalField(_('total demand value'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True)
+  safetystockvalue = models.DecimalField(_('safety stock value'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True)
+  reorderquantityvalue = models.DecimalField(_('reorder quantity value'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True)
+  proposedpurchasesvalue = models.DecimalField(_('proposed purchases value'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True)
+  proposedtransfersvalue = models.DecimalField(_('proposed transfers value'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True)
+
+  def __str__(self):
+    return self.buffer.name
+
+  class Meta:
+    db_table = 'out_inventoryplanning'
+    ordering = ['buffer']
+    

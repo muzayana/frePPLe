@@ -10,7 +10,7 @@
 
 from django.conf.urls import patterns
 
-import freppledb.inventoryplanning.views
+from freppledb.inventoryplanning.views import InventoryPlanningList, DRP, DRPitemlocation, DRPitem, DRPlocation
 
 # Automatically add these URLs when the application is installed
 autodiscover = True
@@ -18,5 +18,9 @@ autodiscover = True
 urlpatterns = patterns(
   '',  # Prefix
   # Model list reports, which override standard admin screens
-  (r'^data/inventoryplanning/inventoryplanning/$', freppledb.inventoryplanning.views.InventoryPlanningList.as_view()),
+  (r'^data/inventoryplanning/inventoryplanning/$', InventoryPlanningList.as_view()),
+  (r'^inventoryplanning/drp/$', DRP.as_view()),
+  (r'^inventoryplanning/drpitemlocation/(.+)/$', DRPitemlocation.as_view()),
+  (r'^inventoryplanning/drpitem/(.+)/$', DRPitem.as_view()),
+  (r'^inventoryplanning/drplocation/(.+)/$', DRPlocation.as_view()),
   )

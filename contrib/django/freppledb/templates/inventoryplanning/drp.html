@@ -1,0 +1,233 @@
+{% extends "admin/base_site_grid.html" %}
+{% load i18n %}
+
+{% block contextmenus %}
+{% include "buffercontext.html" %}
+{% endblock %}
+
+{% block extra_grid %}onSelectRow: selectRow,{% endblock %}
+
+{% block extrahead %}{{block.super}}
+<script type="text/javascript">
+
+var showtab = null;
+var result = null;
+
+function selectRow(id)
+{
+  $.ajax({
+    url: '/inventoryplanning/drpitemlocation/' + admin_escape(id) + '/',
+    type: 'GET',
+    success: displayResult,
+    error: function (result, stat, errorThrown) {
+      $('#popup').html(result.responseText + "  " + stat + errorThrown).dialog({
+        title: gettext("Error retrieving data"),
+        autoOpen: true,
+        resizable: false,
+        width: 'auto',
+        height: 'auto'
+      });
+      }
+    });  
+}
+
+function extraPreference() 
+{
+  // TODO save settings on forecast, planning and transaction tabs
+  return {
+     "height": $("#gbox_grid").height() - 48,
+     "showtab": showtab
+     };
+}
+
+function save(event)
+{
+  event.preventDefault();
+  if (result == null)
+    return;
+    
+  // Build the results to send back to the server
+  var data = {};
+  $("#commentitemlocation.red").each(function() {
+    data["comment"] = $("#newcomment").val();
+    data["commenttype"] = "itemlocation";
+    });
+  $("#commentlocation.red").each(function() {
+    data["comment"] = $("#newcomment").val();
+    data["commenttype"] = "location";
+    });
+  $("#commentitem.red").each(function() {
+    data["comment"] = $("#newcomment").val();
+    data["commenttype"] = "item";
+    });
+
+  // Send the results back to the server
+  $.ajax({
+    url: '/inventoryplanning/drpitemlocation/' + admin_escape(result.name) + '/',
+    type: 'POST',
+    data: JSON.stringify(data),
+    contentType: 'application/json', 
+    success: function() {
+      // TODO reset style of the save button
+      },
+    error: function (result, stat, errorThrown) {
+      $('#popup').html(result.responseText + "  " + stat + errorThrown).dialog({
+        title: gettext("Error posting data"),
+        autoOpen: true,
+        resizable: false,
+        width: 'auto',
+        height: 'auto'
+      });
+      }
+    });  
+}
+
+function undo()
+{
+  displayResult(result);
+}
+
+function displayResult(data) 
+{
+  result = data;
+  
+  // Enable input elements 
+  $("#save, #undo, #commentitem, #commentitemlocation, #commentlocation").prop('disabled', false);
+  
+  // Update title
+  if (result.type == "itemlocation")
+    $("#detailtitle").html("{% trans 'buffer'|capfirst|escape %} " + result.name);
+  else if (result.type == "item")
+    $("#detailtitle").html("{% trans 'item'|capfirst|escape %} " + result.name);
+  else if (result.type == "itemlocation")
+    $("#detailtitle").html("{% trans 'location'|capfirst|escape %} " + result.name);
+  
+  // Update the parameter values
+  $("#parameters").html(JSON.stringify(data));
+  
+  // Show comments
+  $("#commentlocation, #commentitem, #commentitemlocation").removeClass("red");   
+  $("#newcomment:visible").css("display", "none");
+  var comments = $("#pastcomments");
+  comments.empty();   
+  console.log(result.comments);
+  for (var c in result.comments)
+  {
+    $("<hr/><h3/>").text(result.comments[c].user + " " + result.comments[c].type).appendTo(comments); 
+    $("<span class='float_right'></span>").text(result.comments[c].lastmodified).appendTo(comments);
+    $("<pre/>").text(result.comments[c].comment).appendTo(comments);
+  }
+}
+      
+function selectTab(value)
+{
+  // Nothing changed
+  if (value === showtab) return;
+
+  // Hide previous tab
+  if (showtab != null)
+  {
+    $("#" + showtab + "tab").removeClass("frepple-tabs-active");
+    $("#" + showtab + "data").css("display", "none");
+  }
+  
+  // Show new tab
+  showtab = value;
+  $("#" + showtab + "tab").addClass("frepple-tabs-active");
+  $("#" + showtab + "data").css("display", "block");
+  
+  // Save selected table as a preference
+  grid.saveColumnConfiguration();
+  return false;
+}
+
+function setCommentType(t)
+{
+  if (t == "item")
+    $("#commentitemlocation, #commentlocation").removeClass("red");
+  else if (t == "location")
+    $("#commentitemlocation, #commentitem").removeClass("red");
+  else
+    $("#commentlocation, #commentitem").removeClass("red");   
+  $("#comment" + t).addClass("red");
+  $("#newcomment:hidden").toggle();
+}
+
+
+$(function() {
+  selectTab("forecast");
+});
+
+</script>
+{% endblock %}
+
+{% block actions %}<span id="filter" onclick="grid.showFilter()" title="{% trans 'Filter data'|escape%}" class="fa fa-search fa-lg"></span>
+<span onclick="grid.showExport(true)" title="{% trans 'Export as CSV or Excel file'|escape %}" class="fa fa-arrow-down fa-lg"></span>
+<span onclick="grid.showCustomize(false);" title="{% trans 'Customize'|escape %}" class="fa fa-wrench fa-lg"></span>{% endblock %}
+{% block after_table %}
+<br/><h1 id="detailtitle">{% trans "Detail" %}</h1>
+<input id="save" type="submit" value="{% trans 'save'|capfirst %}" onclick="save(event)" disabled/>&nbsp;&nbsp;
+<input id="undo" type="submit" value="{% trans 'undo'|capfirst %}" onclick="undo(event)" disabled/>
+<div class="frepple-tabs" id="tabs">
+<ul role="tablist">
+<li id="forecasttab" role="tab"><a class="ui-tabs-anchor" onclick="return selectTab('forecast')">{% trans 'forecast'|capfirst %}</a></li>
+<li id="plantab" role="tab"><a class="ui-tabs-anchor" onclick="return selectTab('plan')">{% trans 'Plan'|capfirst %}</a></li>
+<li id="transactionstab" role="tab"><a class="ui-tabs-anchor" onclick="return selectTab('transactions')">{% trans 'Transactions'|capfirst %}</a></li>
+<li id="commentstab" role="tab"><a class="ui-tabs-anchor" onclick="return selectTab('comments')">{% trans 'Comments'|capfirst %}</a></li>
+<li id="historytab" role="tab"><a class="ui-tabs-anchor" onclick="return selectTab('history')">{% trans 'History'|capfirst %}</a></li>
+</ul>
+</div>
+
+<div id="forecastdata" class="clear" style="display:none">fcst
+<br/><h2>{% trans "parameters"|capfirst %}</h2>
+<table><tr><td>{% trans "Forecast method"|capfirst %}</td><td><select id="forecastmethod" name="method">
+<option value="automatic">Automatic</option>
+<option value="constant">Constant</option>
+<option value="trend">Trend</option>
+<option value="seasonal">Seasonal</option>
+<option value="intermittent">Intermittent</option>
+<option value="moving average">Moving average</option>
+<option value="manual" selected="selected">Manual</option>
+</select></td></tr>
+<tr><td>{% trans "SMAPE Forecast error"|capfirst %}</td><td><span id="forecasterror"></span></td></tr></table>
+</div>
+
+<div id="plandata" class="clear" style="display:none">plan
+<br/><h2>{% trans "parameters"|capfirst %}</h2>
+<table><tr><td class="bold">{% trans "reorder quantity"|capfirst %}</td>
+<td class="bold">{% trans "safety stock"|capfirst %}</td></tr>
+<tr><td valign="top">
+<input type="radio" id="roq_type_eoq" name="roq_type" value="eoq"><label for="roq_type_eoq">{% trans "economic order quantity"|capfirst %}<span id="eoq">&nbsp;&nbsp;&nbsp;&nbsp;</span> units</label><br/>
+<input type="radio" id="roq_type_qty" name="roq_type" value="qty"><label for="roq_type_qty">{% trans "quantity"|capfirst %}<input type="number" name="roq_min" min="1" size="7"> units</label><br/>
+<input type="radio" id="roq_type_poc" name="roq_type" value="poc"><label for="roq_type_poc">{% trans "period of cover"|capfirst %}<input type="number" name="rop_min" min="1" size="7"> days</label><br/>
+</td><td valign="top">
+<input type="radio" id="ss_type_svc" name="ss_type" value="svc"><label for="ss_type_svc">{% trans "service level"|capfirst %}<span id="servicelevel"></span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;{% trans "minimum"|capfirst %} <input type="number" name="svc_percentage" min="0" max="100" size="7"> %<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;{% trans "statistical distribution"|capfirst %}<select id="svc_distribution" name="svc_distribution">
+<option value="automatic">{% trans "automatic"|capfirst %}</option>
+<option value="normal">{% trans "normal"|capfirst %}</option>
+<option value="poisson">{% trans "poisson"|capfirst %}</option>
+<option value="negbinomial">{% trans "negative binomial"|capfirst %}</option>
+</select><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;{% trans "demand standard deviation"|capfirst %} <input type="number" name="svc_dmd_stdev" min="0" max="100" size="7"> units<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;{% trans "lead time standard deviation"|capfirst %} <input type="number" name="svc_lt_stdev" min="0" max="100" size="7"> days</label><br/>
+<input type="radio" id="ss_type_qty" name="ss_type" value="qty"><label for="ss_type_qty">{% trans "quantity"|capfirst %}<input type="number" name="roq_min" min="1" size="7"> units</label><br/>
+<input type="radio" id="ss_type_poc" name="ss_type" value="poc"><label for="ss_type_poc">{% trans "period of cover"|capfirst %}<input type="number" name="rop_min" min="1" size="7"> days</label><br/>
+</td></tr>
+</table>
+<input type="checkbox" id="nostock" name="nostock" value="nostock">&nbsp;&nbsp;<label for="nostock">{% trans "Don't stock" %}</label>
+</div>
+
+<div id="transactionsdata" class="clear" style="display:none">transactions
+<span id="parameters"></span></div>
+
+<div id="commentsdata" class="clear" style="display:none">
+<input id="commentitem" type="submit" value="{% trans 'new item comment'|capfirst %}" onclick="return setCommentType('item')" disabled/>&nbsp;&nbsp;
+<input id="commentitemlocation" type="submit" value="{% trans 'new item-location comment'|capfirst %}" onclick="return setCommentType('itemlocation')" disabled/>&nbsp;&nbsp;
+<input id="commentlocation" type="submit" value="{% trans 'new location comment'|capfirst %}" onclick="return setCommentType('location')" disabled/><br/>
+<textarea style="display:none; width:100%" id="newcomment" name="comment" rows="5"></textarea><br/>
+<span id="pastcomments">{% trans "no comments yet"|capfirst %}</span>
+</div>
+
+<div id="historydata" class="clear" style="display:none">history</div>
+{% endblock %}
