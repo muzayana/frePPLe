@@ -11,7 +11,6 @@
 from decimal import Decimal
 
 from django.db import models, DEFAULT_DB_ALIAS
-from django.db.models import F, Q
 from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
 
