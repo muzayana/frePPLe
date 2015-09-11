@@ -782,12 +782,17 @@ class WebToken {
 
     /** Base64 encoding function.
       * Borrowed from http://www.adp-gmbh.ch/cpp/common/base64.html
-      * Changes from normal encoding:
+      * Changes from normal base64 encoding:
       *   - url safe encoding to use the characters "-" and "_" instead
       *     of the regular "+" and "/".
       *   - no padding
       */
-    static void base64(stringstream&, const unsigned char*, unsigned int);
+    static void base64_encode(stringstream&, const unsigned char*, unsigned int);
+
+    /** Base64 decoding function.
+      * See base64_encode.
+      */
+    static void base64_decode(stringstream&, const string&);
 
     static const string WebToken::base64_chars;
 

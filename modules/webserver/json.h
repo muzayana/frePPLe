@@ -530,10 +530,16 @@ class JSONSerializerString : public JSONSerializer
 {
   public:
     /** Default constructor. */
-    JSONSerializerString() {setOutput(os);}
+    JSONSerializerString()
+    {
+      setOutput(os);
+    }
 
     /** Return the output string. */
-    const string getData() const {return os.str();}
+    const string getData() const
+    {
+      return os.str();
+    }
 
   private:
     ostringstream os;
@@ -792,7 +798,10 @@ class JSONInputString : public JSONInput
     JSONInputString(char* s) : data(s) {};
 
     /** Parse the specified string. */
-    void parse(Object* pRoot) { JSONInput::parse(pRoot, data); }
+    void parse(Object* pRoot)
+    {
+      JSONInput::parse(pRoot, data);
+    }
 
   private:
     /** String containing the data to be parsed. Note that NO local copy of the
@@ -821,10 +830,16 @@ class JSONInputFile : public JSONInput
     JSONInputFile() {};
 
     /** Update the name of the file to be processed. */
-    void setFileName(const string& s) {filename = s;}
+    void setFileName(const string& s)
+    {
+      filename = s;
+    }
 
     /** Returns the name of the file or directory to process. */
-    string getFileName() {return filename;}
+    string getFileName()
+    {
+      return filename;
+    }
 
     /** Parse the specified file.
       * When a directory was passed as the argument a failure is
