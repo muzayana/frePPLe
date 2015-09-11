@@ -359,7 +359,7 @@ class BufferList(GridReport):
   A list report to show buffers.
   '''
   template = 'input/bufferlist.html'
-  title = _("Buffer List")
+  title = _("buffers")
   basequeryset = Buffer.objects.all()
   model = Buffer
   frozenColumns = 1
@@ -387,7 +387,7 @@ class SetupMatrixList(GridReport):
   A list report to show setup matrices.
   '''
   template = 'input/setupmatrixlist.html'
-  title = _("Setup Matrix List")
+  title = _("setup matrices")
   basequeryset = SetupMatrix.objects.all()
   model = SetupMatrix
   frozenColumns = 1
@@ -404,7 +404,7 @@ class ResourceList(GridReport):
   A list report to show resources.
   '''
   template = 'input/resourcelist.html'
-  title = _("Resource List")
+  title = _("resources")
   basequeryset = Resource.objects.all()
   model = Resource
   frozenColumns = 1
@@ -433,7 +433,7 @@ class LocationList(GridReport):
   A list report to show locations.
   '''
   template = 'input/locationlist.html'
-  title = _("Location List")
+  title = _("locations")
   basequeryset = Location.objects.all()
   model = Location
   frozenColumns = 1
@@ -455,7 +455,7 @@ class CustomerList(GridReport):
   A list report to show customers.
   '''
   template = 'input/customerlist.html'
-  title = _("Customer List")
+  title = _("customers")
   basequeryset = Customer.objects.all()
   model = Customer
   frozenColumns = 1
@@ -476,7 +476,7 @@ class SupplierList(GridReport):
   A list report to show supplier.
   '''
   template = 'input/supplierlist.html'
-  title = _("Supplier List")
+  title = _("suppliers")
   basequeryset = Supplier.objects.all()
   model = Supplier
   frozenColumns = 1
@@ -497,7 +497,7 @@ class ItemSupplierList(GridReport):
   A list report to show item suppliers.
   '''
   template = 'input/itemsupplierlist.html'
-  title = _("Item Supplier List")
+  title = _("item suppliers")
   basequeryset = ItemSupplier.objects.all()
   model = ItemSupplier
   frozenColumns = 1
@@ -524,7 +524,7 @@ class ItemDistributionList(GridReport):
   A list report to show item distribution.
   '''
   template = 'input/itemdistributionlist.html'
-  title = _("Item Distribution List")
+  title = _("item distributions")
   basequeryset = ItemDistribution.objects.all()
   model = ItemDistribution
   frozenColumns = 1
@@ -551,7 +551,7 @@ class ItemList(GridReport):
   A list report to show items.
   '''
   template = 'input/itemlist.html'
-  title = _("Item List")
+  title = _("items")
   basequeryset = Item.objects.all()
   model = Item
   frozenColumns = 1
@@ -575,7 +575,7 @@ class SkillList(GridReport):
   A list report to show skills.
   '''
   template = 'input/skilllist.html'
-  title = _("Skill List")
+  title = _("skills")
   basequeryset = Skill.objects.all()
   model = Skill
   frozenColumns = 1
@@ -592,7 +592,7 @@ class ResourceSkillList(GridReport):
   A list report to show resource skills.
   '''
   template = 'input/resourceskilllist.html'
-  title = _("Resource skill List")
+  title = _("resource skills")
   basequeryset = ResourceSkill.objects.all()
   model = ResourceSkill
   frozenColumns = 1
@@ -614,7 +614,7 @@ class LoadList(GridReport):
   A list report to show loads.
   '''
   template = 'input/loadlist.html'
-  title = _("Load List")
+  title = _("loads")
   basequeryset = Load.objects.all()
   model = Load
   frozenColumns = 1
@@ -642,7 +642,7 @@ class FlowList(GridReport):
   A list report to show flows.
   '''
   template = 'input/flowlist.html'
-  title = _("Flow List")
+  title = _("flows")
   basequeryset = Flow.objects.all()
   model = Flow
   frozenColumns = 1
@@ -669,7 +669,7 @@ class DemandList(GridReport):
   A list report to show demands.
   '''
   template = 'input/demandlist.html'
-  title = _("Demand List")
+  title = _("sales orders")
   basequeryset = Demand.objects.all()
   model = Demand
   frozenColumns = 1
@@ -700,7 +700,7 @@ class CalendarList(GridReport):
   A list report to show calendars.
   '''
   template = 'input/calendarlist.html'
-  title = _("Calendar List")
+  title = _("calendars")
   basequeryset = Calendar.objects.all()
   model = Calendar
   frozenColumns = 1
@@ -720,7 +720,7 @@ class CalendarBucketList(GridReport):
   A list report to show calendar buckets.
   '''
   template = 'input/calendarbucketlist.html'
-  title = _("Calendar Bucket List")
+  title = _("calendar buckets")
   basequeryset = CalendarBucket.objects.all()
   model = CalendarBucket
   frozenColumns = 3
@@ -750,7 +750,7 @@ class OperationList(GridReport):
   A list report to show operations.
   '''
   template = 'input/operationlist.html'
-  title = _("Operation List")
+  title = _("operations")
   basequeryset = Operation.objects.all()
   model = Operation
   frozenColumns = 1
@@ -781,7 +781,7 @@ class SubOperationList(GridReport):
   A list report to show suboperations.
   '''
   template = 'input/suboperationlist.html'
-  title = _("Suboperation List")
+  title = _("suboperations")
   basequeryset = SubOperation.objects.all()
   model = SubOperation
   frozenColumns = 1
@@ -803,7 +803,7 @@ class OperationPlanList(GridReport):
   A list report to show operationplans.
   '''
   template = 'input/operationplanlist.html'
-  title = _("Operationplan List")
+  title = _("operationplans")
   basequeryset = OperationPlan.objects.all()
   model = OperationPlan
   frozenColumns = 1
@@ -826,7 +826,7 @@ class DistributionOrderList(GridReport):
   A list report to show distribution orders.
   '''
   template = 'input/distributionorderlist.html'
-  title = _("Distribution order List")
+  title = _("distribution orders")
   basequeryset = DistributionOrder.objects.all()
   model = DistributionOrder
   frozenColumns = 1
@@ -853,7 +853,7 @@ class PurchaseOrderList(GridReport):
   A list report to show purchase orders.
   '''
   template = 'input/purchaseorderlist.html'
-  title = _("Purchase order List")
+  title = _("purchase orders")
   basequeryset = PurchaseOrder.objects.all()
   model = PurchaseOrder
   frozenColumns = 1

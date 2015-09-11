@@ -1047,6 +1047,6 @@ class Demand(AuditModel, HierarchyModel):
 
   class Meta(AuditModel.Meta):
     db_table = 'demand'
-    verbose_name = _('demand')
-    verbose_name_plural = _('demands')
+    verbose_name = _('sales order')
+    verbose_name_plural = _('sales orders')
     ordering = ['name']
