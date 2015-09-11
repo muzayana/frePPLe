@@ -119,6 +119,7 @@ class InventoryPlanningOutput(models.Model):
   reorderquantityvalue = models.DecimalField(_('reorder quantity value'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True)
   proposedpurchasesvalue = models.DecimalField(_('proposed purchases value'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True)
   proposedtransfersvalue = models.DecimalField(_('proposed transfers value'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True)
+  #  TODO other useful metrics:  OH, OO, POC, excess/shortage, EOQ,
 
   def __str__(self):
     return self.buffer.name
@@ -126,4 +127,3 @@ class InventoryPlanningOutput(models.Model):
   class Meta:
     db_table = 'out_inventoryplanning'
     ordering = ['buffer']
-    

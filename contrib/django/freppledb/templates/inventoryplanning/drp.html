@@ -1,6 +1,19 @@
 {% extends "admin/base_site_grid.html" %}
 {% load i18n %}
 
+{% comment %}
+  TODO:
+  - different views for the top section
+  - tree in top grid
+  - forecast graph
+  - forecast grid
+  - plan graph
+  - plan grid
+  - transaction actions
+  - save parameters, plan, forecast
+  - view history
+{% endcomment %}
+
 {% block contextmenus %}
 {% include "buffercontext.html" %}
 {% endblock %}
@@ -15,6 +28,10 @@ var result = null;
 
 function selectRow(id)
 {
+  if (!!result && id == result.name)
+    // Selection has not changed
+    return;
+
   $.ajax({
     url: '/inventoryplanning/drpitemlocation/' + admin_escape(id) + '/',
     type: 'GET',
@@ -28,10 +45,10 @@ function selectRow(id)
         height: 'auto'
       });
       }
-    });  
+    });
 }
 
-function extraPreference() 
+function extraPreference()
 {
   // TODO save settings on forecast, planning and transaction tabs
   return {
@@ -45,7 +62,7 @@ function save(event)
   event.preventDefault();
   if (result == null)
     return;
-    
+
   // Build the results to send back to the server
   var data = {};
   $("#commentitemlocation.red").each(function() {
@@ -66,7 +83,7 @@ function save(event)
     url: '/inventoryplanning/drpitemlocation/' + admin_escape(result.name) + '/',
     type: 'POST',
     data: JSON.stringify(data),
-    contentType: 'application/json', 
+    contentType: 'application/json',
     success: function() {
       // TODO reset style of the save button
       },
@@ -79,7 +96,7 @@ function save(event)
         height: 'auto'
       });
       }
-    });  
+    });
 }
 
 function undo()
@@ -87,13 +104,16 @@ function undo()
   displayResult(result);
 }
 
-function displayResult(data) 
+function displayResult(data)
 {
   result = data;
-  
-  // Enable input elements 
+
+  // Debugging
+  $("#parameters").html(JSON.stringify(data));
+
+  // Enable input elements
   $("#save, #undo, #commentitem, #commentitemlocation, #commentlocation").prop('disabled', false);
-  
+
   // Update title
   if (result.type == "itemlocation")
     $("#detailtitle").html("{% trans 'buffer'|capfirst|escape %} " + result.name);
@@ -101,43 +121,209 @@ function displayResult(data)
     $("#detailtitle").html("{% trans 'item'|capfirst|escape %} " + result.name);
   else if (result.type == "itemlocation")
     $("#detailtitle").html("{% trans 'location'|capfirst|escape %} " + result.name);
-  
-  // Update the parameter values
-  $("#parameters").html(JSON.stringify(data));
-  
+
+  // Update the forecasting parameters
+  $("#forecastmethod").val(data.parameters.forecastmethod);
+
+  // Update the inventory planning parameters
+  if (data.parameters.roq_min_qty != "")
+     $('input[name="roq_type"]').val("qty");
+  else if (data.parameters.roq_min_poc != "")
+     $('input[name="roq_type"]').val("poc");
+  else
+     $('input[name="roq_type"]').val("eoq");
+  if (data.parameters.ss_min_qty != "")
+     $('input[name="ss_type"]').val("qty");
+  else if (data.parameters.ss_min_poc != "")
+     $('input[name="ss_type"]').val("poc");
+  else
+     $('input[name="ss_type"]').val("svc");
+  $("#eoq").html(data.parameters.eoq);
+  $("#roq_min_qty").html(data.parameters.roq_min_qty);
+  $("#roq_min_poc").html(data.parameters.roq_min_poc);
+  $("#service_level_qty").html(data.parameters.service_level_qty);
+  $("#service_level").html(data.parameters.service_level);
+  $("#demand_distribution").val(data.parameters.demand_distribution);
+  $("#demand_deviation").html(data.parameters.demand_deviation);
+  $("#leadtime_deviation").html(data.parameters.leadtime_deviation);
+  $("#ss_min_qty").html(data.parameters.ss_min_qty);
+  $("#ss_min_poc").html(data.parameters.ss_min_poc);
+  $("#nostock").prop('checked', data.paramters.nostock == "False");
+
   // Show comments
-  $("#commentlocation, #commentitem, #commentitemlocation").removeClass("red");   
+  $("#commentlocation, #commentitem, #commentitemlocation").removeClass("red");
   $("#newcomment:visible").css("display", "none");
   var comments = $("#pastcomments");
-  comments.empty();   
-  console.log(result.comments);
+  comments.empty();
   for (var c in result.comments)
   {
-    $("<hr/><h3/>").text(result.comments[c].user + " " + result.comments[c].type).appendTo(comments); 
+    $("<hr/><h3/>").text(result.comments[c].user + " " + result.comments[c].type).appendTo(comments);
     $("<span class='float_right'></span>").text(result.comments[c].lastmodified).appendTo(comments);
     $("<pre/>").text(result.comments[c].comment).appendTo(comments);
   }
+
+  // Show forecast tab
+  if (!$.trim($("#forecastgrid").html()))
+  {
+    // Forecast grid displayed for the first time
+    $("#forecastgrid").jqGrid({
+      data: result.forecast,
+      datatype: 'local',
+      jsonReader: { repeatitems: false },
+      altRows: true,
+      altclass: 'altRow',
+      colModel:[
+         {name:'id',index:'id',editable:false,label:'{% trans "identifier"|capfirst %}',align:'center',title:false,key:true,hidden:true,counter:0,frozen:true,searchoptions:{searchhidden: true}},
+         {name:'date',index:'date',editable:false,label:'{% trans "date"|capfirst %}',align:'center',title:false,formatter:'date',formatoptions:{srcformat:'Y-m-d H:i:s',newformat:'Y-m-d H:i:s'},width:140,counter:6,searchoptions:{searchhidden: true}},
+         {name:'type',index:'status',editable:true,label:'{% trans "type"|capfirst %}',align:'center',title:false,formatter:'select', edittype:'select', editoptions:{value:'confirmed:confirmed;approved:approved;proposed:proposed'},width:100,counter:2,searchoptions:{searchhidden: true}},
+         {name:'reference',index:'reference',editable:true,label:'{% trans "reference"|capfirst %}',align:'left',title:false,width:200,counter:1,searchoptions:{searchhidden: true}},
+         {name:'status',index:'status',editable:true,label:'{% trans "status"|capfirst %}',align:'center',title:false,formatter:'select', edittype:'select', editoptions:{value:'confirmed:confirmed;approved:approved;proposed:proposed'},width:100,counter:2,searchoptions:{searchhidden: true}},
+         {name:'item',index:'item',editable:true,label:'{% trans "item"|capfirst %}',align:'left',title:false,formatter:'item',width:200,counter:3,searchoptions:{searchhidden: true}},
+         {name:'origin',index:'origin',editable:true,label:'{% trans "origin"|capfirst %}',align:'left',title:false,formatter:'location',width:200,counter:4,searchoptions:{searchhidden: true}},
+         {name:'startdate',index:'startdate',editable:true,label:'{% trans "start date"|capfirst %}',align:'center',title:false,formatter:'date',formatoptions:{srcformat:'Y-m-d H:i:s',newformat:'Y-m-d H:i:s'},width:140,counter:6,searchoptions:{searchhidden: true}},
+         {name:'enddate',index:'enddate',editable:true,label:'{% trans "end date"|capfirst %}',align:'center',title:false,formatter:'date',formatoptions:{srcformat:'Y-m-d H:i:s',newformat:'Y-m-d H:i:s'},width:140,counter:7,searchoptions:{searchhidden: true}},
+         {name:'quantity',index:'quantity',editable:true,label:'{% trans "quantity"|capfirst %}',align:'center',title:false,formatter:'number',searchrules:{number:true},width:70,counter:8,searchoptions:{searchhidden: true}},
+         {name:'criticality',index:'criticality',editable:false,label:'{% trans "criticality"|capfirst %}',align:'center',title:false,formatter:'number',searchrules:{number:true},width:70,counter:10,searchoptions:{searchhidden: true}},
+         {name:'lastmodified',index:'lastmodified',editable:false,label:'Last Modified',align:'center',title:false,formatter:'date',formatoptions:{srcformat:'Y-m-d H:i:s',newformat:'Y-m-d H:i:s'},width:140,counter:12,searchoptions:{searchhidden: true}}
+         ],
+      rowNum:20,
+      rowList:[20, 30, 50],
+      iconSet: "fontAwesome",
+      sortname: 'date',
+      sortorder: "asc",
+      autowidth: true,
+      shrinkToFit: false,
+      loadonce: true,
+      height: 250
+      });
+    jQuery("#forecastgrid").jqGrid('setFrozenColumns');
+  }
+  else
+  {
+    // Refresh data in the forecast grid
+    $('#forecastgrid')
+      .jqGrid('clearGridData')
+      .jqGrid('setGridParam', {data: result.forecast})
+      .trigger('reloadGrid');
+  }
+
+  // Show transaction tab
+  if (!$.trim($("#transactiongrid").html()))
+  {
+    // Transaction grid displayed for the first time
+    $("#transactiongrid").jqGrid({
+      data: result.transactions,
+      datatype: 'clientSide',
+      jsonReader: { repeatitems: false },
+      altRows: true,
+      altclass: 'altRow',
+      colModel:[
+         {name:'id',index:'id',editable:false,label:'{% trans "identifier"|capfirst %}',align:'center',title:false,key:true,hidden:true,counter:0,frozen:true,searchoptions:{searchhidden: true}},
+         {name:'date',index:'date',editable:false,label:'{% trans "date"|capfirst %}',align:'center',title:false,formatter:'date',formatoptions:{srcformat:'Y-m-d H:i:s',newformat:'Y-m-d H:i:s'},width:140,counter:6,searchoptions:{searchhidden: true}},
+         {name:'type',index:'status',editable:true,label:'{% trans "type"|capfirst %}',align:'center',title:false,formatter:'select', edittype:'select', editoptions:{value:'confirmed:confirmed;approved:approved;proposed:proposed'},width:100,counter:2,searchoptions:{searchhidden: true}},
+         {name:'reference',index:'reference',editable:true,label:'{% trans "reference"|capfirst %}',align:'left',title:false,width:200,counter:1,searchoptions:{searchhidden: true}},
+         {name:'status',index:'status',editable:true,label:'{% trans "status"|capfirst %}',align:'center',title:false,formatter:'select', edittype:'select', editoptions:{value:'confirmed:confirmed;approved:approved;proposed:proposed'},width:100,counter:2,searchoptions:{searchhidden: true}},
+         {name:'item',index:'item',editable:true,label:'{% trans "item"|capfirst %}',align:'left',title:false,formatter:'item',width:200,counter:3,searchoptions:{searchhidden: true}},
+         {name:'origin',index:'origin',editable:true,label:'{% trans "origin"|capfirst %}',align:'left',title:false,formatter:'location',width:200,counter:4,searchoptions:{searchhidden: true}},
+         {name:'startdate',index:'startdate',editable:true,label:'{% trans "start date"|capfirst %}',align:'center',title:false,formatter:'date',formatoptions:{srcformat:'Y-m-d H:i:s',newformat:'Y-m-d H:i:s'},width:140,counter:6,searchoptions:{searchhidden: true}},
+         {name:'enddate',index:'enddate',editable:true,label:'{% trans "end date"|capfirst %}',align:'center',title:false,formatter:'date',formatoptions:{srcformat:'Y-m-d H:i:s',newformat:'Y-m-d H:i:s'},width:140,counter:7,searchoptions:{searchhidden: true}},
+         {name:'quantity',index:'quantity',editable:true,label:'{% trans "quantity"|capfirst %}',align:'center',title:false,formatter:'number',searchrules:{number:true},width:70,counter:8,searchoptions:{searchhidden: true}},
+         {name:'criticality',index:'criticality',editable:false,label:'{% trans "criticality"|capfirst %}',align:'center',title:false,formatter:'number',searchrules:{number:true},width:70,counter:10,searchoptions:{searchhidden: true}},
+         {name:'lastmodified',index:'lastmodified',editable:false,label:'Last Modified',align:'center',title:false,formatter:'date',formatoptions:{srcformat:'Y-m-d H:i:s',newformat:'Y-m-d H:i:s'},width:140,counter:12,searchoptions:{searchhidden: true}}
+         ],
+      rowNum:20,
+      rowList:[20, 30, 50],
+      iconSet: "fontAwesome",
+      sortname: 'date',
+      sortorder: "asc",
+      autowidth: true,
+      height: 250,
+      multiselect: true
+      });
+    $("#transactiongrid").jqGrid('setFrozenColumns');
+  }
+  else
+  {
+    // Refresh data in the transaction grid
+    $('#transactiongrid')
+      .jqGrid('clearGridData')
+      .jqGrid('setGridParam', {data: result.transactions})
+      .trigger('reloadGrid');
+  }
+
+  // Show plan tab
+  if (!$.trim($("#plangrid").html()))
+  {
+    // Plan grid displayed for the first time
+    $("#plangrid").jqGrid({
+      data: result.plan,
+      datatype: 'local',
+      jsonReader: { repeatitems: false },
+      altRows: true,
+      altclass: 'altRow',
+      colModel:[
+         {name:'id',index:'id',editable:false,label:'{% trans "identifier"|capfirst %}',align:'center',title:false,key:true,hidden:true,counter:0,frozen:true,searchoptions:{searchhidden: true}},
+         {name:'date',index:'date',editable:false,label:'{% trans "date"|capfirst %}',align:'center',title:false,formatter:'date',formatoptions:{srcformat:'Y-m-d H:i:s',newformat:'Y-m-d H:i:s'},width:140,counter:6,searchoptions:{searchhidden: true}},
+         {name:'type',index:'status',editable:true,label:'{% trans "type"|capfirst %}',align:'center',title:false,formatter:'select', edittype:'select', editoptions:{value:'confirmed:confirmed;approved:approved;proposed:proposed'},width:100,counter:2,searchoptions:{searchhidden: true}},
+         {name:'reference',index:'reference',editable:true,label:'{% trans "reference"|capfirst %}',align:'left',title:false,width:200,counter:1,searchoptions:{searchhidden: true}},
+         {name:'status',index:'status',editable:true,label:'{% trans "status"|capfirst %}',align:'center',title:false,formatter:'select', edittype:'select', editoptions:{value:'confirmed:confirmed;approved:approved;proposed:proposed'},width:100,counter:2,searchoptions:{searchhidden: true}},
+         {name:'item',index:'item',editable:true,label:'{% trans "item"|capfirst %}',align:'left',title:false,formatter:'item',width:200,counter:3,searchoptions:{searchhidden: true}},
+         {name:'origin',index:'origin',editable:true,label:'{% trans "origin"|capfirst %}',align:'left',title:false,formatter:'location',width:200,counter:4,searchoptions:{searchhidden: true}},
+         {name:'startdate',index:'startdate',editable:true,label:'{% trans "start date"|capfirst %}',align:'center',title:false,formatter:'date',formatoptions:{srcformat:'Y-m-d H:i:s',newformat:'Y-m-d H:i:s'},width:140,counter:6,searchoptions:{searchhidden: true}},
+         {name:'enddate',index:'enddate',editable:true,label:'{% trans "end date"|capfirst %}',align:'center',title:false,formatter:'date',formatoptions:{srcformat:'Y-m-d H:i:s',newformat:'Y-m-d H:i:s'},width:140,counter:7,searchoptions:{searchhidden: true}},
+         {name:'quantity',index:'quantity',editable:true,label:'{% trans "quantity"|capfirst %}',align:'center',title:false,formatter:'number',searchrules:{number:true},width:70,counter:8,searchoptions:{searchhidden: true}},
+         {name:'criticality',index:'criticality',editable:false,label:'{% trans "criticality"|capfirst %}',align:'center',title:false,formatter:'number',searchrules:{number:true},width:70,counter:10,searchoptions:{searchhidden: true}},
+         {name:'lastmodified',index:'lastmodified',editable:false,label:'Last Modified',align:'center',title:false,formatter:'date',formatoptions:{srcformat:'Y-m-d H:i:s',newformat:'Y-m-d H:i:s'},width:140,counter:12,searchoptions:{searchhidden: true}}
+         ],
+      rowNum:20,
+      rowList:[20, 30, 50],
+      iconSet: "fontAwesome",
+      sortname: 'date',
+      sortorder: "asc",
+      autowidth: true,
+      shrinkToFit: false,
+      loadonce: true,
+      height: 250
+      });
+    jQuery("#plangrid").jqGrid('setFrozenColumns');
+  }
+  else
+  {
+    // Refresh data in the plan grid
+    $('#plangrid')
+      .jqGrid('clearGridData')
+      .jqGrid('setGridParam', {data: result.plan})
+      .trigger('reloadGrid');
+  }
 }
-      
+
 function selectTab(value)
 {
   // Nothing changed
   if (value === showtab) return;
 
-  // Hide previous tab
   if (showtab != null)
   {
+    // Hide previous tab
     $("#" + showtab + "tab").removeClass("frepple-tabs-active");
     $("#" + showtab + "data").css("display", "none");
+
+    // Show new tab
+    showtab = value;
+    $("#" + showtab + "tab").addClass("frepple-tabs-active");
+    $("#" + showtab + "data").css("display", "block");
+
+    // Save newly selected table as a preference
+    grid.saveColumnConfiguration();
   }
-  
-  // Show new tab
-  showtab = value;
-  $("#" + showtab + "tab").addClass("frepple-tabs-active");
-  $("#" + showtab + "data").css("display", "block");
-  
-  // Save selected table as a preference
-  grid.saveColumnConfiguration();
+  else
+  {
+    // Show new tab
+    showtab = value;
+    $("#" + showtab + "tab").addClass("frepple-tabs-active");
+    $("#" + showtab + "data").css("display", "block");
+  }
+
   return false;
 }
 
@@ -148,14 +334,14 @@ function setCommentType(t)
   else if (t == "location")
     $("#commentitemlocation, #commentitem").removeClass("red");
   else
-    $("#commentlocation, #commentitem").removeClass("red");   
+    $("#commentlocation, #commentitem").removeClass("red");
   $("#comment" + t).addClass("red");
   $("#newcomment:hidden").toggle();
 }
 
 
 $(function() {
-  selectTab("forecast");
+  selectTab("{% if preferences.showtab %}{{ preferences.showtab }}{% else %}plan{% endif %}");
 });
 
 </script>
@@ -178,9 +364,10 @@ $(function() {
 </ul>
 </div>
 
-<div id="forecastdata" class="clear" style="display:none">fcst
-<br/><h2>{% trans "parameters"|capfirst %}</h2>
-<table><tr><td>{% trans "Forecast method"|capfirst %}</td><td><select id="forecastmethod" name="method">
+<div id="forecastdata" class="clear" style="display:none">
+<table id="forecastgrid"></table><br/>
+<h2>{% trans "parameters"|capfirst %}</h2>
+<table><tr><td>{% trans "Forecast method"|capfirst %}</td><td><select id="forecastmethod">
 <option value="automatic">Automatic</option>
 <option value="constant">Constant</option>
 <option value="trend">Trend</option>
@@ -192,34 +379,36 @@ $(function() {
 <tr><td>{% trans "SMAPE Forecast error"|capfirst %}</td><td><span id="forecasterror"></span></td></tr></table>
 </div>
 
-<div id="plandata" class="clear" style="display:none">plan
-<br/><h2>{% trans "parameters"|capfirst %}</h2>
+<div id="plandata" class="clear" style="display:none">
+<table id="plangrid"></table><br/>
+<h2>{% trans "parameters"|capfirst %}</h2>
 <table><tr><td class="bold">{% trans "reorder quantity"|capfirst %}</td>
 <td class="bold">{% trans "safety stock"|capfirst %}</td></tr>
 <tr><td valign="top">
-<input type="radio" id="roq_type_eoq" name="roq_type" value="eoq"><label for="roq_type_eoq">{% trans "economic order quantity"|capfirst %}<span id="eoq">&nbsp;&nbsp;&nbsp;&nbsp;</span> units</label><br/>
-<input type="radio" id="roq_type_qty" name="roq_type" value="qty"><label for="roq_type_qty">{% trans "quantity"|capfirst %}<input type="number" name="roq_min" min="1" size="7"> units</label><br/>
-<input type="radio" id="roq_type_poc" name="roq_type" value="poc"><label for="roq_type_poc">{% trans "period of cover"|capfirst %}<input type="number" name="rop_min" min="1" size="7"> days</label><br/>
+<input type="radio" id="roq_type_eoq" name="roq_type" value="eoq"><label for="roq_type_eoq">{% trans "economic order quantity"|capfirst %}: <span id="eoq">&nbsp;&nbsp;&nbsp;&nbsp;</span> units</label><br/>
+<input type="radio" id="roq_type_qty" name="roq_type" value="qty"><label for="roq_type_qty">{% trans "quantity"|capfirst %}<input type="number" name="roq_min_qty" min="1" size="7"> units</label><br/>
+<input type="radio" id="roq_type_poc" name="roq_type" value="poc"><label for="roq_type_poc">{% trans "period of cover"|capfirst %}<input type="number" id="rop_min_qty" min="1" size="7"> days</label><br/>
 </td><td valign="top">
-<input type="radio" id="ss_type_svc" name="ss_type" value="svc"><label for="ss_type_svc">{% trans "service level"|capfirst %}<span id="servicelevel"></span><br/>
-&nbsp;&nbsp;&nbsp;&nbsp;{% trans "minimum"|capfirst %} <input type="number" name="svc_percentage" min="0" max="100" size="7"> %<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;{% trans "statistical distribution"|capfirst %}<select id="svc_distribution" name="svc_distribution">
+<input type="radio" id="ss_type_svc" name="ss_type" value="svc"><label for="ss_type_svc">{% trans "service level"|capfirst %}: <span id="service_level_qty">&nbsp;&nbsp;&nbsp;&nbsp;</span>units<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;{% trans "minimum"|capfirst %} <input type="number" id="service_level" min="0" max="100" size="7"> %<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;{% trans "statistical distribution"|capfirst %}<select id="demand_distribution">
 <option value="automatic">{% trans "automatic"|capfirst %}</option>
 <option value="normal">{% trans "normal"|capfirst %}</option>
 <option value="poisson">{% trans "poisson"|capfirst %}</option>
 <option value="negbinomial">{% trans "negative binomial"|capfirst %}</option>
 </select><br/>
-&nbsp;&nbsp;&nbsp;&nbsp;{% trans "demand standard deviation"|capfirst %} <input type="number" name="svc_dmd_stdev" min="0" max="100" size="7"> units<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;{% trans "lead time standard deviation"|capfirst %} <input type="number" name="svc_lt_stdev" min="0" max="100" size="7"> days</label><br/>
-<input type="radio" id="ss_type_qty" name="ss_type" value="qty"><label for="ss_type_qty">{% trans "quantity"|capfirst %}<input type="number" name="roq_min" min="1" size="7"> units</label><br/>
-<input type="radio" id="ss_type_poc" name="ss_type" value="poc"><label for="ss_type_poc">{% trans "period of cover"|capfirst %}<input type="number" name="rop_min" min="1" size="7"> days</label><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;{% trans "demand standard deviation"|capfirst %} <input type="number" id="demand_deviation" size="7"> units<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;{% trans "lead time standard deviation"|capfirst %} <input type="number" id="leadtime_deviation" size="7"> days</label><br/>
+<input type="radio" id="ss_type_qty" name="ss_type" value="qty"><label for="ss_type_qty">{% trans "quantity"|capfirst %}<input type="number" id="ss_min_qty" min="1" size="7"> units</label><br/>
+<input type="radio" id="ss_type_poc" name="ss_type" value="poc"><label for="ss_type_poc">{% trans "period of cover"|capfirst %}<input type="number" id="ss_min_poc" min="1" size="7"> days</label><br/>
 </td></tr>
 </table>
-<input type="checkbox" id="nostock" name="nostock" value="nostock">&nbsp;&nbsp;<label for="nostock">{% trans "Don't stock" %}</label>
+<input type="checkbox" id="nostock">&nbsp;&nbsp;<label for="nostock">{% trans "Don't stock" %}</label>
 </div>
 
-<div id="transactionsdata" class="clear" style="display:none">transactions
-<span id="parameters"></span></div>
+<div id="transactionsdata" class="clear" style="display:none">
+<table id="transactiongrid"></table>
+</div>
 
 <div id="commentsdata" class="clear" style="display:none">
 <input id="commentitem" type="submit" value="{% trans 'new item comment'|capfirst %}" onclick="return setCommentType('item')" disabled/>&nbsp;&nbsp;
@@ -229,5 +418,5 @@ $(function() {
 <span id="pastcomments">{% trans "no comments yet"|capfirst %}</span>
 </div>
 
-<div id="historydata" class="clear" style="display:none">history</div>
+<div id="historydata" class="clear" style="display:none"><span id="parameters"></span></div>
 {% endblock %}
