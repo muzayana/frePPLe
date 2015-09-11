@@ -236,7 +236,7 @@ class GanttReport(GridReport):
 
   @classmethod
   def query(reportclass, request, basequery):
-    basesql, baseparams = basequery.query.get_compiler(basequery.db).as_sql(with_col_aliases=True)
+    basesql, baseparams = basequery.query.get_compiler(basequery.db).as_sql(with_col_aliases=False)
 
     # Assure the resource hierarchy is up to date
     Resource.rebuildHierarchy(database=basequery.db)
