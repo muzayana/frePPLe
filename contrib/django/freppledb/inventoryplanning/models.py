@@ -30,59 +30,59 @@ class InventoryPlanning(AuditModel):
   # Database fields
   buffer = models.OneToOneField(Buffer, primary_key=True)
   roq_min_qty = models.DecimalField(
-    _('ROQ minimum quantity'), max_digits=settings.MAX_DIGITS,
-    decimal_places=settings.DECIMAL_PLACES, null=True, blank=True
+    _('ROQ minimum quantity'), max_digits=15,
+    decimal_places=4, null=True, blank=True
     )
   roq_max_qty = models.DecimalField(
-    _('ROQ maximum quantity'), max_digits=settings.MAX_DIGITS,
-    decimal_places=settings.DECIMAL_PLACES, null=True, blank=True
+    _('ROQ maximum quantity'), max_digits=15,
+    decimal_places=4, null=True, blank=True
     )
   roq_multiple_qty = models.DecimalField(
-    _('ROQ multiple quantity'), max_digits=settings.MAX_DIGITS,
-    decimal_places=settings.DECIMAL_PLACES, null=True, blank=True
+    _('ROQ multiple quantity'), max_digits=15,
+    decimal_places=4, null=True, blank=True
     )
   roq_min_poc = models.DecimalField(
-    _('ROQ minimum period of cover'), max_digits=settings.MAX_DIGITS,
-    decimal_places=settings.DECIMAL_PLACES, null=True, blank=True
+    _('ROQ minimum period of cover'), max_digits=15,
+    decimal_places=4, null=True, blank=True
     )
   roq_max_poc = models.DecimalField(
-    _('ROQ maximum period of cover'), max_digits=settings.MAX_DIGITS,
-    decimal_places=settings.DECIMAL_PLACES, null=True, blank=True
+    _('ROQ maximum period of cover'), max_digits=15,
+    decimal_places=4, null=True, blank=True
     )
   leadtime_deviation = models.DecimalField(
-    _('lead time deviation'), max_digits=settings.MAX_DIGITS,
-    decimal_places=settings.DECIMAL_PLACES, null=True, blank=True
+    _('lead time deviation'), max_digits=15,
+    decimal_places=4, null=True, blank=True
     )
   demand_deviation = models.DecimalField(
-    _('demand deviation'), max_digits=settings.MAX_DIGITS,
-    decimal_places=settings.DECIMAL_PLACES, null=True, blank=True
+    _('demand deviation'), max_digits=15,
+    decimal_places=4, null=True, blank=True
     )
   demand_distribution = models.CharField(
     _('demand distribution'), null=True, blank=True, max_length=20, choices=distributions
     )
   service_level = models.DecimalField(
-    _('service level'), max_digits=settings.MAX_DIGITS,
-    decimal_places=settings.DECIMAL_PLACES, null=True, blank=True
+    _('service level'), max_digits=15,
+    decimal_places=4, null=True, blank=True
     )
   ss_min_qty = models.DecimalField(
-    _('safety stock minimum quantity'), max_digits=settings.MAX_DIGITS,
-    decimal_places=settings.DECIMAL_PLACES, null=True, blank=True
+    _('safety stock minimum quantity'), max_digits=15,
+    decimal_places=4, null=True, blank=True
     )
   ss_max_qty = models.DecimalField(
-    _('safety stock maximum quantity'), max_digits=settings.MAX_DIGITS,
-    decimal_places=settings.DECIMAL_PLACES, null=True, blank=True
+    _('safety stock maximum quantity'), max_digits=15,
+    decimal_places=4, null=True, blank=True
     )
   ss_multiple_qty = models.DecimalField(
-    _('safety stock multiple quantity'), max_digits=settings.MAX_DIGITS,
-    decimal_places=settings.DECIMAL_PLACES, null=True, blank=True
+    _('safety stock multiple quantity'), max_digits=15,
+    decimal_places=4, null=True, blank=True
     )
   ss_min_poc = models.DecimalField(
-    _('safety stock minimum period of cover'), max_digits=settings.MAX_DIGITS,
-    decimal_places=settings.DECIMAL_PLACES, null=True, blank=True
+    _('safety stock minimum period of cover'), max_digits=15,
+    decimal_places=4, null=True, blank=True
     )
   ss_max_poc = models.DecimalField(
-    _('safety stock maximum period of cover'), max_digits=settings.MAX_DIGITS,
-    decimal_places=settings.DECIMAL_PLACES, null=True, blank=True
+    _('safety stock maximum period of cover'), max_digits=15,
+    decimal_places=4, null=True, blank=True
     )
   nostock = models.BooleanField(_("Do not stock"), blank=True, default=False)
 
@@ -100,25 +100,25 @@ class InventoryPlanningOutput(models.Model):
   # Database fields
   buffer = models.OneToOneField(Buffer, primary_key=True)
   leadtime = models.DurationField(_('lead time'), db_index=True, null=True)
-  servicelevel = models.DecimalField(_('service level'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True)
-  localforecast = models.DecimalField(_('local forecast'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True)
-  localorders = models.DecimalField(_('local orders'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True)
-  localbackorders = models.DecimalField(_('local backorders'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True)
-  dependentforecast = models.DecimalField(_('dependent forecast'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True)
-  totaldemand = models.DecimalField(_('total demand'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True)
-  safetystock = models.DecimalField(_('safety stock'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True)
-  reorderquantity = models.DecimalField(_('reorder quantity'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True)
-  proposedpurchases = models.DecimalField(_('proposed purchases'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True)
-  proposedtransfers = models.DecimalField(_('proposed transfers'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True)
-  localforecastvalue = models.DecimalField(_('local forecast value'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True)
-  localordersvalue = models.DecimalField(_('local orders value'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True)
-  localbackordersvalue = models.DecimalField(_('local backorders value'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True)
-  dependentforecastvalue = models.DecimalField(_('dependent forecast value'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True)
-  totaldemandvalue = models.DecimalField(_('total demand value'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True)
-  safetystockvalue = models.DecimalField(_('safety stock value'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True)
-  reorderquantityvalue = models.DecimalField(_('reorder quantity value'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True)
-  proposedpurchasesvalue = models.DecimalField(_('proposed purchases value'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True)
-  proposedtransfersvalue = models.DecimalField(_('proposed transfers value'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True)
+  servicelevel = models.DecimalField(_('service level'), max_digits=15, decimal_places=4, null=True)
+  localforecast = models.DecimalField(_('local forecast'), max_digits=15, decimal_places=4, null=True)
+  localorders = models.DecimalField(_('local orders'), max_digits=15, decimal_places=4, null=True)
+  localbackorders = models.DecimalField(_('local backorders'), max_digits=15, decimal_places=4, null=True)
+  dependentforecast = models.DecimalField(_('dependent forecast'), max_digits=15, decimal_places=4, null=True)
+  totaldemand = models.DecimalField(_('total demand'), max_digits=15, decimal_places=4, null=True)
+  safetystock = models.DecimalField(_('safety stock'), max_digits=15, decimal_places=4, null=True)
+  reorderquantity = models.DecimalField(_('reorder quantity'), max_digits=15, decimal_places=4, null=True)
+  proposedpurchases = models.DecimalField(_('proposed purchases'), max_digits=15, decimal_places=4, null=True)
+  proposedtransfers = models.DecimalField(_('proposed transfers'), max_digits=15, decimal_places=4, null=True)
+  localforecastvalue = models.DecimalField(_('local forecast value'), max_digits=15, decimal_places=4, null=True)
+  localordersvalue = models.DecimalField(_('local orders value'), max_digits=15, decimal_places=4, null=True)
+  localbackordersvalue = models.DecimalField(_('local backorders value'), max_digits=15, decimal_places=4, null=True)
+  dependentforecastvalue = models.DecimalField(_('dependent forecast value'), max_digits=15, decimal_places=4, null=True)
+  totaldemandvalue = models.DecimalField(_('total demand value'), max_digits=15, decimal_places=4, null=True)
+  safetystockvalue = models.DecimalField(_('safety stock value'), max_digits=15, decimal_places=4, null=True)
+  reorderquantityvalue = models.DecimalField(_('reorder quantity value'), max_digits=15, decimal_places=4, null=True)
+  proposedpurchasesvalue = models.DecimalField(_('proposed purchases value'), max_digits=15, decimal_places=4, null=True)
+  proposedtransfersvalue = models.DecimalField(_('proposed transfers value'), max_digits=15, decimal_places=4, null=True)
   #  TODO other useful metrics:  OH, OO, POC, excess/shortage, EOQ,
 
   def __str__(self):

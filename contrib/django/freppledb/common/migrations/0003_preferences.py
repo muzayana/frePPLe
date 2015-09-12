@@ -23,7 +23,7 @@ class Migration(migrations.Migration):
             name='UserPreference',
             fields=[
                 ('id', models.AutoField(verbose_name='identifier', serialize=False, primary_key=True)),
-                ('property', models.CharField(max_length=60)),
+                ('property', models.CharField(max_length=100)),
                 ('value', freppledb.common.fields.JSONField(max_length=1000)),
                 ('user', models.ForeignKey(verbose_name='user', editable=False, related_name='preferences', to=settings.AUTH_USER_MODEL)),
             ],

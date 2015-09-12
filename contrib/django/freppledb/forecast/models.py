@@ -31,10 +31,10 @@ class Forecast(AuditModel):
   )
 
   # Database fields
-  name = models.CharField(_('name'), max_length=settings.NAMESIZE, primary_key=True)
-  description = models.CharField(_('description'), max_length=settings.DESCRIPTIONSIZE, null=True, blank=True)
-  category = models.CharField(_('category'), max_length=settings.CATEGORYSIZE, null=True, blank=True, db_index=True)
-  subcategory = models.CharField(_('subcategory'), max_length=settings.CATEGORYSIZE, null=True, blank=True, db_index=True)
+  name = models.CharField(_('name'), max_length=300, primary_key=True)
+  description = models.CharField(_('description'), max_length=500, null=True, blank=True)
+  category = models.CharField(_('category'), max_length=300, null=True, blank=True, db_index=True)
+  subcategory = models.CharField(_('subcategory'), max_length=300, null=True, blank=True, db_index=True)
   customer = models.ForeignKey(Customer, verbose_name=_('customer'), db_index=True)
   item = models.ForeignKey(Item, verbose_name=_('item'), db_index=True)
   method = models.CharField(
@@ -53,11 +53,11 @@ class Forecast(AuditModel):
     )
   minshipment = models.DecimalField(
     _('minimum shipment'), null=True, blank=True,
-    max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES,
+    max_digits=15, decimal_places=4,
     help_text=_('Minimum shipment quantity when planning this demand'))
   maxlateness = models.DecimalField(
     _('maximum lateness'), null=True, blank=True,
-    max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES,
+    max_digits=15, decimal_places=4,
     help_text=_("Maximum lateness allowed when planning this demand")
     )
   discrete = models.BooleanField(
@@ -818,7 +818,7 @@ class ForecastDemand(AuditModel):
   forecast = models.ForeignKey(Forecast, verbose_name=_('forecast'), null=False, db_index=True, related_name='entries')
   startdate = models.DateField(_('start date'), null=False)
   enddate = models.DateField(_('end date'), null=False)
-  quantity = models.DecimalField(_('quantity'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default=0)
+  quantity = models.DecimalField(_('quantity'), max_digits=15, decimal_places=4, default=0)
 
   def __str__(self):
     return self.forecast.name + " " + str(self.startdate) + " - " + str(self.enddate)
@@ -837,26 +837,26 @@ class ForecastPlan(models.Model):
   itemlvl = models.PositiveIntegerField(null=True, editable=False, blank=True)
   startdate = models.DateTimeField(_('start date'), null=False, db_index=True)
   enddate = models.DateTimeField(_('end date'), null=False, db_index=True)
-  orderstotal = models.DecimalField(_('total orders'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
-  ordersadjustment = models.DecimalField(_('orders adjustment'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True, blank=True)
-  ordersopen = models.DecimalField(_('open orders'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
-  ordersplanned = models.DecimalField(_('planned orders'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
-  forecastbaseline = models.DecimalField(_('forecast baseline'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
-  forecastadjustment = models.DecimalField(_('forecast adjustment'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True, blank=True)
-  forecasttotal = models.DecimalField(_('forecast total'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
-  forecastnet = models.DecimalField(_('forecast net'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
-  forecastconsumed = models.DecimalField(_('forecast consumed'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
-  forecastplanned = models.DecimalField(_('planned forecast'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
-  orderstotalvalue = models.DecimalField(_('total orders'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
-  ordersadjustmentvalue = models.DecimalField(_('orders adjustment'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True, blank=True)
-  ordersopenvalue = models.DecimalField(_('open orders'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
-  ordersplannedvalue = models.DecimalField(_('planned orders'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
-  forecastbaselinevalue = models.DecimalField(_('forecast baseline'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
-  forecastadjustmentvalue = models.DecimalField(_('forecast adjustment'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, null=True, blank=True)
-  forecasttotalvalue = models.DecimalField(_('forecast total'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
-  forecastnetvalue = models.DecimalField(_('forecast net'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
-  forecastconsumedvalue = models.DecimalField(_('forecast consumed'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
-  forecastplannedvalue = models.DecimalField(_('planned forecast'), max_digits=settings.MAX_DIGITS, decimal_places=settings.DECIMAL_PLACES, default='0.00')
+  orderstotal = models.DecimalField(_('total orders'), max_digits=15, decimal_places=4, default='0.00')
+  ordersadjustment = models.DecimalField(_('orders adjustment'), max_digits=15, decimal_places=4, null=True, blank=True)
+  ordersopen = models.DecimalField(_('open orders'), max_digits=15, decimal_places=4, default='0.00')
+  ordersplanned = models.DecimalField(_('planned orders'), max_digits=15, decimal_places=4, default='0.00')
+  forecastbaseline = models.DecimalField(_('forecast baseline'), max_digits=15, decimal_places=4, default='0.00')
+  forecastadjustment = models.DecimalField(_('forecast adjustment'), max_digits=15, decimal_places=4, null=True, blank=True)
+  forecasttotal = models.DecimalField(_('forecast total'), max_digits=15, decimal_places=4, default='0.00')
+  forecastnet = models.DecimalField(_('forecast net'), max_digits=15, decimal_places=4, default='0.00')
+  forecastconsumed = models.DecimalField(_('forecast consumed'), max_digits=15, decimal_places=4, default='0.00')
+  forecastplanned = models.DecimalField(_('planned forecast'), max_digits=15, decimal_places=4, default='0.00')
+  orderstotalvalue = models.DecimalField(_('total orders'), max_digits=15, decimal_places=4, default='0.00')
+  ordersadjustmentvalue = models.DecimalField(_('orders adjustment'), max_digits=15, decimal_places=4, null=True, blank=True)
+  ordersopenvalue = models.DecimalField(_('open orders'), max_digits=15, decimal_places=4, default='0.00')
+  ordersplannedvalue = models.DecimalField(_('planned orders'), max_digits=15, decimal_places=4, default='0.00')
+  forecastbaselinevalue = models.DecimalField(_('forecast baseline'), max_digits=15, decimal_places=4, default='0.00')
+  forecastadjustmentvalue = models.DecimalField(_('forecast adjustment'), max_digits=15, decimal_places=4, null=True, blank=True)
+  forecasttotalvalue = models.DecimalField(_('forecast total'), max_digits=15, decimal_places=4, default='0.00')
+  forecastnetvalue = models.DecimalField(_('forecast net'), max_digits=15, decimal_places=4, default='0.00')
+  forecastconsumedvalue = models.DecimalField(_('forecast consumed'), max_digits=15, decimal_places=4, default='0.00')
+  forecastplannedvalue = models.DecimalField(_('planned forecast'), max_digits=15, decimal_places=4, default='0.00')
   method = models.CharField(_('method'), max_length=60, editable=False, db_index=True, null=True)
 
   def __str__(self):

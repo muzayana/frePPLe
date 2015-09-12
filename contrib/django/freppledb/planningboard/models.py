@@ -20,7 +20,7 @@ class Chat(models.Model):
   This model stores the history of all chat messages.
   '''
   id = models.AutoField(_('identifier'), primary_key=True)
-  message = models.TextField(_('message'), max_length=settings.COMMENT_MAX_LENGTH)
+  message = models.TextField(_('message'), max_length=3000)
   user = models.ForeignKey(User, verbose_name=_('user'), blank=False, null=False, editable=False, related_name='chat')
   lastmodified = models.DateTimeField(_('last modified'), auto_now=True, null=True, editable=False, db_index=True)
 

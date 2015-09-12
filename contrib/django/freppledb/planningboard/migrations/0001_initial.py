@@ -29,7 +29,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(primary_key=True, verbose_name='identifier', serialize=False)),
                 ('message', models.TextField(verbose_name='message', max_length=3000)),
                 ('lastmodified', models.DateTimeField(verbose_name='last modified', null=True, auto_now=True, db_index=True)),
-                ('user', models.ForeignKey(verbose_name='user', to=settings.AUTH_USER_MODEL, related_name='chat', editable=False)),
+                ('user', models.ForeignKey(related_name='chat', verbose_name='user', editable=False, to=settings.AUTH_USER_MODEL)),
             ],
             options={
                 'ordering': ('id',),

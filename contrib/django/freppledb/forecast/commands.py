@@ -265,8 +265,8 @@ def generateBaseline(solver_fcst, cursor):
     where forecast_id = %s and startdate=%s
     ''', [
       (
-        round(i.total, settings.DECIMAL_PLACES),
-        round(i.total * i.forecast.item.price, settings.DECIMAL_PLACES),
+        round(i.total, 4),
+        round(i.total * i.forecast.item.price, 4),
         i.forecast.method,
         i.forecast.name, str(i.start)
       )
@@ -354,12 +354,12 @@ def exportForecastFull(cursor):
        forecasttotalvalue=%s, forecastnetvalue=%s, forecastconsumedvalue=%s
      where forecast_id=%s and startdate=%s''', [
       (
-        round(i.total, settings.DECIMAL_PLACES),
-        round(i.quantity, settings.DECIMAL_PLACES),
-        round(i.consumed, settings.DECIMAL_PLACES),
-        round(i.total*i.item.price, settings.DECIMAL_PLACES),
-        round(i.quantity*i.item.price, settings.DECIMAL_PLACES),
-        round(i.consumed*i.item.price, settings.DECIMAL_PLACES),
+        round(i.total, 4),
+        round(i.quantity, 4),
+        round(i.consumed, 4),
+        round(i.total*i.item.price, 4),
+        round(i.quantity*i.item.price, 4),
+        round(i.consumed*i.item.price, 4),
         i.owner.name, str(i.start)
       )
       for i in generator(cursor)
@@ -495,10 +495,10 @@ def exportForecastPlanned(cursor):
        forecastnetvalue=%s, forecastconsumedvalue=%s
      where forecast_id=%s and startdate=%s''', [
       (
-        round(i.quantity, settings.DECIMAL_PLACES),
-        round(i.consumed, settings.DECIMAL_PLACES),
-        round(i.quantity*i.item.price, settings.DECIMAL_PLACES),
-        round(i.consumed*i.item.price, settings.DECIMAL_PLACES),
+        round(i.quantity, 4),
+        round(i.consumed, 4),
+        round(i.quantity*i.item.price, 4),
+        round(i.consumed*i.item.price, 4),
         i.owner.name, str(i.start)
       )
       for i in generator(cursor)
@@ -615,8 +615,8 @@ def exportForecastValues(cursor):
        forecasttotalvalue=%s
      where forecast_id=%s and startdate=%s''', [
       (
-        round(i.total, settings.DECIMAL_PLACES),
-        round(i.total*i.item.price, settings.DECIMAL_PLACES),
+        round(i.total, 4),
+        round(i.total*i.item.price, 4),
         i.owner.name, str(i.start)
       )
       for i in generator(cursor)
