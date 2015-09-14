@@ -1288,14 +1288,16 @@ class HasLevel
     /** Return the level (and recompute first if required). */
     short getLevel() const
     {
-      if (recomputeLevels || computationBusy) computeLevels();
+      if (recomputeLevels || computationBusy)
+        computeLevels();
       return lvl;
     }
 
     /** Return the cluster number (and recompute first if required). */
     int getCluster() const
     {
-      if (recomputeLevels || computationBusy) computeLevels();
+      if (recomputeLevels || computationBusy)
+        computeLevels();
       return cluster;
     }
 
@@ -2197,6 +2199,8 @@ class OperationPlan
 
     static inline OperationPlan::iterator begin();
 
+    inline OperationPlan::iterator getSubOperationPlans() const;
+
     DECLARE_EXPORT PeggingIterator getPeggingDownstream() const;
 
     DECLARE_EXPORT PeggingIterator getPeggingUpstream() const;
@@ -2228,6 +2232,7 @@ class OperationPlan
       m->addIteratorField<Cls, loadplanlist::const_iterator, LoadPlan>(Tags::loadplans, Tags::loadplan, &Cls::getLoadPlans, DONT_SERIALIZE);
       m->addIteratorField<Cls, PeggingIterator, PeggingIterator>(Tags::pegging_downstream, Tags::pegging, &Cls::getPeggingDownstream, DONT_SERIALIZE);
       m->addIteratorField<Cls, PeggingIterator, PeggingIterator>(Tags::pegging_upstream, Tags::pegging, &Cls::getPeggingUpstream, DONT_SERIALIZE);
+      m->addIteratorField<Cls, OperationPlan::iterator, OperationPlan>(Tags::operationplans, Tags::operationplan, &Cls::getSubOperationPlans, DONT_SERIALIZE);
     }
 
     DECLARE_EXPORT static PyObject* createIterator(PyObject* self, PyObject* args);
@@ -3007,6 +3012,13 @@ inline OperationPlan::iterator OperationPlan::begin()
   return iterator();
 }
 
+
+inline OperationPlan::iterator OperationPlan::getSubOperationPlans() const
+{
+  return OperationPlan::iterator(this);
+}
+
+
 /** @brief A simple class to easily remember the date, quantity and owner of
   * an operationplan. */
 class OperationPlanState  // @todo should also be able to remember and restore suboperationplans!!!
@@ -3595,14 +3607,16 @@ class ItemDistribution : public Object,
     /** Updates the origin Location. This method can only be called once on each instance. */
     void setOrigin(Location* s)
     {
-      if (s) setPtrA(s, s->getDistributionOrigins());
+      if (s)
+        setPtrA(s, s->getDistributionOrigins());
       HasLevel::triggerLazyRecomputation();
     }
 
     /** Updates the destination location. This method can only be called once on each instance. */
     void setDestination(Location* i)
     {
-      if (i) setPtrB(i, i->getDistributionDestinations());
+      if (i)
+        setPtrB(i, i->getDistributionDestinations());
       HasLevel::triggerLazyRecomputation();
     }
 
@@ -3906,14 +3920,16 @@ class ItemSupplier : public Object,
     /** Updates the resource. This method can only be called on an instance. */
     void setSupplier(Supplier* s)
     {
-      if (s) setPtrA(s, s->getItems());
+      if (s)
+        setPtrA(s, s->getItems());
       HasLevel::triggerLazyRecomputation();
     }
 
     /** Updates the item. This method can only be called on an instance. */
     void setItem(Item* i)
     {
-      if (i) setPtrB(i, i->getSuppliers());
+      if (i)
+        setPtrB(i, i->getSuppliers());
       HasLevel::triggerLazyRecomputation();
     }
 
@@ -5000,6 +5016,7 @@ class Flow : public Object, public Association<Operation,Buffer,Flow>::Node,
       altFlow(NULL), search(PRIORITY)
     {
       initType(metadata);
+      HasLevel::triggerLazyRecomputation();
     }
 
   private:
@@ -6262,6 +6279,7 @@ class Load
       search(PRIORITY), skill(NULL)
     {
       initType(metadata);
+      HasLevel::triggerLazyRecomputation();
     }
 
     /** Return the search mode. */
