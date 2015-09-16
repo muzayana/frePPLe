@@ -127,7 +127,8 @@ def preferences(request):
       try:
         newdata = form.cleaned_data
         request.user.language = newdata['language']
-        request.user.theme = newdata['theme']
+        if 'theme' in newdata:
+          request.user.theme = newdata['theme']
         request.user.pagesize = newdata['pagesize']
         if newdata['cur_password']:
           request.user.set_password(newdata["new_password1"])
@@ -138,7 +139,8 @@ def preferences(request):
           update_session_auth_hash(request, form.user)
         request.user.save()
         # Switch to the new theme and language immediately
-        request.theme = newdata['theme']
+        if 'theme' in newdata:
+          request.theme = newdata['theme']
         if newdata['language'] == 'auto':
           newdata['language'] = translation.get_language_from_request(request)
         if translation.get_language() != newdata['language']:
@@ -196,7 +198,7 @@ def horizon(request):
 
 @login_required
 @csrf_protect
-def settings(request):
+def saveSettings(request):
   if request.method != 'POST' or not request.is_ajax():
     raise Http404('Only ajax post requests allowed')
   try:

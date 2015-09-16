@@ -28,7 +28,7 @@ urlpatterns = patterns(
   (r'^horizon/$', freppledb.common.views.horizon),
 
   # Report settings
-  (r'^settings/$', freppledb.common.views.settings),
+  (r'^settings/$', freppledb.common.views.saveSettings),
 
   # Dashboard widgets
   (r'^widget/(.+)/', freppledb.common.dashboard.Dashboard.dispatch),
