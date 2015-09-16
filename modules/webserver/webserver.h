@@ -794,7 +794,7 @@ class WebToken {
       */
     static void base64_decode(stringstream&, const string&);
 
-    static const string WebToken::base64_chars;
+    static const string base64_chars;
 
     static inline bool is_base64(unsigned char c)
     {
