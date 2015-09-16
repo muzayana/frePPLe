@@ -12,7 +12,7 @@ from freppledb.menu import menu
 from freppledb.forecast.views import OverviewReport, ForecastList, ForecastDemandList
 
 # Adding reports. We use an index value to keep the same order of the entries in all languages.
-menu.addItem("sales", "forecast report", url="/forecast/", report=OverviewReport, index=250)
+menu.addItem("sales", "forecast report", url="/forecast/", report=OverviewReport, index=110)
 menu.addItem("sales", "forecast", url="/data/forecast/forecast/", report=ForecastList, index=1210)
 menu.addItem("sales", "forecast demand", url="/data/forecast/forecastdemand/", report=ForecastDemandList, index=1220)
 
