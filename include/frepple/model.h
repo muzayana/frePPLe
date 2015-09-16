@@ -92,7 +92,7 @@ class LibraryModel
   * methods on the friend class Calendar.
   * @see Calendar
   */
-class CalendarBucket : public Object, public NonCopyable
+class CalendarBucket : public Object, public NonCopyable, public HasSource
 {
     friend class Calendar;
   private:
@@ -325,6 +325,7 @@ class CalendarBucket : public Object, public NonCopyable
       m->addDurationField<Cls>(Tags::endtime, &Cls::getEndTime, &Cls::setEndTime, 86400L);
       m->addDoubleField<Cls>(Tags::value, &Cls::getValue, &Cls::setValue);
       m->addPointerField<Cls, Calendar>(Tags::calendar, &Cls::getCalendar, &Cls::setCalendar, DONT_SERIALIZE + PARENT);
+      HasSource::registerFields<Cls>(m);
     }
 
   public:
