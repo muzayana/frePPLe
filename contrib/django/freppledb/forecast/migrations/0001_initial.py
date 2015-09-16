@@ -7,7 +7,6 @@
 # You are not allowed to distribute the software, either in the form of source code
 # or in the form of compiled binaries.
 #
-from django.conf import settings
 from django.core.management import call_command
 from django.db import models, migrations
 import django.utils.timezone
@@ -42,6 +41,7 @@ class Migration(migrations.Migration):
                 ('calendar', models.ForeignKey(verbose_name='calendar', to='input.Calendar')),
                 ('customer', models.ForeignKey(verbose_name='customer', to='input.Customer')),
                 ('item', models.ForeignKey(verbose_name='item', to='input.Item')),
+                ('location', models.ForeignKey(verbose_name='location', to='input.Location')),
                 ('operation', models.ForeignKey(verbose_name='delivery operation', related_name='used_forecast', null=True, blank=True, to='input.Operation', help_text='Operation used to satisfy this demand')),
             ],
             options={

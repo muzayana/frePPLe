@@ -12,10 +12,9 @@ from decimal import Decimal
 
 from django.db import models, DEFAULT_DB_ALIAS
 from django.utils.translation import ugettext_lazy as _
-from django.conf import settings
 
 from freppledb.common.models import AuditModel
-from freppledb.input.models import Customer, Operation, Item, Calendar, Demand
+from freppledb.input.models import Customer, Operation, Item, Calendar, Demand, Location
 
 
 class Forecast(AuditModel):
@@ -37,6 +36,7 @@ class Forecast(AuditModel):
   subcategory = models.CharField(_('subcategory'), max_length=300, null=True, blank=True, db_index=True)
   customer = models.ForeignKey(Customer, verbose_name=_('customer'), db_index=True)
   item = models.ForeignKey(Item, verbose_name=_('item'), db_index=True)
+  location = models.ForeignKey(Location, verbose_name=_('location'), db_index=True)
   method = models.CharField(
     _('Forecast method'), max_length=20, null=True, blank=True,
     choices=methods, default='automatic',

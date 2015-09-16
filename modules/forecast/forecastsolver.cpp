@@ -141,10 +141,13 @@ void ForecastSolver::solve(const Demand* l, void* v)
   // Forecast don't net themselves, and hidden demands either...
   if (!l || dynamic_cast<const Forecast*>(l) || l->getHidden()) return;
 
+  // TODO Add also a location matching in the forecast netting
+
   // Message
   if (getLogLevel()>0)
     logger << "  Netting of demand '" << l << "'  ('" << l->getCustomer()
-        << "','" << l->getItem() << "', '" << l->getDeliveryOperation()
+        << "', '" << l->getItem() << "', '" << l->getLocation()
+        << "', '" << l->getDeliveryOperation()
         << "'): " << l->getDue() << ", " << l->getQuantity() << endl;
 
   // Find a matching forecast

@@ -19,7 +19,7 @@ def loadForecast(cursor):
   starttime = time()
   cursor.execute('''SELECT name, customer_id, item_id, priority,
     operation_id, minshipment, calendar_id, discrete, maxlateness,
-    category, subcategory, method, planned
+    category, subcategory, method, planned, location_id
     FROM forecast''')
   for i in cursor.fetchall():
     cnt += 1
@@ -53,6 +53,8 @@ def loadForecast(cursor):
         fcst.methods = 0
     if i[12] is not None and not i[12]:
       fcst.planned = False  # null value -> True
+    if i[13]:
+      fcst.location = frepple.location(name=i[13])
   print('Loaded %d forecasts in %.2f seconds' % (cnt, time() - starttime))
 
 

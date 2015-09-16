@@ -37,7 +37,7 @@ class ForecastList(GridReport):
   A list report to show forecasts.
   '''
   template = 'forecast/forecastlist.html'
-  title = _("Forecast List")
+  title = _("forecast")
   basequeryset = Forecast.objects.all()
   model = Forecast
   frozenColumns = 1
@@ -45,6 +45,7 @@ class ForecastList(GridReport):
   rows = (
     GridFieldText('name', title=_('name'), key=True, formatter='forecast'),
     GridFieldText('item', title=_('item'), field_name='item__name', formatter='item'),
+    GridFieldText('location', title=_('location'), field_name='location__name', formatter='location'),
     GridFieldText('customer', title=_('customer'), field_name='customer__name', formatter='customer'),
     GridFieldText('calendar', title=_('calendar'), field_name='calendar__name', formatter='calendar'),
     GridFieldText('description', title=_('description')),
@@ -67,7 +68,7 @@ class ForecastDemandList(GridReport):
   A list report to show forecastdemands.
   '''
   template = 'forecast/forecastdemandlist.html'
-  title = _("Forecasted Demand List")
+  title = _("forecasted demand")
   basequeryset = ForecastDemand.objects.all()
   model = ForecastDemand
   frozenColumns = 1
@@ -100,7 +101,8 @@ class OverviewReport(GridPivot):
   rows = (
     GridFieldText('forecast', title=_('forecast'), key=True, field_name='name', formatter='forecast', editable=False),
     GridFieldText('item', title=_('item'), field_name='item__name', formatter='item', editable=False),
-    GridFieldText('customer', title=_('customer'), field_name='customer__name', formatter='customer', editable=False)
+    GridFieldText('customer', title=_('customer'), field_name='customer__name', formatter='customer', editable=False),
+    GridFieldText('location', title=_('location'), field_name='location__name', formatter='location', editable=False)
     )
   crosses = (
     ('orderstotal', {'title': _('total orders')}),
@@ -149,6 +151,7 @@ class OverviewReport(GridPivot):
 
     query = '''
         select fcst.name as row1, fcst.item_id as row2, fcst.customer_id as row3,
+           fcst.location_id as row4,
            d.bucket as col1, d.startdate as col2, d.enddate as col3,
            coalesce(sum(forecastplan.orderstotal%s),0) as orderstotal,
            coalesce(sum(forecastplan.ordersopen%s),0) as ordersopen,
@@ -173,7 +176,7 @@ class OverviewReport(GridPivot):
         and forecastplan.startdate >= d.startdate
         and forecastplan.startdate < d.enddate
         -- Grouping
-        group by fcst.name, fcst.item_id, fcst.customer_id,
+        group by fcst.name, fcst.item_id, fcst.customer_id, fcst.location_id,
                d.bucket, d.startdate, d.enddate
         order by %s, d.startdate
         ''' % (
@@ -189,21 +192,22 @@ class OverviewReport(GridPivot):
         'forecast': row[0],
         'item': row[1],
         'customer': row[2],
-        'bucket': row[3],
-        'startdate': python_date(row[4]),
-        'enddate': python_date(row[5]),
-        'past': python_date(row[4]) < currentdate and 1 or 0,
-        'future': python_date(row[5]) > currentdate and 1 or 0,
-        'orderstotal': row[6],
-        'ordersopen': row[7],
-        'ordersadjustment': row[8],
-        'forecastbaseline': row[9],
-        'forecastadjustment': row[10],
-        'forecasttotal': row[11],
-        'forecastnet': row[12],
-        'forecastconsumed': row[13],
-        'ordersplanned': row[14],
-        'forecastplanned': row[15],
+        'location': row[3],
+        'bucket': row[4],
+        'startdate': python_date(row[5]),
+        'enddate': python_date(row[6]),
+        'past': python_date(row[5]) < currentdate and 1 or 0,
+        'future': python_date(row[6]) > currentdate and 1 or 0,
+        'orderstotal': row[7],
+        'ordersopen': row[8],
+        'ordersadjustment': row[9],
+        'forecastbaseline': row[10],
+        'forecastadjustment': row[11],
+        'forecasttotal': row[12],
+        'forecastnet': row[13],
+        'forecastconsumed': row[14],
+        'ordersplanned': row[15],
+        'forecastplanned': row[16],
         }
 
 

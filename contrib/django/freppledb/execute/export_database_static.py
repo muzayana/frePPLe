@@ -938,12 +938,13 @@ class exportStaticModel(object):
       primary_keys = set([ i[0] for i in cursor.fetchall() ])
       cursor.executemany(
         '''insert into forecast
-        (name,customer_id,item_id,priority,operation_id,minshipment,
+        (name,customer_id,item_id,location_id,priority,operation_id,minshipment,
          calendar_id,discrete,maxlateness,category,subcategory,lastmodified)
         values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)''',
         [
           (
-            i.name, i.customer and i.customer.name or None, i.item.name, i.priority,
+            i.name, i.customer and i.customer.name or None, i.item.name,
+            i.location and i.location.name or None, i.priority,
             i.operation and i.operation.name or None, round(i.minshipment, 4),
             i.calendar.name, i.discrete, round(i.maxlateness, 4),
             i.category, i.subcategory, self.timestamp
@@ -953,12 +954,14 @@ class exportStaticModel(object):
         ])
       cursor.executemany(
         '''update forecast
-         set customer_id=%s, item_id=%s, priority=%s, operation_id=%s, minshipment=%s,
-         calendar_id=%s, discrete=%s,maxlateness=%s, category=%s, subcategory=%s, lastmodified=%s
+         set customer_id=%s, item_id=%s, location_id=%s, priority=%s, operation_id=%s,
+         minshipment=%s, calendar_id=%s, discrete=%s,maxlateness=%s, category=%s,
+         subcategory=%s, lastmodified=%s
          where name=%s''',
         [
           (
-            i.customer and i.customer.name or None, i.item.name, i.priority,
+            i.customer and i.customer.name or None, i.item.name,
+            i.location and i.location.name or None, i.priority,
             i.operation and i.operation.name or None, round(i.minshipment, 4),
             i.calendar.name, i.discrete, round(i.maxlateness, 4),
             i.category, i.subcategory, self.timestamp, i.name,
