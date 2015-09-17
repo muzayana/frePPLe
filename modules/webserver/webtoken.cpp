@@ -32,9 +32,9 @@ const string WebToken::base64_chars =
 void WebToken::initialize()
 {
   // Initialize the list of algorithms
-  algorithms["HS256"] = &signHS256;
-  algorithms["HS384"] = &signHS384;
-  algorithms["HS512"] = &signHS512;
+  algorithms["HS256"] = &WebToken::signHS256;
+  algorithms["HS384"] = &WebToken::signHS384;
+  algorithms["HS512"] = &WebToken::signHS512;
 
   /*
   WebToken t;  // TODO create unit test for JWT
