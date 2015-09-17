@@ -50,7 +50,6 @@ int InventoryPlanningSolver::initialize()
 }
 
 
-
 PyObject* InventoryPlanningSolver::create(PyTypeObject* pytype, PyObject* args, PyObject* kwds)
 {
   try
@@ -118,21 +117,21 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
     logger << "Inventory planning solver on buffer " << b << endl;
 
   // Inventory planning parameters of this buffer
-  double leadtime_deviation = 0;
-  double demand_deviation = 0;
-  bool nostock = false;
-  double roq_min_qty = 0.0;
-  double roq_max_qty = DBL_MAX;
-  Duration roq_min_poc;
-  Duration roq_max_poc(10 * 365 * 86400);
-  double roq_multiple = 1.0;
-  string distribution = "normal";
-  double service_level = 0.0;
-  double ss_min_qty = 0.0;
-  double ss_max_qty = DBL_MAX;
-  double ss_multiple = 1.0;
-  Duration ss_min_poc;
-  Duration ss_max_poc(10 * 365 * 86400);
+  double leadtime_deviation = b->getDoubleProperty("leadtime_deviation", 0.0);
+  double demand_deviation = b->getDoubleProperty("demand_deviation", 0.0);
+  bool nostock = b->getBoolProperty("nostock", false);
+  double roq_min_qty = b->getDoubleProperty("roq_min_qty", false);
+  double roq_max_qty = b->getDoubleProperty("roq_max_qty", DBL_MAX);
+  Duration roq_min_poc = static_cast<long>(b->getDoubleProperty("roq_min_poc", 0));
+  Duration roq_max_poc = static_cast<long>(b->getDoubleProperty("roq_min_poc", 10 * 365 * 86400));
+  double roq_multiple = b->getDoubleProperty("roq_multiple", 1);
+  string distribution = b->getStringProperty("distribution", "normal");
+  double service_level = b->getDoubleProperty("service_level", 0.0);
+  double ss_min_qty = b->getDoubleProperty("ss_min_qty", 0);
+  double ss_max_qty = b->getDoubleProperty("ss_max_qty", DBL_MAX);
+  double ss_multiple = b->getDoubleProperty("ss_multiple", 1);
+  Duration ss_min_poc = static_cast<long>(b->getDoubleProperty("ss_min_poc", 0));
+  Duration ss_max_poc = static_cast<long>(b->getDoubleProperty("ss_max_poc", 10 * 365 * 86400));
   double price = 0.0;
   if (b->getItem())
     price = b->getItem()->getPrice();
@@ -215,10 +214,16 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
   CalendarBucket *roq_calendar_bucket = NULL;
   CalendarBucket *ss_calendar_bucket = NULL;
 
+  // Variables for the output metrics
+  double eoq = 1;
+  double service_level_out = 0.99;
+  string distribution_out("normal");
+
   // Loop over all buckets in the horizon
   Date startdate = Plan::instance().getCurrent() - Duration(horizon_start * 86400L);
   Date enddate = Plan::instance().getCurrent() + Duration(horizon_end * 86400L);
   Date bucketstart;
+  bool firstBucket = true;
   for (Calendar::EventIterator bucket(cal, startdate, true);
     bucket.getDate() < enddate; ++bucket)
   {
@@ -264,7 +269,13 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
     }
     if (lastdemand > 0)
       demand += lastdemand * (fence - last_bucket_start) / (last_bucket_end - last_bucket_start);
-    demand = demand / leadtime * 86400;
+    if (leadtime)
+      // Normal case
+      demand = demand / leadtime * 86400;
+    else
+      // Special case when the leadtime is zero. We then consider the
+      // average demand of the current bucket.
+      demand = demand / static_cast<long>(last_bucket_end - last_bucket_start) * 86400;
 
     // Compute the reorder quantity
     // 1. start with the wilson formula for the optimal reorder quantity
@@ -274,7 +285,12 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
     //    round down when doing so.
     double roq = 1.0;
     if (price)
+    {
       roq = sqrt(2 * 365 * demand * fixed_order_cost / holding_cost / price);
+      if (firstBucket)
+        // Remember the economic order metric in the first bucket
+        eoq = roq;
+    }
     if (roq < roq_min_qty)
       roq = roq_min_qty;
     if (roq < demand * roq_min_poc)
@@ -304,9 +320,9 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
     if (service_level > 0)
     {
       if (demand_deviation && leadtime_deviation)
-        ss = 1.0 * sqrt(demand * demand_deviation * demand_deviation + demand * demand * leadtime_deviation * leadtime_deviation);
+        ss = 1.0 /** TODO Z-factor */ * sqrt(demand * demand_deviation * demand_deviation + demand * demand * leadtime_deviation * leadtime_deviation);
       else if (demand_deviation)
-        ss = 1.0 * sqrt(demand) * demand_deviation;
+        ss = 1.0 /** TODO Z-factor */ * sqrt(demand) * demand_deviation;
       else if (leadtime_deviation)
         ss = 1.0 * demand * leadtime_deviation;
     }
@@ -336,6 +352,34 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
         << ", ss: " << ss
         << ", rop: " << (ss + leadtime * demand / 86400) << endl;
 
+    // Store the metrics in the first bucket.
+    // The values are averaged over the lead time.
+    if (firstBucket)
+    {
+      firstBucket = false;
+      PythonData res;
+      res.setDouble(leadtime);
+      const_cast<Buffer*>(b)->setProperty("ip_leadtime", res, 3);
+      res.setDouble(eoq);
+      const_cast<Buffer*>(b)->setProperty("ip_eoq", res, 3);
+      res.setDouble(service_level_out);
+      const_cast<Buffer*>(b)->setProperty("ip_service_level", res, 3);
+      res.setDouble(roq);
+      const_cast<Buffer*>(b)->setProperty("ip_roq", res, 3);
+      res.setDouble(ss);
+      const_cast<Buffer*>(b)->setProperty("ip_ss", res, 3);
+      res.setDouble(demand);
+      const_cast<Buffer*>(b)->setProperty("ip_demand", res, 3);
+      /* TODO
+         - local (forecast/)demand per period, averaged over the lead time
+         - local dependent demand per period, averaged over the lead time
+         - statistical distribution applied, intermediate result
+         - safety stock in the first bucket, unconstrained intermediate result
+         - safety stock in the first bucket, final value
+         - reorder quantity in the first bucket
+         */
+    }
+
     // Store the result on the ROQ and SS calendars
     if (!ss_calendar_bucket || fabs(ss_calendar_bucket->getValue() - ss) > ROUNDING_ERROR)
     {
@@ -345,6 +389,7 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
       ss_calendar_bucket->setStart(bucketstart);
       ss_calendar_bucket->setCalendar(ss_calendar);
       ss_calendar_bucket->setValue(ss);
+      ss_calendar_bucket->setPriority(999);
     }
     if (!roq_calendar_bucket || fabs(roq_calendar_bucket->getValue() - roq) > ROUNDING_ERROR)
     {
@@ -354,6 +399,7 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
       roq_calendar_bucket->setStart(bucketstart);
       roq_calendar_bucket->setCalendar(roq_calendar);
       roq_calendar_bucket->setValue(roq);
+      roq_calendar_bucket->setPriority(999);
     }
 
     // Prepare for the next bucket

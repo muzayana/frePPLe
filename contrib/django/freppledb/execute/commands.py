@@ -86,28 +86,11 @@ def createPlan(database=DEFAULT_DB_ALIAS):
     else:
       solver.loglevel = 0
 
-  # TODO: move this properly into the inventory planning app
+  # TODO: move this completely into the inventory planning app
   with_inventoryplanning = 'solver_inventoryplanning' in [ a[0] for a in inspect.getmembers(frepple) ]
   if with_inventoryplanning:
-    print("Start inventory planning")
-
-    # Create an unconstrained plan to propagate demand across all dependent levels.
-    # TODO: we only want to propagate the forecasted demand, excluding any actual sales orders already received.
-    frepple.solver_mrp(plantype=2, constraints=0, loglevel=0).solve()
-
-    # Run the inventory planning solver to compute the safety stock and reorder quantities
-    frepple.solver_inventoryplanning(
-      calendar=frepple.calendar(name=Parameter.getValue('inventoryplanning.calendar', database), action='C'),
-      horizon_start=int(Parameter.getValue('inventoryplanning.horizon_start', database, 0)),
-      horizon_end=int(Parameter.getValue('inventoryplanning.horizon_end', database, 365)),
-      holding_cost=float(Parameter.getValue('inventoryplanning.holding_cost', database, 0.05)),
-      fixed_order_cost=float(Parameter.getValue('inventoryplanning.fixed_order_cost', database, 20)),
-      loglevel=int(Parameter.getValue('inventoryplanning.loglevel', database, 0)),
-      ).solve()
-
-    # Erase the plan again
-    frepple.erase(False)
-    print("Finished inventory planning")
+    from freppledb.inventoryplanning.commands import createInventoryPlan
+    createInventoryPlan(database)
 
   # Create a solver where the plan type are defined by an environment variable
   try:

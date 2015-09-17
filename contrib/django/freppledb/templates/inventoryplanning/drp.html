@@ -3,28 +3,31 @@
 
 {% comment %}
   TODO:
-  - different views for the top section
-  - tree in top grid
-  - forecast graph
-  - forecast grid
-  - plan graph
-  - plan grid
-  - transaction actions
+  - backend: data for plan
   - save parameters, plan, forecast
   - view history
+  - transaction actions
+  - different views for the top section
+  - tree in top grid
 {% endcomment %}
 
 {% block contextmenus %}
 {% include "buffercontext.html" %}
+{% include "itemcontext.html" %}
+{% include "locationcontext.html" %}
 {% endblock %}
 
 {% block extra_grid %}onSelectRow: selectRow,{% endblock %}
 
 {% block extrahead %}{{block.super}}
+<script type="text/javascript" src="{{STATIC_URL}}js/d3.min.js"></script>
 <script type="text/javascript">
 
 var showtab = null;
 var result = null;
+var forecastcurrentbucket = 0;
+
+var timebuckets = [ {% for f in request.report_bucketlist %}{% if not forloop.first %},{% endif %}{'name':'{{f.name}}','startdate':'{{f.startdate|date:"Y-m-d"}}','enddate':'{{f.enddate|date:"Y-m-d"}}'}{% endfor %} ];
 
 function selectRow(id)
 {
@@ -99,10 +102,493 @@ function save(event)
     });
 }
 
+function onChange(event)
+{
+  $(event.target).addClass('dirty-cell');
+  upload.select();
+}
+
+
 function undo()
 {
   displayResult(result);
 }
+
+function forecastfields()
+{
+  var col = 
+    '{{_("total orders")|capfirst}}' + "<br/>" +
+    '{{_("open orders")|capfirst}}' + "<br/>" +
+    '<span class="editablepivotcol">' + '{{_("orders adjustment")|capfirst}}' + "</span><br/>" +
+    '{{_("forecast baseline")|capfirst %}' + "<br/>" + 
+    '<span class="editablepivotcol">' + '{{_("forecast adjustment")|capfirst}}' + "</span><br/>";
+  return col;
+}
+
+function planfields()
+{
+  var col = 
+    '{{_('reorder quantity')|capfirst}}' + "<br/>" +
+    '<span class="editablepivotcol">' + '{{_("reorder quantity override")|capfirst}}' + "</span><br/>" +
+    '{{_("safety stock")|capfirst}}' + "<br/>" +
+    '<span class="editablepivotcol">' + '{{_("safety stock override")|capfirst}}' + "</span><br/>" +
+    '{{_("starting inventory")|capfirst}}' + "<br/>" + 
+    '{{_("local forecast")|capfirst}}' + "<br/>" + 
+    '{{_("local orders")|capfirst}}' + "<br/>" + 
+    '{{_("dependent demand")|capfirst}}' + "<br/>" + 
+    '{{_("total demand")|capfirst}}' + "<br/>" + 
+    '{{_("confirmed purchases")|capfirst}}' + "<br/>" + 
+    '{{_("confirmed transfers")|capfirst}}' + "<br/>" + 
+    '{{_("proposed purchases")|capfirst}}' + "<br/>" + 
+    '{{_("proposed transfers")|capfirst}}' + "<br/>" + 
+    '{{_("total supply")|capfirst}}' + "<br/>" + 
+    '{{_("ending inventory")|capfirst}}' + "<br/>";    
+  return col;
+}
+
+
+function forecastcell(cellvalue, options, rowObject)
+{
+  var cell = result.forecast[parseInt(options.pos) + parseInt(forecastcurrentbucket) - 1];
+  if (!cell) return "";
+  var cellstring = "";
+  cellstring += cell.orderstotal + "<br/>";
+  cellstring += cell.ordersopen + "<br/>";{% if perms.forecast.change_forecastdemand %}
+  cellstring += '<input type="text" class="smallpadding adjhistory" value="' + ((cell.ordersadjustment === null) ? '' : Math.round(cell.ordersadjustment)) + '" size="5" onchange="onChange(event)" onclick="$(this).select();"/><br/>';
+  {% else %}
+  cellstring += Math.round(cell.ordersadjustment) + '<br/>';{% endif %}
+  cellstring += cell.forecastbaseline + "<br/>";{% if perms.forecast.change_forecastdemand %}
+  cellstring += '<input type="text" class="smallpadding adjforecast" value="' + ((cell.forecastadjustment === null) ? '' : Math.round(cell.forecastadjustment)) + '" size="5" onchange="onChange(event)" onclick="$(this).select();"/><br/>';
+  {% else %}
+  cellstring += Math.round(cell.forecastadjustment) + '<br/>';{% endif %}  
+  return cellstring;
+
+  /* TODO
+    Demand history year - 1
+    Demand history override year - 1 (editable)
+    Demand history year - 2
+    Demand history override year - 2 (editable)
+    Demand history year - 3
+    Demand history override year - 3 (editable)
+  */
+}
+
+function plancell(cellvalue, options, rowObject)
+{
+  var cell = result.plan[parseInt(options.pos) - 1];
+  if (!cell) return "s";
+  var cellstring = "";
+  cellstring += cell.roq + "<br/>"{% if perms.forecast.change_forecastdemand %}
+  cellstring += '<input type="text" class="smallpadding adjroqoverride" value="' + ((cell.roqoverride === null) ? '' : Math.round(cell.roqoverride)) + '" size="5" onchange="onChange(event)" onclick="$(this).select();"/><br/>';
+  {% else %}
+  cellstring += Math.round(cell.roqoverride) + '<br/>';{% endif %}
+  cellstring += cell.ss + "<br/>"{% if perms.forecast.change_forecastdemand %}
+  cellstring += '<input type="text" class="smallpadding ssoverride" value="' + ((cell.ssoverride === null) ? '' : Math.round(cell.roqoverride)) + '" size="5" onchange="onChange(event)" onclick="$(this).select();"/><br/>';
+  {% else %}
+  cellstring += Math.round(cell.ssoverride) + '<br/>';{% endif %}
+  cellstring += cell.startoh + "<br/>";
+  cellstring += cell.dmdfcstlocal + "<br/>";
+  cellstring += cell.dmdorderslocal + "<br/>";
+  cellstring += cell.dmddependent + "<br/>";
+  cellstring += cell.dmdtotal + "<br/>";
+  cellstring += cell.poconfirmed + "<br/>";
+  cellstring += cell.doconfirmed + "<br/>";
+  cellstring += cell.poproposed + "<br/>";
+  cellstring += cell.doproposed + "<br/>";
+  cellstring += cell.supply + "<br/>";
+  cellstring += cell.endoh + "<br/>";
+  return cellstring;
+}
+
+
+function displayPlanGraph()
+{
+  var margin = {top: 0, right: 100, bottom: 30, left: 50};
+  var width = $("#content-main").width() - margin.left - margin.right;
+  var height = $("#plangraph").height() - margin.top - margin.bottom;
+  
+  // Define X-axis
+  var domain_x = [];
+  var bucketnamelength = 0;
+  for (var i in result.plan)
+  {
+    domain_x.push(result.plan[i].bucket);
+    bucketnamelength = Math.max(result.plan[i].bucket.length, bucketnamelength);
+  }
+  var x = d3.scale.ordinal()
+    .domain(domain_x)
+    .rangeRoundBands([0, width], .1);
+  var x_width = x.rangeBand();
+
+  // Define Y-axis
+  var y = d3.scale.linear().rangeRound([height, 0]);
+
+  // Create a new SVG element
+  $($("#plangraph").get(0)).html("");
+  var svg = d3.select($("#plangraph").get(0))
+    .append("svg")
+    .attr("class","graphcell")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+  // Get the maxima of the values
+  var max_y = 0;
+  var min_y = 0;
+  for (var i in result.plan)
+  {
+    var tmp = result.plan[i];
+    if (tmp.startoh > max_y)
+       max_y = tmp.orderstotal;
+    if (tmp.dmdtotal > max_y)
+       max_y = tmp.dmdtotal;
+    if (tmp.supply > max_y)
+       max_y = tmp.supply;
+    if (tmp.endoh > max_y)
+       max_y = tmp.endoh;
+    if (tmp.startoh < min_y)
+       min_y = tmp.startoh;
+    if (tmp.dmdtotal < min_y)
+       min_y = tmp.dmdtotal;
+    if (tmp.supply < min_y)
+       min_y = tmp.supply;
+    if (tmp.endoh < min_y)
+       min_y = tmp.endoh;
+  }
+
+  // Update the scale of the Y-axis by looking for the max value
+  y.domain([min_y, max_y]);
+  var y_zero = y(0);
+
+  // Create D3 bars
+  var my_y;
+  svg.selectAll("g")
+    .data(result.plan)
+    .enter()
+    .append("g")
+    .attr("transform", function(d) { return "translate(" + x(d.bucket) + ",0)"; })
+    .on("click", function(d) {
+        if (d3.event.defaultPrevented || (d.supply == 0 && d.dmdtotal == 0))
+          return;
+        d3.select("#tooltip").style('display', 'none');
+        d3.event.stopPropagation();
+      })
+    .on("mouseenter", function(d) {
+       graph.showTooltip(
+         '<div style="text-align:center; font-weight:bold">'
+         + d.bucket + '</div>'
+         + '<table><tr><td>{{_('reorder quantity')|capfirst}}</td><td style="text-align:right">'
+         + (Math.round(d.roq*10)/10)
+         + '</td></tr><tr><td>{{_('reorder quantity override')|capfirst}}</td><td style="text-align:right">'
+         + (Math.round(d.roqoverride*10)/10)
+         + '</td></tr><tr><td>{{_('safety stock')|capfirst}}</td><td style="text-align:right">'
+         + (Math.round(d.ss*10)/10)
+         + '</td></tr><tr><td>{{_('safety stock override')|capfirst}}</td><td style="text-align:right">'
+         + ((d.ssoverride === null) ? '' : (Math.round(d.ssoverride*10)/10))
+         + '</td></tr><tr><td>{{_('start inventory')|capfirst}}</td><td style="text-align:right">'
+         + (Math.round(d.startoh*10)/10)
+         + '</td></tr><tr><td>{{_('end inventory')|capfirst}}</td><td style="text-align:right">'
+         + (Math.round(d.endoh*10)/10)
+         + '</td></tr></table>'
+         );
+      })
+    .on("mouseleave", graph.hideTooltip)
+    .on("mousemove", graph.moveTooltip)
+    .each(function(d) {
+      var bucket = d3.select(this);
+      var top;
+      if (d['ordersopen'] > 0)
+      {
+        my_y = y(d['ordersopen']);
+        bucket.append("rect")
+          .attr("width", x_width/2)
+          .attr("height", y_zero - my_y)
+          .attr("x", x_width/2)
+          .attr("y", my_y)
+          .style("fill","#2B95EC");
+      }
+      if (d['ordersplanned'] > 0)
+      {
+        top = y(d['ordersplanned']);
+        bucket.append("rect")
+          .attr("width", x_width/2)
+          .attr("y", top)
+          .attr("height", y_zero - top)
+          .style("fill","#7B5E08");
+      }
+      if (d['forecastplanned'] > 0)
+      {
+        bucket.append("rect")
+          .attr("width", x_width/2)
+          .attr("y", y(d['forecastplanned'] + d['ordersplanned']))
+          .attr("height", y(d['ordersplanned']) - y(d['forecastplanned'] + d['ordersplanned']))
+          .style("fill","#F6BD0F");
+      }
+    });
+
+  // Create D3 lines
+  var line = d3.svg.line()
+    .x(function(d) { return x(d.bucket) + x_width / 2; })
+    .y(function(d) { return y(d.orderstotal); });
+  svg.append("svg:path")
+    .attr('class', 'graphline')
+    .attr("stroke","#8BBA00")
+    .attr("d", line(result.forecast));
+  var line = d3.svg.line()
+    .x(function(d) { return x(d.bucket) + x_width / 2; })
+    .y(function(d) { return d['future']==1 ? y(d['forecasttotal']) : y_zero; });
+  svg.append("svg:path")
+    .attr('class', 'graphline')
+    .attr("stroke","#FF0000")
+    .attr("d", line(result.forecast));
+
+  // Display Y-Axis
+  var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left");
+  svg.append("g")
+    .attr("class", "y axis")
+    .call(yAxis);
+
+  // Display X-axis
+  var nth = Math.ceil(result.plan.length / width * bucketnamelength * 10);
+  var myticks = [];
+  for (var i in result.plan)
+    if (i % nth == 0) myticks.push(result.plan[i].bucket);
+  var xAxis = d3.svg.axis()
+    .scale(x)
+    .tickValues(myticks)
+    .orient("bottom");
+  svg.append("g")
+    .attr("class", "x axis")
+    .attr("transform", "translate(0," + height + ")")
+    .call(xAxis);
+
+  // Display legend
+  var legend = svg.append("g");
+  var codes = [
+    ["{{_('start inventory')|capfirst}}", "#8BBA00"],
+    ["{{_('produced')|capfirst}}", "#2B95EC"],
+    ["{{_('consumed')|capfirst}}", "#F6BD0F"],
+    ["{{_('end inventory')|capfirst}}", "#7B5E08"]
+    ];
+  var visible = 0;
+  for (var i in codes)
+  {
+    legend.append("rect")
+      .attr("x", width + 82)
+      .attr("width", 18)
+      .attr("height", 18)
+      .style("fill", codes[i][1])
+      .attr("transform", "translate(0," + (visible*20+10) + ")");
+    legend.append("text")
+      .attr("x", width + 76)
+      .attr("y", 9)
+      .attr("dy", ".35em")
+      .style("text-anchor", "end")
+      .text(codes[i][0])
+      .attr("transform", "translate(0," + (visible*20+10) + ")");
+    visible += 1;
+  }
+}
+
+
+function displayForecastGraph()
+{
+  var margin = {top: 0, right: 100, bottom: 30, left: 50};
+  var width = $("#content-main").width() - margin.left - margin.right;
+  var height = $("#forecastgraph").height() - margin.top - margin.bottom;
+  
+  // Define X-axis
+  var domain_x = [];
+  var bucketnamelength = 0;
+  for (var i in result.forecast)
+  {
+    domain_x.push(result.forecast[i].bucket);
+    bucketnamelength = Math.max(result.forecast[i].bucket.length, bucketnamelength);
+    if (result.forecast[i].bucket == timebuckets[0].name)
+      forecastcurrentbucket = i;
+  }
+  var x = d3.scale.ordinal()
+    .domain(domain_x)
+    .rangeRoundBands([0, width], .1);
+  var x_width = x.rangeBand();
+
+  // Define Y-axis
+  var y = d3.scale.linear().rangeRound([height, 0]);
+
+  // Create a new SVG element
+  $($("#forecastgraph").get(0)).html("");
+  var svg = d3.select($("#forecastgraph").get(0))
+    .append("svg")
+    .attr("class","graphcell")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+  // Get the maxima of the values
+  var max_y = 0;
+  var min_y = 0;
+  for (var i in result.forecast)
+  {
+    var tmp = result.forecast[i];
+    if (tmp.orderstotal > max_y)
+       max_y = tmp.orderstotal;
+    if (tmp.forecasttotal > max_y)
+       max_y = tmp.forecasttotal;
+    if (tmp.orderstotal < min_y)
+       min_y = tmp.orderstotal;
+    if (tmp.forecasttotal < min_y)
+       min_y = tmp.forecasttotal;
+  }
+
+  // Update the scale of the Y-axis by looking for the max value
+  y.domain([min_y, max_y]);
+  var y_zero = y(0);
+
+  // Create D3 bars
+  var my_y;
+  svg.selectAll("g")
+    .data(result.forecast)
+    .enter()
+    .append("g")
+    .attr("transform", function(d) { return "translate(" + x(d.bucket) + ",0)"; })
+    .on("click", function(d) {
+        if (d3.event.defaultPrevented || (d.produced == 0 && d.consumed == 0))
+          return;
+        d3.select("#tooltip").style('display', 'none');
+        d3.event.stopPropagation();
+      })
+    .on("mouseenter", function(d) {
+       graph.showTooltip(
+         '<div style="text-align:center; font-weight:bold">'
+         + d.bucket + '</div>'
+         + '<table><tr><td>{{_('total orders')|capfirst}}</td><td style="text-align:right">'
+         + (Math.round(d.orderstotal*10)/10)
+         + '</td></tr><tr><td>{{_('open orders')|capfirst}}</td><td style="text-align:right">'
+         + (Math.round(d.ordersopen*10)/10)
+         + '</td></tr><tr><td>{{_('orders adjustment')|capfirst}}</td><td style="text-align:right">'
+         + ((d.ordersadjustment === null) ? '' : (Math.round(d.ordersadjustment*10)/10))
+         + '</td></tr><tr><td>{{_('forecast baseline')|capfirst}}</td><td style="text-align:right">'
+         + (Math.round(d.forecastbaseline*10)/10)
+         + '</td></tr><tr><td>{{_('forecast adjustment')|capfirst}}</td><td style="text-align:right">'
+         + ((d.forecastadjustment === null) ? '' : Math.round(d.forecastadjustment*10)/10)
+         + '</td></tr><tr><td>{{_('forecast total')|capfirst}}</td><td style="text-align:right">'
+         + (Math.round(d.forecasttotal*10)/10)
+         + '</td></tr><tr><td>{{_('forecast net')|capfirst}}</td><td style="text-align:right">'
+         + (Math.round(d.forecastnet*10)/10)
+         + '</td></tr><tr><td>{{_('forecast consumed')|capfirst}}</td><td style="text-align:right">'
+         + (Math.round(d.forecastconsumed*10)/10)
+         + '</td></tr><tr><td>{{_('planned orders')|capfirst}}</td><td style="text-align:right">'
+         + (Math.round(d.ordersplanned*10)/10)
+         + '</td></tr><tr><td>{{_('planned net forecast')|capfirst}}</td><td style="text-align:right">'
+         + (Math.round(d.forecastplanned*10)/10)
+         + '</td></tr></table>'
+         );
+      })
+    .on("mouseleave", graph.hideTooltip)
+    .on("mousemove", graph.moveTooltip)
+    .each(function(d) {
+      var bucket = d3.select(this);
+      var top;
+      if (d['ordersopen'] > 0)
+      {
+        my_y = y(d['ordersopen']);
+        bucket.append("rect")
+          .attr("width", x_width/2)
+          .attr("height", y_zero - my_y)
+          .attr("x", x_width/2)
+          .attr("y", my_y)
+          .style("fill","#2B95EC");
+      }
+      if (d['ordersplanned'] > 0)
+      {
+        top = y(d['ordersplanned']);
+        bucket.append("rect")
+          .attr("width", x_width/2)
+          .attr("y", top)
+          .attr("height", y_zero - top)
+          .style("fill","#7B5E08");
+      }
+      if (d['forecastplanned'] > 0)
+      {
+        bucket.append("rect")
+          .attr("width", x_width/2)
+          .attr("y", y(d['forecastplanned'] + d['ordersplanned']))
+          .attr("height", y(d['ordersplanned']) - y(d['forecastplanned'] + d['ordersplanned']))
+          .style("fill","#F6BD0F");
+      }
+    });
+
+  // Create D3 lines
+  var line = d3.svg.line()
+    .x(function(d) { return x(d.bucket) + x_width / 2; })
+    .y(function(d) { return y(d.orderstotal); });
+  svg.append("svg:path")
+    .attr('class', 'graphline')
+    .attr("stroke","#8BBA00")
+    .attr("d", line(result.forecast));
+  var line = d3.svg.line()
+    .x(function(d) { return x(d.bucket) + x_width / 2; })
+    .y(function(d) { return d['future']==1 ? y(d['forecasttotal']) : y_zero; });
+  svg.append("svg:path")
+    .attr('class', 'graphline')
+    .attr("stroke","#FF0000")
+    .attr("d", line(result.forecast));
+
+  // Display Y-Axis
+  var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left");
+  svg.append("g")
+    .attr("class", "y axis")
+    .call(yAxis);
+
+  // Display X-axis for a single forecast
+  var nth = Math.ceil(result.forecast.length / width * bucketnamelength * 10);
+  var myticks = [];
+  for (var i in result.forecast)
+    if (i % nth == 0) myticks.push(result.forecast[i].bucket);
+  var xAxis = d3.svg.axis()
+    .scale(x)
+    .tickValues(myticks)
+    .orient("bottom");
+  svg.append("g")
+    .attr("class", "x axis")
+    .attr("transform", "translate(0," + height + ")")
+    .call(xAxis);
+
+  // Display legend
+  var legend = svg.append("g");
+  var codes = [
+    ["{{_('open orders')|capfirst}}", "#2B95EC", 1],
+    ["{{_('total orders')|capfirst}}", "#8BBA00", 0],
+    ["{{_('forecast total')|capfirst}}", "#FF0000", 5],
+    ["{{_('planned orders')|capfirst}}", "#7B5E08", 8],
+    ["{{_('planned net forecast')|capfirst}}", "#F6BD0F", 9]
+    ];
+  var visible = 0;
+  for (var i in codes)
+  {
+    legend.append("rect")
+      .attr("x", width + 82)
+      .attr("width", 18)
+      .attr("height", 18)
+      .style("fill", codes[i][1])
+      .attr("transform", "translate(0," + (visible*20+10) + ")");
+    legend.append("text")
+      .attr("x", width + 76)
+      .attr("y", 9)
+      .attr("dy", ".35em")
+      .style("text-anchor", "end")
+      .text(codes[i][0])
+      .attr("transform", "translate(0," + (visible*20+10) + ")");
+    visible += 1;
+  }
+}
+
 
 function displayResult(data)
 {
@@ -116,11 +602,11 @@ function displayResult(data)
 
   // Update title
   if (result.type == "itemlocation")
-    $("#detailtitle").html("{% trans 'buffer'|capfirst|escape %} " + result.name);
+    $("#detailtitle").html("{{_('buffer')|capfirst|escape}} " + result.name);
   else if (result.type == "item")
-    $("#detailtitle").html("{% trans 'item'|capfirst|escape %} " + result.name);
+    $("#detailtitle").html("{{_('item')|capfirst|escape}} " + result.name);
   else if (result.type == "itemlocation")
-    $("#detailtitle").html("{% trans 'location'|capfirst|escape %} " + result.name);
+    $("#detailtitle").html("{{_('location')|capfirst|escape}} " + result.name);
 
   // Update the forecasting parameters
   $("#forecastmethod").val(data.parameters.forecastmethod);
@@ -148,7 +634,7 @@ function displayResult(data)
   $("#leadtime_deviation").html(data.parameters.leadtime_deviation);
   $("#ss_min_qty").html(data.parameters.ss_min_qty);
   $("#ss_min_poc").html(data.parameters.ss_min_poc);
-  $("#nostock").prop('checked', data.paramters.nostock == "False");
+  $("#nostock").prop('checked', data.parameters.nostock == "True");
 
   // Show comments
   $("#commentlocation, #commentitem, #commentitemlocation").removeClass("red");
@@ -157,56 +643,79 @@ function displayResult(data)
   comments.empty();
   for (var c in result.comments)
   {
-    $("<hr/><h3/>").text(result.comments[c].user + " " + result.comments[c].type).appendTo(comments);
+    $("<hr/>").appendTo(comments);
+    $("<h3/>").text(result.comments[c].user + " " + result.comments[c].type).appendTo(comments);
     $("<span class='float_right'></span>").text(result.comments[c].lastmodified).appendTo(comments);
     $("<pre/>").text(result.comments[c].comment).appendTo(comments);
   }
 
   // Show forecast tab
+  displayForecastGraph(); // this function also sets the variable firstforecastbucket
   if (!$.trim($("#forecastgrid").html()))
   {
     // Forecast grid displayed for the first time
     $("#forecastgrid").jqGrid({
-      data: result.forecast,
+      data: [1],  // Dummy: single row
       datatype: 'local',
       jsonReader: { repeatitems: false },
-      altRows: true,
-      altclass: 'altRow',
+      hoverrows: false,
       colModel:[
-         {name:'id',index:'id',editable:false,label:'{% trans "identifier"|capfirst %}',align:'center',title:false,key:true,hidden:true,counter:0,frozen:true,searchoptions:{searchhidden: true}},
-         {name:'date',index:'date',editable:false,label:'{% trans "date"|capfirst %}',align:'center',title:false,formatter:'date',formatoptions:{srcformat:'Y-m-d H:i:s',newformat:'Y-m-d H:i:s'},width:140,counter:6,searchoptions:{searchhidden: true}},
-         {name:'type',index:'status',editable:true,label:'{% trans "type"|capfirst %}',align:'center',title:false,formatter:'select', edittype:'select', editoptions:{value:'confirmed:confirmed;approved:approved;proposed:proposed'},width:100,counter:2,searchoptions:{searchhidden: true}},
-         {name:'reference',index:'reference',editable:true,label:'{% trans "reference"|capfirst %}',align:'left',title:false,width:200,counter:1,searchoptions:{searchhidden: true}},
-         {name:'status',index:'status',editable:true,label:'{% trans "status"|capfirst %}',align:'center',title:false,formatter:'select', edittype:'select', editoptions:{value:'confirmed:confirmed;approved:approved;proposed:proposed'},width:100,counter:2,searchoptions:{searchhidden: true}},
-         {name:'item',index:'item',editable:true,label:'{% trans "item"|capfirst %}',align:'left',title:false,formatter:'item',width:200,counter:3,searchoptions:{searchhidden: true}},
-         {name:'origin',index:'origin',editable:true,label:'{% trans "origin"|capfirst %}',align:'left',title:false,formatter:'location',width:200,counter:4,searchoptions:{searchhidden: true}},
-         {name:'startdate',index:'startdate',editable:true,label:'{% trans "start date"|capfirst %}',align:'center',title:false,formatter:'date',formatoptions:{srcformat:'Y-m-d H:i:s',newformat:'Y-m-d H:i:s'},width:140,counter:6,searchoptions:{searchhidden: true}},
-         {name:'enddate',index:'enddate',editable:true,label:'{% trans "end date"|capfirst %}',align:'center',title:false,formatter:'date',formatoptions:{srcformat:'Y-m-d H:i:s',newformat:'Y-m-d H:i:s'},width:140,counter:7,searchoptions:{searchhidden: true}},
-         {name:'quantity',index:'quantity',editable:true,label:'{% trans "quantity"|capfirst %}',align:'center',title:false,formatter:'number',searchrules:{number:true},width:70,counter:8,searchoptions:{searchhidden: true}},
-         {name:'criticality',index:'criticality',editable:false,label:'{% trans "criticality"|capfirst %}',align:'center',title:false,formatter:'number',searchrules:{number:true},width:70,counter:10,searchoptions:{searchhidden: true}},
-         {name:'lastmodified',index:'lastmodified',editable:false,label:'Last Modified',align:'center',title:false,formatter:'date',formatoptions:{srcformat:'Y-m-d H:i:s',newformat:'Y-m-d H:i:s'},width:140,counter:12,searchoptions:{searchhidden: true}}
+         {name:'fields',index:'fields',editable:false,label:'{% trans "fields"|capfirst %}',align:'left',title:false,key:true,counter:0,frozen:true,sortable:false,formatter:forecastfields},
+         {% for f in request.report_bucketlist %}{% if not forloop.first %},
+         {% endif %}{ name:'{{f.name|safe}}',startdate:'{{f.startdate|date:"Y-m-d"}}',enddate:'{{f.enddate|date:"Y-m-d"}}',sortable:false,width:90,align:'center',formatter:forecastcell,search:false,title:false }{% endfor %}
          ],
-      rowNum:20,
-      rowList:[20, 30, 50],
       iconSet: "fontAwesome",
-      sortname: 'date',
-      sortorder: "asc",
       autowidth: true,
       shrinkToFit: false,
       loadonce: true,
-      height: 250
+      beforeSelectRow: function() {return false;},
+      height: 'auto'
       });
-    jQuery("#forecastgrid").jqGrid('setFrozenColumns');
+    jQuery("#forecastgrid").jqGrid('setFrozenColumns');    
   }
   else
   {
     // Refresh data in the forecast grid
     $('#forecastgrid')
       .jqGrid('clearGridData')
-      .jqGrid('setGridParam', {data: result.forecast})
+      .jqGrid('setGridParam', {data: [1]}) // Dummy: single row
       .trigger('reloadGrid');
   }
-
+  
+  // Show plan tab
+  displayPlanGraph();
+  if (!$.trim($("#plangrid").html()))
+  {
+    displayPlanGraph();
+    // Plan grid displayed for the first time
+    $("#plangrid").jqGrid({
+      data: [1],
+      datatype: 'local',
+      jsonReader: { repeatitems: false },
+      hoverrows: false,      
+      colModel:[
+         {name:'fields',index:'fields',editable:false,label:'{% trans "fields"|capfirst %}',align:'left',title:false,key:true,counter:0,frozen:true,sortable:false,formatter:planfields},
+         {% for f in request.report_bucketlist %}{% if not forloop.first %},
+         {% endif %}{ name:'{{f.name|safe}}',startdate:'{{f.startdate|date:"Y-m-d"}}',enddate:'{{f.enddate|date:"Y-m-d"}}',sortable:false,width:90,align:'center',formatter:plancell,search:false,title:false }{% endfor %}
+         ],
+      iconSet: "fontAwesome",
+      autowidth: true,
+      shrinkToFit: false,
+      loadonce: true,
+      beforeSelectRow: function() {return false;},
+      height: 'auto'
+      });
+    jQuery("#plangrid").jqGrid('setFrozenColumns');
+  }
+  else
+  {
+    // Refresh data in the plan grid
+    $('#plangrid')
+      .jqGrid('clearGridData')
+      .jqGrid('setGridParam', {data: [1]})
+      .trigger('reloadGrid');
+  }
+    
   // Show transaction tab
   if (!$.trim($("#transactiongrid").html()))
   {
@@ -237,7 +746,7 @@ function displayResult(data)
       sortname: 'date',
       sortorder: "asc",
       autowidth: true,
-      height: 250,
+      height: 200,
       multiselect: true
       });
     $("#transactiongrid").jqGrid('setFrozenColumns');
@@ -248,51 +757,6 @@ function displayResult(data)
     $('#transactiongrid')
       .jqGrid('clearGridData')
       .jqGrid('setGridParam', {data: result.transactions})
-      .trigger('reloadGrid');
-  }
-
-  // Show plan tab
-  if (!$.trim($("#plangrid").html()))
-  {
-    // Plan grid displayed for the first time
-    $("#plangrid").jqGrid({
-      data: result.plan,
-      datatype: 'local',
-      jsonReader: { repeatitems: false },
-      altRows: true,
-      altclass: 'altRow',
-      colModel:[
-         {name:'id',index:'id',editable:false,label:'{% trans "identifier"|capfirst %}',align:'center',title:false,key:true,hidden:true,counter:0,frozen:true,searchoptions:{searchhidden: true}},
-         {name:'date',index:'date',editable:false,label:'{% trans "date"|capfirst %}',align:'center',title:false,formatter:'date',formatoptions:{srcformat:'Y-m-d H:i:s',newformat:'Y-m-d H:i:s'},width:140,counter:6,searchoptions:{searchhidden: true}},
-         {name:'type',index:'status',editable:true,label:'{% trans "type"|capfirst %}',align:'center',title:false,formatter:'select', edittype:'select', editoptions:{value:'confirmed:confirmed;approved:approved;proposed:proposed'},width:100,counter:2,searchoptions:{searchhidden: true}},
-         {name:'reference',index:'reference',editable:true,label:'{% trans "reference"|capfirst %}',align:'left',title:false,width:200,counter:1,searchoptions:{searchhidden: true}},
-         {name:'status',index:'status',editable:true,label:'{% trans "status"|capfirst %}',align:'center',title:false,formatter:'select', edittype:'select', editoptions:{value:'confirmed:confirmed;approved:approved;proposed:proposed'},width:100,counter:2,searchoptions:{searchhidden: true}},
-         {name:'item',index:'item',editable:true,label:'{% trans "item"|capfirst %}',align:'left',title:false,formatter:'item',width:200,counter:3,searchoptions:{searchhidden: true}},
-         {name:'origin',index:'origin',editable:true,label:'{% trans "origin"|capfirst %}',align:'left',title:false,formatter:'location',width:200,counter:4,searchoptions:{searchhidden: true}},
-         {name:'startdate',index:'startdate',editable:true,label:'{% trans "start date"|capfirst %}',align:'center',title:false,formatter:'date',formatoptions:{srcformat:'Y-m-d H:i:s',newformat:'Y-m-d H:i:s'},width:140,counter:6,searchoptions:{searchhidden: true}},
-         {name:'enddate',index:'enddate',editable:true,label:'{% trans "end date"|capfirst %}',align:'center',title:false,formatter:'date',formatoptions:{srcformat:'Y-m-d H:i:s',newformat:'Y-m-d H:i:s'},width:140,counter:7,searchoptions:{searchhidden: true}},
-         {name:'quantity',index:'quantity',editable:true,label:'{% trans "quantity"|capfirst %}',align:'center',title:false,formatter:'number',searchrules:{number:true},width:70,counter:8,searchoptions:{searchhidden: true}},
-         {name:'criticality',index:'criticality',editable:false,label:'{% trans "criticality"|capfirst %}',align:'center',title:false,formatter:'number',searchrules:{number:true},width:70,counter:10,searchoptions:{searchhidden: true}},
-         {name:'lastmodified',index:'lastmodified',editable:false,label:'Last Modified',align:'center',title:false,formatter:'date',formatoptions:{srcformat:'Y-m-d H:i:s',newformat:'Y-m-d H:i:s'},width:140,counter:12,searchoptions:{searchhidden: true}}
-         ],
-      rowNum:20,
-      rowList:[20, 30, 50],
-      iconSet: "fontAwesome",
-      sortname: 'date',
-      sortorder: "asc",
-      autowidth: true,
-      shrinkToFit: false,
-      loadonce: true,
-      height: 250
-      });
-    jQuery("#plangrid").jqGrid('setFrozenColumns');
-  }
-  else
-  {
-    // Refresh data in the plan grid
-    $('#plangrid')
-      .jqGrid('clearGridData')
-      .jqGrid('setGridParam', {data: result.plan})
       .trigger('reloadGrid');
   }
 }
@@ -365,6 +829,7 @@ $(function() {
 </div>
 
 <div id="forecastdata" class="clear" style="display:none">
+<div id="forecastgraph" style="clear: both; height: 200px; padding: 10px; "></div>
 <table id="forecastgrid"></table><br/>
 <h2>{% trans "parameters"|capfirst %}</h2>
 <table><tr><td>{% trans "Forecast method"|capfirst %}</td><td><select id="forecastmethod">
@@ -380,6 +845,7 @@ $(function() {
 </div>
 
 <div id="plandata" class="clear" style="display:none">
+<div id="plangraph" style="clear: both; height: 200px; padding: 10px; "></div>
 <table id="plangrid"></table><br/>
 <h2>{% trans "parameters"|capfirst %}</h2>
 <table><tr><td class="bold">{% trans "reorder quantity"|capfirst %}</td>

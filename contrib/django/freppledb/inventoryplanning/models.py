@@ -97,6 +97,30 @@ class InventoryPlanning(AuditModel):
 
 
 class InventoryPlanningOutput(models.Model):
+  '''
+  This model stores the output result of the inventory planning and is the
+  key driver for the distribution planning screen and workflows.
+
+  The fields are populated from different source:
+     - Populated by a run of the inventory planning module.
+         - lead time
+         - planned service level in the first bucket
+         - local (forecast/)demand per period, averaged over the lead time
+         - local dependent demand per period, averaged over the lead time
+         - economic order quantity in the first bucket, unconstrained intermediate result
+         - statistical distribution applied, intermediate result
+         - safety stock in the first bucket, unconstrained intermediate result
+         - safety stock in the first bucket, final value
+         - reorder quantity in the first bucket
+     - Populated by a daily update procedure (or computed on the fly!)
+         - demand deviation computed?
+         - local open orders
+         - local open backorders
+         - proposed purchases
+         - proposed transfers in
+         - proposed transfers out
+         - period of cover
+  '''
   # Database fields
   buffer = models.OneToOneField(Buffer, primary_key=True)
   leadtime = models.DurationField(_('lead time'), db_index=True, null=True)
