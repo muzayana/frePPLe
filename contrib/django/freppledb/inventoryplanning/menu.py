@@ -9,8 +9,12 @@
 #
 
 from freppledb.menu import menu
+from freppledb.inventoryplanning.models import InventoryPlanning
 from freppledb.inventoryplanning.views import InventoryPlanningList, DRP
 
 # Adding reports. We use an index value to keep the same order of the entries in all languages.
 menu.addItem("distribution", "drp", url="/inventoryplanning/drp/", report=DRP, index=150)
-menu.addItem("inventory", "inventory planning parameters", url="/data/inventoryplanning/inventoryplanning/", report=InventoryPlanningList, index=1300)
+menu.addItem(
+  "inventory", "inventory planning parameters", url="/data/inventoryplanning/inventoryplanning/",
+  report=InventoryPlanningList, model=InventoryPlanning, index=1300
+  )

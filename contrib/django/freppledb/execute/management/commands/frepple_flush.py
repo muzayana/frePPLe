@@ -124,6 +124,10 @@ class Command(BaseCommand):
         tables.add("setuprule")
       if "forecast" in tables:
         tables.add('forecastplan')
+      if "buffer" in tables:
+        tables.add("inventoryplanning")
+      if "buffer" in tables:
+        tables.add("out_inventoryplanning")
       tables.discard('auth_group_permissions')
       tables.discard('auth_permission')
       tables.discard('auth_group')
