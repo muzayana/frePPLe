@@ -7,6 +7,7 @@
   - save parameters, plan, forecast
   - view history
   - transaction actions
+  - toggle value & units
   - different views for the top section
   - tree in top grid
 {% endcomment %}
@@ -117,6 +118,12 @@ function undo()
 function forecastfields()
 {
   var col = 
+    '{{_("total orders - year-3")|capfirst}}' + "<br/>" +
+    '<span class="editablepivotcol">{{_("orders adjustment - year-3")|capfirst}}' + "</span><br/>" +
+    '{{_("total orders - year-2")|capfirst}}' + "<br/>" +
+    '<span class="editablepivotcol">{{_("orders adjustment - year-2")|capfirst}}' + "</span><br/>" +
+    '{{_("total orders - year-1")|capfirst}}' + "<br/>" +
+    '<span class="editablepivotcol">{{_("orders adjustment - year-1")|capfirst}}' + "</span><br/>" +
     '{{_("total orders")|capfirst}}' + "<br/>" +
     '{{_("open orders")|capfirst}}' + "<br/>" +
     '<span class="editablepivotcol">' + '{{_("orders adjustment")|capfirst}}' + "</span><br/>" +
@@ -150,8 +157,32 @@ function planfields()
 function forecastcell(cellvalue, options, rowObject)
 {
   var cell = result.forecast[parseInt(options.pos) + parseInt(forecastcurrentbucket) - 1];
+  var cell_min1 = result.forecast[parseInt(options.pos) + parseInt(forecastcurrentbucket) - 13];
+  var cell_min2 = result.forecast[parseInt(options.pos) + parseInt(forecastcurrentbucket) - 25];
+  var cell_min3 = result.forecast[parseInt(options.pos) + parseInt(forecastcurrentbucket) - 37];
   if (!cell) return "";
   var cellstring = "";
+  if (!cell_min3)
+    cellstring += "<br/><br/>";
+  else
+  {
+    cellstring += cell_min3.orderstotal + "<br/>";
+    cellstring += '<input type="text" class="smallpadding adjhistory" value="' + ((cell_min3.ordersadjustment === null) ? '' : Math.round(cell_min3.ordersadjustment)) + '" size="5" onchange="onChange(event)" onclick="$(this).select();"/><br/>';
+  }
+  if (!cell_min2)
+    cellstring += "<br/><br/>";
+  else
+  {
+    cellstring += cell_min2.orderstotal + "<br/>";
+    cellstring += '<input type="text" class="smallpadding adjhistory" value="' + ((cell_min2.ordersadjustment === null) ? '' : Math.round(cell_min2.ordersadjustment)) + '" size="5" onchange="onChange(event)" onclick="$(this).select();"/><br/>';
+  }
+  if (!cell_min1)
+    cellstring += "<br/><br/>";
+  else
+  {
+    cellstring += cell_min1.orderstotal + "<br/>";
+    cellstring += '<input type="text" class="smallpadding adjhistory" value="' + ((cell_min1.ordersadjustment === null) ? '' : Math.round(cell_min1.ordersadjustment)) + '" size="5" onchange="onChange(event)" onclick="$(this).select();"/><br/>';
+  }
   cellstring += cell.orderstotal + "<br/>";
   cellstring += cell.ordersopen + "<br/>";{% if perms.forecast.change_forecastdemand %}
   cellstring += '<input type="text" class="smallpadding adjhistory" value="' + ((cell.ordersadjustment === null) ? '' : Math.round(cell.ordersadjustment)) + '" size="5" onchange="onChange(event)" onclick="$(this).select();"/><br/>';
@@ -162,15 +193,6 @@ function forecastcell(cellvalue, options, rowObject)
   {% else %}
   cellstring += Math.round(cell.forecastadjustment) + '<br/>';{% endif %}  
   return cellstring;
-
-  /* TODO
-    Demand history year - 1
-    Demand history override year - 1 (editable)
-    Demand history year - 2
-    Demand history override year - 2 (editable)
-    Demand history year - 3
-    Demand history override year - 3 (editable)
-  */
 }
 
 function plancell(cellvalue, options, rowObject)

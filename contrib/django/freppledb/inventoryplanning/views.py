@@ -236,9 +236,11 @@ class DRPitemlocation(View):
        avg(ss_calc.value) ss,
        avg(ss_override.value) ssoverride,
        1 dmdfcstlocal, 1 dmdorderslocal,
-       1 dmddependent, 1 dmdtotal,
+       1 dmddependent,
+       -coalesce(sum(least(out_flowplan.quantity, 0)),0.0) dmdtotal,
        1 poconfirmed, 1 doconfirmed,
-       1 poproposed, 1 doproposed, 1 supply
+       1 poproposed, 1 doproposed,
+       coalesce(sum(greatest(out_flowplan.quantity,0)),0.0) supply
     from buffer
     inner join inventoryplanning
     on buffer.name = inventoryplanning.buffer_id
@@ -263,6 +265,12 @@ class DRPitemlocation(View):
     left outer join calendarbucket roq_override
       on roq_override.calendar_id = 'Reorder quantities for ' || buffer.name
       and roq_override.source <> 'Inventory planning'
+    -- Consumed and produced quantities
+    left join out_flowplan
+    on buffer.name = out_flowplan.thebuffer
+    and d.startdate <= out_flowplan.flowdate
+    and d.enddate > out_flowplan.flowdate
+    -- join operationplan TODO
     where item_id = %s and location_id = %s
     group by d.bucket, d.startdate
     order by d.startdate
