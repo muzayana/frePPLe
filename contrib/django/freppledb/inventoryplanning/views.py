@@ -75,7 +75,7 @@ class InventoryPlanningList(GridReport):
 class DRP(GridReport):
   template = 'inventoryplanning/drp.html'
   title = _("Distribution planning")
-  basequeryset = Buffer.objects.all()
+  basequeryset = Buffer.objects.all().exclude(inventoryplanning__isnull=True)
   model = Buffer
   height = 150
   frozenColumns = 1
@@ -287,8 +287,6 @@ class DRPitemlocation(View):
        coalesce(sum(forecastplan.forecasttotal),0) as forecasttotal,
        coalesce(sum(forecastplan.forecastnet),0) as forecastnet,
        coalesce(sum(forecastplan.forecastconsumed),0) as forecastconsumed,
-       coalesce(sum(forecastplan.ordersplanned),0) as ordersplanned,
-       coalesce(sum(forecastplan.forecastplanned),0) as forecastplanned,
        coalesce(sum(forecastplan.orderstotalvalue),0) as orderstotalvalue,
        coalesce(sum(forecastplan.ordersopenvalue),0) as ordersopenvalue,
        sum(forecastplan.ordersadjustmentvalue) as ordersadjustmentvalue,
@@ -296,9 +294,8 @@ class DRPitemlocation(View):
        sum(forecastplan.forecastadjustmentvalue) as forecastadjustmentvalue,
        coalesce(sum(forecastplan.forecasttotalvalue),0) as forecasttotalvalue,
        coalesce(sum(forecastplan.forecastnetvalue),0) as forecastnetvalue,
-       coalesce(sum(forecastplan.forecastconsumedvalue),0) as forecastconsumedvalue,
-       coalesce(sum(forecastplan.ordersplannedvalue),0) as ordersplannedvalue,
-       coalesce(sum(forecastplan.forecastplannedvalue),0) as forecastplannedvalue
+       coalesce(sum(forecastplan.forecastconsumedvalue),0) as forecastconsumedvalue
+
     from forecast
     -- Join buckets
     cross join (
@@ -389,18 +386,14 @@ class DRPitemlocation(View):
         'forecasttotal': round(rec[6]),
         'forecastnet': round(rec[7]),
         'forecastconsumed': round(rec[8]),
-        'ordersplanned': round(rec[9]),
-        'forecastplanned': round(rec[10]),
-        'orderstotalvalue': round(rec[11]),
-        'ordersopenvalue': round(rec[12]),
-        'ordersadjustmentvalue': round(rec[13]) if rec[13] is not None else None,
-        'forecastbaselinevalue': round(rec[14]),
-        'forecastadjustmentvalue': round(rec[15]) if rec[15] is not None else None,
-        'forecasttotalvalue': round(rec[16]),
-        'forecastnetvalue': round(rec[17]),
-        'forecastconsumedvalue': round(rec[18]),
-        'ordersplannedvalue': round(rec[19]),
-        'forecastplannedvalue': round(rec[20])
+        'orderstotalvalue': round(rec[9]),
+        'ordersopenvalue': round(rec[10]),
+        'ordersadjustmentvalue': round(rec[11]) if rec[11] is not None else None,
+        'forecastbaselinevalue': round(rec[12]),
+        'forecastadjustmentvalue': round(rec[13]) if rec[13] is not None else None,
+        'forecasttotalvalue': round(rec[14]),
+        'forecastnetvalue': round(rec[15]),
+        'forecastconsumedvalue': round(rec[16]),
         })
 
     # Retrieve inventory plan

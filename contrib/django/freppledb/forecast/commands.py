@@ -197,6 +197,7 @@ def generateBaseline(solver_fcst, cursor):
   curfcst = None
 
   # Build bucket lists
+  print (frepple.settings.current, "patatos")
   horizon_history = int(Parameter.getValue('forecast.Horizon_history', cursor.db.alias, 10000))
   horizon_future = int(Parameter.getValue('forecast.Horizon_future', cursor.db.alias, 365))
   thebuckets = {}
@@ -731,8 +732,8 @@ def generate_plan():
       print(e)
 
     solver_fcst = createSolver(cursor)
+
     # Assure the hierarchies are up to date
-    from freppledb.forecast.models import Forecast
     print("\nStart building hierarchies at", datetime.now().strftime("%H:%M:%S"))
     Item.rebuildHierarchy(database=db)
     Customer.rebuildHierarchy(database=db)

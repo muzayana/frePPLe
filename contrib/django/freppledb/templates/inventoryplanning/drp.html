@@ -37,7 +37,7 @@ function selectRow(id)
     return;
 
   $.ajax({
-    url: '/inventoryplanning/drpitemlocation/' + admin_escape(id) + '/',
+    url: '{{request.prefix}}/inventoryplanning/drpitemlocation/' + admin_escape(id) + '/',
     type: 'GET',
     success: displayResult,
     error: function (result, stat, errorThrown) {
@@ -84,7 +84,7 @@ function save(event)
 
   // Send the results back to the server
   $.ajax({
-    url: '/inventoryplanning/drpitemlocation/' + admin_escape(result.name) + '/',
+    url: '{{request.prefix}}/inventoryplanning/drpitemlocation/' + admin_escape(result.name) + '/',
     type: 'POST',
     data: JSON.stringify(data),
     contentType: 'application/json',
@@ -117,7 +117,7 @@ function undo()
 
 function forecastfields()
 {
-  var col = 
+  var col =
     '{{_("total orders - year-3")|capfirst}}' + "<br/>" +
     '<span class="editablepivotcol">{{_("orders adjustment - year-3")|capfirst}}' + "</span><br/>" +
     '{{_("total orders - year-2")|capfirst}}' + "<br/>" +
@@ -127,29 +127,29 @@ function forecastfields()
     '{{_("total orders")|capfirst}}' + "<br/>" +
     '{{_("open orders")|capfirst}}' + "<br/>" +
     '<span class="editablepivotcol">' + '{{_("orders adjustment")|capfirst}}' + "</span><br/>" +
-    '{{_("forecast baseline")|capfirst %}' + "<br/>" + 
+    '{{_("forecast baseline")|capfirst}}' + "<br/>" +
     '<span class="editablepivotcol">' + '{{_("forecast adjustment")|capfirst}}' + "</span><br/>";
   return col;
 }
 
 function planfields()
 {
-  var col = 
+  var col =
     '{{_('reorder quantity')|capfirst}}' + "<br/>" +
     '<span class="editablepivotcol">' + '{{_("reorder quantity override")|capfirst}}' + "</span><br/>" +
     '{{_("safety stock")|capfirst}}' + "<br/>" +
     '<span class="editablepivotcol">' + '{{_("safety stock override")|capfirst}}' + "</span><br/>" +
-    '{{_("starting inventory")|capfirst}}' + "<br/>" + 
-    '{{_("local forecast")|capfirst}}' + "<br/>" + 
-    '{{_("local orders")|capfirst}}' + "<br/>" + 
-    '{{_("dependent demand")|capfirst}}' + "<br/>" + 
-    '{{_("total demand")|capfirst}}' + "<br/>" + 
-    '{{_("confirmed purchases")|capfirst}}' + "<br/>" + 
-    '{{_("confirmed transfers")|capfirst}}' + "<br/>" + 
-    '{{_("proposed purchases")|capfirst}}' + "<br/>" + 
-    '{{_("proposed transfers")|capfirst}}' + "<br/>" + 
-    '{{_("total supply")|capfirst}}' + "<br/>" + 
-    '{{_("ending inventory")|capfirst}}' + "<br/>";    
+    '{{_("starting inventory")|capfirst}}' + "<br/>" +
+    '{{_("local forecast")|capfirst}}' + "<br/>" +
+    '{{_("local orders")|capfirst}}' + "<br/>" +
+    '{{_("dependent demand")|capfirst}}' + "<br/>" +
+    '{{_("total demand")|capfirst}}' + "<br/>" +
+    '{{_("confirmed purchases")|capfirst}}' + "<br/>" +
+    '{{_("confirmed transfers")|capfirst}}' + "<br/>" +
+    '{{_("proposed purchases")|capfirst}}' + "<br/>" +
+    '{{_("proposed transfers")|capfirst}}' + "<br/>" +
+    '{{_("total supply")|capfirst}}' + "<br/>" +
+    '{{_("ending inventory")|capfirst}}' + "<br/>";
   return col;
 }
 
@@ -191,7 +191,7 @@ function forecastcell(cellvalue, options, rowObject)
   cellstring += cell.forecastbaseline + "<br/>";{% if perms.forecast.change_forecastdemand %}
   cellstring += '<input type="text" class="smallpadding adjforecast" value="' + ((cell.forecastadjustment === null) ? '' : Math.round(cell.forecastadjustment)) + '" size="5" onchange="onChange(event)" onclick="$(this).select();"/><br/>';
   {% else %}
-  cellstring += Math.round(cell.forecastadjustment) + '<br/>';{% endif %}  
+  cellstring += Math.round(cell.forecastadjustment) + '<br/>';{% endif %}
   return cellstring;
 }
 
@@ -228,7 +228,7 @@ function displayPlanGraph()
   var margin = {top: 0, right: 100, bottom: 30, left: 50};
   var width = $("#content-main").width() - margin.left - margin.right;
   var height = $("#plangraph").height() - margin.top - margin.bottom;
-  
+
   // Define X-axis
   var domain_x = [];
   var bucketnamelength = 0;
@@ -421,7 +421,7 @@ function displayForecastGraph()
   var margin = {top: 0, right: 100, bottom: 30, left: 50};
   var width = $("#content-main").width() - margin.left - margin.right;
   var height = $("#forecastgraph").height() - margin.top - margin.bottom;
-  
+
   // Define X-axis
   var domain_x = [];
   var bucketnamelength = 0;
@@ -478,7 +478,7 @@ function displayForecastGraph()
     .append("g")
     .attr("transform", function(d) { return "translate(" + x(d.bucket) + ",0)"; })
     .on("click", function(d) {
-        if (d3.event.defaultPrevented || (d.produced == 0 && d.consumed == 0))
+        if (d3.event.defaultPrevented)
           return;
         d3.select("#tooltip").style('display', 'none');
         d3.event.stopPropagation();
@@ -503,10 +503,6 @@ function displayForecastGraph()
          + (Math.round(d.forecastnet*10)/10)
          + '</td></tr><tr><td>{{_('forecast consumed')|capfirst}}</td><td style="text-align:right">'
          + (Math.round(d.forecastconsumed*10)/10)
-         + '</td></tr><tr><td>{{_('planned orders')|capfirst}}</td><td style="text-align:right">'
-         + (Math.round(d.ordersplanned*10)/10)
-         + '</td></tr><tr><td>{{_('planned net forecast')|capfirst}}</td><td style="text-align:right">'
-         + (Math.round(d.forecastplanned*10)/10)
          + '</td></tr></table>'
          );
       })
@@ -515,32 +511,15 @@ function displayForecastGraph()
     .each(function(d) {
       var bucket = d3.select(this);
       var top;
-      if (d['ordersopen'] > 0)
+      if (d.ordersopen > 0)
       {
-        my_y = y(d['ordersopen']);
+        my_y = y(d.ordersopen);
         bucket.append("rect")
-          .attr("width", x_width/2)
+          .attr("width", x_width)
           .attr("height", y_zero - my_y)
           .attr("x", x_width/2)
           .attr("y", my_y)
           .style("fill","#2B95EC");
-      }
-      if (d['ordersplanned'] > 0)
-      {
-        top = y(d['ordersplanned']);
-        bucket.append("rect")
-          .attr("width", x_width/2)
-          .attr("y", top)
-          .attr("height", y_zero - top)
-          .style("fill","#7B5E08");
-      }
-      if (d['forecastplanned'] > 0)
-      {
-        bucket.append("rect")
-          .attr("width", x_width/2)
-          .attr("y", y(d['forecastplanned'] + d['ordersplanned']))
-          .attr("height", y(d['ordersplanned']) - y(d['forecastplanned'] + d['ordersplanned']))
-          .style("fill","#F6BD0F");
       }
     });
 
@@ -554,7 +533,7 @@ function displayForecastGraph()
     .attr("d", line(result.forecast));
   var line = d3.svg.line()
     .x(function(d) { return x(d.bucket) + x_width / 2; })
-    .y(function(d) { return d['future']==1 ? y(d['forecasttotal']) : y_zero; });
+    .y(function(d) { return y(d['forecasttotal']); });
   svg.append("svg:path")
     .attr('class', 'graphline')
     .attr("stroke","#FF0000")
@@ -587,9 +566,7 @@ function displayForecastGraph()
   var codes = [
     ["{{_('open orders')|capfirst}}", "#2B95EC", 1],
     ["{{_('total orders')|capfirst}}", "#8BBA00", 0],
-    ["{{_('forecast total')|capfirst}}", "#FF0000", 5],
-    ["{{_('planned orders')|capfirst}}", "#7B5E08", 8],
-    ["{{_('planned net forecast')|capfirst}}", "#F6BD0F", 9]
+    ["{{_('forecast total')|capfirst}}", "#FF0000", 5]
     ];
   var visible = 0;
   for (var i in codes)
@@ -693,7 +670,7 @@ function displayResult(data)
       beforeSelectRow: function() {return false;},
       height: 'auto'
       });
-    jQuery("#forecastgrid").jqGrid('setFrozenColumns');    
+    jQuery("#forecastgrid").jqGrid('setFrozenColumns');
   }
   else
   {
@@ -703,7 +680,7 @@ function displayResult(data)
       .jqGrid('setGridParam', {data: [1]}) // Dummy: single row
       .trigger('reloadGrid');
   }
-  
+
   // Show plan tab
   displayPlanGraph();
   if (!$.trim($("#plangrid").html()))
@@ -714,7 +691,7 @@ function displayResult(data)
       data: [1],
       datatype: 'local',
       jsonReader: { repeatitems: false },
-      hoverrows: false,      
+      hoverrows: false,
       colModel:[
          {name:'fields',index:'fields',editable:false,label:'{% trans "fields"|capfirst %}',align:'left',title:false,key:true,counter:0,frozen:true,sortable:false,formatter:planfields},
          {% for f in request.report_bucketlist %}{% if not forloop.first %},
@@ -737,7 +714,7 @@ function displayResult(data)
       .jqGrid('setGridParam', {data: [1]})
       .trigger('reloadGrid');
   }
-    
+
   // Show transaction tab
   if (!$.trim($("#transactiongrid").html()))
   {
