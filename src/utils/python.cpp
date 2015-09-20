@@ -639,8 +639,11 @@ DECLARE_EXPORT bool Object::getBoolProperty(const string& name, bool def) const
   PyGILState_STATE pythonstate = PyGILState_Ensure();
   PyObject* lkp = PyDict_GetItemString(dict, name.c_str());
   if (!lkp)
+  {
     // Value not found in the dictionary
+    PyGILState_Release(pythonstate);
     return def;
+  }
   PythonData val(lkp);
   bool result = val.getBool();
   PyGILState_Release(pythonstate);
@@ -655,8 +658,11 @@ DECLARE_EXPORT Date Object::getDateProperty(const string& name, Date def) const
   PyGILState_STATE pythonstate = PyGILState_Ensure();
   PyObject* lkp = PyDict_GetItemString(dict, name.c_str());
   if (!lkp)
+  {
     // Value not found in the dictionary
+    PyGILState_Release(pythonstate);
     return def;
+  }
   PythonData val(lkp);
   Date result = val.getDate();
   PyGILState_Release(pythonstate);
@@ -672,8 +678,11 @@ DECLARE_EXPORT double Object::getDoubleProperty(const string& name, double def) 
   PyGILState_STATE pythonstate = PyGILState_Ensure();
   PyObject* lkp = PyDict_GetItemString(dict, name.c_str());
   if (!lkp)
+  {
     // Value not found in the dictionary
+    PyGILState_Release(pythonstate);
     return def;
+  }
   PythonData val(lkp);
   double result = val.getDouble();
   PyGILState_Release(pythonstate);
@@ -689,8 +698,11 @@ DECLARE_EXPORT string Object::getStringProperty(const string& name, const string
   PyGILState_STATE pythonstate = PyGILState_Ensure();
   PyObject* lkp = PyDict_GetItemString(dict, name.c_str());
   if (!lkp)
+  {
     // Value not found in the dictionary
+    PyGILState_Release(pythonstate);
     return def;
+  }
   PythonData val(lkp);
   string result = val.getString();
   PyGILState_Release(pythonstate);
