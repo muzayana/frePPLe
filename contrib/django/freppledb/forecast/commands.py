@@ -711,18 +711,9 @@ def generate_plan():
 
   # Create a database connection
   cursor = connections[db].cursor()
-  if settings.DATABASES[db]['ENGINE'] == 'django.db.backends.sqlite3':
-    cursor.execute('PRAGMA temp_store = MEMORY;')
-    cursor.execute('PRAGMA synchronous = OFF')
-    cursor.execute('PRAGMA cache_size = 8000')
-  elif settings.DATABASES[db]['ENGINE'] == 'oracle':
-    cursor.execute("ALTER SESSION SET COMMIT_WRITE='BATCH,NOWAIT'")
 
   # Detect whether the forecast module is available
   with_forecasting = 'demand_forecast' in [ a[0] for a in inspect.getmembers(frepple) ]
-  if settings.DATABASES[db]['ENGINE'] != 'django.db.backends.postgresql_psycopg2':
-    print("Warning: forecast module is only supported when using a PostgreSQL database")
-    with_forecasting = False
 
   if with_forecasting:
     print("\nStart loading forecast data from the database at", datetime.now().strftime("%H:%M:%S"))
