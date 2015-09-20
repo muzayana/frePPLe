@@ -166,6 +166,9 @@ b is a double that must be in the interval ]0;1[ is the probability of failures,
 x the variable, integer as the negative binomial distribution is discrete, the number of failures
 output :
 a double in the [0;1] interval representing the probability.
+
+See also http://scialert.net/fulltext/?doi=itj.2013.688.695
+
 ***********************************************************************/
 double NegativeBinomialDistribution::negativeBinomialDistributionFunction(int x, double a, double b) {
 

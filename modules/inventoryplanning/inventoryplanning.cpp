@@ -125,7 +125,7 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
   Duration roq_min_poc = static_cast<long>(b->getDoubleProperty("roq_min_poc", 0));
   Duration roq_max_poc = static_cast<long>(b->getDoubleProperty("roq_min_poc", 10 * 365 * 86400));
   double roq_multiple = b->getDoubleProperty("roq_multiple", 1);
-  string distribution = b->getStringProperty("distribution", "normal");
+  string distribution = "Automatic"; //TODOb->getStringProperty("distribution", "normal");
   double service_level = b->getDoubleProperty("service_level", 0.0);
   double ss_min_qty = b->getDoubleProperty("ss_min_qty", 0);
   double ss_max_qty = b->getDoubleProperty("ss_max_qty", DBL_MAX);
@@ -319,12 +319,18 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
     double ss = 0.0;
     if (service_level > 0)
     {
+      ss = calulateStockLevel(demand * leadtime / 86400, demand_deviation*demand_deviation, static_cast<int>(ceil(roq)), service_level/100, 1, true, distribution);
+      ss -= demand * leadtime / 86400;
+      if (ss < 0)
+        ss = 0;
+      /*
       if (demand_deviation && leadtime_deviation)
-        ss = 1.0 /** TODO Z-factor */ * sqrt(demand * demand_deviation * demand_deviation + demand * demand * leadtime_deviation * leadtime_deviation);
+        ss = 1.0 * sqrt(demand * demand_deviation * demand_deviation + demand * demand * leadtime_deviation * leadtime_deviation);
       else if (demand_deviation)
-        ss = 1.0 /** TODO Z-factor */ * sqrt(demand) * demand_deviation;
+        ss = 1.0 * sqrt(demand) * demand_deviation;
       else if (leadtime_deviation)
         ss = 1.0 * demand * leadtime_deviation;
+      */
     }
     if (ss < ss_min_qty)
       ss = ss_min_qty;
@@ -431,10 +437,9 @@ int InventoryPlanningSolver::calulateStockLevel(double mean, double variance, in
 
 	if (fillRateMaximum > 1)
 		fillRateMaximum = 1;
-
-	// Below code is definitely not optimal, we might think of coding a dichotomical approach
+	// TODO Below code is definitely not optimal, we might think of coding a dichotomical approach
 	// or think of a formula giving the stock level based on the fill rate without iterating
-	unsigned int rop = 0;
+	unsigned int rop = static_cast<int>(floor(mean));
 	double fillRate;
 	while ((fillRate = calculateFillRate(mean, variance, rop, roq, distribution)) < fillRateMinimum)
 	{
@@ -460,30 +465,38 @@ roq : reorder quantity
 double InventoryPlanningSolver::calculateFillRate(double mean, double variance, int rop, int roq, string distribution) {
 
 	if (mean <= 0)
-		return 0;
+		return 1;
 
 	double varianceToMean = variance/mean;
 
-	if (distribution == "Automatic") {
+	if (distribution == "Automatic") 
+  {
+    /*if the mean is greater than 20, we will a Normal distribution as an approximation. */
+    if (mean >= 20) 
+      return NormalDistribution::calculateFillRate(mean, variance, rop, roq);
 
-	/* If the variance to mean is greater than 1.1, we switch to negative binomial */
-	if (varianceToMean > 1.1)
-		return NegativeBinomialDistribution::calculateFillRate(mean, variance, rop, roq);
-
-	/*if the mean is lower than 20, we will use Poisson, else we will use Normal distribution */
-	if (mean <= 20)
-		return PoissonDistribution::calculateFillRate(mean, rop, roq);
-	else
-		return NormalDistribution::calculateFillRate(mean, variance, rop, roq);
+	  /* If the variance to mean is greater than 1.1, we switch to negative binomial */
+	  if (varianceToMean > 1.1)
+		    return NegativeBinomialDistribution::calculateFillRate(mean, variance, rop, roq);
+    else
+		  return PoissonDistribution::calculateFillRate(mean, rop, roq);
 	}
 	else if (distribution == "Poisson") {
-		return PoissonDistribution::calculateFillRate(mean, rop, roq);
+    if (mean >= 20)
+      // Poisson is very close to normal for large input values
+      return NormalDistribution::calculateFillRate(mean, variance, rop, roq);
+    else
+		  return PoissonDistribution::calculateFillRate(mean, rop, roq);
 	}
 	else if (distribution == "Normal") {
 		return NormalDistribution::calculateFillRate(mean, variance, rop, roq);
 	}
-	else if (distribution == "Negative Binomial") {
-		return NegativeBinomialDistribution::calculateFillRate(mean, variance, rop, roq);
+	else if (distribution == "Negative Binomial") 
+  {
+    if (mean < 20)
+		  return NegativeBinomialDistribution::calculateFillRate(mean, variance, rop, roq);
+    else
+      return NormalDistribution::calculateFillRate(mean, variance, rop, roq);
 	}
 	else throw DataException("Inalid distribution name");
 }
