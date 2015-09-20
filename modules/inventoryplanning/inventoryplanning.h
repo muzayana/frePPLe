@@ -18,7 +18,6 @@
 #include "frepple.h"
 using namespace frepple;
 
-# define M_PI           3.14159265358979323846  /* pi */
 
 namespace module_inventoryplanning
 {
@@ -137,32 +136,48 @@ class InventoryPlanningSolver : public Solver
 	static double calculateFillRate(double mean, double variance, int rop, int roq, string distribution);
 };
 
+
 class PoissonDistribution
 {
-
   public:
-	static double calculateFillRate(double mean, int rop, int roq);
+	  static double calculateFillRate(double mean, int rop, int roq);
+
+  private:
     static double getCumulativePoissonProbability(double mean, int x);
-	static double getPoissonProbability(double mean, int x);
-	static double factorial(unsigned int n);
+	  static double getPoissonProbability(double mean, int x);
+	  static double factorial(unsigned int n);
 };
+
 
 class NormalDistribution
 {
   public:
-	static double calculateFillRate(double mean, double variance, int rop, int roq);
-	static double phi(double x);
-	static double getNormalProbabilityDensityFunction(double mean, double variance, double x);
-	static double getNormalDistributionFunction(double mean, double variance, int x);
-	static double erf(double x);
+	  static double calculateFillRate(double mean, double variance, int rop, int roq);
+
+  private:
+	  static inline double getNormalProbabilityDensityFunction(double mean, double variance, double x)
+    {
+	    double z = (x - mean) / sqrt(variance);
+	    return (1 / sqrt(2*3.14159265358979323846)) * exp(-0.5 * z * z);
+    }
+
+	  static inline double getNormalDistributionFunction(double mean, double variance, int x)
+    {
+      assert(variance > 0);
+	    return phi((x - mean) / sqrt(variance));
+    }
+
+    static double phi(double x);
 };
+
 
 class NegativeBinomialDistribution
 {
   public:
-	static double negativeBinomialDistributionFunction(int x, double a, double b);
-	static double negativeBinomialCumulativeDistributionFunction(int x, double a, double b);
-	static double calculateFillRate(double mean, double variance, int rop, int roq);
+	  static double calculateFillRate(double mean, double variance, int rop, int roq);
+  private:
+	  static double negativeBinomialDistributionFunction(int x, double a, double b);
+	  static double negativeBinomialCumulativeDistributionFunction(int x, double a, double b);
 };
 
 }   // End namespace

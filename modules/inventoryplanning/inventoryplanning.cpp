@@ -319,18 +319,16 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
     double ss = 0.0;
     if (service_level > 0)
     {
-      ss = calulateStockLevel(demand * leadtime / 86400, demand_deviation*demand_deviation, static_cast<int>(ceil(roq)), service_level/100, 1, true, distribution);
+      ss = calulateStockLevel(
+        demand * leadtime / 86400,
+        demand_deviation * demand_deviation, // TODO need to add the lead time deviation:  leadtime_deviation,
+        static_cast<int>(ceil(roq)),
+        service_level/100,
+        1, true, distribution
+        );
       ss -= demand * leadtime / 86400;
       if (ss < 0)
         ss = 0;
-      /*
-      if (demand_deviation && leadtime_deviation)
-        ss = 1.0 * sqrt(demand * demand_deviation * demand_deviation + demand * demand * leadtime_deviation * leadtime_deviation);
-      else if (demand_deviation)
-        ss = 1.0 * sqrt(demand) * demand_deviation;
-      else if (leadtime_deviation)
-        ss = 1.0 * demand * leadtime_deviation;
-      */
     }
     if (ss < ss_min_qty)
       ss = ss_min_qty;
@@ -413,6 +411,7 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
   }
 }
 
+
 /************************************************************************************************************
 function calculateStockLevel
 This function will compute a rop respecting the minimum fill rate lower bound.
@@ -430,7 +429,6 @@ minimumStrongest : The algorithm will start from a rop equal to 0 and will incre
 **************************************************************************************************************/
 int InventoryPlanningSolver::calulateStockLevel(double mean, double variance, int roq, double fillRateMinimum, double fillRateMaximum, bool minimumStrongest, string distribution)
 {
-
 	/* Checks that the fill rates are between 0 and 1*/
 	if (fillRateMinimum < 0)
 		fillRateMinimum = 0;
@@ -442,9 +440,7 @@ int InventoryPlanningSolver::calulateStockLevel(double mean, double variance, in
 	unsigned int rop = static_cast<int>(floor(mean));
 	double fillRate;
 	while ((fillRate = calculateFillRate(mean, variance, rop, roq, distribution)) < fillRateMinimum)
-	{
-		rop++;
-	}
+		++rop;
 
 	// Now we are sure the that lower bound is respected, what about the upper bound
 	if (minimumStrongest == true || fillRate <= fillRateMaximum)
@@ -462,43 +458,48 @@ rop reorder point
 roq : reorder quantity
 @return : a double between 0 and 1
 **************************************************************************************************************/
-double InventoryPlanningSolver::calculateFillRate(double mean, double variance, int rop, int roq, string distribution) {
-
+double InventoryPlanningSolver::calculateFillRate(
+  double mean, double variance, int rop, int roq, string distribution
+  )
+{
 	if (mean <= 0)
 		return 1;
 
-	double varianceToMean = variance/mean;
-
-	if (distribution == "Automatic") 
+	if (distribution == "Automatic")
   {
-    /*if the mean is greater than 20, we will a Normal distribution as an approximation. */
-    if (mean >= 20) 
+    /* If the mean is greater than 20, we use a normal distribution as an approximation. */
+    if (mean >= 20)
       return NormalDistribution::calculateFillRate(mean, variance, rop, roq);
 
-	  /* If the variance to mean is greater than 1.1, we switch to negative binomial */
+	  double varianceToMean = variance/mean;
 	  if (varianceToMean > 1.1)
-		    return NegativeBinomialDistribution::calculateFillRate(mean, variance, rop, roq);
+      /* If the variance to mean ratio is greater than 1.1, we switch to negative binomial */
+		  return NegativeBinomialDistribution::calculateFillRate(mean, variance, rop, roq);
     else
+      /* Else apply a Poisson distribution. */
 		  return PoissonDistribution::calculateFillRate(mean, rop, roq);
 	}
-	else if (distribution == "Poisson") {
+	else if (distribution == "Poisson")
+  {
     if (mean >= 20)
-      // Poisson is very close to normal for large input values
+      // A poisson distribution is very close to a normal distribution for
+      // large input values. And a normal distribution can be computed much
+      // faster.
       return NormalDistribution::calculateFillRate(mean, variance, rop, roq);
     else
 		  return PoissonDistribution::calculateFillRate(mean, rop, roq);
 	}
-	else if (distribution == "Normal") {
+	else if (distribution == "Normal")
 		return NormalDistribution::calculateFillRate(mean, variance, rop, roq);
-	}
-	else if (distribution == "Negative Binomial") 
+	else if (distribution == "Negative Binomial")
   {
     if (mean < 20)
 		  return NegativeBinomialDistribution::calculateFillRate(mean, variance, rop, roq);
     else
       return NormalDistribution::calculateFillRate(mean, variance, rop, roq);
 	}
-	else throw DataException("Inalid distribution name");
+	else
+    throw DataException("Invalid distribution name");
 }
 
 
