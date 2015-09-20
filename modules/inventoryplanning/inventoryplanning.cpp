@@ -407,4 +407,86 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
   }
 }
 
+/************************************************************************************************************
+function calculateStockLevel
+This function will compute a rop respecting the minimum fill rate lower bound.
+The algorithm will start from a rop equal to 0 and will increment it until the minimum fill rate is respected.
+It will then check if maximum fill rate is respected. If yes then the calculated rop is returned.
+If no, it will check the value of the boolean minimumStrongest. If true, the calculated rop is returned else
+the calculated rop-1 is returned. The calculated rop-1 will respect the maximum fill rate.
+
+mean : average demand during lead time
+variance : the demand variance
+roq : reorder quantity
+fillRateMinimum : The minimum fill rate
+fillRateMaximum : The maximum fill rate
+minimumStrongest : The algorithm will start from a rop equal to 0 and will increment it until
+**************************************************************************************************************/
+int InventoryPlanningSolver::calulateStockLevel(double mean, double variance, int roq, double fillRateMinimum, double fillRateMaximum, bool minimumStrongest, string distribution)
+{
+
+	/* Checks that the fill rates are between 0 and 1*/
+	if (fillRateMinimum < 0)
+		fillRateMinimum = 0;
+
+	if (fillRateMaximum > 1)
+		fillRateMaximum = 1;
+
+	// Below code is definitely not optimal, we might think of coding a dichotomical approach
+	// or think of a formula giving the stock level based on the fill rate without iterating
+	unsigned int rop = 0;
+	double fillRate;
+	while ((fillRate = calculateFillRate(mean, variance, rop, roq, distribution)) < fillRateMinimum)
+	{
+		rop++;
+	}
+
+	// Now we are sure the that lower bound is respected, what about the upper bound
+	if (minimumStrongest == true || fillRate <= fillRateMaximum)
+		return rop;
+	else
+		return rop - 1;
+}
+
+/************************************************************************************************************
+function calculateFillRate
+This function returns the fill rate given a mean, a rop and a roq
+
+mean : average demand during lead time
+rop reorder point
+roq : reorder quantity
+@return : a double between 0 and 1
+**************************************************************************************************************/
+double InventoryPlanningSolver::calculateFillRate(double mean, double variance, int rop, int roq, string distribution) {
+
+	if (mean <= 0)
+		return 0;
+
+	double varianceToMean = variance/mean;
+
+	if (distribution == "Automatic") {
+
+	/* If the variance to mean is greater than 1.1, we switch to negative binomial */
+	if (varianceToMean > 1.1)
+		return NegativeBinomialDistribution::calculateFillRate(mean, variance, rop, roq);
+
+	/*if the mean is lower than 20, we will use Poisson, else we will use Normal distribution */
+	if (mean <= 20)
+		return PoissonDistribution::calculateFillRate(mean, rop, roq);
+	else
+		return NormalDistribution::calculateFillRate(mean, variance, rop, roq);
+	}
+	else if (distribution == "Poisson") {
+		return PoissonDistribution::calculateFillRate(mean, rop, roq);
+	}
+	else if (distribution == "Normal") {
+		return NormalDistribution::calculateFillRate(mean, variance, rop, roq);
+	}
+	else if (distribution == "Negative Binomial") {
+		return NegativeBinomialDistribution::calculateFillRate(mean, variance, rop, roq);
+	}
+	else throw DataException("Inalid distribution name");
+}
+
+
 }       // end namespace

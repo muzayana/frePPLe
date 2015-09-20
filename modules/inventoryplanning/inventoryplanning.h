@@ -18,6 +18,8 @@
 #include "frepple.h"
 using namespace frepple;
 
+# define M_PI           3.14159265358979323846  /* pi */
+
 namespace module_inventoryplanning
 {
 
@@ -130,6 +132,37 @@ class InventoryPlanningSolver : public Solver
       m->addDoubleField<Cls>(tag_fixed_order_cost, &Cls::getFixedOrderCost, &Cls::setFixedOrderCost);
       m->addDoubleField<Cls>(tag_holding_cost, &Cls::getHoldingCost, &Cls::setHoldingCost);
     }
+
+	static int calulateStockLevel(double mean, double variance, int roq, double fillRateMinimum, double fillRateMaximum, bool minimumStrongest, string distribution);
+	static double calculateFillRate(double mean, double variance, int rop, int roq, string distribution);
+};
+
+class PoissonDistribution
+{
+
+  public:
+	static double calculateFillRate(double mean, int rop, int roq);
+    static double getCumulativePoissonProbability(double mean, int x);
+	static double getPoissonProbability(double mean, int x);
+	static double factorial(unsigned int n);
+};
+
+class NormalDistribution
+{
+  public:
+	static double calculateFillRate(double mean, double variance, int rop, int roq);
+	static double phi(double x);
+	static double getNormalProbabilityDensityFunction(double mean, double variance, double x);
+	static double getNormalDistributionFunction(double mean, double variance, int x);
+	static double erf(double x);
+};
+
+class NegativeBinomialDistribution
+{
+  public:
+	static double negativeBinomialDistributionFunction(int x, double a, double b);
+	static double negativeBinomialCumulativeDistributionFunction(int x, double a, double b);
+	static double calculateFillRate(double mean, double variance, int rop, int roq);
 };
 
 }   // End namespace

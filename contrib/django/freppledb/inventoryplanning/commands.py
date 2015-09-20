@@ -145,7 +145,8 @@ def createInventoryPlan(database=DEFAULT_DB_ALIAS):
      ) dep_stddev
      where inventoryplanning.buffer_id = dep_stddev.buffer_id
      ''')
-
+  cursor.execute('''delete from inventoryplanning where demand_deviation = 0''') # TODO TEMP HACK
+  
   # Step 3.
   # Load inventory planning parameters
   starttime = time()
@@ -219,7 +220,7 @@ def createInventoryPlan(database=DEFAULT_DB_ALIAS):
 
   # Step 7.
   # Export all results into the database
-  exportResults(cursor, database)
+  #exportResults(cursor, database)
 
   # Step 8.
   # Erase the plan again
