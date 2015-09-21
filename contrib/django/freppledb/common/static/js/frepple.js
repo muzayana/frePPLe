@@ -555,8 +555,12 @@ var grid = {
          click: function() {
            var result = {};
            result[reportkey] = null;
+           if (typeof url_prefix != 'undefined')
+             var url = url_prefix + '/settings/';
+           else
+             var url = '/settings/';
            $.ajax({
-            url: '/settings/',
+            url: url,
             type: 'POST',
             contentType: 'application/json; charset=utf-8',
             data: JSON.stringify(result),
@@ -656,8 +660,12 @@ var grid = {
       for (var idx in extra)
         result[reportkey][idx] = extra[idx];
     }
+    if (typeof url_prefix != 'undefined')
+      var url = url_prefix + '/settings/';
+    else
+      var url = '/settings/';
     $.ajax({
-      url: '/settings/',
+      url: url,
       type: 'POST',
       contentType: 'application/json; charset=utf-8',
       data: JSON.stringify(result),
@@ -1114,8 +1122,12 @@ var dashboard = {
     if ($.type(extra) === "string")
       columns[columns.length-1]['widgets'].push( [extra,{}] );
     // Send the results to the server
+    if (typeof url_prefix != 'undefined')
+      var url = url_prefix + '/settings/';
+    else
+      var url = '/settings/';
     $.ajax({
-      url: '/settings/',
+      url: url,
       type: 'POST',
       contentType: 'application/json; charset=utf-8',
       data: JSON.stringify({"freppledb.common.cockpit": columns}),
@@ -1216,8 +1228,12 @@ var dashboard = {
             {
               text: gettext("Reset"),
               click: function() {
+                if (typeof url_prefix != 'undefined')
+                  var url = url_prefix + '/settings/';
+                else
+                  var url = '/settings/';
                 $.ajax({
-                  url: '/settings/',
+                  url: url,
                   type: 'POST',
                   contentType: 'application/json; charset=utf-8',
                   data: JSON.stringify({"freppledb.common.cockpit": ""}),

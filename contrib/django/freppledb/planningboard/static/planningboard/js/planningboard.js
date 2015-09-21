@@ -637,8 +637,12 @@ function addSelected(entity)
    var r = [];
    for (var k in ganttRows)
      r[ganttRows[k].index] = k;
+   if (typeof url_prefix != 'undefined')
+     var url = url_prefix + '/settings/';
+   else
+     var url = '/settings/';
    $.ajax({
-     url: '/settings/',
+     url: url,
      type: 'POST',
      contentType: 'application/json; charset=utf-8',
      data: JSON.stringify({"freppledb.planningboard": {"rows": r}}),
@@ -1020,8 +1024,12 @@ function resetBoard()
   ganttRows = {};
   numRows = 0;
   d3.select("#gantt").selectAll("*").remove();
+  if (typeof url_prefix != 'undefined')
+    var url = url_prefix + '/settings/';
+  else
+    var url = '/settings/';
   $.ajax({
-    url: '/settings/',
+    url: url,
     type: 'POST',
     contentType: 'application/json; charset=utf-8',
     data: JSON.stringify({"freppledb.planningboard": {"rows": []}}),
