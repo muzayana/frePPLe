@@ -650,6 +650,7 @@ DECLARE_EXPORT bool Object::getBoolProperty(const string& name, bool def) const
   return result;
 }
 
+
 DECLARE_EXPORT Date Object::getDateProperty(const string& name, Date def) const
 {
   if (!dict)

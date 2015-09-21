@@ -1,28 +1,28 @@
 /*
  * This file contains extra frePPLe styles that vary by theme.
  */
-
+ 
  /*
   * Frepple Colors (838D11 F47A00 D21800)
-
-  * black       black
+                
+  * black       black       
   * gray1       #ebebeb
   * gray2       #b3b3b3
   * gray3       #555555
   * green1      #C1C688  // header background-color
   * green2      #A2B3A4  //special green for nav menu
   * green3      #838d11
-  * oranje1
+  * oranje1     
   * red1        #ff5656
   */
-
+  
 @import url("../opensans.css");
 
-.red {
+.red {                  /* classes used for save_undo_buttons */
   color: #ff5656;
 }
 
-.white {
+.white {                /* classes used for save_undo_buttons */
     color: white;
 }
 
@@ -73,13 +73,13 @@ nav ul li a:link, nav ul li a:visited, div.breadcrumbs a {
 }
 
 nav ul li:hover a, nav ul ul, .ui-autocomplete {/* Copy from the Jquery UI style ".ui-widget-header". */
-  background: #A2B3A4; //Special green for menu
+  background: #A2B3A4; //Special green for menu  
   font-weight: 600;
   //color: white;
 }
 
 nav ul ul li a:hover {                          /* Copy from the Jquery UI style ".ui-state-hover". */
-  background: #EBEBEB; //Color gray2
+  background: #EBEBEB; //Color gray2  
   font-weight: 600;
   //color: white;
 }
@@ -90,6 +90,7 @@ nav ul ul li a:hover {                          /* Copy from the Jquery UI style
   border-top: 2px solid #000000; //Color green3
 }
 
+/* separator style in nav menus */
 nav ul ul li.separator {
     display: block;
     margin-top: 0.5em;
@@ -100,17 +101,22 @@ nav ul ul li.separator {
     border-width: 1px;
 }
 
+/* separator color in nav menus */
 .separator::after {
     background: #555555;
 }
 
-.ui-state-default a:hover {
+/* for pop-up menus in listing items */
+.ui-state-default li {          
+    color: #555555;
+    background: #EBEBEB;
+}
+.ui-state-default li:hover {
     color: #000000;
     background: #B3B3B3;
 }
 
-.ui-state-highlight, .ui-widget-content .ui-state-highlight, .ui-widget-header .ui-state-highlight {
-    border-color: #838d11;
-    background: #C1C688;
-    color: #000000;
+/* disable focus blue outline */
+input:focus, select:focus, textarea:focus, button:focus {
+    outline: none;      
 }
