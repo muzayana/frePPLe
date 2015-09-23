@@ -15,6 +15,21 @@
 namespace module_inventoryplanning
 {
 
+
+distribution InventoryPlanningSolver::matchDistributionName(string& name)
+{
+  if (name == "Automatic")
+    return AUTOMATIC;
+  if (name == "Poisson")
+    return POISSON;
+  if (name == "Normal")
+    return NORMAL;
+  if (name == "Negative Binomial")
+    return NEGATIVE_BINOMIAL;
+  throw DataException("Invalid distribution name");
+}
+
+
 /*****************************************************
 function getCumulativePoissonProbability
 input :

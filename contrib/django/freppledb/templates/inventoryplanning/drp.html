@@ -112,6 +112,32 @@ function onChange(event)
 
 function undo()
 {
+  /* Experimental code to detach the content in a new window
+  var w = window.open();
+  w.document.body.innerHTML =
+    '<!DOCTYPE html><html lang="en"><head>' +
+    '<title>Distribution planning - frePPLe</title>' +
+    '<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />' +
+    '<meta http-equiv="X-UA-Compatible" content="IE=edge" />' +
+    '<meta name="robots" content="NONE,NOARCHIVE" />' +
+    '<link rel="stylesheet" type="text/css" media="screen" href="/static/css/frepple/jquery-ui.min.css" />' +
+    '<link rel="stylesheet" type="text/css" media="screen" href="/static/css/font-awesome.min.css" />' +
+    '<link rel="stylesheet" type="text/css" media="screen" href="/static/css/ui.jqgrid.css" />' +
+    '<link rel="stylesheet" type="text/css" media="screen" href="/static/css/uix.multiselect.css" />' +
+    '<link rel="stylesheet" type="text/css" href="/static/css/frepple.css" />' +
+    '<link rel="stylesheet" type="text/css" href="/static/css/frepple/custom.css" />' +
+    '<link rel="shortcut icon" href="/static/favicon.ico"/>' +
+    '<s' + 'cript type="text/javascript" src="/data/jsi18n/"></s' + 'cript>' +
+    '<s' + 'cript type="text/javascript" src="/static/js/jquery-2.1.4.min.js"></s' + 'cript>' +
+    '<s' + 'cript type="text/javascript" src="/static/js/jquery-ui-1.10.4.min.js"></s' + 'cript>' +
+    '<s' + 'cript type="text/javascript" src="/static/js/i18n/jquery.ui.datepicker-en.js"></s' + 'cript>' +
+    '<s' + 'cript src="/static/js/i18n/grid.locale-en.js" type="text/javascript"></s' + 'cript>' +
+    '<s' + 'cript src="/static/js/jquery.jqGrid.min.js" type="text/javascript"></s' + 'cript>' +
+    '<s' + 'cript src="/static/js/jquery.uix.multiselect.min.js" type="text/javascript"></s' + 'cript>' +
+    '<s' + 'cript src="/static/js/i18n/jquery.uix.multiselect_en.js"></s' + 'cript>' +
+    '<s' + 'cript type="text/javascript" src="/static/js/frepple.js"></s' + 'cript></head><body>'
+    +  $("#detail").html() +"</body>";
+  */
   displayResult(result);
 }
 
@@ -222,6 +248,9 @@ function plancell(cellvalue, options, rowObject)
   return cellstring;
 }
 
+/*
+{"doproposed":null,"endoh":1,"startoh":0,"dmddependent":null,"roqoverride":null,"roq":null,"dmdorderslocal":null,"doconfirmed":null,"poproposed":null,"bucket":"Jan 11","poconfirmed":null,"ss":null,"ssoverride":null,"supply":null,"dmdfcstlocal":null,"dmdtotal":null},
+*/
 
 function displayPlanGraph()
 {
@@ -609,6 +638,7 @@ function displayResult(data)
 
   // Update the forecasting parameters
   $("#forecastmethod").val(data.parameters.forecastmethod);
+  $("#forecasterror").html(data.parameters.forecasterror);
 
   // Update the inventory planning parameters
   if (data.parameters.roq_min_qty != "")
@@ -814,7 +844,8 @@ $(function() {
 <span onclick="grid.showExport(true)" title="{% trans 'Export as CSV or Excel file'|escape %}" class="fa fa-arrow-down fa-lg"></span>
 <span onclick="grid.showCustomize(false);" title="{% trans 'Customize'|escape %}" class="fa fa-wrench fa-lg"></span>{% endblock %}
 {% block after_table %}
-<br/><h1 id="detailtitle">{% trans "Detail" %}</h1>
+<br/>
+<div id="detail"><h1 id="detailtitle">{% trans "Detail" %}</h1>
 <input id="save" type="submit" value="{% trans 'save'|capfirst %}" onclick="save(event)" disabled/>&nbsp;&nbsp;
 <input id="undo" type="submit" value="{% trans 'undo'|capfirst %}" onclick="undo(event)" disabled/>
 <div class="frepple-tabs" id="tabs">
@@ -884,4 +915,5 @@ $(function() {
 </div>
 
 <div id="historydata" class="clear" style="display:none"><span id="parameters"></span></div>
+</div>
 {% endblock %}

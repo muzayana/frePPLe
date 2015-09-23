@@ -129,12 +129,72 @@ class DRP(GridReport):
       select buf.name, buf.item_id, buf.location_id,
         out_inventoryplanning.leadtime, out_inventoryplanning.servicelevel,
         out_inventoryplanning.totaldemand, out_inventoryplanning.reorderquantity,
-        out_inventoryplanning.safetystock, buf.onhand
+        out_inventoryplanning.safetystock, buf.onhand,
+        coalesce(sum(so.quantity), 0) localorders,
+        coalesce(sum(case when so.due > now() then so.quantity end), 0) localbackorders,
+        coalesce(min(roq_cal.value), 1) roq,
+        coalesce(min(ss_cal.value), 0) ss,
+        coalesce(sum(case when po.status = 'confirmed' then po.quantity end), 0) confirmed_po,
+        coalesce(sum(case when po.status = 'proposed' then po.quantity end), 0) proposed_po,
+        coalesce(sum(case when trf.status = 'confirmed' then trf.quantity end), 0) confirmed_trf,
+        coalesce(sum(case when trf.status = 'proposed' then trf.quantity end), 0) proposed_trf
       from (%s) buf
+      -- join roq calendar
+      left outer join calendarbucket roq_cal
+        on roq_cal.calendar_id = 'ROQ for ' || buf.name
+        and now() between roq_cal.startdate and roq_cal.enddate
+        and roq_cal.id = (
+           select id from calendarbucket
+           where calendar_id = 'ROQ for ' || buf.name
+           and now() between roq_cal.startdate and roq_cal.enddate
+           )
+      -- join ss calendar
+      left outer join calendarbucket ss_cal
+        on ss_cal.calendar_id = 'SS for ' || buf.name
+        and now() between ss_cal.startdate and ss_cal.enddate
+        and ss_cal.id = (
+           select id from calendarbucket
+           where calendar_id = 'SS for ' || buf.name
+           and now() between ss_cal.startdate and ss_cal.enddate
+           )
+      -- join item and child items
+      inner join item
+        on buf.item_id = item.name
+      left outer join item item2
+        on item2.lft between item.lft and item.rght
+      -- join location and child locations
+      inner join location
+        on buf.location_id = location.name
+      left outer join location location2
+        on location2.lft between location.lft and location.rght
+      -- join inventory planning results
       inner join inventoryplanning
-      on buf.name = inventoryplanning.buffer_id
+        on buf.name = inventoryplanning.buffer_id
       left outer join out_inventoryplanning
-      on buf.name = out_inventoryplanning.buffer_id
+        on buf.name = out_inventoryplanning.buffer_id
+      -- join demand within lead time
+      left outer join demand so
+        on so.item_id = item2.name
+        and so.location_id = location2.name
+        and so.due < now() + out_inventoryplanning.leadtime + interval '7 day'
+        and so.status = 'confirmed'
+      -- join purchase orders
+      left outer join purchase_order po
+        on po.item_id = item2.name
+        and po.location_id = location2.name
+        and po.enddate < now() + out_inventoryplanning.leadtime + interval '7 day'
+        and po.status in ('confirmed','proposed')
+      -- join distribution orders
+      left outer join distribution_order trf
+        on trf.item_id = item2.name
+        and (trf.destination_id = location2.name or trf.origin_id = location2.name)
+        and trf.enddate < now() + out_inventoryplanning.leadtime + interval '7 day'
+        and trf.status in ('confirmed','proposed')
+      -- grouping and ordering
+      group by buf.name, buf.item_id, buf.location_id,
+        out_inventoryplanning.leadtime, out_inventoryplanning.servicelevel,
+        out_inventoryplanning.totaldemand, out_inventoryplanning.reorderquantity,
+        out_inventoryplanning.safetystock, buf.onhand
       order by %s
       ''' % (
         basesql, sortsql
@@ -153,15 +213,13 @@ class DRP(GridReport):
         'reorderquantity': row[6],
         'safetystock': row[7],
         'onhand': row[8],
+        'localorders': row[9],
+        'localbackorders': row[10],
+        'proposedpurchases': row[12],
+        'proposedtransfers': row[14],
         'localforecast': 666,
-        'localorders': 666,
-        'localbackorders': 666,
         'dependentforecast': 666,
         'totaldemand': 666,
-        'safetystock': 666,
-        'reorderquantity': 666,
-        'proposedpurchases': 666,
-        'proposedtransfers': 666,
         'localforecastvalue': 666,
         'localordersvalue': 666,
         'localbackordersvalue': 666,
@@ -228,7 +286,6 @@ class DRPitemlocation(View):
     order by date, quantity
     """
 
-# --and enddate > '%s' and startdate < '%s'
   sql_plan = """
     select d.bucket,
        avg(roq_calc.value) roq,
@@ -250,20 +307,20 @@ class DRPitemlocation(View):
     cross join (
            select name as bucket, startdate, enddate
            from common_bucketdetail
-           where bucket_id = %s
+           where bucket_id = %s and enddate > %s and startdate < %s
            ) d
     -- join calendars
     left outer join calendarbucket ss_calc
-      on  ss_calc.calendar_id = 'Safety stock for ' || buffer.name
+      on  ss_calc.calendar_id = 'SS for ' || buffer.name
       and ss_calc.source = 'Inventory planning'
     left outer join calendarbucket ss_override
-      on  ss_override.calendar_id = 'Safety stock for ' || buffer.name
+      on  ss_override.calendar_id = 'SS for ' || buffer.name
       and ss_override.source <> 'Inventory planning'
     left outer join calendarbucket roq_calc
-      on roq_calc.calendar_id = 'Reorder quantities for ' || buffer.name
+      on roq_calc.calendar_id = 'ROQ for ' || buffer.name
       and roq_calc.source = 'Inventory planning'
     left outer join calendarbucket roq_override
-      on roq_override.calendar_id = 'Reorder quantities for ' || buffer.name
+      on roq_override.calendar_id = 'ROQ for ' || buffer.name
       and roq_override.source <> 'Inventory planning'
     -- Consumed and produced quantities
     left join out_flowplan
@@ -334,6 +391,7 @@ class DRPitemlocation(View):
     # and the user can navigate them without
 
     buckets = request.user.horizonbuckets
+    DRP.getBuckets(request)
     ip = InventoryPlanning.objects.using(request.database).get(pk=itemlocation)
     item_name = ip.buffer.item.name if ip.buffer.item else None
     location_name = ip.buffer.location.name if ip.buffer.location else None
@@ -361,10 +419,12 @@ class DRPitemlocation(View):
         "ss_max_poc": str(ip.ss_max_poc) if ip.ss_max_poc is not None else None,
         "eoq": 49,  # TODO comes from output table
         "service_level_qty": 49, # TODO comes from output table
-        "forecast_method": "auto"
+        "forecastmethod": "automatic", # TODO retrieve from forecastplan
+        "forecasterror": "12 %"          
         })
       ])
 
+    
     cursor = connections[request.database].cursor()
 
     # Retrieve forecast data
@@ -399,9 +459,9 @@ class DRPitemlocation(View):
     # Retrieve inventory plan
     yield '],"plan":['
     first = True
-    cursor.execute(self.sql_plan, (buckets, item_name, location_name))
-    startoh = 0
+    cursor.execute(self.sql_plan, (request.report_bucket, request.report_startdate, request.report_enddate, item_name, location_name))
     endoh = 0
+    startoh = 0
     for rec in cursor.fetchall():
       if not first:
         yield ","

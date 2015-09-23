@@ -100,10 +100,60 @@ void InventoryPlanningSolver::solve(void* v)
   if (!cal)
     throw DataException("Inventory planning solver requires a calendar to be specified");
 
-  // Call the solve method for each buffer
-  for (Buffer::iterator i = Buffer::begin(); i != Buffer::end(); ++i)
-    if (i->getType() != *BufferInfinite::metadata)
-      solve(&*i);
+  // Step 1: Erase the previous plan (except locked operationplans)
+  for (Operation::iterator o = Operation::begin(); o != Operation::end(); ++o)
+    o->deleteOperationPlans();
+
+  // Step 2: Create a delivery operationplan for all demands
+  for (Demand::iterator d = Demand::begin(); d != Demand::end(); ++d)
+  {
+    // Select delivery operation
+    Operation* deliveryoper = d->getDeliveryOperation();
+    if (!deliveryoper)
+      continue;
+
+    // Determine the quantity to be planned and the date for the planning loop
+    double plan_qty = d->getQuantity() - d->getPlannedQuantity();
+    if (plan_qty < ROUNDING_ERROR || d->getDue() == Date::infiniteFuture)
+      continue;
+
+    // Respect minimum shipment quantities
+    if (plan_qty < d->getMinShipment())
+      plan_qty = d->getMinShipment();
+
+    // Create a delivery operationplan for the remaining quantity
+    deliveryoper->createOperationPlan(
+      plan_qty, Date::infinitePast, d->getDue(), &*d, NULL, 0, true
+      );
+  }
+
+  // Step 3: Solve buffer by buffer, ordered by level
+  SolverMRP prop;
+  prop.setConstraints(0);
+  prop.setLogLevel(0);
+  prop.setPropagate(false);
+  for (int lvl = 0; lvl <= HasLevel::getNumberOfLevels(); ++lvl)
+  {
+    for (Buffer::iterator b = Buffer::begin(); b != Buffer::end(); ++b)
+    {
+      if (b->getLevel() != lvl)
+        continue;
+
+      // We know the complete demand on the buffer now.
+      // We can calculate the ROQ and safety stock.
+      if (b->getType() != *BufferInfinite::metadata)
+        solve(&*b);
+
+      // Given the demand, ROQ and safety stock, we resolve the shortage
+      // with an unconstrained propagation to the next level.
+      prop.getCommands().state->curDemand = NULL;
+      prop.getCommands().state->a_qty = 0;
+      prop.getCommands().state->q_qty = 100000;
+      prop.getCommands().state->q_date = Date::infinitePast;
+      b->solve(prop, &(prop.getCommands()));
+      prop.getCommands().CommandManager::commit();
+    }
+  }
 
   if (getLogLevel() > 0)
     logger << "End inventory planning solver" << endl;
@@ -120,12 +170,13 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
   double leadtime_deviation = b->getDoubleProperty("leadtime_deviation", 0.0);
   double demand_deviation = b->getDoubleProperty("demand_deviation", 0.0);
   bool nostock = b->getBoolProperty("nostock", false);
-  double roq_min_qty = b->getDoubleProperty("roq_min_qty", false);
+  double roq_min_qty = b->getDoubleProperty("roq_min_qty", 1);
   double roq_max_qty = b->getDoubleProperty("roq_max_qty", DBL_MAX);
   Duration roq_min_poc = static_cast<long>(b->getDoubleProperty("roq_min_poc", 0));
   Duration roq_max_poc = static_cast<long>(b->getDoubleProperty("roq_min_poc", 10 * 365 * 86400));
   double roq_multiple = b->getDoubleProperty("roq_multiple", 1);
-  string distribution = "Automatic"; //TODOb->getStringProperty("distribution", "normal");
+  string distname = b->getStringProperty("distribution", "Automatic");
+  distribution dist = matchDistributionName(distname);
   double service_level = b->getDoubleProperty("service_level", 0.0);
   double ss_min_qty = b->getDoubleProperty("ss_min_qty", 0);
   double ss_max_qty = b->getDoubleProperty("ss_max_qty", DBL_MAX);
@@ -168,13 +219,25 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
       << ", max cover: " << ss_max_poc
       << ", multiple: " << ss_multiple << endl;
     logger << "   don't stock: " << nostock
-      << ", distribution: " << distribution
+      << ", distribution: " << distname
       << ", service level: " << service_level << endl;
   }
 
+  // Sanity check for the parameters
+  if (roq_multiple > 0.0 && roq_min_qty < roq_multiple)
+    roq_min_qty = roq_multiple;
+  if (ss_min_qty < 0.0)
+    ss_min_qty = 0.0;
+  if (ss_max_qty < 0.0)
+    ss_max_qty = 0.0;
+  if (ss_multiple < 0.0)
+    ss_multiple = 0.0;
+  if (ss_multiple > 0.0 && ss_min_qty < ss_multiple)
+    ss_min_qty = ss_multiple;
+
   // Prepare the calendars to retrieve the results
-  Calendar *roq_calendar = oper->getSizeMinimumCalendar();
-  Calendar *ss_calendar = b->getMinimumCalendar();
+  Calendar *roq_calendar = Calendar::find("ROQ for " + b->getName()); //oper->getSizeMinimumCalendar();
+  Calendar *ss_calendar = Calendar::find("SS for " + b->getName()); //b->getMinimumCalendar();
   if (roq_calendar)
   {
     // Erase existing calendar buckets
@@ -189,8 +252,8 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
   else
   {
     // Create a brand new calendar
-    roq_calendar = new Calendar();
-    roq_calendar->setName("Reorder quantities for " + b->getName());
+    roq_calendar = new CalendarDefault();
+    roq_calendar->setName("ROQ for " + b->getName());
     roq_calendar->setSource("Inventory planning");
   }
   if (ss_calendar)
@@ -207,8 +270,8 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
   else
   {
     // Create a brand new calendar
-    ss_calendar = new Calendar();
-    ss_calendar->setName("Safety stock for " + b->getName());
+    ss_calendar = new CalendarDefault();
+    ss_calendar->setName("SS for " + b->getName());
     ss_calendar->setSource("Inventory planning");
   }
   CalendarBucket *roq_calendar_bucket = NULL;
@@ -217,7 +280,6 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
   // Variables for the output metrics
   double eoq = 1;
   double service_level_out = 0.99;
-  string distribution_out("normal");
 
   // Loop over all buckets in the horizon
   Date startdate = Plan::instance().getCurrent() - Duration(horizon_start * 86400L);
@@ -259,9 +321,9 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
     {
       if (i->getQuantity() < 0)
       {
-        if (i->getDate() > last_bucket_start)
+        if (i->getDate() >= last_bucket_start)
           lastdemand -= i->getQuantity();
-        else if (i->getDate() > bucketstart)
+        else if (i->getDate() >= bucketstart)
           demand -= i->getQuantity();
       }
       if (i->getDate() >= last_bucket_end)
@@ -286,15 +348,16 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
     double roq = 1.0;
     if (price)
     {
-      roq = sqrt(2 * 365 * demand * fixed_order_cost / holding_cost / price);
+      roq = ceil(sqrt(2 * 365 * demand * fixed_order_cost / holding_cost / price));
       if (firstBucket)
         // Remember the economic order metric in the first bucket
         eoq = roq;
     }
     if (roq < roq_min_qty)
       roq = roq_min_qty;
-    if (roq < demand * roq_min_poc)
-      roq = demand * roq_min_poc;
+    double tmp = demand * roq_min_poc;
+    if (roq < tmp)
+      roq = tmp;
     if (roq_multiple > 0)
       roq = roq_multiple * static_cast<int>(roq / roq_multiple + 0.99999999);
     if (roq > roq_max_qty)
@@ -309,6 +372,8 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
       if (roq_multiple > 0)
         roq = roq_multiple * static_cast<int>(roq / roq_multiple);
     }
+    if (!roq)
+      roq = 1;
 
     // Compute the safety stock
     // 1. start with the value based on the desired service level
@@ -324,7 +389,7 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
         demand_deviation * demand_deviation, // TODO need to add the lead time deviation:  leadtime_deviation,
         static_cast<int>(ceil(roq)),
         service_level/100,
-        1, true, distribution
+        1, true, dist
         );
       ss -= demand * leadtime / 86400;
       if (ss < 0)
@@ -374,6 +439,24 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
       const_cast<Buffer*>(b)->setProperty("ip_ss", res, 3);
       res.setDouble(demand);
       const_cast<Buffer*>(b)->setProperty("ip_demand", res, 3);
+      if (dist == AUTOMATIC)
+      {
+        distribution choosen = chooseDistribution(
+          demand * leadtime / 86400,
+          demand_deviation * demand_deviation
+          );
+        if (choosen == POISSON)
+          res.setString("Poisson");
+        else if (choosen == NORMAL)
+          res.setString("Normal");
+        else if (choosen == NEGATIVE_BINOMIAL)
+          res.setString("Negative Binomial");
+        else
+          throw LogicException("Distribution not recognized");
+      }
+      else
+        res.setString(distname);
+      const_cast<Buffer*>(b)->setProperty("ip_distribution", res, 4);
       /* TODO
          - local (forecast/)demand per period, averaged over the lead time
          - local dependent demand per period, averaged over the lead time
@@ -393,6 +476,7 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
       ss_calendar_bucket->setStart(bucketstart);
       ss_calendar_bucket->setCalendar(ss_calendar);
       ss_calendar_bucket->setValue(ss);
+      ss_calendar_bucket->setSource("Inventory planning");
       ss_calendar_bucket->setPriority(999);
     }
     if (!roq_calendar_bucket || fabs(roq_calendar_bucket->getValue() - roq) > ROUNDING_ERROR)
@@ -403,6 +487,7 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
       roq_calendar_bucket->setStart(bucketstart);
       roq_calendar_bucket->setCalendar(roq_calendar);
       roq_calendar_bucket->setValue(roq);
+      roq_calendar_bucket->setSource("Inventory planning");
       roq_calendar_bucket->setPriority(999);
     }
 
@@ -427,7 +512,10 @@ fillRateMinimum : The minimum fill rate
 fillRateMaximum : The maximum fill rate
 minimumStrongest : The algorithm will start from a rop equal to 0 and will increment it until
 **************************************************************************************************************/
-int InventoryPlanningSolver::calulateStockLevel(double mean, double variance, int roq, double fillRateMinimum, double fillRateMaximum, bool minimumStrongest, string distribution)
+int InventoryPlanningSolver::calulateStockLevel(
+  double mean, double variance, int roq, double fillRateMinimum,
+  double fillRateMaximum, bool minimumStrongest, distribution dist
+  )
 {
 	/* Checks that the fill rates are between 0 and 1*/
 	if (fillRateMinimum < 0)
@@ -439,7 +527,7 @@ int InventoryPlanningSolver::calulateStockLevel(double mean, double variance, in
 	// or think of a formula giving the stock level based on the fill rate without iterating
 	unsigned int rop = static_cast<int>(floor(mean));
 	double fillRate;
-	while ((fillRate = calculateFillRate(mean, variance, rop, roq, distribution)) < fillRateMinimum)
+	while ((fillRate = calculateFillRate(mean, variance, rop, roq, dist)) < fillRateMinimum)
 		++rop;
 
 	// Now we are sure the that lower bound is respected, what about the upper bound
@@ -448,6 +536,24 @@ int InventoryPlanningSolver::calulateStockLevel(double mean, double variance, in
 	else
 		return rop - 1;
 }
+
+
+distribution InventoryPlanningSolver::chooseDistribution(
+  double mean, double variance
+  )
+{
+  if (mean >= 20)
+    return NORMAL;
+
+	double varianceToMean = variance/mean;
+	if (varianceToMean > 1.1)
+    /* If the variance to mean ratio is greater than 1.1, we switch to negative binomial */
+		return NEGATIVE_BINOMIAL;
+  else
+    /* Else apply a Poisson distribution. */
+		return POISSON;
+}
+
 
 /************************************************************************************************************
 function calculateFillRate
@@ -459,27 +565,16 @@ roq : reorder quantity
 @return : a double between 0 and 1
 **************************************************************************************************************/
 double InventoryPlanningSolver::calculateFillRate(
-  double mean, double variance, int rop, int roq, string distribution
+  double mean, double variance, int rop, int roq, distribution dist
   )
 {
 	if (mean <= 0)
 		return 1;
 
-	if (distribution == "Automatic")
-  {
-    /* If the mean is greater than 20, we use a normal distribution as an approximation. */
-    if (mean >= 20)
-      return NormalDistribution::calculateFillRate(mean, variance, rop, roq);
+	if (dist == AUTOMATIC)
+    dist = chooseDistribution(mean, variance);
 
-	  double varianceToMean = variance/mean;
-	  if (varianceToMean > 1.1)
-      /* If the variance to mean ratio is greater than 1.1, we switch to negative binomial */
-		  return NegativeBinomialDistribution::calculateFillRate(mean, variance, rop, roq);
-    else
-      /* Else apply a Poisson distribution. */
-		  return PoissonDistribution::calculateFillRate(mean, rop, roq);
-	}
-	else if (distribution == "Poisson")
+  if (dist == POISSON)
   {
     if (mean >= 20)
       // A poisson distribution is very close to a normal distribution for
@@ -489,17 +584,20 @@ double InventoryPlanningSolver::calculateFillRate(
     else
 		  return PoissonDistribution::calculateFillRate(mean, rop, roq);
 	}
-	else if (distribution == "Normal")
+	else if (dist == NORMAL)
 		return NormalDistribution::calculateFillRate(mean, variance, rop, roq);
-	else if (distribution == "Negative Binomial")
+	else if (dist == NEGATIVE_BINOMIAL)
   {
-    if (mean < 20)
-		  return NegativeBinomialDistribution::calculateFillRate(mean, variance, rop, roq);
-    else
+    if (mean >= 20)
+      // A negative binomial distribution is very close to a normal distribution
+      // for large input values. And a normal distribution can be computed much
+      // faster.
       return NormalDistribution::calculateFillRate(mean, variance, rop, roq);
+    else
+		  return NegativeBinomialDistribution::calculateFillRate(mean, variance, rop, roq);
 	}
 	else
-    throw DataException("Invalid distribution name");
+    throw DataException("Invalid distribution");
 }
 
 

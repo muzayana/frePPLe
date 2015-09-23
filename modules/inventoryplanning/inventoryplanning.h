@@ -25,6 +25,17 @@ namespace module_inventoryplanning
 /** Initialization routine for the library. */
 MODULE_EXPORT const char* initialize(const Environment::ParameterList&);
 
+
+/** Statistical distributions. */
+enum distribution
+{
+  AUTOMATIC = 1,
+  NORMAL = 2,
+  POISSON = 3,
+  NEGATIVE_BINOMIAL = 4
+};
+
+
 class InventoryPlanningSolver : public Solver
 {
   private:
@@ -132,8 +143,10 @@ class InventoryPlanningSolver : public Solver
       m->addDoubleField<Cls>(tag_holding_cost, &Cls::getHoldingCost, &Cls::setHoldingCost);
     }
 
-	static int calulateStockLevel(double mean, double variance, int roq, double fillRateMinimum, double fillRateMaximum, bool minimumStrongest, string distribution);
-	static double calculateFillRate(double mean, double variance, int rop, int roq, string distribution);
+  static distribution matchDistributionName(string&);
+  static distribution chooseDistribution(double mean, double variance);
+  static int calulateStockLevel(double mean, double variance, int roq, double fillRateMinimum, double fillRateMaximum, bool minimumStrongest, distribution dist);
+  static double calculateFillRate(double mean, double variance, int rop, int roq, distribution dist);
 };
 
 

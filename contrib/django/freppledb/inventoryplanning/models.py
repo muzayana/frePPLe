@@ -18,13 +18,13 @@ from freppledb.input.models import Buffer
 
 class InventoryPlanning(AuditModel):
   distributions = (
-    ('automatic', _('Automatic')),
+    ('Automatic', _('Automatic')),
     # Translators: Normal statistical distribution, aka Gaussian distribution
-    ('normal', _('Normal')),
+    ('Normal', _('Normal')),
     # Translators: Poisson statistical distribution
-    ('poisson', _('Poisson')),
+    ('Poisson', _('Poisson')),
     # Translators: Negative binomial statistical distribution
-    ('negative binomial', _('Negative binomial')),
+    ('Negative Binomial', _('Negative Binomial')),
   )
 
   # Database fields

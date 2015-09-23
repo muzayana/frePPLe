@@ -30,7 +30,7 @@ def exportResults(cursor, database):
     cursor.execute("SELECT max(id) FROM calendarbucket")
     cnt = cursor.fetchone()[0] or 1
     for c in frepple.calendars():
-      if i.source != 'Inventory planning':
+      if c.source != 'Inventory planning':
         continue
       for i in c.buckets:
         if i.source != 'Inventory planning':
@@ -52,6 +52,19 @@ def exportResults(cursor, database):
     print("Exporting inventory planning results...")
     timestamp = str(datetime.now())
     starttime = time()
+
+    cursor.execute("delete from out_inventoryplanning")  # TODO avoid complete rebuild of the table
+    cursor.executemany('''
+      insert into out_inventoryplanning
+      (buffer_id, leadtime, reorderquantity, reorderquantityvalue, servicelevel, safetystock, totaldemand)
+      values (%s,(%s||' second')::interval ,%s,%s,%s,%s,%s)
+      ''',
+      [
+        (b.name, b.ip_leadtime, b.ip_eoq, b.ip_eoq * b.item.price, b.ip_service_level, b.ip_ss, b.ip_demand)
+        for b in frepple.buffers()
+        if hasattr(b, 'ip_flag')
+      ])
+
     cursor.execute('''
       delete from calendarbucket where source = 'Inventory planning'
     ''')
@@ -77,21 +90,9 @@ def exportResults(cursor, database):
           (i[0].days & 16) and True or False, (i[0].days & 32) and True or False,
           (i[0].days & 64) and True or False,
           int_to_time(i[0].starttime), int_to_time(i[0].endtime - 1),
-          i.source, timestamp
+          i[0].source, timestamp
         )
         for i in buckets()
-      ])
-
-    cursor.execute("delete from out_inventoryplanning")  # TODO avoid complete rebuild of the table
-    cursor.executemany('''
-      insert into out_inventoryplanning
-      (buffer_id, leadtime, reorderquantityvalue, servicelevel, reorderquantity, safetystock, totaldemand, lastmodified)
-      values (%s,%s,%s,%s,%s,%s,%s,%s)
-      ''',
-      [
-        (b.name, b.ip_leadtime, b.ip_eoq, b.ip_service_level, b.ip_roq, b.ip_ss, b.ip_demand, timestamp)
-        for b in frepple.buffer()
-        if b.hasattr('ip_flag')
       ])
 
     print('Exported inventory planning results in %.2f seconds' % (time() - starttime))
@@ -146,7 +147,7 @@ def createInventoryPlan(database=DEFAULT_DB_ALIAS):
      where inventoryplanning.buffer_id = dep_stddev.buffer_id
      ''')
   cursor.execute('''delete from inventoryplanning where demand_deviation = 0''') # TODO TEMP HACK
-  
+
   # Step 3.
   # Load inventory planning parameters
   starttime = time()
@@ -196,18 +197,6 @@ def createInventoryPlan(database=DEFAULT_DB_ALIAS):
   print('Loaded %d inventory planning parameters in %.2f seconds' % (cnt, time() - starttime))
 
   # Step 4.
-  # Create a plan to propagate the demand across all levels
-  # Create an unconstrained plan to propagate demand across all dependent levels.
-  # TODO: we only want to propagate the forecasted demand, excluding any actual sales orders already received.
-  # TODO: chicken and egg: this is already using ROQs
-  frepple.solver_mrp(plantype=2, constraints=0, loglevel=0).solve()
-
-  # Step 5.
-  # Calculate the deviation contributed from the dependent demand
-  # (following the transfer lanes which actually carry dependent demand)
-  # chicken and egg: this is using the shipment ROQ which we haven't computed yet.
-
-  # Step 6.
   # Run the inventory planning solver to compute the safety stock and reorder quantities
   frepple.solver_inventoryplanning(
     calendar=frepple.calendar(name=Parameter.getValue('inventoryplanning.calendar', database), action='C'),
@@ -218,11 +207,11 @@ def createInventoryPlan(database=DEFAULT_DB_ALIAS):
     loglevel=int(Parameter.getValue('inventoryplanning.loglevel', database, 0)),
     ).solve()
 
-  # Step 7.
-  # Export all results into the database
-  #exportResults(cursor, database)
+  # Erase the plan
+  #frepple.erase(False)
 
-  # Step 8.
-  # Erase the plan again
-  frepple.erase(False)
+  # Step 5.
+  # Export all results into the database
+  exportResults(cursor, database)
+
   print("Finished inventory planning")
