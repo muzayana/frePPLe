@@ -1340,13 +1340,13 @@ class Location : public HasHierarchy<Location>, public HasDescription
       * The availability calendar models the working hours and holidays. It
       * applies to all operations, resources and buffers using this location.
       */
-    CalendarDefault *getAvailable() const
+    Calendar *getAvailable() const
     {
       return available;
     }
 
     /** Updates the availability calendar of the location. */
-    void setAvailable(CalendarDefault* b)
+    void setAvailable(Calendar* b)
     {
       available = b;
     }
@@ -1387,7 +1387,7 @@ class Location : public HasHierarchy<Location>, public HasDescription
     {
       HasHierarchy<Cls>:: template registerFields<Cls>(m);
       HasDescription::registerFields<Cls>(m);
-      m->addPointerField<Cls, CalendarDefault>(Tags::available, &Cls::getAvailable, &Cls::setAvailable);
+      m->addPointerField<Cls, Calendar>(Tags::available, &Cls::getAvailable, &Cls::setAvailable);
       m->addBoolField<Cls>(Tags::hidden, &Cls::getHidden, &Cls::setHidden, BOOL_FALSE, DONT_SERIALIZE);
     }
 
@@ -1395,7 +1395,7 @@ class Location : public HasHierarchy<Location>, public HasDescription
     /** The availability calendar models the working hours and holidays. It
       * applies to all operations, resources and buffers using this location.
       */
-    CalendarDefault* available;
+    Calendar* available;
 
     /** This is a list of item distributions pointing to this location as
       * origin.
@@ -4276,7 +4276,7 @@ class Buffer : public HasHierarchy<Buffer>, public HasLevel,
 
     /** Returns a pointer to a calendar for storing the minimum inventory
       * level. */
-    CalendarDefault* getMinimumCalendar() const
+    Calendar* getMinimumCalendar() const
     {
       return min_cal;
     }
@@ -4289,7 +4289,7 @@ class Buffer : public HasHierarchy<Buffer>, public HasLevel,
 
     /** Returns a pointer to a calendar for storing the maximum inventory
       * level. */
-    CalendarDefault* getMaximumCalendar() const
+    Calendar* getMaximumCalendar() const
     {
       return max_cal;
     }
@@ -4298,13 +4298,13 @@ class Buffer : public HasHierarchy<Buffer>, public HasLevel,
     DECLARE_EXPORT void setMinimum(double);
 
     /** Updates the minimum inventory target for the buffer. */
-    DECLARE_EXPORT void setMinimumCalendar(CalendarDefault*);
+    DECLARE_EXPORT void setMinimumCalendar(Calendar*);
 
     /** Updates the minimum inventory target for the buffer. */
     DECLARE_EXPORT void setMaximum(double);
 
     /** Updates the minimum inventory target for the buffer. */
-    DECLARE_EXPORT void setMaximumCalendar(CalendarDefault*);
+    DECLARE_EXPORT void setMaximumCalendar(Calendar*);
 
     /** Initialize the class. */
     static int initialize();
@@ -4445,9 +4445,9 @@ class Buffer : public HasHierarchy<Buffer>, public HasLevel,
       Plannable::registerFields<Cls>(m);
       m->addDoubleField<Cls>(Tags::onhand, &Cls::getOnHand, &Cls::setOnHand);
       m->addDoubleField<Cls>(Tags::minimum, &Cls::getMinimum, &Cls::setMinimum);
-      m->addPointerField<Cls, CalendarDefault>(Tags::minimum_calendar, &Cls::getMinimumCalendar, &Cls::setMinimumCalendar);
+      m->addPointerField<Cls, Calendar>(Tags::minimum_calendar, &Cls::getMinimumCalendar, &Cls::setMinimumCalendar);
       m->addDoubleField<Cls>(Tags::maximum, &Cls::getMaximum, &Cls::setMaximum, default_max);
-      m->addPointerField<Cls, CalendarDefault>(Tags::maximum_calendar, &Cls::getMaximumCalendar, &Cls::setMaximumCalendar);
+      m->addPointerField<Cls, Calendar>(Tags::maximum_calendar, &Cls::getMaximumCalendar, &Cls::setMaximumCalendar);
       m->addDurationField<Cls>(Tags::mininterval, &Cls::getMinimumInterval, &Cls::setMinimumInterval, -1);
       m->addDurationField<Cls>(Tags::maxinterval, &Cls::getMaximumInterval, &Cls::setMaximumInterval);
       m->addIteratorField<Cls, flowlist::const_iterator, Flow>(Tags::flows, Tags::flow, &Cls::getFlowIterator, DETAIL);
@@ -4507,13 +4507,13 @@ class Buffer : public HasHierarchy<Buffer>, public HasLevel,
       * The default value is NULL, resulting in a constant minimum level
       * of 0.
       */
-    CalendarDefault *min_cal;
+    Calendar *min_cal;
 
     /** Points to a calendar to store the maximum inventory level.<br>
       * The default value is NULL, resulting in a buffer without excess
       * inventory problems.
       */
-    CalendarDefault *max_cal;
+    Calendar *max_cal;
 
     /** Minimum time interval between purchasing operations. */
     Duration min_interval;
@@ -5689,13 +5689,13 @@ class Resource : public HasHierarchy<Resource>,
     virtual DECLARE_EXPORT ~Resource();
 
     /** Updates the size of a resource, when it is time-dependent. */
-    virtual DECLARE_EXPORT void setMaximumCalendar(CalendarDefault*);
+    virtual DECLARE_EXPORT void setMaximumCalendar(Calendar*);
 
     /** Updates the size of a resource. */
     DECLARE_EXPORT void setMaximum(double);
 
     /** Return a pointer to the maximum capacity profile. */
-    CalendarDefault* getMaximumCalendar() const
+    Calendar* getMaximumCalendar() const
     {
       return size_max_cal;
     }
@@ -5866,7 +5866,7 @@ class Resource : public HasHierarchy<Resource>,
       HasHierarchy<Cls>:: template registerFields<Cls>(m);
       HasDescription::registerFields<Cls>(m);
       m->addDoubleField<Cls>(Tags::maximum, &Cls::getMaximum, &Cls::setMaximum, 1);
-      m->addPointerField<Cls, CalendarDefault>(Tags::maximum_calendar, &Cls::getMaximumCalendar, &Cls::setMaximumCalendar);
+      m->addPointerField<Cls, Calendar>(Tags::maximum_calendar, &Cls::getMaximumCalendar, &Cls::setMaximumCalendar);
       m->addDurationField<Cls>(Tags::maxearly, &Cls::getMaxEarly, &Cls::setMaxEarly, defaultMaxEarly);
       m->addDoubleField<Cls>(Tags::cost, &Cls::getCost, &Cls::setCost);
       m->addPointerField<Cls, Location>(Tags::location, &Cls::getLocation, &Cls::setLocation);
@@ -5882,7 +5882,7 @@ class Resource : public HasHierarchy<Resource>,
     }
   protected:
     /** This calendar is used to updates to the resource size. */
-    CalendarDefault* size_max_cal;
+    Calendar* size_max_cal;
 
     /** Stores the collection of all loadplans of this resource. */
     loadplanlist loadplans;
@@ -6036,7 +6036,7 @@ class ResourceBuckets : public Resource
     virtual DECLARE_EXPORT void updateProblems();
 
     /** Updates the time buckets and the quantity per time bucket. */
-    virtual DECLARE_EXPORT void setMaximumCalendar(CalendarDefault*);
+    virtual DECLARE_EXPORT void setMaximumCalendar(Calendar*);
 };
 
 
