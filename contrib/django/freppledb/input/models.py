@@ -816,9 +816,9 @@ class Load(AuditModel):
 class OperationPlan(AuditModel):
   # Possible status
   orderstatus = (
-    ('confirmed', _('confirmed')),
-    ('approved', _('approved')),
     ('proposed', _('proposed')),
+    ('confirmed', _('confirmed')),
+    ('closed', _('closed')),
   )
 
   # Database fields
@@ -866,9 +866,9 @@ class OperationPlan(AuditModel):
 class DistributionOrder(AuditModel):
   # Possible status
   orderstatus = (
-    ('confirmed', _('confirmed')),
-    ('approved', _('approved')),
     ('proposed', _('proposed')),
+    ('confirmed', _('confirmed')),
+    ('closed', _('closed')),
   )
 
   # Database fields
@@ -923,9 +923,9 @@ class DistributionOrder(AuditModel):
 class PurchaseOrder(AuditModel):
   # Possible status
   orderstatus = (
-    ('confirmed', _('confirmed')),
     ('proposed', _('proposed')),
-    ('approved', _('approved')),
+    ('confirmed', _('confirmed')),
+    ('closed', _('closed')),
   )
 
   # Database fields
