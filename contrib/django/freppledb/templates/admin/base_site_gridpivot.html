@@ -39,7 +39,8 @@ $(function() {
     cellEdit: true,
     cellsubmit: 'clientArray',
     editurl: location.pathname,
-    beforeSaveCell: upload.select,
+    beforeSaveCell: upload.select,{% else %}
+    onSelectRow: function() {$(this).resetSelection();},
     {% endif %}rowNum: {{request.pagesize}},
    	pager: '#gridpager',
     viewrecords: true,
