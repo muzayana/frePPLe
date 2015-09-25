@@ -101,6 +101,10 @@ function save(event)
       });
       }
     });
+    
+  // Reset the buttons
+  $('#undo').addClass("save_undo_button_inactive").removeClass("save_undo_button_active");
+  $('#save').addClass("save_undo_button_inactive").removeClass("save_undo_button_active");
 }
 
 function onChange(event)
@@ -139,6 +143,10 @@ function undo()
     +  $("#detail").html() +"</body>";
   */
   displayResult(result);
+  
+  // Reset the buttons
+  $('#undo').addClass("save_undo_button_inactive").removeClass("save_undo_button_active");
+  $('#save').addClass("save_undo_button_inactive").removeClass("save_undo_button_active");
 }
 
 function forecastfields()
@@ -679,7 +687,6 @@ function displayResult(data)
   }
 
   // Show forecast tab
-  //$('#actions').css("display", "none");
   displayForecastGraph(); // this function also sets the variable firstforecastbucket
   if (!$.trim($("#forecastgrid").html()))
   {
@@ -713,7 +720,6 @@ function displayResult(data)
   }
 
   // Show plan tab
-  //$('#actions').css("display", "none");
   displayPlanGraph();
   if (!$.trim($("#plangrid").html()))
   {
@@ -748,7 +754,6 @@ function displayResult(data)
   }
 
   // Show transaction tab
-  //$('#actions').css("display", "initial");
   if (!$.trim($("#transactiongrid").html()))
   {
     // Transaction grid displayed for the first time
