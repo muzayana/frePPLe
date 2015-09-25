@@ -133,6 +133,7 @@ ForecastBucket::ForecastBucket(Forecast* f, Date d, Date e, double w, ForecastBu
   setMaxLateness(f->getMaxLateness());
   setMinShipment(f->getMinShipment());
   setOperation(f->getOperation());
+  setLocation(f->getLocation());
   initType(metadata);
 }
 
