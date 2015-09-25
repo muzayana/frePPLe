@@ -679,6 +679,7 @@ function displayResult(data)
   }
 
   // Show forecast tab
+  //$('#actions').css("display", "none");
   displayForecastGraph(); // this function also sets the variable firstforecastbucket
   if (!$.trim($("#forecastgrid").html()))
   {
@@ -712,6 +713,7 @@ function displayResult(data)
   }
 
   // Show plan tab
+  //$('#actions').css("display", "none");
   displayPlanGraph();
   if (!$.trim($("#plangrid").html()))
   {
@@ -746,6 +748,7 @@ function displayResult(data)
   }
 
   // Show transaction tab
+  //$('#actions').css("display", "initial");
   if (!$.trim($("#transactiongrid").html()))
   {
     // Transaction grid displayed for the first time
@@ -800,11 +803,12 @@ function selectTab(value)
     // Hide previous tab
     $("#" + showtab + "tab").removeClass("frepple-tabs-active");
     $("#" + showtab + "data").css("display", "none");
+    $('#actions').css("display", "none");
+
 
     // Show new tab
     showtab = value;
     $("#" + showtab + "tab").addClass("frepple-tabs-active");
-    $("#" + showtab + "data").css("display", "block");
 
     // Save newly selected table as a preference
     grid.saveColumnConfiguration();
@@ -813,10 +817,16 @@ function selectTab(value)
   {
     // Show new tab
     showtab = value;
+
     $("#" + showtab + "tab").addClass("frepple-tabs-active");
     $("#" + showtab + "data").css("display", "block");
   }
-
+  if (showtab == "transactions") {
+    $('#actions').css("display", "initial");
+  }
+  else {
+    $('#actions').css("display", "none");
+  };
   return false;
 }
 
@@ -846,8 +856,13 @@ $(function() {
 {% block after_table %}
 <br/>
 <div id="detail"><h1 id="detailtitle">{% trans "Detail" %}</h1>
-<input id="save" type="submit" value="{% trans 'save'|capfirst %}" onclick="save(event)" disabled/>&nbsp;&nbsp;
-<input id="undo" type="submit" value="{% trans 'undo'|capfirst %}" onclick="undo(event)" disabled/>
+&nbsp;&nbsp;<input type="submit" value="SAVE" id="save" class="button ui-corner-all save_undo_button_inactive" role="button" onclick="save()" title="{% trans 'Save changes'|escape %}">
+&nbsp;&nbsp;<input type="submit" value="UNDO" id="undo" class="button ui-corner-all save_undo_button_inactive" role="button" onclick="undo()" title="{% trans 'Undo changes'|escape %}">
+&nbsp;&nbsp;
+<select disabled='disabled' name="actions" id="actions" onchange="grid.runAction($(this).val());" style="display: none" class="ui-corner-all ui-selectmenu-disabled ui-state-disabled change_status_selectmenu_inactive" >
+    <option value="no_action">{% trans "Select action" %}</option>{% for i in  actions %}
+    <option value="{{ i.name|escape }}">{{ i.label }}</option>{% endfor %}
+</select>
 <div class="frepple-tabs" id="tabs">
 <ul role="tablist">
 <li id="forecasttab" role="tab"><a class="ui-tabs-anchor" onclick="return selectTab('forecast')">{% trans 'forecast'|capfirst %}</a></li>
