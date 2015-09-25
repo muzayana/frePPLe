@@ -132,17 +132,15 @@ void InventoryPlanningSolver::solve(void* v)
   // Step 3: Solve buffer by buffer, ordered by level
   SolverMRP prop;
   prop.setConstraints(0);
-  prop.setLogLevel(8);
+  prop.setLogLevel(0);
   prop.setPropagate(false);
   for (short lvl = -1; lvl <= HasLevel::getNumberOfLevels(); ++lvl)
   {
-    logger << "solving for level " << lvl << endl;
     for (Buffer::iterator b = Buffer::begin(); b != Buffer::end(); ++b)
     {
       if (b->getLevel() != lvl)
+        // Not your turn yet...
         continue;
-
-      logger << "SOLVING FOR " << b->getName() << "  " << b->getLevel() << endl;
 
       // We know the complete demand on the buffer now.
       // We can calculate the ROQ and safety stock.
@@ -211,7 +209,6 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
     logger << "   Replenishing operation should be of type fixed_time" << endl; // TODO Make more generic
   else
     leadtime = static_cast<OperationFixedTime*>(oper)->getDuration();
-  logger << " ------- " << oper << " leadtime " << endl;
 
   // Report parameter settings
   if (loglevel > 1)
@@ -353,7 +350,7 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
     for (Buffer::flowplanlist::const_iterator i = b->getFlowPlans().begin();
       i != b->getFlowPlans().end(); ++i)
     {
-      if (i->getQuantity() < 0)
+      if (i->getEventType() == 1 && i->getQuantity() < 0)
       {
         if (i->getDate() >= last_bucket_start)
           lastdemand -= i->getQuantity();

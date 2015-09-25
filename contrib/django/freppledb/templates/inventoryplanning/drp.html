@@ -257,9 +257,6 @@ function plancell(cellvalue, options, rowObject)
   return cellstring;
 }
 
-/*
-{"doproposed":null,"endoh":1,"startoh":0,"dmddependent":null,"roqoverride":null,"roq":null,"dmdorderslocal":null,"doconfirmed":null,"poproposed":null,"bucket":"Jan 11","poconfirmed":null,"ss":null,"ssoverride":null,"supply":null,"dmdfcstlocal":null,"dmdtotal":null},
-*/
 
 function displayPlanGraph()
 {
@@ -386,6 +383,13 @@ function displayPlanGraph()
     });
 
   // Create D3 lines
+  var line = d3.svg.line()
+    .x(function(d) { return x(d.bucket) + x_width / 2; })
+    .y(function(d) { return y(d.startoh); });
+  svg.append("svg:path")
+    .attr('class', 'graphline')
+    .attr("stroke","#8BBA00")
+    .attr("d", line(result.plan));
   var line = d3.svg.line()
     .x(function(d) { return x(d.bucket) + x_width / 2; })
     .y(function(d) {

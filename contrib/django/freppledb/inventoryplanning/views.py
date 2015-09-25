@@ -76,7 +76,7 @@ class InventoryPlanningList(GridReport):
 class DRP(GridReport):
   '''
      Data assumptions:
-       - No overlapping calendar entries in the ROQ
+       - No overlapping calendar entries in the ROQ or SS calendars
   '''
   template = 'inventoryplanning/drp.html'
   title = _("Distribution planning")
@@ -90,7 +90,7 @@ class DRP(GridReport):
   maxBucketLevel = 3
 
   rows = (
-    GridFieldText('buffer', title=_('buffer'), key=True, formatter='buffer'),
+    GridFieldText('name', title=_('buffer'), field_name="name", key=True, formatter='buffer'),
     GridFieldText('item', title=_('item'), formatter='item'),
     GridFieldText('location', title=_('location'), formatter='location'),
     GridFieldNumber('leadtime', title=_('lead time'), extra="formatoptions:{defaultValue:''}"),
@@ -221,7 +221,7 @@ class DRP(GridReport):
     # Build the python result
     for row in cursor.fetchall():
       yield {
-        'buffer': row[0],
+        'name': row[0],
         'item': row[1],
         'location': row[2],
         'leadtime': row[3],
@@ -481,18 +481,36 @@ class DRPitemlocation(View):
         'forecastconsumedvalue': round(rec[16]),
         })
 
+    # Retrieve onhand at the start of the planning horizon
+    cursor.execute('''
+      select out_flowplan.onhand
+        from out_flowplan
+        inner join (
+          select max(id) as id
+          from out_flowplan
+          where flowdate < '%s'
+          and thebuffer = %%s
+          ) maxid
+        on maxid.id = out_flowplan.id
+        and out_flowplan.thebuffer = %%s
+      ''' % request.report_startdate,
+      (itemlocation, itemlocation)
+      )
+    startoh = cursor.fetchone()[0]
+    endoh = startoh
+
     # Retrieve inventory plan
     yield '],"plan":['
     first = True
     cursor.execute(self.sql_plan, (request.report_bucket, request.report_startdate, request.report_enddate, item_name, location_name))
-    endoh = 0
-    startoh = 0
     for rec in cursor.fetchall():
       if not first:
         yield ","
       else:
         first = False
-      endoh += 1
+      dmdtotal = round(rec[8]) if rec[8] is not None else None
+      supply = round(rec[13]) if rec[13] is not None else None
+      endoh += supply - dmdtotal
       yield json.dumps({
         'bucket': rec[0],
         'roq': round(rec[1]) if rec[1] is not None else None,
@@ -503,15 +521,15 @@ class DRPitemlocation(View):
         'dmdfcstlocal': round(rec[5]) if rec[5] is not None else None,
         'dmdorderslocal': round(rec[6]) if rec[6] is not None else None,
         'dmddependent': round(rec[7]) if rec[7] is not None else None,
-        'dmdtotal': round(rec[8]) if rec[8] is not None else None,
+        'dmdtotal': dmdtotal,
         'doconfirmed': round(rec[9]) if rec[9] is not None else None,
         'poconfirmed': round(rec[10]) if rec[10] is not None else None,
         'poproposed': round(rec[11]) if rec[11] is not None else None,
         'doproposed': round(rec[12]) if rec[12] is not None else None,
-        'supply': round(rec[13]) if rec[13] is not None else None,
+        'supply': supply,
         'endoh': round(endoh)
         })
-      startoh += endoh
+      startoh = endoh
 
     # Retrieve transactions
     yield '],"transactions":['
