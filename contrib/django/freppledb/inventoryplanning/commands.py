@@ -19,6 +19,14 @@ import frepple
 
 def exportResults(cursor, database):
 
+  def buffers():
+    for b in frepple.buffers():
+      try:
+        if b.ip_flag == True:
+          yield b
+      except:
+        pass
+
   def calendars():
     cursor.execute("select name from calendar where source = 'Inventory planning'")
     cals = set([ i[0] for i in cursor.fetchall() ])
@@ -61,8 +69,7 @@ def exportResults(cursor, database):
       ''',
       [
         (b.name, b.ip_leadtime, b.ip_eoq, b.ip_eoq * b.item.price, b.ip_service_level, b.ip_ss, b.ip_demand)
-        for b in frepple.buffers()
-        if hasattr(b, 'ip_flag')
+        for b in buffers()
       ])
 
     cursor.execute('''
@@ -138,7 +145,7 @@ def createInventoryPlan(database=DEFAULT_DB_ALIAS):
       inner join forecastplan
       on forecastplan.forecast_id = forecast.name
       group by item_id, location_id, startdate
-      --where startdate > '%s' and startdate < '%s'
+      --where startdate > '%s' and startdate < '%s' TODO
       ) dmd
       on dmd.item_id = buffer.item_id
       and dmd.location_id = buffer.location_id
@@ -146,7 +153,6 @@ def createInventoryPlan(database=DEFAULT_DB_ALIAS):
      ) dep_stddev
      where inventoryplanning.buffer_id = dep_stddev.buffer_id
      ''')
-  cursor.execute('''delete from inventoryplanning where demand_deviation = 0''') # TODO TEMP HACK
 
   # Step 3.
   # Load inventory planning parameters
@@ -207,11 +213,14 @@ def createInventoryPlan(database=DEFAULT_DB_ALIAS):
     loglevel=int(Parameter.getValue('inventoryplanning.loglevel', database, 0)),
     ).solve()
 
-  # Erase the plan
-  #frepple.erase(False)
-
   # Step 5.
   # Export all results into the database
   exportResults(cursor, database)
 
   print("Finished inventory planning")
+
+
+if __name__ == "__main__":
+  print("CONFIGURATION ERROR:")
+  print("  Don't use inventoryplanning/commands.py as the main planning script")  # TODO
+  print("  Change the order of the INSTALLED_APPS in your djangosettings.py configuration file")

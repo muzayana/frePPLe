@@ -8,6 +8,7 @@
   - view history
   - transaction actions
   - toggle value & units
+  - sorting and filtering in the top grid not working
   - different views for the top section
   - tree in top grid
 {% endcomment %}
@@ -299,21 +300,27 @@ function displayPlanGraph()
   {
     var tmp = result.plan[i];
     if (tmp.startoh > max_y)
-       max_y = tmp.orderstotal;
+       max_y = tmp.startoh;
     if (tmp.dmdtotal > max_y)
        max_y = tmp.dmdtotal;
     if (tmp.supply > max_y)
        max_y = tmp.supply;
-    if (tmp.endoh > max_y)
-       max_y = tmp.endoh;
+    if (typeof tmp.roqoverride !== 'undefined')
+    {
+      if (tmp.roqoverride > max_y)
+        max_y = tmp.roqoverride;
+    }
+    else if (tmp.roq > max_y)
+      max_y = tmp.roq;
+    if (typeof tmp.ssoverride !== 'undefined')
+    {
+      if (tmp.ssoverride > max_y)
+        max_y = tmp.ssoverride;
+    }
+    else if (tmp.ss > max_y)
+      max_y = tmp.ss;
     if (tmp.startoh < min_y)
        min_y = tmp.startoh;
-    if (tmp.dmdtotal < min_y)
-       min_y = tmp.dmdtotal;
-    if (tmp.supply < min_y)
-       min_y = tmp.supply;
-    if (tmp.endoh < min_y)
-       min_y = tmp.endoh;
   }
 
   // Update the scale of the Y-axis by looking for the max value
@@ -357,9 +364,18 @@ function displayPlanGraph()
     .each(function(d) {
       var bucket = d3.select(this);
       var top;
-      if (d['ordersopen'] > 0)
+      if (d['dmdtotal'] > 0)
       {
-        my_y = y(d['ordersopen']);
+        my_y = y(d['dmdtotal']);
+        bucket.append("rect")
+          .attr("width", x_width/2)
+          .attr("height", y_zero - my_y)
+          .attr("y", my_y)
+          .style("fill","#F6BD0F");
+      }
+      if (d['supply'] > 0)
+      {
+        my_y = y(d['supply']);
         bucket.append("rect")
           .attr("width", x_width/2)
           .attr("height", y_zero - my_y)
@@ -367,40 +383,33 @@ function displayPlanGraph()
           .attr("y", my_y)
           .style("fill","#2B95EC");
       }
-      if (d['ordersplanned'] > 0)
-      {
-        top = y(d['ordersplanned']);
-        bucket.append("rect")
-          .attr("width", x_width/2)
-          .attr("y", top)
-          .attr("height", y_zero - top)
-          .style("fill","#7B5E08");
-      }
-      if (d['forecastplanned'] > 0)
-      {
-        bucket.append("rect")
-          .attr("width", x_width/2)
-          .attr("y", y(d['forecastplanned'] + d['ordersplanned']))
-          .attr("height", y(d['ordersplanned']) - y(d['forecastplanned'] + d['ordersplanned']))
-          .style("fill","#F6BD0F");
-      }
     });
 
   // Create D3 lines
   var line = d3.svg.line()
     .x(function(d) { return x(d.bucket) + x_width / 2; })
-    .y(function(d) { return y(d.orderstotal); });
+    .y(function(d) {
+         if (typeof d.roqoverride !== 'undefined')
+           return y(d.roqoverride);
+         else
+           return y(d.roq);
+         });
   svg.append("svg:path")
     .attr('class', 'graphline')
-    .attr("stroke","#8BBA00")
-    .attr("d", line(result.forecast));
+    .attr("stroke","#f47a00")
+    .attr("d", line(result.plan));
   var line = d3.svg.line()
     .x(function(d) { return x(d.bucket) + x_width / 2; })
-    .y(function(d) { return d['future']==1 ? y(d['forecasttotal']) : y_zero; });
+    .y(function(d) {
+         if (typeof d.ssoverride !== 'undefined')
+           return y(d.ssoverride);
+         else
+           return y(d.ss);
+         });
   svg.append("svg:path")
     .attr('class', 'graphline')
     .attr("stroke","#FF0000")
-    .attr("d", line(result.forecast));
+    .attr("d", line(result.plan));
 
   // Display Y-Axis
   var yAxis = d3.svg.axis()
@@ -430,7 +439,8 @@ function displayPlanGraph()
     ["{{_('start inventory')|capfirst}}", "#8BBA00"],
     ["{{_('produced')|capfirst}}", "#2B95EC"],
     ["{{_('consumed')|capfirst}}", "#F6BD0F"],
-    ["{{_('end inventory')|capfirst}}", "#7B5E08"]
+    ["{{_('reorder quantity')|capfirst}}", "#f47a00"],
+    ["{{_('safety stock')|capfirst}}", "#FF0000"]
     ];
   var visible = 0;
   for (var i in codes)
@@ -808,13 +818,12 @@ function selectTab(value)
     // Hide previous tab
     $("#" + showtab + "tab").removeClass("frepple-tabs-active");
     $("#" + showtab + "data").css("display", "none");
-    $('#actions').css("display", "none");
-
 
     // Show new tab
     showtab = value;
     $("#" + showtab + "tab").addClass("frepple-tabs-active");
-
+    $("#" + showtab + "data").css("display", "block");
+    
     // Save newly selected table as a preference
     grid.saveColumnConfiguration();
   }
@@ -822,16 +831,13 @@ function selectTab(value)
   {
     // Show new tab
     showtab = value;
-
     $("#" + showtab + "tab").addClass("frepple-tabs-active");
     $("#" + showtab + "data").css("display", "block");
   }
-  if (showtab == "transactions") {
+  if (showtab == "transactions")
     $('#actions').css("display", "initial");
-  }
-  else {
+  else
     $('#actions').css("display", "none");
-  };
   return false;
 }
 

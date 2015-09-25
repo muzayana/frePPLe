@@ -8,6 +8,7 @@
 # or in the form of compiled binaries.
 #
 
+from datetime import datetime
 import json
 
 from django.conf import settings
@@ -28,7 +29,7 @@ from freppledb.common.report import GridFieldNumber, GridFieldBool, GridFieldDur
 
 from freppledb.inventoryplanning.models import InventoryPlanning
 from freppledb.input.models import Buffer, Item, Location
-from freppledb.common.models import Comment
+from freppledb.common.models import Comment, Parameter
 
 
 import logging
@@ -50,7 +51,7 @@ class InventoryPlanningList(GridReport):
   frozenColumns = 1
 
   rows = (
-    GridFieldText('buffer', title=_('buffer'), key=True, formatter='buffer'),
+    GridFieldText('buffer', title=_('buffer'), field_name="buffer__name", key=True, formatter='buffer'),
     GridFieldNumber('roq_min_qty', title=_('ROQ minimum quantity'), extra="formatoptions:{defaultValue:''}"),
     #GridFieldNumber('roq_max_qty', title=_('ROQ maximum quantity'), extra="formatoptions:{defaultValue:''}"),
     #GridFieldNumber('roq_multiple_qty', title=_('ROQ multiple quantity'), extra="formatoptions:{defaultValue:''}"),
@@ -73,6 +74,10 @@ class InventoryPlanningList(GridReport):
 
 
 class DRP(GridReport):
+  '''
+     Data assumptions:
+       - No overlapping calendar entries in the ROQ
+  '''
   template = 'inventoryplanning/drp.html'
   title = _("Distribution planning")
   basequeryset = Buffer.objects.all().exclude(inventoryplanning__isnull=True)
@@ -88,7 +93,7 @@ class DRP(GridReport):
     GridFieldText('buffer', title=_('buffer'), key=True, formatter='buffer'),
     GridFieldText('item', title=_('item'), formatter='item'),
     GridFieldText('location', title=_('location'), formatter='location'),
-    GridFieldDuration('leadtime', title=_('lead time'), extra="formatoptions:{defaultValue:''}"),
+    GridFieldNumber('leadtime', title=_('lead time'), extra="formatoptions:{defaultValue:''}"),
     GridFieldNumber('servicelevel', title=_('service level'), extra="formatoptions:{defaultValue:''}"),
     GridFieldNumber('localforecast', title=_('local forecast'), extra="formatoptions:{defaultValue:''}"),
     GridFieldNumber('localorders', title=_('local orders'), extra="formatoptions:{defaultValue:''}"),
@@ -122,12 +127,22 @@ class DRP(GridReport):
     Item.rebuildHierarchy(database=basequery.db)
     Location.rebuildHierarchy(database=basequery.db)
 
+    # Get the current date
+    try:
+      current_date = datetime.strptime(
+        Parameter.objects.using(request.database).get(name="currentdate").value,
+        "%Y-%m-%d %H:%M:%S"
+        )
+    except:
+      current_date = datetime.now()
+
     # Execute the query
     # TODO don't display buffers, but items and locations, and aggregate stuff
     # TODO add location and item attributes
     query = '''
       select buf.name, buf.item_id, buf.location_id,
-        out_inventoryplanning.leadtime, out_inventoryplanning.servicelevel,
+        extract(epoch from out_inventoryplanning.leadtime)/86400 lead_time,
+        out_inventoryplanning.servicelevel,
         out_inventoryplanning.totaldemand, out_inventoryplanning.reorderquantity,
         out_inventoryplanning.safetystock, buf.onhand,
         coalesce(sum(so.quantity), 0) localorders,
@@ -142,20 +157,20 @@ class DRP(GridReport):
       -- join roq calendar
       left outer join calendarbucket roq_cal
         on roq_cal.calendar_id = 'ROQ for ' || buf.name
-        and now() between roq_cal.startdate and roq_cal.enddate
-        and roq_cal.id = (
-           select id from calendarbucket
+        and roq_cal.startdate <= '%s' and roq_cal.enddate > '%s'
+        and roq_cal.priority = (
+           select min(priority) from calendarbucket
            where calendar_id = 'ROQ for ' || buf.name
-           and now() between roq_cal.startdate and roq_cal.enddate
+           and roq_cal.startdate <= '%s' and roq_cal.enddate > '%s'
            )
       -- join ss calendar
       left outer join calendarbucket ss_cal
         on ss_cal.calendar_id = 'SS for ' || buf.name
-        and now() between ss_cal.startdate and ss_cal.enddate
-        and ss_cal.id = (
-           select id from calendarbucket
+        and ss_cal.startdate <= '%s' and ss_cal.enddate > '%s'
+        and ss_cal.priority = (
+           select min(priority) from calendarbucket
            where calendar_id = 'SS for ' || buf.name
-           and now() between ss_cal.startdate and ss_cal.enddate
+           and ss_cal.startdate <= '%s' and ss_cal.enddate > '%s'
            )
       -- join item and child items
       inner join item
@@ -176,19 +191,19 @@ class DRP(GridReport):
       left outer join demand so
         on so.item_id = item2.name
         and so.location_id = location2.name
-        and so.due < now() + out_inventoryplanning.leadtime + interval '7 day'
+        and so.due < timestamp '%s' + out_inventoryplanning.leadtime
         and so.status = 'confirmed'
       -- join purchase orders
       left outer join purchase_order po
         on po.item_id = item2.name
         and po.location_id = location2.name
-        and po.enddate < now() + out_inventoryplanning.leadtime + interval '7 day'
+        and po.enddate < timestamp '%s' + out_inventoryplanning.leadtime
         and po.status in ('confirmed','proposed')
       -- join distribution orders
       left outer join distribution_order trf
         on trf.item_id = item2.name
         and (trf.destination_id = location2.name or trf.origin_id = location2.name)
-        and trf.enddate < now() + out_inventoryplanning.leadtime + interval '7 day'
+        and trf.enddate < timestamp '%s' + out_inventoryplanning.leadtime
         and trf.status in ('confirmed','proposed')
       -- grouping and ordering
       group by buf.name, buf.item_id, buf.location_id,
@@ -197,8 +212,10 @@ class DRP(GridReport):
         out_inventoryplanning.safetystock, buf.onhand
       order by %s
       ''' % (
-        basesql, sortsql
-      )
+        basesql, current_date, current_date, current_date, current_date,
+        current_date, current_date, current_date, current_date, current_date,
+        current_date, current_date, sortsql
+        )
     cursor.execute(query, baseparams)
 
     # Build the python result
@@ -313,15 +330,23 @@ class DRPitemlocation(View):
     left outer join calendarbucket ss_calc
       on  ss_calc.calendar_id = 'SS for ' || buffer.name
       and ss_calc.source = 'Inventory planning'
+      and d.startdate >= ss_calc.startdate
+      and d.startdate < ss_calc.enddate
     left outer join calendarbucket ss_override
       on  ss_override.calendar_id = 'SS for ' || buffer.name
-      and ss_override.source <> 'Inventory planning'
+      and (ss_override.source <> 'Inventory planning' or ss_override.source is null)
+      and d.startdate >= ss_override.startdate
+      and d.startdate < ss_override.enddate
     left outer join calendarbucket roq_calc
       on roq_calc.calendar_id = 'ROQ for ' || buffer.name
       and roq_calc.source = 'Inventory planning'
+      and d.startdate >= roq_calc.startdate
+      and d.startdate < roq_calc.enddate
     left outer join calendarbucket roq_override
       on roq_override.calendar_id = 'ROQ for ' || buffer.name
-      and roq_override.source <> 'Inventory planning'
+      and (roq_override.source <> 'Inventory planning' or roq_override.source is null)
+      and d.startdate >= roq_override.startdate
+      and d.startdate < roq_override.enddate
     -- Consumed and produced quantities
     left join out_flowplan
     on buffer.name = out_flowplan.thebuffer
@@ -420,11 +445,11 @@ class DRPitemlocation(View):
         "eoq": 49,  # TODO comes from output table
         "service_level_qty": 49, # TODO comes from output table
         "forecastmethod": "automatic", # TODO retrieve from forecastplan
-        "forecasterror": "12 %"          
+        "forecasterror": "12 %"
         })
       ])
 
-    
+
     cursor = connections[request.database].cursor()
 
     # Retrieve forecast data
@@ -475,15 +500,15 @@ class DRPitemlocation(View):
         'ss': round(rec[3]) if rec[3] is not None else None,
         'ssoverride': round(rec[4]) if rec[4] is not None else None,
         'startoh': round(startoh),
-        'dmdfcstlocal': round(rec[6]) if rec[4] is not None else None,
-        'dmdorderslocal': round(rec[7]) if rec[4] is not None else None,
-        'dmddependent': round(rec[8]) if rec[4] is not None else None,
-        'dmdtotal': round(rec[9]) if rec[4] is not None else None,
-        'doconfirmed': round(rec[10]) if rec[4] is not None else None,
-        'poconfirmed': round(rec[11]) if rec[4] is not None else None,
-        'poproposed': round(rec[12]) if rec[4] is not None else None,
-        'doproposed': round(rec[13]) if rec[4] is not None else None,
-        'supply': round(rec[14]) if rec[4] is not None else None,
+        'dmdfcstlocal': round(rec[5]) if rec[5] is not None else None,
+        'dmdorderslocal': round(rec[6]) if rec[6] is not None else None,
+        'dmddependent': round(rec[7]) if rec[7] is not None else None,
+        'dmdtotal': round(rec[8]) if rec[8] is not None else None,
+        'doconfirmed': round(rec[9]) if rec[9] is not None else None,
+        'poconfirmed': round(rec[10]) if rec[10] is not None else None,
+        'poproposed': round(rec[11]) if rec[11] is not None else None,
+        'doproposed': round(rec[12]) if rec[12] is not None else None,
+        'supply': round(rec[13]) if rec[13] is not None else None,
         'endoh': round(endoh)
         })
       startoh += endoh

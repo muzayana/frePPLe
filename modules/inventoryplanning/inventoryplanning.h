@@ -105,14 +105,14 @@ class InventoryPlanningSolver : public Solver
 
     double getHoldingCost() const
     {
-      return fixed_order_cost;
+      return holding_cost;
     }
 
     void setHoldingCost(double d)
     {
       if (d <= 0)
         throw DataException("Holding cost must be greater than 0");
-      fixed_order_cost = d;
+      holding_cost = d;
     }
 
     static int initialize();

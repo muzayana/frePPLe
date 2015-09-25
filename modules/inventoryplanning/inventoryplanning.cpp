@@ -13,6 +13,8 @@
 
 #include "inventoryplanning.h"
 
+#define SOURCE_IP "Inventory planning"
+
 namespace module_inventoryplanning
 {
 
@@ -130,14 +132,17 @@ void InventoryPlanningSolver::solve(void* v)
   // Step 3: Solve buffer by buffer, ordered by level
   SolverMRP prop;
   prop.setConstraints(0);
-  prop.setLogLevel(0);
+  prop.setLogLevel(8);
   prop.setPropagate(false);
-  for (int lvl = 0; lvl <= HasLevel::getNumberOfLevels(); ++lvl)
+  for (short lvl = -1; lvl <= HasLevel::getNumberOfLevels(); ++lvl)
   {
+    logger << "solving for level " << lvl << endl;
     for (Buffer::iterator b = Buffer::begin(); b != Buffer::end(); ++b)
     {
       if (b->getLevel() != lvl)
         continue;
+
+      logger << "SOLVING FOR " << b->getName() << "  " << b->getLevel() << endl;
 
       // We know the complete demand on the buffer now.
       // We can calculate the ROQ and safety stock.
@@ -146,10 +151,14 @@ void InventoryPlanningSolver::solve(void* v)
 
       // Given the demand, ROQ and safety stock, we resolve the shortage
       // with an unconstrained propagation to the next level.
-      prop.getCommands().state->curDemand = NULL;
-      prop.getCommands().state->a_qty = 0;
-      prop.getCommands().state->q_qty = 100000;
+      prop.getCommands().state->curBuffer = NULL;
+      prop.getCommands().state->q_qty = -1.0;
       prop.getCommands().state->q_date = Date::infinitePast;
+      prop.getCommands().state->a_cost = 0.0;
+      prop.getCommands().state->a_penalty = 0.0;
+      prop.getCommands().state->curDemand = NULL;
+      prop.getCommands().state->curOwnerOpplan = NULL;
+      prop.getCommands().state->a_qty = 0;
       b->solve(prop, &(prop.getCommands()));
       prop.getCommands().CommandManager::commit();
     }
@@ -196,10 +205,13 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
       logger << "   No replenishing operation defined" << endl;
     return;
   }
-  else if (oper->getType() != *OperationFixedTime::metadata)
+  else if (oper->getType() != *OperationFixedTime::metadata
+    && oper->getType() != *OperationItemDistribution::metadata
+    && oper->getType() != *OperationItemSupplier::metadata)
     logger << "   Replenishing operation should be of type fixed_time" << endl; // TODO Make more generic
   else
     leadtime = static_cast<OperationFixedTime*>(oper)->getDuration();
+  logger << " ------- " << oper << " leadtime " << endl;
 
   // Report parameter settings
   if (loglevel > 1)
@@ -236,43 +248,65 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
     ss_min_qty = ss_multiple;
 
   // Prepare the calendars to retrieve the results
-  Calendar *roq_calendar = Calendar::find("ROQ for " + b->getName()); //oper->getSizeMinimumCalendar();
-  Calendar *ss_calendar = Calendar::find("SS for " + b->getName()); //b->getMinimumCalendar();
+  Calendar *roq_calendar = oper->getSizeMinimumCalendar();
+  if (!roq_calendar)
+    // Automatically association based on the calendar name.
+    roq_calendar = Calendar::find("ROQ for " + b->getName());
   if (roq_calendar)
   {
     // Erase existing calendar buckets
-    while (true)
+    // We don't delete immediately, but wait until the iterator has moved on
+    CalendarBucket *to_delete = NULL;
+    CalendarBucket::iterator bcktiter = roq_calendar->getBuckets();
+    while (CalendarBucket *bckt = bcktiter.next())
     {
-      CalendarBucket::iterator i = roq_calendar->getBuckets();
-      if (i == roq_calendar->getBuckets().end())
-        break;
-      roq_calendar->removeBucket(&*i);
+      if (to_delete)
+      {
+        roq_calendar->removeBucket(to_delete);
+        to_delete = NULL;
+      }
+      if (bckt->getSource() == SOURCE_IP)
+        to_delete = bckt;
     }
+    if (to_delete)
+      roq_calendar->removeBucket(to_delete);
   }
   else
   {
     // Create a brand new calendar
     roq_calendar = new CalendarDefault();
     roq_calendar->setName("ROQ for " + b->getName());
-    roq_calendar->setSource("Inventory planning");
+    roq_calendar->setSource(SOURCE_IP);
   }
+  Calendar *ss_calendar = b->getMinimumCalendar();
+  if (!ss_calendar)
+    // Automatically association based on the calendar name.
+    ss_calendar = Calendar::find("SS for " + b->getName());
   if (ss_calendar)
   {
     // Erase existing calendar buckets
-    while (true)
+    // We don't delete immediately, but wait until the iterator has moved on
+    CalendarBucket *to_delete = NULL;
+    CalendarBucket::iterator bcktiter = ss_calendar->getBuckets();
+    while (CalendarBucket *bckt = bcktiter.next())
     {
-      CalendarBucket::iterator i = ss_calendar->getBuckets();
-      if (i == ss_calendar->getBuckets().end())
-        break;
-      ss_calendar->removeBucket(&*i);
+      if (to_delete)
+      {
+        ss_calendar->removeBucket(to_delete);
+        to_delete = NULL;
+      }
+      if (bckt->getSource() == SOURCE_IP)
+        to_delete = bckt;
     }
+    if (to_delete)
+      ss_calendar->removeBucket(to_delete);
   }
   else
   {
     // Create a brand new calendar
     ss_calendar = new CalendarDefault();
     ss_calendar->setName("SS for " + b->getName());
-    ss_calendar->setSource("Inventory planning");
+    ss_calendar->setSource(SOURCE_IP);
   }
   CalendarBucket *roq_calendar_bucket = NULL;
   CalendarBucket *ss_calendar_bucket = NULL;
@@ -476,7 +510,7 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
       ss_calendar_bucket->setStart(bucketstart);
       ss_calendar_bucket->setCalendar(ss_calendar);
       ss_calendar_bucket->setValue(ss);
-      ss_calendar_bucket->setSource("Inventory planning");
+      ss_calendar_bucket->setSource(SOURCE_IP);
       ss_calendar_bucket->setPriority(999);
     }
     if (!roq_calendar_bucket || fabs(roq_calendar_bucket->getValue() - roq) > ROUNDING_ERROR)
@@ -487,13 +521,21 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
       roq_calendar_bucket->setStart(bucketstart);
       roq_calendar_bucket->setCalendar(roq_calendar);
       roq_calendar_bucket->setValue(roq);
-      roq_calendar_bucket->setSource("Inventory planning");
+      roq_calendar_bucket->setSource(SOURCE_IP);
       roq_calendar_bucket->setPriority(999);
     }
 
     // Prepare for the next bucket
     bucketstart = bucket.getDate();
   }
+
+  // Associate the new or updated created calendars
+  if (oper->getSizeMinimumCalendar())
+    oper->setSizeMinimumCalendar(NULL);
+  oper->setSizeMinimumCalendar(roq_calendar);
+  if (b->getMinimumCalendar())
+    const_cast<Buffer*>(b)->setMinimumCalendar(NULL);
+  const_cast<Buffer*>(b)->setMinimumCalendar(ss_calendar);
 }
 
 
