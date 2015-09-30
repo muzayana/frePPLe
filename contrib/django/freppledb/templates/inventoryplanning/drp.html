@@ -46,25 +46,25 @@ if ($('#save').hasClass("save_undo_button_active")) {
 } 
 
 
-  if (!!result && id == result.name)
-    // Selection has not changed
-    return;
+if (!!result && id == result.name)
+  // Selection has not changed
+  return;
 
-  $.ajax({
-    url: '{{request.prefix}}/inventoryplanning/drpitemlocation/' + admin_escape(id) + '/',
-    type: 'GET',
-    success: displayResult,
-    error: function (result, stat, errorThrown) {
-      $('#popup').html(result.responseText + "  " + stat + errorThrown).dialog({
-        title: gettext("Error retrieving data"),
-        autoOpen: true,
-        resizable: false,
-        width: 'auto',
-        height: 'auto'
-      });
-      }
+$.ajax({
+  url: '{{request.prefix}}/inventoryplanning/drpitemlocation/' + admin_escape(id) + '/',
+  type: 'GET',
+  success: displayResult,
+  error: function (result, stat, errorThrown) {
+    $('#popup').html(result.responseText + "  " + stat + errorThrown).dialog({
+      title: gettext("Error retrieving data"),
+      autoOpen: true,
+      resizable: false,
+      width: 'auto',
+      height: 'auto'
     });
-    
+    }
+  });
+  
   $('#undo').addClass("save_undo_button_inactive").removeClass("save_undo_button_active");
   $('#save').addClass("save_undo_button_inactive").removeClass("save_undo_button_active");
   $("#actions")
@@ -79,18 +79,18 @@ function extraPreference()
   return {
      "height": $("#gbox_grid").height() - 48,
      "showtab": showtab
-     };
+  };
 }
 
-  function select()
-  {
-    //$('#filter').addClass("ui-state-disabled");
-    //$.jgrid.hideModal("#searchmodfbox_grid");
-    $('#save').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
-    $('#undo').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
-    $(window).off('beforeunload', warnUnsavedChanges);
-    $(window).on('beforeunload', warnUnsavedChanges);
-  }
+function select()
+{
+  //$('#filter').addClass("ui-state-disabled");
+  //$.jgrid.hideModal("#searchmodfbox_grid");
+  $('#save').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
+  $('#undo').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
+  $(window).off('beforeunload', warnUnsavedChanges);
+  $(window).on('beforeunload', warnUnsavedChanges);
+}
 
 function warnUnsavedChanges() {
   return gettext("There are unsaved changes on this page.");
@@ -128,12 +128,7 @@ function undo(){
     '<s' + 'cript type="text/javascript" src="/static/js/frepple.js"></s' + 'cript></head><body>'
     +  $("#detail").html() +"</body>";
   */
-  console.log(result);
-  displayResult(result);
-  
-  //Warn about unsaved changes
-  
-  
+
   // Reset the buttons
   $('#undo').addClass("save_undo_button_inactive").removeClass("save_undo_button_active");
   $('#save').addClass("save_undo_button_inactive").removeClass("save_undo_button_active");
@@ -210,8 +205,8 @@ function setStatus(newstatus)
 function setForecastMethod(newmethod)
 {
 //  var sel = jQuery("#transactiongrid").jqGrid('getGridParam','selarrrow');
-
-    jQuery("#forecastmethod").css("background","red");
+console.log(newmethod);
+//    jQuery("#forecastmethod").css("background-color","red");
 
   $('#save').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
   $('#undo').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
@@ -1009,7 +1004,7 @@ $(function() {
 <div id="forecastgraph" style="clear: both; height: 200px; padding: 10px; "></div>
 <table id="forecastgrid"></table><br/>
 <h2>{% trans "parameters"|capfirst %}</h2>
-<table><tr><td>{% trans "Forecast method"|capfirst %}</td><td><select id="forecastmethod">
+<table><tr><td>{% trans "Forecast method"|capfirst %}</td><td><select id="forecastmethod" onchange="setForecastMethod($(this).val());">
 <option value="automatic">Automatic</option>
 <option value="constant">Constant</option>
 <option value="trend">Trend</option>
