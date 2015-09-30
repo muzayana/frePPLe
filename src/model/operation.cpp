@@ -572,7 +572,7 @@ DECLARE_EXPORT OperationPlanState OperationFixedTime::setOperationPlanParameters
     if (getSizeMinimumCalendar())
     {
       // Minimum size varies over time
-      double curmin = getSizeMinimumCalendar()->getValue(x.getStart());
+      double curmin = getSizeMinimumCalendar()->getValue(x.getEnd());
       if (q < curmin)
         q = curmin;
     }
@@ -583,7 +583,7 @@ DECLARE_EXPORT OperationPlanState OperationFixedTime::setOperationPlanParameters
   if (q > getSizeMaximum())
     q = getSizeMaximum();
   if (fabs(q - opplan->getQuantity()) > ROUNDING_ERROR)
-    q = opplan->setQuantity(q, false, false, execute, x.getStart());
+    q = opplan->setQuantity(q, false, false, execute, x.getEnd());
 
   if (!execute)
     // Simulation only
@@ -701,7 +701,7 @@ OperationTimePer::setOperationPlanParameters
       // in a constrained plan can be not optimal or incorrect.
       Duration tmp1;
       DateRange tmp2 = calculateOperationTime(s, e, &tmp1);
-      double curmin = getSizeMinimumCalendar()->getValue(tmp2.getStart());
+      double curmin = getSizeMinimumCalendar()->getValue(tmp2.getEnd());
       if (q < curmin)
         q = curmin;
     }
@@ -1514,7 +1514,7 @@ DECLARE_EXPORT void OperationRouting::addSubOperationPlan
 
 
 DECLARE_EXPORT double Operation::setOperationPlanQuantity
-  (OperationPlan* oplan, double f, bool roundDown, bool upd, bool execute, Date start) const
+  (OperationPlan* oplan, double f, bool roundDown, bool upd, bool execute, Date end) const
 {
   assert(oplan);
 
@@ -1538,7 +1538,7 @@ DECLARE_EXPORT double Operation::setOperationPlanQuantity
   // sub-operations is respected.
   if (oplan->owner && oplan->owner->getOperation()->getType() != *OperationAlternate::metadata
     && oplan->owner->getOperation()->getType() != *OperationSplit::metadata)
-    return oplan->owner->setQuantity(f, roundDown, upd, execute, start);
+    return oplan->owner->setQuantity(f, roundDown, upd, execute, end);
 
   // Compute the correct size for the operationplan
   if (oplan->getOperation()->getType() == *OperationSplit::metadata)
@@ -1558,7 +1558,7 @@ DECLARE_EXPORT double Operation::setOperationPlanQuantity
     double curmin;
     if (getSizeMinimumCalendar())
       // Minimum varies over time
-      curmin = getSizeMinimumCalendar()->getValue(start ? start : oplan->getDates().getStart());
+      curmin = getSizeMinimumCalendar()->getValue(end ? end : oplan->getDates().getEnd());
     else
       // Minimum is constant
       curmin = getSizeMinimum();
@@ -1645,11 +1645,11 @@ DECLARE_EXPORT double Operation::setOperationPlanQuantity
 
 
 DECLARE_EXPORT double OperationRouting::setOperationPlanQuantity
-  (OperationPlan* oplan, double f, bool roundDown, bool upd, bool execute, Date start) const
+  (OperationPlan* oplan, double f, bool roundDown, bool upd, bool execute, Date end) const
 {
   assert(oplan);
   // Call the default logic, implemented on the Operation class
-  double newqty = Operation::setOperationPlanQuantity(oplan, f, roundDown, false, execute, start);
+  double newqty = Operation::setOperationPlanQuantity(oplan, f, roundDown, false, execute, end);
   if (!execute)
     return newqty;
 
