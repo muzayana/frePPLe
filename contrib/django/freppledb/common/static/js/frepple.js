@@ -427,8 +427,6 @@ var grid = {
    setStatus : function(newstatus)
    {
     var sel = jQuery("#grid").jqGrid('getGridParam','selarrrow');
-    console.log(sel);
-    console.log(sel.length);
     for ( i in sel ) {
       jQuery("#grid").jqGrid("setCell", sel[i], "status", newstatus, "dirty-cell");
       jQuery("#grid").jqGrid("setRowData", sel[i], false, "edited");
