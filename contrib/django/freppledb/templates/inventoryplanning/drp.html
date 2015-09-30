@@ -33,6 +33,19 @@ var timebuckets = [ {% for f in request.report_bucketlist %}{% if not forloop.fi
 
 function selectRow(id)
 {
+
+if ($('#save').hasClass("save_undo_button_active")) {
+  $('#popup').html(result.responseText)
+  .dialog({
+    title: gettext("Error saving data"),
+    autoOpen: true,
+    resizable: false,
+    width: 'auto',
+    height: 'auto'
+  }); return;
+} 
+
+
   if (!!result && id == result.name)
     // Selection has not changed
     return;
@@ -51,6 +64,13 @@ function selectRow(id)
       });
       }
     });
+    
+  $('#undo').addClass("save_undo_button_inactive").removeClass("save_undo_button_active");
+  $('#save').addClass("save_undo_button_inactive").removeClass("save_undo_button_active");
+  $("#actions")
+  .addClass("ui-selectmenu-disabled ui-state-disabled change_status_selectmenu_inactive")
+  .removeClass("change_status_selectmenu_active ui-state-enabled ui-selectmenu-enabled")
+  .prop('disabled', 'disabled');
 }
 
 function extraPreference()
@@ -62,61 +82,26 @@ function extraPreference()
      };
 }
 
-function save(event)
-{
-  event.preventDefault();
-  if (result == null)
-    return;
+  function select()
+  {
+    //$('#filter').addClass("ui-state-disabled");
+    //$.jgrid.hideModal("#searchmodfbox_grid");
+    $('#save').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
+    $('#undo').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
+    $(window).off('beforeunload', warnUnsavedChanges);
+    $(window).on('beforeunload', warnUnsavedChanges);
+  }
 
-  // Build the results to send back to the server
-  var data = {};
-  $("#commentitemlocation.red").each(function() {
-    data["comment"] = $("#newcomment").val();
-    data["commenttype"] = "itemlocation";
-    });
-  $("#commentlocation.red").each(function() {
-    data["comment"] = $("#newcomment").val();
-    data["commenttype"] = "location";
-    });
-  $("#commentitem.red").each(function() {
-    data["comment"] = $("#newcomment").val();
-    data["commenttype"] = "item";
-    });
-
-  // Send the results back to the server
-  $.ajax({
-    url: '{{request.prefix}}/inventoryplanning/drpitemlocation/' + admin_escape(result.name) + '/',
-    type: 'POST',
-    data: JSON.stringify(data),
-    contentType: 'application/json',
-    success: function() {
-      // TODO reset style of the save button
-      },
-    error: function (result, stat, errorThrown) {
-      $('#popup').html(result.responseText + "  " + stat + errorThrown).dialog({
-        title: gettext("Error posting data"),
-        autoOpen: true,
-        resizable: false,
-        width: 'auto',
-        height: 'auto'
-      });
-      }
-    });
-    
-  // Reset the buttons
-  $('#undo').addClass("save_undo_button_inactive").removeClass("save_undo_button_active");
-  $('#save').addClass("save_undo_button_inactive").removeClass("save_undo_button_active");
+function warnUnsavedChanges() {
+  return gettext("There are unsaved changes on this page.");
 }
 
-function onChange(event)
-{
+function onChange(event) {
   $(event.target).addClass('dirty-cell');
-  upload.select();
+  select();
 }
 
-
-function undo()
-{
+function undo(){
   /* Experimental code to detach the content in a new window
   var w = window.open();
   w.document.body.innerHTML =
@@ -143,15 +128,144 @@ function undo()
     '<s' + 'cript type="text/javascript" src="/static/js/frepple.js"></s' + 'cript></head><body>'
     +  $("#detail").html() +"</body>";
   */
+  console.log(result);
   displayResult(result);
+  
+  //Warn about unsaved changes
+  
   
   // Reset the buttons
   $('#undo').addClass("save_undo_button_inactive").removeClass("save_undo_button_active");
   $('#save').addClass("save_undo_button_inactive").removeClass("save_undo_button_active");
+  $("#actions").addClass("ui-selectmenu-disabled ui-state-disabled change_status_selectmenu_inactive")
+    .removeClass("change_status_selectmenu_active ui-state-enabled ui-selectmenu-enabled")
+    .prop('disabled', 'disabled');
+
+  $(window).off('beforeunload', warnUnsavedChanges);
+  //Fetch data
+  selectRow(result.name);
 }
 
-function forecastfields()
+function select() {
+  $('#filter').addClass("ui-state-disabled");
+  $.jgrid.hideModal("#searchmodfbox_grid");
+  $('#save').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
+  $('#undo').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
+  $(window).off('beforeunload', warnUnsavedChanges);
+  $(window).on('beforeunload', warnUnsavedChanges);
+}
+
+function markSelectedRow(id)
 {
+  var sel = jQuery("#transactiongrid").jqGrid('getGridParam','selarrrow').length;
+  if (sel > 0)
+  {
+    $("#actions").removeClass("ui-selectmenu-disabled ui-state-disabled change_status_selectmenu_inactive")
+    .addClass("change_status_selectmenu_active ui-state-enabled ui-selectmenu-enabled")
+    .prop('disabled', false);
+  }
+  else
+  {
+    $("#actions")
+    .addClass("ui-selectmenu-disabled ui-state-disabled change_status_selectmenu_inactive")
+    .removeClass("change_status_selectmenu_active ui-state-enabled ui-selectmenu-enabled")
+    .prop('disabled', 'disabled');
+  }
+}
+
+function markAllRows()
+{
+  if ($(this).is(':checked'))
+  {
+    $("#actions").removeClass("ui-selectmenu-disabled ui-state-disabled change_status_selectmenu_inactive")
+    .removeClass("ui-selectmenu-disabled ui-state-disabled change_status_selectmenu_inactive")
+    .addClass("change_status_selectmenu_active ui-state-enabled ui-selectmenu-enabled")
+    .prop('disabled', false);
+    $('.cbox').prop("checked", true);
+  }
+  else
+  {
+   $("#actions")
+    .addClass("ui-selectmenu-disabled ui-state-disabled change_status_selectmenu_inactive")
+    .removeClass("change_status_selectmenu_active ui-state-enabled ui-selectmenu-enabled")
+    .prop('disabled', 'disabled');
+    $('.cbox').prop("checked", false);
+  }
+}
+  
+function setStatus(newstatus)
+{
+  var sel = jQuery("#transactiongrid").jqGrid('getGridParam','selarrrow');
+  for ( i in sel ) {
+    jQuery("#transactiongrid").jqGrid("setCell", sel[i], "status", newstatus, "dirty-cell");
+    jQuery("#transactiongrid").jqGrid("setRowData", sel[i], false, "edited");
+  };
+
+  $("#actions").prop("selectedIndex",0);
+  $('#save').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
+  $('#undo').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
+  $(window).on('beforeunload', warnUnsavedChanges);
+}
+ 
+function setForecastMethod(newmethod)
+{
+//  var sel = jQuery("#transactiongrid").jqGrid('getGridParam','selarrrow');
+
+    jQuery("#forecastmethod").css("background","red");
+
+  $('#save').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
+  $('#undo').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
+  $(window).on('beforeunload', warnUnsavedChanges);
+}
+
+function save(event) {
+  event.preventDefault();
+  if (result == null)
+    return;
+
+  // Build the results to send back to the server
+  var data = {};
+  $("#commentitemlocation.red").each(function() {
+    data["comment"] = $("#newcomment").val();
+    data["commenttype"] = "itemlocation";
+    });
+  $("#commentlocation.red").each(function() {
+    data["comment"] = $("#newcomment").val();
+    data["commenttype"] = "location";
+    });
+  $("#commentitem.red").each(function() {
+    data["comment"] = $("#newcomment").val();
+    data["commenttype"] = "item";
+    });
+//    console.log(data.length);
+
+  // Send the results back to the server
+  $.ajax({
+    url: '{{request.prefix}}/inventoryplanning/drpitemlocation/' + admin_escape(result.name) + '/',
+    type: 'POST',
+    data: JSON.stringify(data),
+    contentType: 'application/json',
+    success: function() {
+      // TODO reset style of the save button
+      },
+    error: function (result, stat, errorThrown) {
+      $('#popup').html(result.responseText + "  " + stat + errorThrown).dialog({
+        title: gettext("Error posting data"),
+        autoOpen: true,
+        resizable: false,
+        width: 'auto',
+        height: 'auto'
+      });
+      }
+    });
+    
+  // Reset the buttons
+  $('#undo').addClass("save_undo_button_inactive").removeClass("save_undo_button_active");
+  $('#save').addClass("save_undo_button_inactive").removeClass("save_undo_button_active");
+  $(window).off('beforeunload', warnUnsavedChanges);
+}
+
+function forecastfields() {
   var col =
     '{{_("total orders - year-3")|capfirst}}' + "<br/>" +
     '<span class="editablepivotcol">{{_("orders adjustment - year-3")|capfirst}}' + "</span><br/>" +
@@ -167,8 +281,7 @@ function forecastfields()
   return col;
 }
 
-function planfields()
-{
+function planfields() {
   var col =
     '{{_('reorder quantity')|capfirst}}' + "<br/>" +
     '<span class="editablepivotcol">' + '{{_("reorder quantity override")|capfirst}}' + "</span><br/>" +
@@ -189,8 +302,7 @@ function planfields()
 }
 
 
-function forecastcell(cellvalue, options, rowObject)
-{
+function forecastcell(cellvalue, options, rowObject) {
   var cell = result.forecast[parseInt(options.pos) + parseInt(forecastcurrentbucket) - 1];
   var cell_min1 = result.forecast[parseInt(options.pos) + parseInt(forecastcurrentbucket) - 13];
   var cell_min2 = result.forecast[parseInt(options.pos) + parseInt(forecastcurrentbucket) - 25];
@@ -199,32 +311,29 @@ function forecastcell(cellvalue, options, rowObject)
   var cellstring = "";
   if (!cell_min3)
     cellstring += "<br/><br/>";
-  else
-  {
+  else {
     cellstring += cell_min3.orderstotal + "<br/>";
     cellstring += '<input type="text" class="smallpadding adjhistory" value="' + ((cell_min3.ordersadjustment === null) ? '' : Math.round(cell_min3.ordersadjustment)) + '" size="5" onchange="onChange(event)" onclick="$(this).select();"/><br/>';
   }
   if (!cell_min2)
     cellstring += "<br/><br/>";
-  else
-  {
+  else {
     cellstring += cell_min2.orderstotal + "<br/>";
     cellstring += '<input type="text" class="smallpadding adjhistory" value="' + ((cell_min2.ordersadjustment === null) ? '' : Math.round(cell_min2.ordersadjustment)) + '" size="5" onchange="onChange(event)" onclick="$(this).select();"/><br/>';
   }
   if (!cell_min1)
     cellstring += "<br/><br/>";
-  else
-  {
+  else {
     cellstring += cell_min1.orderstotal + "<br/>";
-    cellstring += '<input type="text" class="smallpadding adjhistory" value="' + ((cell_min1.ordersadjustment === null) ? '' : Math.round(cell_min1.ordersadjustment)) + '" size="5" onchange="onChange(event)" onclick="$(this).select();"/><br/>';
+    cellstring += '<input type="text" class="smallpadding adjhistory" value="' + ((cell_min1.ordersadjustment === null) ? '' : Math.round(cell_min1.ordersadjustment)) + '" size="5" onchange="onChange("event)" onclick="$(this).select();"/><br/>';
   }
   cellstring += cell.orderstotal + "<br/>";
   cellstring += cell.ordersopen + "<br/>";{% if perms.forecast.change_forecastdemand %}
-  cellstring += '<input type="text" class="smallpadding adjhistory" value="' + ((cell.ordersadjustment === null) ? '' : Math.round(cell.ordersadjustment)) + '" size="5" onchange="onChange(event)" onclick="$(this).select();"/><br/>';
+  cellstring += '<input type="text" class="smallpadding adjhistory" value="' + ((cell.ordersadjustment === null) ? '' : Math.round(cell.ordersadjustment)) + '" size="5" onchange="onChange("event)" onclick="$(this).select();"/><br/>';
   {% else %}
   cellstring += Math.round(cell.ordersadjustment) + '<br/>';{% endif %}
   cellstring += cell.forecastbaseline + "<br/>";{% if perms.forecast.change_forecastdemand %}
-  cellstring += '<input type="text" class="smallpadding adjforecast" value="' + ((cell.forecastadjustment === null) ? '' : Math.round(cell.forecastadjustment)) + '" size="5" onchange="onChange(event)" onclick="$(this).select();"/><br/>';
+  cellstring += '<input type="text" class="smallpadding adjforecast" value="' + ((cell.forecastadjustment === null) ? '' : Math.round(cell.forecastadjustment)) + '" size="5" onchange="onChange("event)" onclick="$(this).select();"/><br/>';
   {% else %}
   cellstring += Math.round(cell.forecastadjustment) + '<br/>';{% endif %}
   return cellstring;
@@ -236,11 +345,11 @@ function plancell(cellvalue, options, rowObject)
   if (!cell) return "s";
   var cellstring = "";
   cellstring += cell.roq + "<br/>"{% if perms.forecast.change_forecastdemand %}
-  cellstring += '<input type="text" class="smallpadding adjroqoverride" value="' + ((cell.roqoverride === null) ? '' : Math.round(cell.roqoverride)) + '" size="5" onchange="onChange(event)" onclick="$(this).select();"/><br/>';
+  cellstring += '<input type="text" class="smallpadding adjroqoverride" value="' + ((cell.roqoverride === null) ? '' : Math.round(cell.roqoverride)) + '" size="5" onchange="onChange("event)" onclick="$(this).select();"/><br/>';
   {% else %}
   cellstring += Math.round(cell.roqoverride) + '<br/>';{% endif %}
   cellstring += cell.ss + "<br/>"{% if perms.forecast.change_forecastdemand %}
-  cellstring += '<input type="text" class="smallpadding ssoverride" value="' + ((cell.ssoverride === null) ? '' : Math.round(cell.roqoverride)) + '" size="5" onchange="onChange(event)" onclick="$(this).select();"/><br/>';
+  cellstring += '<input type="text" class="smallpadding ssoverride" value="' + ((cell.ssoverride === null) ? '' : Math.round(cell.roqoverride)) + '" size="5" onchange="onChange("event)" onclick="$(this).select();"/><br/>';
   {% else %}
   cellstring += Math.round(cell.ssoverride) + '<br/>';{% endif %}
   cellstring += cell.startoh + "<br/>";
@@ -768,11 +877,12 @@ function displayResult(data)
   }
 
   // Show transaction tab
+  var transactiondata = $.extend(true, [], result.transactions);
   if (!$.trim($("#transactiongrid").html()))
   {
     // Transaction grid displayed for the first time
     $("#transactiongrid").jqGrid({
-      data: result.transactions,
+      data: transactiondata,
       datatype: 'clientSide',
       jsonReader: { repeatitems: false },
       altRows: true,
@@ -782,7 +892,7 @@ function displayResult(data)
          {name:'date',index:'date',editable:false,label:'{% trans "date"|capfirst %}',align:'center',title:false,formatter:'date',formatoptions:{srcformat:'Y-m-d H:i:s',newformat:'Y-m-d H:i:s'},width:140,counter:6,searchoptions:{searchhidden: true}},
          {name:'type',index:'status',editable:true,label:'{% trans "type"|capfirst %}',align:'center',title:false,formatter:'select', edittype:'select', editoptions:{value:'confirmed:confirmed;approved:approved;proposed:proposed'},width:100,counter:2,searchoptions:{searchhidden: true}},
          {name:'reference',index:'reference',editable:true,label:'{% trans "reference"|capfirst %}',align:'left',title:false,width:200,counter:1,searchoptions:{searchhidden: true}},
-         {name:'status',index:'status',editable:true,label:'{% trans "status"|capfirst %}',align:'center',title:false,formatter:'select', edittype:'select', editoptions:{value:'confirmed:confirmed;approved:approved;proposed:proposed'},width:100,counter:2,searchoptions:{searchhidden: true}},
+         {name:'status',index:'status',editable:true,label:'{% trans "status"|capfirst %}',align:'center',title:false,formatter:'select', edittype:'select', editoptions:{value:'proposed:proposed;confirmed:confirmed;closed:closed'},width:100,counter:2,searchoptions:{searchhidden: true}},
          {name:'item',index:'item',editable:true,label:'{% trans "item"|capfirst %}',align:'left',title:false,formatter:'item',width:200,counter:3,searchoptions:{searchhidden: true}},
          {name:'origin',index:'origin',editable:true,label:'{% trans "origin"|capfirst %}',align:'left',title:false,formatter:'location',width:200,counter:4,searchoptions:{searchhidden: true}},
          {name:'startdate',index:'startdate',editable:true,label:'{% trans "start date"|capfirst %}',align:'center',title:false,formatter:'date',formatoptions:{srcformat:'Y-m-d H:i:s',newformat:'Y-m-d H:i:s'},width:140,counter:6,searchoptions:{searchhidden: true}},
@@ -798,13 +908,18 @@ function displayResult(data)
       sortorder: "asc",
       autowidth: true,
       height: 200,
-      multiselect: true
-      });
+      multiselect: true,
+      cellEdit: true,
+      cellsubmit: 'clientArray',
+      editurl: location.pathname,   //afterEditCell: afterEditCell,
+      beforeSaveCell: select, 
+      onSelectRow: markSelectedRow
+        });
     $("#transactiongrid").jqGrid('setFrozenColumns');
   }
   else
   {
-    // Refresh data in the transaction grid
+    // Refresh data in the transaction grid    
     $('#transactiongrid')
       .jqGrid('clearGridData')
       .jqGrid('setGridParam', {data: result.transactions})
@@ -874,9 +989,11 @@ $(function() {
 &nbsp;&nbsp;<input type="submit" value="SAVE" id="save" class="button ui-corner-all save_undo_button_inactive" role="button" onclick="save()" title="{% trans 'Save changes'|escape %}">
 &nbsp;&nbsp;<input type="submit" value="UNDO" id="undo" class="button ui-corner-all save_undo_button_inactive" role="button" onclick="undo()" title="{% trans 'Undo changes'|escape %}">
 &nbsp;&nbsp;
-<select disabled='disabled' name="actions" id="actions" onchange="grid.runAction($(this).val());" style="display: none" class="ui-corner-all ui-selectmenu-disabled ui-state-disabled change_status_selectmenu_inactive" >
-    <option value="no_action">{% trans "Select action" %}</option>{% for i in  actions %}
-    <option value="{{ i.name|escape }}">{{ i.label }}</option>{% endfor %}
+<select disabled='disabled' name="actions" id="actions" onchange="setStatus($(this).val());" style="display: initial" class="ui-corner-all ui-selectmenu-disabled ui-state-disabled change_status_selectmenu_inactive" >
+    <option value='no_action'>{% trans "Select action" %}</option>
+    <option value='proposed'>proposed</option>
+    <option value='confirmed'>confirmed</option>
+    <option value='closed'>closed</option>
 </select>
 <div class="frepple-tabs" id="tabs">
 <ul role="tablist">
