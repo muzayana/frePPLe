@@ -469,7 +469,9 @@ class GridReport(View):
       rows = [ (i, cls.rows[i].hidden, cls.rows[i].width) for i in range(len(cls.rows)) ]
     else:
       frozencolumns = prefs.get('frozen', cls.frozenColumns)
-      rows = prefs['rows']
+      rows = prefs.get('rows')
+      if not rows:
+        rows = [ (i, cls.rows[i].hidden, cls.rows[i].width) for i in range(len(cls.rows)) ]
     result = []
     if is_popup:
       result.append("{name:'select',label:gettext('Select'),width:75,align:'center',sortable:false,search:false}")
