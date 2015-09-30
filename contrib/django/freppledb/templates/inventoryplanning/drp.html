@@ -346,15 +346,15 @@ function forecastcell(cellvalue, options, rowObject) {
     cellstring += "<br/><br/>";
   else {
     cellstring += cell_min1.orderstotal + "<br/>";
-    cellstring += '<input type="text" class="smallpadding adjhistory" value="' + ((cell_min1.ordersadjustment === null) ? '' : Math.round(cell_min1.ordersadjustment)) + '" size="5" onchange="onChange("event)" onclick="$(this).select();"/><br/>';
+    cellstring += '<input type="text" class="smallpadding adjhistory" value="' + ((cell_min1.ordersadjustment === null) ? '' : Math.round(cell_min1.ordersadjustment)) + '" size="5" onchange="onChange(event)" onclick="$(this).select();"/><br/>';
   }
   cellstring += cell.orderstotal + "<br/>";
   cellstring += cell.ordersopen + "<br/>";{% if perms.forecast.change_forecastdemand %}
-  cellstring += '<input type="text" class="smallpadding adjhistory" value="' + ((cell.ordersadjustment === null) ? '' : Math.round(cell.ordersadjustment)) + '" size="5" onchange="onChange("event)" onclick="$(this).select();"/><br/>';
+  cellstring += '<input type="text" class="smallpadding adjhistory" value="' + ((cell.ordersadjustment === null) ? '' : Math.round(cell.ordersadjustment)) + '" size="5" onchange="onChange(event)" onclick="$(this).select();"/><br/>';
   {% else %}
   cellstring += Math.round(cell.ordersadjustment) + '<br/>';{% endif %}
   cellstring += cell.forecastbaseline + "<br/>";{% if perms.forecast.change_forecastdemand %}
-  cellstring += '<input type="text" class="smallpadding adjforecast" value="' + ((cell.forecastadjustment === null) ? '' : Math.round(cell.forecastadjustment)) + '" size="5" onchange="onChange("event)" onclick="$(this).select();"/><br/>';
+  cellstring += '<input type="text" class="smallpadding adjforecast" value="' + ((cell.forecastadjustment === null) ? '' : Math.round(cell.forecastadjustment)) + '" size="5" onchange="onChange(event)" onclick="$(this).select();"/><br/>';
   {% else %}
   cellstring += Math.round(cell.forecastadjustment) + '<br/>';{% endif %}
   return cellstring;
@@ -366,11 +366,11 @@ function plancell(cellvalue, options, rowObject)
   if (!cell) return "s";
   var cellstring = "";
   cellstring += cell.roq + "<br/>"{% if perms.forecast.change_forecastdemand %}
-  cellstring += '<input type="text" class="smallpadding adjroqoverride" value="' + ((cell.roqoverride === null) ? '' : Math.round(cell.roqoverride)) + '" size="5" onchange="onChange("event)" onclick="$(this).select();"/><br/>';
+  cellstring += '<input type="text" class="smallpadding adjroqoverride" value="' + ((cell.roqoverride === null) ? '' : Math.round(cell.roqoverride)) + '" size="5" onchange="onChange(event)" onclick="$(this).select();"/><br/>';
   {% else %}
   cellstring += Math.round(cell.roqoverride) + '<br/>';{% endif %}
   cellstring += cell.ss + "<br/>"{% if perms.forecast.change_forecastdemand %}
-  cellstring += '<input type="text" class="smallpadding ssoverride" value="' + ((cell.ssoverride === null) ? '' : Math.round(cell.ssoverride)) + '" size="5" onchange="onChange("event)" onclick="$(this).select();"/><br/>';
+  cellstring += '<input type="text" class="smallpadding ssoverride" value="' + ((cell.ssoverride === null) ? '' : Math.round(cell.ssoverride)) + '" size="5" onchange="onChange(event)" onclick="$(this).select();"/><br/>';
   {% else %}
   cellstring += Math.round(cell.ssoverride) + '<br/>';{% endif %}
   cellstring += cell.startoh + "<br/>";
