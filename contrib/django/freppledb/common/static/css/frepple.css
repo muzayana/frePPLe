@@ -151,6 +151,12 @@ a:link, a:visited {
     color: #B3B3B3;
 }
 
+.comment_button_active {
+    font-weight: bold;
+/*     text-decoration: underline; */
+    color: #555555;  
+}
+
 button:hover {
         border: 1px solid black;
         background: #EBEBEB;

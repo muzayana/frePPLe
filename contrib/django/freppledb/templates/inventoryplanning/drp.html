@@ -92,6 +92,16 @@ function select()
   $(window).on('beforeunload', warnUnsavedChanges);
 }
 
+function activateSaveUndo()
+{
+  //$('#filter').addClass("ui-state-disabled");
+  //$.jgrid.hideModal("#searchmodfbox_grid");
+  $('#save').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
+  $('#undo').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
+  $(window).off('beforeunload', warnUnsavedChanges);
+  $(window).on('beforeunload', warnUnsavedChanges);
+}
+
 function warnUnsavedChanges() {
   return gettext("There are unsaved changes on this page.");
 }
@@ -135,6 +145,8 @@ function undo(){
   $("#actions").addClass("ui-selectmenu-disabled ui-state-disabled change_status_selectmenu_inactive")
     .removeClass("change_status_selectmenu_active ui-state-enabled ui-selectmenu-enabled")
     .prop('disabled', 'disabled');
+    
+  $("#newcomment").val("");
 
   $(window).off('beforeunload', warnUnsavedChanges);
   //Fetch data
@@ -232,6 +244,13 @@ function save(event) {
     data["comment"] = $("#newcomment").val();
     data["commenttype"] = "item";
     });
+//  data["forecastparameter"] = { "method": xxxxx}
+//  data["invzntroryparameter"] = { "method": xxxxx}
+//  data^["forecastoverride"] = [ {"bucket": "Feb 15", "value": vvvv}, {"bucket": "Feb 15", "value": vvvv}, ]
+//  data^["orderoverride"] = [ {"bucket": "Feb 15", "value": vvvv}, {"bucket": "Feb 15", "value": vvvv}, ]
+//  data^[ssoverride]
+//  data [roqoverride]
+//  data[transactions] = [{"id": qqq, "status"}, ]
 //    console.log(data.length);
 
   // Send the results back to the server
@@ -958,12 +977,12 @@ function selectTab(value)
 function setCommentType(t)
 {
   if (t == "item")
-    $("#commentitemlocation, #commentlocation").removeClass("red");
+    $("#commentitemlocation, #commentlocation").removeClass("comment_button_active ui-state-disabled");
   else if (t == "location")
-    $("#commentitemlocation, #commentitem").removeClass("red");
+    $("#commentitemlocation, #commentitem").removeClass("comment_button_active ui-state-disabled");
   else
-    $("#commentlocation, #commentitem").removeClass("red");
-  $("#comment" + t).addClass("red");
+    $("#commentlocation, #commentitem").removeClass("comment_button_active ui-state-disabled");
+  $("#comment" + t).addClass("comment_button_active ui-state-disabled");
   $("#newcomment:hidden").toggle();
 }
 
@@ -1047,12 +1066,14 @@ $(function() {
 <div id="transactionsdata" class="clear" style="display:none">
 <table id="transactiongrid"></table>
 </div>
-
 <div id="commentsdata" class="clear" style="display:none">
-<input id="commentitem" type="submit" value="{% trans 'new item comment'|capfirst %}" onclick="return setCommentType('item')" disabled/>&nbsp;&nbsp;
-<input id="commentitemlocation" type="submit" value="{% trans 'new item-location comment'|capfirst %}" onclick="return setCommentType('itemlocation')" disabled/>&nbsp;&nbsp;
-<input id="commentlocation" type="submit" value="{% trans 'new location comment'|capfirst %}" onclick="return setCommentType('location')" disabled/><br/>
-<textarea style="display:none; width:100%" id="newcomment" name="comment" rows="5"></textarea><br/>
+<input type="submit"  role="button" id="commentitem" value="{% trans 'new item comment'|capfirst %}" onclick="return setCommentType('item')" aria-disabled="false" style="font-size:12px" disabled="disabled" class="ui-button ui-widget ui-state-default ui-state-disabled ui-corner-all" />
+&nbsp;&nbsp;
+<input type="submit"  role="button" id="commentitemlocation" value="{% trans 'new item-location comment'|capfirst %}" onclick="return setCommentType('itemlocation')" aria-disabled="false" style="font-size:12px" disabled="disabled" class="ui-button ui-widget ui-state-default ui-state-disabled ui-corner-all" />
+&nbsp;&nbsp;
+<input type="submit"  role="button" id="commentlocation" value="{% trans 'new location comment'|capfirst %}" onclick="return setCommentType('location')" aria-disabled="false" style="font-size:12px" disabled="disabled" class="ui-button ui-widget ui-state-default ui-state-disabled ui-corner-all" />
+&nbsp;&nbsp;
+<textarea style="display:none; width:100%" id="newcomment" name="comment" rows="5" oninput="activateSaveUndo()"></textarea><br/>
 <span id="pastcomments">{% trans "no comments yet"|capfirst %}</span>
 </div>
 
