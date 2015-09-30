@@ -35,15 +35,24 @@ function selectRow(id)
 {
 
 if ($('#save').hasClass("save_undo_button_active")) {
-  $('#popup').html(result.responseText)
-  .dialog({
-    title: gettext("Error saving data"),
-    autoOpen: true,
-    resizable: false,
-    width: 'auto',
-    height: 'auto'
-  }); return;
-} 
+  $('#popup').html("{% trans 'There are unsaved changes'|escapejs %}")
+	  .dialog({
+	    title: gettext("Error saving data"),
+	    autoOpen: true,
+	    resizable: false,
+	    width: 'auto',
+	    height: 'auto',
+	    buttons : {
+	        "{% trans "Save"|escapejs %}" : function() {
+	          window.location.href = targetUrl;
+	        },
+	        "{% trans "Cancel"|escapejs %}" : function() {
+	           $(this).dialog("close");
+	        }
+	      }
+	  });
+	  return;
+	  }
 
 
 if (!!result && id == result.name)
@@ -64,7 +73,7 @@ $.ajax({
     });
     }
   });
-  
+
   $('#undo').addClass("save_undo_button_inactive").removeClass("save_undo_button_active");
   $('#save').addClass("save_undo_button_inactive").removeClass("save_undo_button_active");
   $("#actions")
@@ -77,8 +86,10 @@ function extraPreference()
 {
   // TODO save settings on forecast, planning and transaction tabs
   return {
-     "height": $("#gbox_grid").height() - 48,
-     "showtab": showtab
+    "height": $("#gbox_grid").height() - 48,
+    "showtab": showtab,
+    "type": result ? result.type : null,
+    "name": result ? result.name : null
   };
 }
 
@@ -145,7 +156,7 @@ function undo(){
   $("#actions").addClass("ui-selectmenu-disabled ui-state-disabled change_status_selectmenu_inactive")
     .removeClass("change_status_selectmenu_active ui-state-enabled ui-selectmenu-enabled")
     .prop('disabled', 'disabled');
-    
+
   $("#newcomment").val("");
 
   $(window).off('beforeunload', warnUnsavedChanges);
@@ -199,7 +210,7 @@ function markAllRows()
     $('.cbox').prop("checked", false);
   }
 }
-  
+
 function setStatus(newstatus)
 {
   var sel = jQuery("#transactiongrid").jqGrid('getGridParam','selarrrow');
@@ -213,34 +224,30 @@ function setStatus(newstatus)
   $('#undo').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
   $(window).on('beforeunload', warnUnsavedChanges);
 }
- 
+
 function setForecastMethod(newmethod)
 {
-//  var sel = jQuery("#transactiongrid").jqGrid('getGridParam','selarrrow');
-console.log(newmethod);
-//    jQuery("#forecastmethod").css("background-color","red");
-
   $('#save').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
   $('#undo').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
   $(window).on('beforeunload', warnUnsavedChanges);
 }
 
-function save(event) {
-  event.preventDefault();
+
+function save() {
   if (result == null)
     return;
 
   // Build the results to send back to the server
   var data = {};
-  $("#commentitemlocation.red").each(function() {
+  $("#commentitemlocation.comment_button_active").each(function() {
     data["comment"] = $("#newcomment").val();
     data["commenttype"] = "itemlocation";
     });
-  $("#commentlocation.red").each(function() {
+  $("#commentlocation.comment_button_active").each(function() {
     data["comment"] = $("#newcomment").val();
     data["commenttype"] = "location";
     });
-  $("#commentitem.red").each(function() {
+  $("#commentitem.comment_button_active").each(function() {
     data["comment"] = $("#newcomment").val();
     data["commenttype"] = "item";
     });
@@ -272,7 +279,7 @@ function save(event) {
       });
       }
     });
-    
+
   // Reset the buttons
   $('#undo').addClass("save_undo_button_inactive").removeClass("save_undo_button_active");
   $('#save').addClass("save_undo_button_inactive").removeClass("save_undo_button_active");
@@ -363,7 +370,7 @@ function plancell(cellvalue, options, rowObject)
   {% else %}
   cellstring += Math.round(cell.roqoverride) + '<br/>';{% endif %}
   cellstring += cell.ss + "<br/>"{% if perms.forecast.change_forecastdemand %}
-  cellstring += '<input type="text" class="smallpadding ssoverride" value="' + ((cell.ssoverride === null) ? '' : Math.round(cell.roqoverride)) + '" size="5" onchange="onChange("event)" onclick="$(this).select();"/><br/>';
+  cellstring += '<input type="text" class="smallpadding ssoverride" value="' + ((cell.ssoverride === null) ? '' : Math.round(cell.ssoverride)) + '" size="5" onchange="onChange("event)" onclick="$(this).select();"/><br/>';
   {% else %}
   cellstring += Math.round(cell.ssoverride) + '<br/>';{% endif %}
   cellstring += cell.startoh + "<br/>";
@@ -811,7 +818,7 @@ function displayResult(data)
   $("#nostock").prop('checked', data.parameters.nostock == "True");
 
   // Show comments
-  $("#commentlocation, #commentitem, #commentitemlocation").removeClass("red");
+  $("#commentlocation, #commentitem, #commentitemlocation").removeClass("comment_button_active ui-state-disabled");
   $("#newcomment:visible").css("display", "none");
   var comments = $("#pastcomments");
   comments.empty();
@@ -926,19 +933,22 @@ function displayResult(data)
       cellEdit: true,
       cellsubmit: 'clientArray',
       editurl: location.pathname,   //afterEditCell: afterEditCell,
-      beforeSaveCell: select, 
+      beforeSaveCell: select,
       onSelectRow: markSelectedRow
         });
     $("#transactiongrid").jqGrid('setFrozenColumns');
   }
   else
   {
-    // Refresh data in the transaction grid    
+    // Refresh data in the transaction grid
     $('#transactiongrid')
       .jqGrid('clearGridData')
       .jqGrid('setGridParam', {data: result.transactions})
       .trigger('reloadGrid');
   }
+
+  // Save newly selected item as a preference
+  grid.saveColumnConfiguration();
 }
 
 function selectTab(value)
@@ -956,7 +966,7 @@ function selectTab(value)
     showtab = value;
     $("#" + showtab + "tab").addClass("frepple-tabs-active");
     $("#" + showtab + "data").css("display", "block");
-    
+
     // Save newly selected table as a preference
     grid.saveColumnConfiguration();
   }
@@ -988,6 +998,7 @@ function setCommentType(t)
 
 
 $(function() {
+	{% if preferences.name %}selectRow("{{ preferences.name|escapejs }}");{% endif %}
   selectTab("{% if preferences.showtab %}{{ preferences.showtab }}{% else %}plan{% endif %}");
 });
 
