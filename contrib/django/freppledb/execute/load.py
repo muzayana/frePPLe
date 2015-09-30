@@ -401,8 +401,7 @@ class loadData(object):
       SELECT name, description, location_id, item_id, onhand,
         minimum, minimum_calendar_id, producing_id, type, leadtime, min_inventory,
         max_inventory, min_interval, max_interval, size_minimum,
-        size_multiple, size_maximum, fence,
-        category, subcategory, source
+        size_multiple, size_maximum, fence, category, subcategory, source
       FROM buffer %s
       ''' % self.filter_where)
     for i in self.cursor.fetchall():
