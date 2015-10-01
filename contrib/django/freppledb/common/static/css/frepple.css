@@ -157,6 +157,10 @@ a:link, a:visited {
     color: #555555;  
 }
 
+*.ui-state-highlight.edit-cell {
+  background: transparent;
+}
+
 button:hover {
         border: 1px solid black;
         background: #EBEBEB;
