@@ -167,3 +167,7 @@ input.ui-button:hover {
   border: 1px solid #838d11 !important; /* Color green3 */
   color: #222222 !important
 }
+
+.ui-widget-content .jqgrow.ui-row-ltr {
+    color: #222; //grid font color
+}
