@@ -620,8 +620,8 @@ div.calendarbox
   padding-right: 20px;
 }
 
-.ui-autocomplete-categoryz {
-  font-weight:bold;
+.ui-autocomplete-category {
+  font-weight:normal;
   list-style-type: none;
 }
 
