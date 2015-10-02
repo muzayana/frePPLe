@@ -870,15 +870,15 @@ function displayResult(data)
   $("#ss_type_" + data.parameters.ss_type).prop("checked", true);
   $("#nostock").prop('checked', data.parameters.nostock == "True");
   $("#eoq").html(data.parameters.eoq);
-  $("#roq_min_qty").html(data.parameters.roq_min_qty);
-  $("#roq_min_poc").html(data.parameters.roq_min_poc);
+  $("#roq_min_qty").val(data.parameters.roq_min_qty);
+  $("#roq_min_poc").val(data.parameters.roq_min_poc);
   $("#service_level_qty").html(data.parameters.service_level_qty);
-  $("#service_level").html(data.parameters.service_level);
+  $("#service_level").val(data.parameters.service_level);
   $("#demand_distribution").val(data.parameters.demand_distribution);
-  $("#demand_deviation").html(data.parameters.demand_deviation);
-  $("#leadtime_deviation").html(data.parameters.leadtime_deviation);
-  $("#ss_min_qty").html(data.parameters.ss_min_qty);
-  $("#ss_min_poc").html(data.parameters.ss_min_poc);
+  $("#demand_deviation").val(data.parameters.demand_deviation);
+  $("#leadtime_deviation").val(data.parameters.leadtime_deviation);
+  $("#ss_min_qty").val(data.parameters.ss_min_qty);
+  $("#ss_min_poc").val(data.parameters.ss_min_poc);
 
   // Show comments
   $("#commentlocation, #commentitem, #commentitemlocation").removeClass("comment_button_active ui-state-disabled");
