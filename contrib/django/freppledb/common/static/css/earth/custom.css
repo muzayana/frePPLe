@@ -167,3 +167,25 @@ input.ui-button:hover {
   border: 1px solid #855C33 !important; /* Color green3 */
   color: #222222 !important
 }
+
+ui-widget-content .jqgrow.ui-row-ltr {
+    color: #222222; //grid font color
+}
+
+.ui-autocomplete .ui-menu-item, .ui-autocomplete-category {
+  background: #9D7D5C;
+  border: 0;
+}
+
+.ui-autocomplete li:hover,
+.ui-autocomplete .ui-menu-item *:hover {
+  background: #855C33;
+  border: 0;
+} 
+
+.ui-autocomplete li:visited,
+.ui-autocomplete .ui-state-focus {
+  background: #855C33;
+  border: 0;
+} 
+
