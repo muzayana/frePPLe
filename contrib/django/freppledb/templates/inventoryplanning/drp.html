@@ -408,25 +408,25 @@ function forecastcell(cellvalue, options, rowObject) {
       cellstring += "<br/><br/>";
     else {
       cellstring += cell_min3.orderstotal + "<br/>";
-      cellstring += '<input type="text" class="smallpadding adjhistory-3" value="' + ((cell_min3.ordersadjustment === null) ? '' : Math.round(cell_min3.ordersadjustment)) + '" size="5" onchange="onChange(event)" onclick="$(this).select();"/><br/>';
+      cellstring += '<input type="text" class="smallpadding adjhistory-3" value="' + ((cell_min3.ordersadjustment === null) ? '' : Math.round(cell_min3.ordersadjustment)) + '" size="5" oninput="onChange(event)" onclick="$(this).select();"/><br/>';
     }
     if (!cell_min2)
       cellstring += "<br/><br/>";
     else {
       cellstring += cell_min2.orderstotal + "<br/>";
-      cellstring += '<input type="text" class="smallpadding adjhistory-2" value="' + ((cell_min2.ordersadjustment === null) ? '' : Math.round(cell_min2.ordersadjustment)) + '" size="5" onchange="onChange(event)" onclick="$(this).select();"/><br/>';
+      cellstring += '<input type="text" class="smallpadding adjhistory-2" value="' + ((cell_min2.ordersadjustment === null) ? '' : Math.round(cell_min2.ordersadjustment)) + '" size="5" oninput="onChange(event)" onclick="$(this).select();"/><br/>';
     }
     if (!cell_min1)
       cellstring += "<br/><br/>";
     else {
       cellstring += cell_min1.orderstotal + "<br/>";
-      cellstring += '<input type="text" class="smallpadding adjhistory-1" value="' + ((cell_min1.ordersadjustment === null) ? '' : Math.round(cell_min1.ordersadjustment)) + '" size="5" onchange="onChange(event)" onclick="$(this).select();"/><br/>';
+      cellstring += '<input type="text" class="smallpadding adjhistory-1" value="' + ((cell_min1.ordersadjustment === null) ? '' : Math.round(cell_min1.ordersadjustment)) + '" size="5" oninput="onChange(event)" onclick="$(this).select();"/><br/>';
     }
   }
   cellstring += cell.orderstotal + "<br/>";
   cellstring += cell.ordersopen + "<br/>";
   cellstring += cell.forecastbaseline + "<br/>";{% if perms.forecast.change_forecastdemand %}
-  cellstring += '<input type="text" class="smallpadding adjforecast" value="' + ((cell.forecastadjustment === null) ? '' : Math.round(cell.forecastadjustment)) + '" size="5" onchange="onChange(event)" onclick="$(this).select();"/><br/>';
+  cellstring += '<input type="text" class="smallpadding adjforecast" value="' + ((cell.forecastadjustment === null) ? '' : Math.round(cell.forecastadjustment)) + '" size="5" oninput="onChange(event)" onclick="$(this).select();"/><br/>';
   {% else %}
   cellstring += Math.round(cell.forecastadjustment) + '<br/>';{% endif %}
   return cellstring;
@@ -439,11 +439,11 @@ function plancell(cellvalue, options, rowObject)
   if (!cell) return "s";
   var cellstring = "";
   cellstring += cell.roq + "<br/>"{% if perms.forecast.change_forecastdemand %}
-  cellstring += '<input type="text" class="smallpadding roqoverride" value="' + ((cell.roqoverride === null) ? '' : Math.round(cell.roqoverride)) + '" size="5" onchange="onChange(event)" onclick="$(this).select();"/><br/>';
+  cellstring += '<input type="text" class="smallpadding roqoverride" value="' + ((cell.roqoverride === null) ? '' : Math.round(cell.roqoverride)) + '" size="5" oninput="onChange(event)" onclick="$(this).select();"/><br/>';
   {% else %}
   cellstring += Math.round(cell.roqoverride) + '<br/>';{% endif %}
   cellstring += cell.ss + "<br/>"{% if perms.forecast.change_forecastdemand %}
-  cellstring += '<input type="text" class="smallpadding ssoverride" value="' + ((cell.ssoverride === null) ? '' : Math.round(cell.ssoverride)) + '" size="5" onchange="onChange(event)" onclick="$(this).select();"/><br/>';
+  cellstring += '<input type="text" class="smallpadding ssoverride" value="' + ((cell.ssoverride === null) ? '' : Math.round(cell.ssoverride)) + '" size="5" oninput="onChange(event);;" onclick="$(this).select();"/><br/>';
   {% else %}
   cellstring += Math.round(cell.ssoverride) + '<br/>';{% endif %}
   cellstring += cell.startoh + "<br/>";
@@ -862,7 +862,7 @@ function displayResult(data)
     $("#detailtitle").html("{{_('location')|capfirst|escape}} " + result.name);
 
   // Update the forecasting parameters
-  $("#forecastmethod").val(data.parameters.forecastmethod);
+  $("#forecastmethod").val(data.parameters.forecastmethod).removeClass('red');
   $("#forecasterror").html(data.parameters.forecasterror);
 
   // Update the inventory planning parameters
@@ -870,15 +870,15 @@ function displayResult(data)
   $("#ss_type_" + data.parameters.ss_type).prop("checked", true);
   $("#nostock").prop('checked', data.parameters.nostock == "True");
   $("#eoq").html(data.parameters.eoq);
-  $("#roq_min_qty").val(data.parameters.roq_min_qty);
-  $("#roq_min_poc").val(data.parameters.roq_min_poc);
+  $("#roq_min_qty").val(data.parameters.roq_min_qty).removeClass('dirty-cell');
+  $("#roq_min_poc").val(data.parameters.roq_min_poc).removeClass('dirty-cell');
   $("#service_level_qty").html(data.parameters.service_level_qty);
-  $("#service_level").val(data.parameters.service_level);
-  $("#demand_distribution").val(data.parameters.demand_distribution);
-  $("#demand_deviation").val(data.parameters.demand_deviation);
-  $("#leadtime_deviation").val(data.parameters.leadtime_deviation);
-  $("#ss_min_qty").val(data.parameters.ss_min_qty);
-  $("#ss_min_poc").val(data.parameters.ss_min_poc);
+  $("#service_level").val(data.parameters.service_level).removeClass('dirty-cell');
+  $("#demand_distribution").val(data.parameters.demand_distribution).removeClass('red');
+  $("#demand_deviation").val(data.parameters.demand_deviation).removeClass('dirty-cell');
+  $("#leadtime_deviation").val(data.parameters.leadtime_deviation).removeClass('dirty-cell');
+  $("#ss_min_qty").val(data.parameters.ss_min_qty).removeClass('dirty-cell');
+  $("#ss_min_poc").val(data.parameters.ss_min_poc).removeClass('dirty-cell');
 
   // Show comments
   $("#commentlocation, #commentitem, #commentitemlocation").removeClass("comment_button_active ui-state-disabled");
@@ -1096,7 +1096,7 @@ $(function() {
 <div id="forecastgraph" style="clear: both; height: 200px; padding: 10px; "></div>
 <table id="forecastgrid"></table><br/>
 <h2>{% trans "parameters"|capfirst %}</h2>
-<table><tr><td>{% trans "Forecast method"|capfirst %}</td><td><select id="forecastmethod" onchange="setForecastMethod($(this).val());">
+<table><tr><td>{% trans "Forecast method"|capfirst %}</td><td><select id="forecastmethod" onchange="setForecastMethod($(this).val()); $(this).addClass('dirty-cell red')">
 <option value="automatic">Automatic</option>
 <option value="constant">Constant</option>
 <option value="trend">Trend</option>
@@ -1116,25 +1116,25 @@ $(function() {
 <td class="bold">{% trans "safety stock"|capfirst %}</td></tr>
 <tr><td valign="top">
 <input type="radio" id="roq_type_calculated" name="roq_type" value="calculated" onclick="activateSaveUndo()"><label for="roq_type_calculated">{% trans "economic order quantity"|capfirst %}: <span id="eoq">&nbsp;&nbsp;&nbsp;&nbsp;</span> units</label><br/>
-<input type="radio" id="roq_type_quantity" name="roq_type" value="quantity" onclick="activateSaveUndo()"><label for="roq_type_quantity">{% trans "quantity"|capfirst %}&nbsp;<input style="width:80px" type="number" id="roq_min_qty" oninput="activateSaveUndo()" min="1"> units</label><br/>
-<input type="radio" id="roq_type_periodofcover" name="roq_type" value="periodofcover" onclick="activateSaveUndo()"><label for="roq_type_periodofcover">{% trans "period of cover"|capfirst %}&nbsp;<input style="width:50px" type="number" id="roq_min_poc" oninput="activateSaveUndo()" min="1" step="7"> days</label><br/>
+<input type="radio" id="roq_type_quantity" name="roq_type" value="quantity" onclick="activateSaveUndo()"><label for="roq_type_quantity">{% trans "quantity"|capfirst %}&nbsp;<input style="width:80px" type="number" id="roq_min_qty" oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" min="1"> units</label><br/>
+<input type="radio" id="roq_type_periodofcover" name="roq_type" value="periodofcover" onclick="activateSaveUndo()"><label for="roq_type_periodofcover">{% trans "period of cover"|capfirst %}&nbsp;<input style="width:50px" type="number" id="roq_min_poc" oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" min="1" step="7"> days</label><br/>
 </td><td valign="top">
 <input type="radio" id="ss_type_calculated" name="ss_type" value="calculated" onclick="activateSaveUndo()"><label for="ss_type_calculated">{% trans "service level"|capfirst %}: <span id="service_level_qty">&nbsp;&nbsp;&nbsp;&nbsp;</span>units<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;{% trans "minimum"|capfirst %} <input type="number" id="service_level" oninput="activateSaveUndo()" min="0" max="100" size="7"> %<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;{% trans "minimum"|capfirst %} <input type="number" id="service_level" oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" min="0" max="100" size="7"> %<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;{% trans "statistical distribution"|capfirst %}
-<select name="actions" id="demand_distribution" onchange="activateSaveUndo()" style="display: initial" class="ui-corner-all ui-selectmenu-default ui-state-enabled">
+<select name="actions" id="demand_distribution" onchange="activateSaveUndo(); $(this).addClass('dirty-cell red')" style="display: initial" class="ui-corner-all ui-selectmenu-default ui-state-enabled">
   <option value="automatic">{% trans "automatic"|capfirst %}</option>
   <option value="normal">{% trans "normal"|capfirst %}</option>
   <option value="poisson">{% trans "poisson"|capfirst %}</option>
   <option value="negbinomial">{% trans "negative binomial"|capfirst %}</option>
 </select><br/>
-&nbsp;&nbsp;&nbsp;&nbsp;{% trans "demand standard deviation"|capfirst %} <input style="width:80px" type="number" id="demand_deviation" oninput="activateSaveUndo()" size="7"> units<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;{% trans "lead time standard deviation"|capfirst %} <input style="width:80px" type="number" id="leadtime_deviation" oninput="activateSaveUndo()" size="7"> days</label><br/>
-<input type="radio" id="ss_type_quantity" name="ss_type" value="quantity" onclick="activateSaveUndo()"><label for="ss_type_quantity">{% trans "quantity"|capfirst %}<input style="width:80px" type="number" id="ss_min_qty" oninput="activateSaveUndo()" min="1"> units</label><br/>
-<input type="radio" id="ss_type_periodofcover" name="ss_type" value="periodofcover" onclick="activateSaveUndo()"><label for="ss_type_periodofcover">{% trans "period of cover"|capfirst %}<input style="width:50px" type="number" id="ss_min_poc" min="1" step="7" oninput="activateSaveUndo()"> days</label><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;{% trans "demand standard deviation"|capfirst %} <input style="width:80px" type="number" id="demand_deviation" oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" size="7"> units<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;{% trans "lead time standard deviation"|capfirst %} <input style="width:80px" type="number" id="leadtime_deviation" oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" size="7"> days</label><br/>
+<input type="radio" id="ss_type_quantity" name="ss_type" value="quantity" onclick="activateSaveUndo()"><label for="ss_type_quantity">{% trans "quantity"|capfirst %}<input style="width:80px" type="number" id="ss_min_qty" oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" min="1"> units</label><br/>
+<input type="radio" id="ss_type_periodofcover" name="ss_type" value="periodofcover" onclick="activateSaveUndo()"><label for="ss_type_periodofcover">{% trans "period of cover"|capfirst %}<input style="width:50px" type="number" id="ss_min_poc" min="1" step="7" oninput="activateSaveUndo(); $(this).addClass('dirty-cell')"> days</label><br/>
 </td></tr>
 </table>
-<input type="checkbox" id="nostock" onclick="activateSaveUndo()">&nbsp;&nbsp;<label for="nostock">{% trans "Don't stock" %}</label>
+<input type="checkbox" id="nostock" onclick="activateSaveUndo(); $(this).addClass('dirty-cell')">&nbsp;&nbsp;<label for="nostock">{% trans "Don't stock" %}</label>
 </div>
 
 <div id="transactionsdata" class="clear" style="display:none">
