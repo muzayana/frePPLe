@@ -10,7 +10,6 @@
 
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
-from django.conf import settings
 
 from freppledb.common.models import AuditModel
 from freppledb.input.models import Buffer
@@ -27,8 +26,19 @@ class InventoryPlanning(AuditModel):
     ('Negative Binomial', _('Negative Binomial')),
   )
 
+  # TODO combined method is currently disabled
+  calculationtype = (
+    #('combined', _("combined")),
+    ('calculated', _("calculated")),
+    ('quantity', _("quantity")),
+    ('periodofcover', _("period of cover")),
+  )
+
   # Database fields
   buffer = models.OneToOneField(Buffer, primary_key=True)
+  roq_type = models.CharField(
+    _('ROQ type'), null=True, blank=True, max_length=20, choices=calculationtype
+    )
   roq_min_qty = models.DecimalField(
     _('ROQ minimum quantity'), max_digits=15,
     decimal_places=4, null=True, blank=True
@@ -59,6 +69,9 @@ class InventoryPlanning(AuditModel):
     )
   demand_distribution = models.CharField(
     _('demand distribution'), null=True, blank=True, max_length=20, choices=distributions
+    )
+  ss_type = models.CharField(
+    _('Safety stock type'), null=True, blank=True, max_length=20, choices=calculationtype
     )
   service_level = models.DecimalField(
     _('service level'), max_digits=15,

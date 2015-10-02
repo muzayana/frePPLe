@@ -9,6 +9,7 @@
 #
 
 from datetime import datetime
+from decimal import Decimal
 import json
 
 from django.conf import settings
@@ -16,7 +17,7 @@ from django.contrib.admin.utils import unquote
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
-from django.db import connections
+from django.db import connections, transaction
 from django.http import Http404
 from django.http.response import StreamingHttpResponse, HttpResponse, HttpResponseServerError
 from django.utils.decorators import method_decorator
@@ -25,11 +26,12 @@ from django.views.generic import View
 
 from freppledb.common.report import GridFieldText, GridReport
 from freppledb.common.report import GridFieldLastModified, GridFieldChoice
-from freppledb.common.report import GridFieldNumber, GridFieldBool, GridFieldDuration
+from freppledb.common.report import GridFieldNumber, GridFieldBool
 
 from freppledb.inventoryplanning.models import InventoryPlanning
-from freppledb.input.models import Buffer, Item, Location
+from freppledb.input.models import Buffer, Item, Location, Calendar, CalendarBucket
 from freppledb.common.models import Comment, Parameter
+from freppledb.forecast.models import Forecast
 
 
 import logging
@@ -52,11 +54,15 @@ class InventoryPlanningList(GridReport):
 
   rows = (
     GridFieldText('buffer', title=_('buffer'), field_name="buffer__name", key=True, formatter='buffer'),
+    GridFieldChoice('roq_type', title=_('ROQ type'),
+      choices=InventoryPlanning.calculationtype, extra="formatoptions:{defaultValue:''}"),
     GridFieldNumber('roq_min_qty', title=_('ROQ minimum quantity'), extra="formatoptions:{defaultValue:''}"),
     #GridFieldNumber('roq_max_qty', title=_('ROQ maximum quantity'), extra="formatoptions:{defaultValue:''}"),
     #GridFieldNumber('roq_multiple_qty', title=_('ROQ multiple quantity'), extra="formatoptions:{defaultValue:''}"),
     GridFieldNumber('roq_min_poc', title=_('ROQ minimum period of cover'), extra="formatoptions:{defaultValue:''}"),
     #GridFieldNumber('roq_max_poc', title=_('ROQ maximum period of cover'), extra="formatoptions:{defaultValue:''}"),
+    GridFieldChoice('ss_type', title=_('Safety stock type'),
+      choices=InventoryPlanning.calculationtype, extra="formatoptions:{defaultValue:''}"),
     GridFieldNumber('ss_min_qty', title=_('safety stock minimum quantity'), extra="formatoptions:{defaultValue:''}"),
     #GridFieldNumber('ss_max_qty', title=_('safety stock maximum quantity'), extra="formatoptions:{defaultValue:''}"),
     #GridFieldNumber('ss_multiple_qty', title=_('safety stock multiple quantity'), extra="formatoptions:{defaultValue:''}"),
@@ -421,20 +427,21 @@ class DRPitemlocation(View):
     item_name = ip.buffer.item.name if ip.buffer.item else None
     location_name = ip.buffer.location.name if ip.buffer.location else None
 
-    # TODO save current selected item-location detail to the preferences
-
     # Retrieve parameters
+    fcst = Forecast.objects.using(request.database).filter(item=item_name, location=location_name).first()
     yield ''.join([
       '{"type":"itemlocation", "name":',  json.dumps(itemlocation), ",",
       '"parameters":', json.dumps({
+        "roq_type": ip.roq_type if ip.roq_type is not None else 'calculated',
+        "ss_type": ip.ss_type if ip.ss_type is not None else 'calculated',
         "ss_multiple_qty": str(ip.ss_multiple_qty) if ip.ss_multiple_qty is not None else None,
-        "ss_min_qty": str(ip.ss_min_qty) if ip.ss_multiple_qty is not None else None,
-        "roq_min_poc": str(ip.roq_min_poc) if ip.ss_multiple_qty is not None else None,
-        "ss_min_poc": str(ip.ss_min_poc) if ip.ss_multiple_qty is not None else None,
-        "roq_min_qty": str(ip.roq_min_qty) if ip.ss_multiple_qty is not None else None,
-        "demand_distribution": str(ip.demand_distribution) if ip.ss_multiple_qty is not None else None,
-        "ss_max_qty": str(ip.ss_max_qty) if ip.ss_multiple_qty is not None else None,
-        "leadtime_deviation": str(ip.leadtime_deviation) if ip.ss_multiple_qty is not None else None,
+        "ss_min_qty": str(ip.ss_min_qty) if ip.ss_min_qty is not None else None,
+        "roq_min_poc": str(ip.roq_min_poc) if ip.roq_min_poc is not None else None,
+        "ss_min_poc": str(ip.ss_min_poc) if ip.ss_min_poc is not None else None,
+        "roq_min_qty": str(ip.roq_min_qty) if ip.roq_min_qty is not None else None,
+        "demand_distribution": ip.demand_distribution if ip.demand_distribution else 'automatic',
+        "ss_max_qty": str(ip.ss_max_qty) if ip.ss_max_qty is not None else None,
+        "leadtime_deviation": str(ip.leadtime_deviation) if ip.leadtime_deviation is not None else None,
         "roq_max_qty": str(ip.roq_max_qty) if ip.roq_max_qty is not None else None,
         "roq_multiple_qty": str(ip.roq_multiple_qty) if ip.roq_multiple_qty is not None else None,
         "nostock": str(ip.nostock) if ip.nostock is not None else None,
@@ -444,11 +451,10 @@ class DRPitemlocation(View):
         "ss_max_poc": str(ip.ss_max_poc) if ip.ss_max_poc is not None else None,
         "eoq": 49,  # TODO comes from output table
         "service_level_qty": 49, # TODO comes from output table
-        "forecastmethod": "automatic", # TODO retrieve from forecastplan
+        "forecastmethod": fcst.method if fcst else 'automatic',
         "forecasterror": "12 %"
         })
       ])
-
 
     cursor = connections[request.database].cursor()
 
@@ -589,6 +595,13 @@ class DRPitemlocation(View):
 
     # Retrieve history: lazy?
 
+    # Save current selected item-location detail to the preferences
+    prefs = request.user.getPreference(DRP.getKey())
+    if prefs:
+      prefs['name'] = itemlocation
+      prefs['type'] = "itemlocation"
+      request.user.setPreference(DRP.getKey(), prefs)
+
 
   @method_decorator(staff_member_required)
   def get(self, request, arg):
@@ -625,31 +638,166 @@ class DRPitemlocation(View):
 
       # Retrieve the posted data
       data = json.JSONDecoder().decode(request.read().decode(request.encoding or settings.DEFAULT_CHARSET))
-
       print("posted:", itemlocation, data)
 
-      # Retrieve the comment
-      if 'commenttype' in data and 'comment' in data:
-        if data['commenttype'] == 'item' and ip.buffer.item:
-          Comment(
-            content_object=ip.buffer.item,
-            user=request.user,
-            comment=data['comment']
-            ).save(using=request.database)
-        elif data['commenttype'] == 'location' and ip.buffer.location:
-          Comment(
-            content_object=ip.buffer.location,
-            user=request.user,
-            comment=data['comment']
-            ).save(using=request.database)
-        elif data['commenttype'] == 'itemlocation':
-          Comment(
-            content_object=ip.buffer,
-            user=request.user,
-            comment=data['comment']
-            ).save(using=request.database)
-        else:
-          raise Exception("Invalid comment data")
+      # Save comments
+      with transaction.atomic(using=request.database):
+
+        # Save the plan overrides
+        if 'plan' in data:
+          roq_calendar = None
+          ss_calendar = None
+          for row in data['plan']:
+            if 'roqoverride' in row:
+              if not roq_calendar:
+                roq_calendar, created = Calendar.objects.using(request.database).get_or_create(name="ROQ for %s" % itemlocation)
+                if created:
+                  roq_calendar.source = 'Inventory planning'
+                  roq_calendar.default = 1
+                  roq_calendar.save(using=request.database)
+              if row['roqoverride'] == '':
+                # Delete a bucket
+                CalendarBucket.objects.using(request.database).filter(calendar=roq_calendar, startdate=datetime.strptime(row['startdate'], '%Y-%m-%d')).exclude(source='Inventory planning').delete()
+              else:
+                # Create or update a bucket
+                cal_bucket, created = CalendarBucket.objects.using(request.database).get_or_create(calendar=roq_calendar, startdate=datetime.strptime(row['startdate'], '%Y-%m-%d'))
+                cal_bucket.value = row['roqoverride']
+                cal_bucket.enddate = datetime.strptime(row['enddate'], '%Y-%m-%d')
+                cal_bucket.priority = 0
+                if cal_bucket.source == 'Inventory planning':
+                  cal_bucket.source = None
+                cal_bucket.save(using=request.database)
+            if 'ssoverride' in row:
+              if not ss_calendar:
+                ss_calendar, created = Calendar.objects.using(request.database).get_or_create(name="SS for %s" % itemlocation)
+                if created:
+                  ss_calendar.source = 'Inventory planning'
+                  ss_calendar.default = 1
+                  ss_calendar.save(using=request.database)
+              if row['ssoverride'] == '':
+                # Delete a bucket
+                CalendarBucket.objects.using(request.database).filter(calendar=ss_calendar, startdate=datetime.strptime(row['startdate'], '%Y-%m-%d')).exclude(source='Inventory planning').delete()
+              else:
+                cal_bucket, created = CalendarBucket.objects.using(request.database).get_or_create(calendar=ss_calendar, startdate=datetime.strptime(row['startdate'], '%Y-%m-%d'))
+                cal_bucket.value = row['ssoverride']
+                cal_bucket.enddate = datetime.strptime(row['enddate'], '%Y-%m-%d')
+                cal_bucket.priority = 0
+                if cal_bucket.source == 'Inventory planning':
+                  cal_bucket.source = None
+                cal_bucket.save(using=request.database)
+
+        # Save the forecast overrides
+        if 'forecast' in data:
+          fcst = None
+          for row in data['forecast']:
+            if not fcst:
+              # Assumption: we find only a single forecast matching this
+              # item+location combination
+              fcst = Forecast.objects.all().using(request.database).get(item=ip.buffer.item, location=ip.buffer.location)
+            strt = datetime.strptime(row['startdate'], '%Y-%m-%d').date()
+            nd = datetime.strptime(row['enddate'], '%Y-%m-%d').date()
+            if 'adjHistory3' in row:
+              fcst.updatePlan(
+                strt.replace(year=strt.year - 3),
+                nd.replace(year=nd.year - 3),
+                None,
+                Decimal(row['adjHistory3']) if (row.get('adjHistory3','') != '') else None,
+                True,  # Units
+                request.database
+                )
+            elif 'adjHistory2' in row:
+              fcst.updatePlan(
+                strt.replace(year=strt.year - 2),
+                nd.replace(year=nd.year - 2),
+                None,
+                Decimal(row['adjHistory2']) if (row.get('adjHistory2','') != '') else None,
+                True,  # Units
+                request.database
+                )
+            elif 'adjHistory1' in row:
+              fcst.updatePlan(
+                strt.replace(year=strt.year - 1),
+                nd.replace(year=nd.year - 1),
+                None,
+                Decimal(row['adjHistory1']) if (row.get('adjHistory1','') != '') else None,
+                True,  # Units
+                request.database
+                )
+            elif 'adjForecast' in row:
+              fcst.updatePlan(
+                datetime.strptime(row['startdate'], '%Y-%m-%d').date(),
+                datetime.strptime(row['enddate'], '%Y-%m-%d').date(),
+                Decimal(row['adjForecast']) if (row.get('adjForecast','') != '') else None,
+                None,
+                True,  # Units
+                request.database
+                )
+
+        # Save the inventory parameters
+        # TODO better error handling using a modelform
+        if 'parameters' in data:
+          param = data['parameters']
+          val = param.get('forecastmethod', '').lower()
+          if val != '':
+            fcst = Forecast.objects.all().using(request.database).get(item=ip.buffer.item, location=ip.buffer.location)
+            fcst.method = val
+            fcst.save(using=request.database)
+          ip.roq_type = param.get('roq_type', None)
+          val = param.get('roq_min_qty', '')
+          if val != '':
+            ip.roq_min_qty = float(val)
+          val = param.get('roq_min_poc', '')
+          if val != '':
+            ip.roq_min_poc = float(val)
+          ip.ss_type = param.get('ss_type', None)
+          val = param.get('ss_min_qty', '')
+          if val != '':
+            ip.ss_min_qty = float(val)
+          val = param.get('ss_min_poc', '')
+          if val != '':
+            ip.ss_min_poc = float(val)
+          val = param.get('demand_deviation', '')
+          if val != '':
+            ip.demand_deviation = float(val)
+          val = param.get('leadtime_deviation', '')
+          if val != '':
+            ip.leadtime_deviation = float(val)
+          val = param.get('service_level', '')
+          if val != '':
+            ip.service_level = float(val)
+          val = param.get('nostock', '')
+          if val != '':
+            if val:
+              ip.nostock = True
+            else:
+              ip.nostock = False
+          val = param.get('demand_distribution', None)
+          if val is not None:
+            ip.demand_distribution = val
+          ip.save(using=request.database)
+
+        # Save the comment
+        if 'commenttype' in data and 'comment' in data:
+          if data['commenttype'] == 'item' and ip.buffer.item:
+            Comment(
+              content_object=ip.buffer.item,
+              user=request.user,
+              comment=data['comment']
+              ).save(using=request.database)
+          elif data['commenttype'] == 'location' and ip.buffer.location:
+            Comment(
+              content_object=ip.buffer.location,
+              user=request.user,
+              comment=data['comment']
+              ).save(using=request.database)
+          elif data['commenttype'] == 'itemlocation':
+            Comment(
+              content_object=ip.buffer,
+              user=request.user,
+              comment=data['comment']
+              ).save(using=request.database)
+          else:
+            raise Exception("Invalid comment data")
 
       return HttpResponse(content="OK")
 

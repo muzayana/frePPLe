@@ -162,7 +162,7 @@ def createInventoryPlan(database=DEFAULT_DB_ALIAS):
       buffer_id, roq_min_qty, roq_max_qty, roq_multiple_qty,
       roq_min_poc, roq_max_poc, leadtime_deviation, demand_deviation,
       demand_distribution, service_level, ss_min_qty, ss_max_qty,
-      ss_multiple_qty, ss_min_poc, ss_max_poc, nostock
+      ss_multiple_qty, ss_min_poc, ss_max_poc, nostock, roq_type, ss_type
     from inventoryplanning
     ''')
   cnt = 0
@@ -200,6 +200,10 @@ def createInventoryPlan(database=DEFAULT_DB_ALIAS):
       buf.ss_max_poc = i[14]
     if i[15]:
       buf.nostock = i[15]
+    if i[16]:
+      buf.roq_type = i[16]
+    if i[17]:
+      buf.ss_type = i[17]
   print('Loaded %d inventory planning parameters in %.2f seconds' % (cnt, time() - starttime))
 
   # Step 4.
