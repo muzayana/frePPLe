@@ -22,7 +22,7 @@ bool ForecastSolver::Match_Using_Delivery_Operation = true;
 Duration ForecastSolver::Net_Late(0L);
 Duration ForecastSolver::Net_Early(0L);
 
-const Keyword ForecastSolver::tag_DueAtEndOfBucket("DueAtEndOfBucket");
+const Keyword ForecastSolver::tag_DueWithinBucket("DueWithinBucket");
 const Keyword ForecastSolver::tag_Net_CustomerThenItemHierarchy("Net_CustomerThenItemHierarchy");
 const Keyword ForecastSolver::tag_Net_MatchUsingDeliveryOperation("Net_MatchUsingDeliveryOperation");
 const Keyword ForecastSolver::tag_Net_NetEarly("Net_NetEarly");

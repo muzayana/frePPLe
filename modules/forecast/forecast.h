@@ -121,11 +121,15 @@
   *
   * The module support the following configuration parameters:
   *
-  *   - DueAtEndOfBucket:<br>
-  *     By default forecast demand is due at the start of the forecasting
-  *     bucket. Since the actual customer demand will come in any time in the
-  *     bucket this is a conservative setting.<br>
-  *     By setting this flag to true, the forecast will be due at the end of
+  *   - DueWithinBucket:<br>
+  *     Specifies whether forecasted demand is due at the 'start', 'middle'
+  *     or 'end' of the bucket.
+  *     Using "start" is a conservative setting (since the actual customer
+  *     demand will come in any time in the bucket.<br>
+  *     When the value "middle" is used, the forecast demand i due in the
+  *     middle of the bucket, rounding to nearest day start. This gives the
+  *     more realistic plans, and is the default value.<br>
+  *     By setting this flag to "end", the forecast will be due at the end of
   *     the forecast bucket.
   *
   *   - Net_CustomerThenItemHierarchy:<br>
@@ -408,18 +412,38 @@ class ForecastBucket : public Demand
       return prev;
     }
 
-    /** A flag to mark whether forecast is due at the start or at the end of a
-      * bucket.<br>
-      * The default is false, ie due at the start of the bucket.
+    /** A flag to mark at which date with a forecasting bucket the forecast
+      * is due.
+      * Possible values are:
+      *  - "start"
+      *    Start of the bucket, which is a conservative setting.
+      *    This is the default.
+      *  - "middle"
+      *    Middle of the bucket, rounded towards the nearest start of day.
+      *  - "end"
+      *    End of the bucket, which is a very relaxed setting.
       */
-    static void setDueAtEndOfBucket(bool b)
+    static void setDueWithinBucket(const string& v)
     {
-      DueAtEndOfBucket = b;
+      if (v == DUEATSTART)
+        DueWithinBucket = 0;
+      else if (v == DUEATMIDDLE)
+        DueWithinBucket = 1;
+      else if (v == DUEATEND)
+        DueWithinBucket = 2;
+      else
+        throw DataException("Invalid value for DueWithinBucket");
     }
 
-    static bool getDueAtEndOfBucket()
+    static const string& getDueWithinBucket()
     {
-      return DueAtEndOfBucket;
+      switch (DueWithinBucket)
+      {
+        case 0: return DUEATSTART;
+        case 1: return DUEATMIDDLE;
+        case 2: return DUEATEND;
+      }
+      throw LogicException("Unreachable code reached");
     }
 
     static int initialize();
@@ -457,12 +481,13 @@ class ForecastBucket : public Demand
     ForecastBucket* prev;
     ForecastBucket* next;
 
-    /** A flag to mark whether forecast is due at the start or at the end of a
-      * bucket.
-      * Note this is a static field, and all forecastbuckets thus automatically
+    /** Note this is a static field, and all forecastbuckets thus automatically
       * use the same value.
       */
-    static bool DueAtEndOfBucket;
+    static short DueWithinBucket;
+    static const string DUEATSTART;
+    static const string DUEATMIDDLE;
+    static const string DUEATEND;
 
     /** Reader function to create the forecastbucket objects.
       * This method is quite different from the other reader functions, since
@@ -1601,14 +1626,14 @@ class ForecastSolver : public Solver
     /** Callback function, used for netting orders against the forecast. */
     bool callback(Demand* l, const Signal a);
 
-    bool getDueAtEndOfBucket() const
+    string getDueWithinBucket() const
     {
-      return ForecastBucket::getDueAtEndOfBucket();
+      return ForecastBucket::getDueWithinBucket();
     }
 
-    void setDueAtEndOfBucket(bool b)
+    void setDueWithinBucket(const string& s)
     {
-      ForecastBucket::setDueAtEndOfBucket(b);
+      ForecastBucket::setDueWithinBucket(s);
     }
 
     void setCustomerThenItemHierarchy(bool b)
@@ -1963,7 +1988,7 @@ class ForecastSolver : public Solver
     template<class Cls> static inline void registerFields(MetaClass* m)
     {
       // Forecast buckets
-      m->addBoolField<Cls>(ForecastSolver::tag_DueAtEndOfBucket, &Cls::getDueAtEndOfBucket, &Cls::setDueAtEndOfBucket);
+      m->addStringField<Cls>(ForecastSolver::tag_DueWithinBucket, &Cls::getDueWithinBucket, &Cls::setDueWithinBucket);
       // Netting
       m->addBoolField<Cls>(ForecastSolver::tag_Net_CustomerThenItemHierarchy, &Cls::getCustomerThenItemHierarchy, &Cls::setCustomerThenItemHierarchy);
       m->addBoolField<Cls>(ForecastSolver::tag_Net_MatchUsingDeliveryOperation, &Cls::getMatchUsingDeliveryOperation, &Cls::setMatchUsingDeliveryOperation);
@@ -2056,7 +2081,7 @@ class ForecastSolver : public Solver
     typedef multiset < Demand*, sorter > sortedDemandList;
 
   public:
-    static const Keyword tag_DueAtEndOfBucket;
+    static const Keyword tag_DueWithinBucket;
     static const Keyword tag_Net_CustomerThenItemHierarchy;
     static const Keyword tag_Net_MatchUsingDeliveryOperation;
     static const Keyword tag_Net_NetEarly;

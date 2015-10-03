@@ -325,10 +325,12 @@ def createSolver(cursor):
   for key, value in cursor.fetchall():
     if key in ('forecast.Horizon_future', 'forecast.Horizon_history'):
       continue
-    elif key in ('forecast.DueAtEndOfBucket', 'forecast.Iterations', 'forecast.loglevel',
+    elif key in ('forecast.DueWithinBucket',):
+      kw[key[9:]] = value
+    elif key in ('forecast.Iterations', 'forecast.loglevel', 'forecast.Skip'
                  'forecast.MovingAverage_order', 'forecast.Net_CustomerThenItemHierarchy',
                  'forecast.Net_MatchUsingDeliveryOperation', 'forecast.Net_NetEarly',
-                 'forecast.Net_NetLate', 'forecast.Skip'):
+                 'forecast.Net_NetLate', ):
       kw[key[9:]] = int(value)
     else:
       kw[key[9:]] = float(value)

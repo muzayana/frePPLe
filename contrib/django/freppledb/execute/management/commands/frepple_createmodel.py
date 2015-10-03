@@ -291,7 +291,7 @@ class Command(BaseCommand):
           description='Minimum trend smoothing constant.'
           ).save(using=database)
         Parameter.objects.using(database).create(
-          name='forecast.DueAtEndOfBucket', value='1',
+          name='forecast.DueWithinBucket', value='middle',
           description='By setting this flag to true, the forecast will be due at the end of the forecast bucket.'
           ).save(using=database)
         Parameter.objects.using(database).create(

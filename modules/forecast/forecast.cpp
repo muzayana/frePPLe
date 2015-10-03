@@ -31,8 +31,10 @@ const Keyword ForecastBucket::tag_forecast("forecast");
 const MetaClass *Forecast::metadata;
 const MetaClass *ForecastBucket::metadata;
 const MetaCategory* ForecastBucket::metacategory;
-bool ForecastBucket::DueAtEndOfBucket = false;
-
+short ForecastBucket::DueWithinBucket = 1;
+const string ForecastBucket::DUEATSTART = "start";
+const string ForecastBucket::DUEATMIDDLE = "middle";
+const string ForecastBucket::DUEATEND = "end";
 
 int Forecast::initialize()
 {
@@ -128,7 +130,22 @@ ForecastBucket::ForecastBucket(Forecast* f, Date d, Date e, double w, ForecastBu
   setHidden(true);  // Avoid the subdemands show up in the list of demands
   setItem(f->getItem());
   setCustomer(f->getCustomer());
-  setDue(DueAtEndOfBucket ? e : d);
+  switch (DueWithinBucket)
+  {
+    case 0: // Start
+      setDue(d);
+      break;
+    case 1: // Middle
+      {
+      Date tmp = d + Duration((e - d) / 2);
+      tmp -= tmp.getSecondsDay();  // Truncate to the start of the day
+      setDue(tmp);
+      break;
+      }
+    case 2: // End
+      setDue(e);
+      break;
+  }
   setPriority(f->getPriority());
   setMaxLateness(f->getMaxLateness());
   setMinShipment(f->getMinShipment());
