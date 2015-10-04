@@ -202,8 +202,14 @@ def createInventoryPlan(database=DEFAULT_DB_ALIAS):
       buf.nostock = i[15]
     if i[16]:
       buf.roq_type = i[16]
+    else:
+      # The engine uses "combined" as default. We apply a different default here!
+      buf.roq_type = "calculated"
     if i[17]:
       buf.ss_type = i[17]
+    else:
+      # The engine uses "combined" as default. We apply a different default here!
+      buf.ss_type = "calculated"
   print('Loaded %d inventory planning parameters in %.2f seconds' % (cnt, time() - starttime))
 
   # Step 4.

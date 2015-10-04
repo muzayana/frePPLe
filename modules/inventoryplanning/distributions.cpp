@@ -100,17 +100,21 @@ double PoissonDistribution::calculateFillRate(double mean, int rop, int roq)
 	if (mean == 0)
 		return 1;
 
-	if (roq == 0)
-		return 0;
-
-	if (rop+roq == 0)
+	if (roq == 0 || rop+roq == 0)
 		return 0;
 
 	double sumFillRate = 0;
-	for (int i = 0 ; i < roq ; ++i)
-		sumFillRate += getCumulativePoissonProbability(mean, rop + i);
-
-	return sumFillRate/roq;
+  // The loop below is an optimized version of the nested loop:
+	//   for (int i = 0 ; i < roq ; ++i)
+	//     sumFillRate += getCumulativePoissonProbability(mean, rop + i);
+  int times = roq;
+  for (int i = 0 ; i < rop + roq ; ++i)
+  {
+		sumFillRate += times * getPoissonProbability(mean, i);
+    if (i >= rop)
+      --times;
+  }
+	return sumFillRate / roq;
 }
 
 
@@ -229,9 +233,17 @@ double NegativeBinomialDistribution::calculateFillRate(double mean, double varia
 	double b = (varianceToMean - 1) / varianceToMean;
 
 	double sumFillRate = 0;
-	for (int i = 0 ; i < roq ; ++i)
-		sumFillRate += negativeBinomialCumulativeDistributionFunction(rop + i, a, b);
-	return sumFillRate/roq;
+  // The loop below is an optimized version of the nested loop:
+  //   for (int i = 0 ; i < roq ; ++i)
+	//     sumFillRate += negativeBinomialCumulativeDistributionFunction(rop + i, a, b);
+  int times = roq;
+  for (int i = 0 ; i < rop + roq ; ++i)
+  {
+		sumFillRate += times * negativeBinomialDistributionFunction(i, a, b);
+    if (i >= rop)
+      --times;
+  }
+	return sumFillRate / roq;
 }
 
 

@@ -177,6 +177,8 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
   double leadtime_deviation = b->getDoubleProperty("leadtime_deviation", 0.0);
   double demand_deviation = b->getDoubleProperty("demand_deviation", 0.0);
   bool nostock = b->getBoolProperty("nostock", false);
+  string roq_type = b->getStringProperty("roq_type", "combined");
+  string ss_type = b->getStringProperty("ss_type", "combined");
   double roq_min_qty = b->getDoubleProperty("roq_min_qty", 1);
   double roq_max_qty = b->getDoubleProperty("roq_max_qty", DBL_MAX);
   Duration roq_min_poc = static_cast<long>(b->getDoubleProperty("roq_min_poc", 0));
@@ -217,12 +219,14 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
       << ", lead time std deviation: " << leadtime_deviation
       << ", demand std deviation: " << demand_deviation
       << ", price: " << price << endl;
-    logger << "   ROQ: min quantity: " << roq_min_qty
+    logger << "   ROQ: type: " << roq_type
+      << ", min quantity: " << roq_min_qty
       << ", max quantity: " << roq_max_qty
       << ", min cover: " << roq_min_poc
       << ", max cover: " << roq_max_poc
       << ", multiple: " << roq_multiple << endl;
-    logger << "   SS: min quantity: " << ss_min_qty
+    logger << "   SS: type: " << ss_type
+      << ", min quantity: " << ss_min_qty
       << ", max quantity: " << ss_max_qty
       << ", min cover: " << ss_min_poc
       << ", max cover: " << ss_max_poc
@@ -329,46 +333,118 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
     if (loglevel > 2)
       logger << "     Bucket " << bucketstart << " - " << bucketend << ": ";
 
-    // Get the demand per day, measured over the lead time.
-    // Demand in buckets which are completely within the lead time is all added.
-    // The last bucket will be only partially within the lead time. We take the
+    // Get the demand per day, measured over a period (which can be lead time,
+    // roq min period of cover, or ss min period of cover).
+    // Demand in buckets which are completely within the period is all added.
+    // The last bucket will be only partially within the period. We take the
     // complete demand in that last bucket and add a proportion of it to the
-    // lead time demand.
-    double demand = 0.0;
-    double lastdemand = 0.0;
-    Date fence = bucketstart + Duration(leadtime);
-    Date last_bucket_start;
-    Date last_bucket_end;
+    // demand.
+    double demand_lt = 0.0;
+    double lastdemand_lt = 0.0;
+    Date fence_lt = bucketstart + leadtime;
+    double demand_roq_poc = 0.0;
+    double lastdemand_roq_poc = 0.0;
+    Date fence_roq_poc = bucketstart + roq_min_poc;
+    double demand_ss_poc = 0.0;
+    double lastdemand_ss_poc = 0.0;
+    Date fence_ss_poc = bucketstart + ss_min_poc;
+
+    Date last_bucket_start_lt;
+    Date last_bucket_end_lt;
+    Date last_bucket_start_roq_poc;
+    Date last_bucket_end_roq_poc;
+    Date last_bucket_start_ss_poc;
+    Date last_bucket_end_ss_poc;
     for (Calendar::EventIterator tmp(cal, startdate, true);
       tmp.getDate() < enddate; ++tmp)
     {
-      last_bucket_start = last_bucket_end;
-      last_bucket_end = tmp.getDate();
-      if (last_bucket_end > fence)
-        break;
+      if (last_bucket_end_lt < fence_lt)
+      {
+        last_bucket_start_lt = last_bucket_end_lt;
+        last_bucket_end_lt = tmp.getDate();
+      }
+      if (last_bucket_end_roq_poc < fence_roq_poc)
+      {
+        last_bucket_start_roq_poc = last_bucket_end_roq_poc;
+        last_bucket_end_roq_poc = tmp.getDate();
+      }
+      if (last_bucket_end_ss_poc < fence_ss_poc)
+      {
+        last_bucket_start_ss_poc = last_bucket_end_ss_poc;
+        last_bucket_end_ss_poc = tmp.getDate();
+      }
     }
     for (Buffer::flowplanlist::const_iterator i = b->getFlowPlans().begin();
       i != b->getFlowPlans().end(); ++i)
     {
-      if (i->getEventType() == 1 && i->getQuantity() < 0)
+      // Only consider consumption
+      if (i->getEventType() != 1 || i->getQuantity() >= 0)
+        continue;
+      bool beyond = 0;
+      if (i->getDate() < last_bucket_end_lt)
       {
-        if (i->getDate() >= last_bucket_start)
-          lastdemand -= i->getQuantity();
+        if (i->getDate() >= last_bucket_start_lt)
+          lastdemand_lt -= i->getQuantity();
         else if (i->getDate() >= bucketstart)
-          demand -= i->getQuantity();
+          demand_lt -= i->getQuantity();
       }
-      if (i->getDate() >= last_bucket_end)
+      else
+        ++beyond;
+      if (i->getDate() < last_bucket_end_roq_poc)
+      {
+        if (i->getDate() >= last_bucket_start_roq_poc)
+          lastdemand_roq_poc -= i->getQuantity();
+        else if (i->getDate() >= bucketstart)
+          demand_roq_poc -= i->getQuantity();
+      }
+      else
+        ++beyond;
+      if (i->getDate() < last_bucket_end_ss_poc)
+      {
+        if (i->getDate() >= last_bucket_start_ss_poc)
+          lastdemand_ss_poc -= i->getQuantity();
+        else if (i->getDate() >= bucketstart)
+          demand_ss_poc -= i->getQuantity();
+      }
+      else
+        ++beyond;
+      if (beyond == 3)
         break;
     }
-    if (lastdemand > 0)
-      demand += lastdemand * (fence - last_bucket_start) / (last_bucket_end - last_bucket_start);
+    if (lastdemand_lt > 0)
+      demand_lt += lastdemand_lt
+        * (fence_lt - last_bucket_start_lt)
+        / (last_bucket_end_lt - last_bucket_start_lt);
+    if (lastdemand_roq_poc > 0)
+      demand_roq_poc += lastdemand_roq_poc
+      * (fence_roq_poc - last_bucket_start_roq_poc)
+      / (last_bucket_end_roq_poc - last_bucket_start_roq_poc);
+    if (lastdemand_ss_poc > 0)
+      demand_ss_poc += lastdemand_ss_poc
+      * (fence_ss_poc - last_bucket_start_ss_poc)
+      / (last_bucket_end_ss_poc - last_bucket_start_ss_poc);
+
     if (leadtime)
       // Normal case
-      demand = demand / leadtime * 86400;
+      demand_lt = demand_lt / leadtime * 86400;
     else
       // Special case when the leadtime is zero. We then consider the
       // average demand of the current bucket.
-      demand = demand / static_cast<long>(last_bucket_end - last_bucket_start) * 86400;
+      demand_lt = demand_lt / static_cast<long>(last_bucket_end_lt - last_bucket_start_lt) * 86400;
+    if (roq_min_poc)
+      // Normal case
+      demand_roq_poc = demand_roq_poc / roq_min_poc * 86400;
+    else
+      // Special case when the leadtime is zero. We then consider the
+      // average demand of the current bucket.
+      demand_roq_poc = demand_roq_poc / static_cast<long>(last_bucket_end_roq_poc - last_bucket_start_roq_poc) * 86400;
+    if (ss_min_poc)
+      // Normal case
+      demand_ss_poc = demand_ss_poc / ss_min_poc * 86400;
+    else
+      // Special case when the leadtime is zero. We then consider the
+      // average demand of the current bucket.
+      demand_ss_poc = demand_ss_poc / static_cast<long>(last_bucket_end_ss_poc - last_bucket_start_ss_poc) * 86400;
 
     // Compute the reorder quantity
     // 1. start with the wilson formula for the optimal reorder quantity
@@ -377,31 +453,37 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
     // 4. apply the maximum constraints in quantity and period of cover, and
     //    round down when doing so.
     double roq = 1.0;
-    if (price)
+    if (price && (roq_type == "combined" || roq_type == "calculated"))
     {
-      roq = ceil(sqrt(2 * 365 * demand * fixed_order_cost / holding_cost / price));
+      roq = ceil(sqrt(2 * 365 * demand_lt * fixed_order_cost / holding_cost / price));
       if (firstBucket)
         // Remember the economic order metric in the first bucket
         eoq = roq;
     }
-    if (roq < roq_min_qty)
-      roq = roq_min_qty;
-    double tmp = demand * roq_min_poc;
-    if (roq < tmp)
-      roq = tmp;
-    if (roq_multiple > 0)
-      roq = roq_multiple * static_cast<int>(roq / roq_multiple + 0.99999999);
-    if (roq > roq_max_qty)
+    if (roq_type == "combined" || roq_type == "quantity")
     {
-      roq = roq_max_qty;
+      if (roq < roq_min_qty)
+        roq = roq_min_qty;
+      double tmp = demand_roq_poc * roq_min_poc;
+      if (roq < tmp && ss_type == "combined")
+        roq = tmp;
       if (roq_multiple > 0)
-        roq = roq_multiple * static_cast<int>(roq / roq_multiple);
+        roq = roq_multiple * static_cast<int>(roq / roq_multiple + 0.99999999);
+      if (roq > roq_max_qty)
+      {
+        roq = roq_max_qty;
+        if (roq_multiple > 0)
+          roq = roq_multiple * static_cast<int>(roq / roq_multiple);
+      }
     }
-    if (roq > demand * roq_max_poc)
+    if (roq_type == "combined" || roq_type == "periodofcover")
     {
-      roq = demand * roq_max_poc;
-      if (roq_multiple > 0)
-        roq = roq_multiple * static_cast<int>(roq / roq_multiple);
+      if (roq > demand_roq_poc * roq_max_poc)
+      {
+        roq = demand_roq_poc * roq_max_poc;
+        if (roq_multiple > 0 && roq_type == "combined")
+          roq = roq_multiple * static_cast<int>(roq / roq_multiple);
+      }
     }
     if (!roq)
       roq = 1;
@@ -413,44 +495,52 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
     // 4. apply the maximum constraints in quantity and period of cover, and
     //    round down when doing so.
     double ss = 0.0;
-    if (service_level > 0)
+    if (service_level > 0 && (ss_type == "combined" || ss_type == "calculated"))
     {
+      Duration roq_cover = demand_roq_poc ? static_cast<long>(roq / demand_roq_poc) : 0L;
       ss = calulateStockLevel(
-        demand * leadtime / 86400,
+        // Consider situation with multiple replenishments over the lead time
+        demand_lt * ((leadtime > roq_cover) ? leadtime : roq_cover) / 86400,
         demand_deviation * demand_deviation, // TODO need to add the lead time deviation:  leadtime_deviation,
         static_cast<int>(ceil(roq)),
         service_level/100,
         1, true, dist
         );
-      ss -= demand * leadtime / 86400;
+      ss -= demand_lt * leadtime / 86400;
       if (ss < 0)
         ss = 0;
     }
-    if (ss < ss_min_qty)
-      ss = ss_min_qty;
-    if (ss < demand * ss_min_poc)
-      ss = demand * ss_min_poc;
-    if (ss_multiple > 0)
-      ss = ss_multiple * static_cast<int>(ss / ss_multiple + 0.99999999);
-    if (ss > ss_max_qty)
+    if (ss_type == "combined" || ss_type == "quantity")
     {
-      ss = ss_max_qty;
+      if (ss < ss_min_qty)
+        ss = ss_min_qty;
+      if (ss < demand_ss_poc * ss_min_poc && ss_type == "combined")
+        ss = demand_ss_poc * ss_min_poc;
       if (ss_multiple > 0)
-        ss = ss_multiple * static_cast<int>(ss / ss_multiple);
+        ss = ss_multiple * static_cast<int>(ss / ss_multiple + 0.99999999);
+      if (ss > ss_max_qty)
+      {
+        ss = ss_max_qty;
+        if (ss_multiple > 0)
+          ss = ss_multiple * static_cast<int>(ss / ss_multiple);
+      }
     }
-    if (ss > demand * ss_max_poc)
+    if (ss_type == "combined" || ss_type == "periodofcover")
     {
-      ss = demand * ss_max_poc;
-      if (ss_multiple > 0)
-        ss = ss_multiple * static_cast<int>(ss / ss_multiple);
+      if (ss > demand_ss_poc * ss_max_poc)
+      {
+        ss = demand_ss_poc * ss_max_poc;
+        if (ss_multiple > 0 && ss_type == "combined")
+          ss = ss_multiple * static_cast<int>(ss / ss_multiple);
+      }
     }
 
     // Final result
     if (loglevel > 2)
-      logger << "demand: " << demand
+      logger << "demand: " << demand_lt // << " / " << demand_roq_poc << " / " << demand_ss_poc
         << ", roq: " << roq
         << ", ss: " << ss
-        << ", rop: " << (ss + leadtime * demand / 86400) << endl;
+        << ", rop: " << (ss + leadtime * demand_lt / 86400) << endl;
 
     // Store the metrics in the first bucket.
     // The values are averaged over the lead time.
@@ -468,12 +558,12 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
       const_cast<Buffer*>(b)->setProperty("ip_roq", res, 3);
       res.setDouble(ss);
       const_cast<Buffer*>(b)->setProperty("ip_ss", res, 3);
-      res.setDouble(demand);
+      res.setDouble(demand_lt);
       const_cast<Buffer*>(b)->setProperty("ip_demand", res, 3);
       if (dist == AUTOMATIC)
       {
         distribution choosen = chooseDistribution(
-          demand * leadtime / 86400,
+          demand_lt * leadtime / 86400,
           demand_deviation * demand_deviation
           );
         if (choosen == POISSON)
@@ -581,6 +671,9 @@ distribution InventoryPlanningSolver::chooseDistribution(
   double mean, double variance
   )
 {
+  // When the average is sufficiently large, any distribution can efficiently
+  // be approximated with a normal distribution.
+  // See http://www.stat.ucla.edu/~dinov/courses_students.dir/Applets.dir/NormalApprox2PoissonApplet.html
   if (mean >= 20)
     return NORMAL;
 

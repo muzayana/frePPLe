@@ -171,7 +171,7 @@ class NormalDistribution
 	  static inline double getNormalProbabilityDensityFunction(double mean, double variance, double x)
     {
       if (!variance)
-        return mean;
+        return (x > mean) ? 1.0 : 0.0;
 	    double z = (x - mean) / sqrt(variance);
 	    return (1 / sqrt(2*3.14159265358979323846)) * exp(-0.5 * z * z);
     }
@@ -179,7 +179,7 @@ class NormalDistribution
 	  static inline double getNormalDistributionFunction(double mean, double variance, int x)
     {
       if (!variance)
-        return mean;
+        return (x > mean) ? 1.0 : 0.0;
 	    return phi((x - mean) / sqrt(variance));
     }
 
