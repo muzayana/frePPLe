@@ -51,6 +51,9 @@ class InventoryPlanningSolver : public Solver
     /** End date of the horizon for which to compute the SS and ROQ. */
     static int horizon_end;
 
+    /** Average bucket size. */
+    static Duration bucket_size;
+
     static double fixed_order_cost;
 
     static double holding_cost;
@@ -154,11 +157,22 @@ class PoissonDistribution
 {
   public:
 	  static double calculateFillRate(double mean, int rop, int roq);
+    static void init()
+    {
+      for(int i = 0; i < 150; ++i)
+        factorialcache[i] = 0.0;
+      factorialcache[0] = 1;
+    }
 
   private:
     static double getCumulativePoissonProbability(double mean, int x);
 	  static double getPoissonProbability(double mean, int x);
+
+    /** Computes the factorial of an integer number N as 1*2*3*4...*N */
 	  static double factorial(unsigned int n);
+
+    /** Cache variable to compute the factorial only once. */
+    static double factorialcache[150];
 };
 
 

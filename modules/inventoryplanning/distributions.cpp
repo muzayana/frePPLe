@@ -16,6 +16,9 @@ namespace module_inventoryplanning
 {
 
 
+double PoissonDistribution::factorialcache[150];
+
+
 distribution InventoryPlanningSolver::matchDistributionName(string& name)
 {
   if (name == "Automatic")
@@ -68,22 +71,31 @@ double PoissonDistribution::getPoissonProbability(double mean, int x)
 }
 
 
-/***************************************************
-function factorial
-input : n
-returns : n! that is 1*2*3*4...*n
-This function can be improved in the future in case of
-performance issues.
-We can :
-1) create a array of all the possible factorial values until we exceed the c++ largest double
-2) We can cache the result of an already calculated value
-I would suggest the first option
-****************************************************/
 double PoissonDistribution::factorial(unsigned int n)
 {
+  // Protect for overflow
+  // Highest number that can be represented is DBL_MAX = 1.79769e+308
+  // and 170! = 7.2574156153e+306
+  if (n > 170)
+    throw DataException("Factorial is too large to compute");
+
+  if (n < 150 && factorialcache[n])
+    return factorialcache[n];
+
 	double ret = 1;
-	for(unsigned int i = 1; i <= n; ++i)
-		ret *= i;
+	for (unsigned int i = n; i > 0; --i)
+  {
+    if (i < 150 && factorialcache[i])
+    {
+      // The factorial of a lower value already exists
+      factorialcache[n] = factorialcache[i] * ret;
+      return factorialcache[n];
+    }
+    else
+		  ret *= i;
+  }
+  if (n < 150)
+    factorialcache[n] = ret;
 	return ret;
 }
 
@@ -110,9 +122,13 @@ double PoissonDistribution::calculateFillRate(double mean, int rop, int roq)
   int times = roq;
   for (int i = 0 ; i < rop + roq ; ++i)
   {
-		sumFillRate += times * getPoissonProbability(mean, i);
+    double tmp = times * getPoissonProbability(mean, i);
+		sumFillRate += tmp;
     if (i >= rop)
       --times;
+    if (tmp < 1e-06 && i > mean)
+      // Contribution is getting ridiculously low and will get even lower
+      break;
   }
 	return sumFillRate / roq;
 }
@@ -239,9 +255,13 @@ double NegativeBinomialDistribution::calculateFillRate(double mean, double varia
   int times = roq;
   for (int i = 0 ; i < rop + roq ; ++i)
   {
-		sumFillRate += times * negativeBinomialDistributionFunction(i, a, b);
+    double tmp = times * negativeBinomialDistributionFunction(i, a, b);
+		sumFillRate += tmp;
     if (i >= rop)
       --times;
+    if (tmp < 1e-06 && i > mean)
+      // Contribution is getting ridiculously low and will get even lower
+      break;
   }
 	return sumFillRate / roq;
 }

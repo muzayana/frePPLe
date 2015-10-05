@@ -29,6 +29,7 @@ int InventoryPlanningSolver::horizon_start = 0;
 int InventoryPlanningSolver::horizon_end = 365;
 double InventoryPlanningSolver::fixed_order_cost = 20;
 double InventoryPlanningSolver::holding_cost = 0.05;
+Duration InventoryPlanningSolver::bucket_size;
 
 
 int InventoryPlanningSolver::initialize()
@@ -101,6 +102,30 @@ void InventoryPlanningSolver::solve(void* v)
   // Validate the solver is initialised correctly
   if (!cal)
     throw DataException("Inventory planning solver requires a calendar to be specified");
+
+  // Measure the average bucket size
+  // We round to the nearest day, to assure we get stable results over time.
+  Date startdate = Plan::instance().getCurrent() - Duration(horizon_start * 86400L);
+  Date enddate = Plan::instance().getCurrent() + Duration(horizon_end * 86400L);
+  Date start;
+  Date end;
+  unsigned int cnt = 0;
+  for (Calendar::EventIterator bucket(cal, startdate, true);
+    bucket.getDate() < enddate; ++bucket)
+  {
+    if (!start)
+      start = bucket.getDate();
+    else
+    {
+      end = bucket.getDate();
+      ++cnt;
+    }
+  }
+  if (!cnt)
+    throw DataException("Invalid calendar");
+  bucket_size = Duration(static_cast<long>(end - start) / cnt / 86400) * 86400;
+  if (bucket_size <= 0L)
+    throw DataException("Invalid calendar");
 
   // Step 1: Erase the previous plan (except locked operationplans)
   for (Operation::iterator o = Operation::begin(); o != Operation::end(); ++o)
@@ -380,7 +405,7 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
       // Only consider consumption
       if (i->getEventType() != 1 || i->getQuantity() >= 0)
         continue;
-      bool beyond = 0;
+      unsigned short beyond = 0;
       if (i->getDate() < last_bucket_end_lt)
       {
         if (i->getDate() >= last_bucket_start_lt)
@@ -497,14 +522,30 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
     double ss = 0.0;
     if (service_level > 0 && (ss_type == "combined" || ss_type == "calculated"))
     {
-      Duration roq_cover = demand_roq_poc ? static_cast<long>(roq / demand_roq_poc) : 0L;
+      // Consider situation with multiple replenishments over the lead time.
+      // In such case only the
+      Duration tmp_leadtime = demand_roq_poc ? static_cast<long>(roq / demand_roq_poc) : 0L;
+      if (leadtime > tmp_leadtime)
+        tmp_leadtime = leadtime;
       ss = calulateStockLevel(
-        // Consider situation with multiple replenishments over the lead time
-        demand_lt * ((leadtime > roq_cover) ? leadtime : roq_cover) / 86400,
-        demand_deviation * demand_deviation, // TODO need to add the lead time deviation:  leadtime_deviation,
+        // Argument 1: demand over the "risk period", which is the max of the
+        // lead time and the time between replenishments.
+        demand_lt * tmp_leadtime / 86400,
+        // Argument 2: Variation, as the sum of the demand variation
+        // over the risk period and the variation caused by the lead time
+        // variance
+        tmp_leadtime / bucket_size * demand_deviation * demand_deviation
+        + leadtime_deviation * leadtime_deviation * demand_lt * demand_lt,
+        // Argument 3: Reorder quantity
         static_cast<int>(ceil(roq)),
+        // Argument 4: Fill rate minimum
         service_level/100,
-        1, true, dist
+        // Argument 5: Fill rate maximum
+        1,
+        // Argument 6: Minimum is the strongest
+        true,
+        // Argument 7: Distribution
+        dist
         );
       ss -= demand_lt * leadtime / 86400;
       if (ss < 0)

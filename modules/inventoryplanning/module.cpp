@@ -53,6 +53,9 @@ MODULE_EXPORT const char* initialize(const Environment::ParameterList& z)
     logger << "Error: unknown exception" << endl;
   }
 
+  // Initialization of Poisson distribution
+  PoissonDistribution::init();
+
   // Return the name of the module
   return name;
 }
