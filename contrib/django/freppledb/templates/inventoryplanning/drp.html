@@ -1062,6 +1062,14 @@ function setCommentType(t)
 $(function() {
   {% if preferences.name %}selectRow("{{ preferences.name|escapejs }}");{% endif %}
   selectTab("{% if preferences.showtab %}{{ preferences.showtab }}{% else %}plan{% endif %}");
+
+  // Resize the grids when the window size changes
+  $(window).bind('resize', function() {
+	  var newsize = $('#content-main').width();
+	  $("#plangrid").setGridWidth(newsize);
+	  $("#transactiongrid").setGridWidth(newsize);
+	  $("#forecastgrid").setGridWidth(newsize);
+	});
 });
 
 </script>
