@@ -114,49 +114,65 @@ class InventoryPlanningOutput(models.Model):
   This model stores the output result of the inventory planning and is the
   key driver for the distribution planning screen and workflows.
 
-  The fields are populated from different source:
-     - Populated by a run of the inventory planning module.
-         - lead time
-         - planned service level in the first bucket
-         - local (forecast/)demand per period, averaged over the lead time
-         - local dependent demand per period, averaged over the lead time
-         - economic order quantity in the first bucket, unconstrained intermediate result
-         - statistical distribution applied, intermediate result
-         - safety stock in the first bucket, unconstrained intermediate result
-         - safety stock in the first bucket, final value
-         - reorder quantity in the first bucket
-     - Populated by a daily update procedure (or computed on the fly!)
-         - demand deviation computed?
-         - local open orders
-         - local open backorders
-         - proposed purchases
-         - proposed transfers in
-         - proposed transfers out
-         - period of cover
+  Two processes are updating the contents in this table:
+    - A strategic planning process which computes the safety stock
+      and reorder quantities.
+      This is typically run on a monthly or weekly basis, as soon as a new
+      planning period is started.
+    - A tactical planning process evaluates the current stock
+      compared to the ideal computed in the previous step.
+      This is typically run daily, and also when purchase orders and
+      distribution orders are changing status.
   '''
-  # Database fields
+  # Database fields - key
   buffer = models.OneToOneField(Buffer, primary_key=True)
+
+  # Database fields - computed by the inventory planning run
   leadtime = models.DurationField(_('lead time'), db_index=True, null=True)
-  servicelevel = models.DecimalField(_('service level'), max_digits=15, decimal_places=4, null=True)
-  localforecast = models.DecimalField(_('local forecast'), max_digits=15, decimal_places=4, null=True)
-  localorders = models.DecimalField(_('local orders'), max_digits=15, decimal_places=4, null=True)
-  localbackorders = models.DecimalField(_('local backorders'), max_digits=15, decimal_places=4, null=True)
-  dependentforecast = models.DecimalField(_('dependent forecast'), max_digits=15, decimal_places=4, null=True)
-  totaldemand = models.DecimalField(_('total demand'), max_digits=15, decimal_places=4, null=True)
+  economicorderquantity = models.DecimalField(_('economic reorder quantity'), max_digits=15, decimal_places=4, null=True)
+  economicorderquantityvalue = models.DecimalField(_('economic reorder quantity value'), max_digits=15, decimal_places=4, null=True)
+
+  # Database fields - computed by the inventory planning run
+  # The following fields are exported by the inventory planning run as a calendar.
+  # The stock position run copies the result in this table.
   safetystock = models.DecimalField(_('safety stock'), max_digits=15, decimal_places=4, null=True)
   reorderquantity = models.DecimalField(_('reorder quantity'), max_digits=15, decimal_places=4, null=True)
-  proposedpurchases = models.DecimalField(_('proposed purchases'), max_digits=15, decimal_places=4, null=True)
-  proposedtransfers = models.DecimalField(_('proposed transfers'), max_digits=15, decimal_places=4, null=True)
-  localforecastvalue = models.DecimalField(_('local forecast value'), max_digits=15, decimal_places=4, null=True)
-  localordersvalue = models.DecimalField(_('local orders value'), max_digits=15, decimal_places=4, null=True)
-  localbackordersvalue = models.DecimalField(_('local backorders value'), max_digits=15, decimal_places=4, null=True)
-  dependentforecastvalue = models.DecimalField(_('dependent forecast value'), max_digits=15, decimal_places=4, null=True)
-  totaldemandvalue = models.DecimalField(_('total demand value'), max_digits=15, decimal_places=4, null=True)
   safetystockvalue = models.DecimalField(_('safety stock value'), max_digits=15, decimal_places=4, null=True)
   reorderquantityvalue = models.DecimalField(_('reorder quantity value'), max_digits=15, decimal_places=4, null=True)
+
+  # Database fields - computed by the stock position run
+  onhand = models.DecimalField(_('onhand'), max_digits=15, decimal_places=4, null=True)
+  overduesalesorders = models.DecimalField(_('overdue sales orders'), max_digits=15, decimal_places=4, null=True)
+  opensalesorders = models.DecimalField(_('open sales orders'), max_digits=15, decimal_places=4, null=True)
+  proposedpurchases = models.DecimalField(_('proposed purchases'), max_digits=15, decimal_places=4, null=True)
+  proposedtransfers = models.DecimalField(_('proposed transfers'), max_digits=15, decimal_places=4, null=True)
+  openpurchases = models.DecimalField(_('open purchases'), max_digits=15, decimal_places=4, null=True)
+  opentransfers = models.DecimalField(_('open transfers'), max_digits=15, decimal_places=4, null=True)
+  onhandvalue = models.DecimalField(_('onhand value'), max_digits=15, decimal_places=4, null=True)
+  overduesalesordersvalue = models.DecimalField(_('overdue sales orders value'), max_digits=15, decimal_places=4, null=True)
+  opensalesordersvalue = models.DecimalField(_('open sales orders value'), max_digits=15, decimal_places=4, null=True)
   proposedpurchasesvalue = models.DecimalField(_('proposed purchases value'), max_digits=15, decimal_places=4, null=True)
   proposedtransfersvalue = models.DecimalField(_('proposed transfers value'), max_digits=15, decimal_places=4, null=True)
-  #  TODO other useful metrics:  OH, OO, POC, excess/shortage, EOQ,
+  openpurchasesvalue = models.DecimalField(_('open purchases value'), max_digits=15, decimal_places=4, null=True)
+  opentransfersvalue = models.DecimalField(_('open transfers value'), max_digits=15, decimal_places=4, null=True)
+  # TODO stockoutrisk = models.DecimalField(_('stockout risk'), max_digits=15, decimal_places=4, null=True)
+
+  # Local forecast over the lead time
+  # Local orders within lead time
+  # Dependent demand within lead time
+  # Total demand within lead time
+  #The fields are populated from different source:
+  #   - Populated by a run of the inventory planning module.
+  #       - planned service level in the first bucket
+  #       - local (forecast/)demand per period, averaged over the lead time
+  #       - local dependent demand per period, averaged over the lead time
+
+  localforecast = models.DecimalField(_('local forecast'), max_digits=15, decimal_places=4, null=True)
+  dependentforecast = models.DecimalField(_('dependent forecast'), max_digits=15, decimal_places=4, null=True)
+  totaldemand = models.DecimalField(_('total demand'), max_digits=15, decimal_places=4, null=True)
+  localforecastvalue = models.DecimalField(_('local forecast value'), max_digits=15, decimal_places=4, null=True)
+  dependentforecastvalue = models.DecimalField(_('dependent forecast value'), max_digits=15, decimal_places=4, null=True)
+  totaldemandvalue = models.DecimalField(_('total demand value'), max_digits=15, decimal_places=4, null=True)
 
   def __str__(self):
     return self.buffer.name

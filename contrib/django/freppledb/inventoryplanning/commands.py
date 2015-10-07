@@ -107,7 +107,7 @@ def exportResults(cursor, database):
 
 def createInventoryPlan(database=DEFAULT_DB_ALIAS):
 
-  print("Start inventory planning")
+  print("Start inventory planning at", datetime.now().strftime("%H:%M:%S"))
 
   cursor = connections[database].cursor()
 
@@ -227,7 +227,7 @@ def createInventoryPlan(database=DEFAULT_DB_ALIAS):
   # Export all results into the database
   exportResults(cursor, database)
 
-  print("Finished inventory planning")
+  print("Finished inventory planning at", datetime.now().strftime("%H:%M:%S"))
 
 
 if __name__ == "__main__":

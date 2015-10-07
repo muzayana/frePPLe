@@ -89,8 +89,14 @@ def createPlan(database=DEFAULT_DB_ALIAS):
   # TODO: move this completely into the inventory planning app
   with_inventoryplanning = 'solver_inventoryplanning' in [ a[0] for a in inspect.getmembers(frepple) ]
   if with_inventoryplanning:
+    # Calculating the SS and ROQ values
     from freppledb.inventoryplanning.commands import createInventoryPlan
-    createInventoryPlan(database)
+    createInventoryPlan(database=database)
+    # Calculating the stock position compared to the targets
+    from freppledb.inventoryplanning.management.commands.frepple_updatestockposition import updateStockPosition
+    print("\nStart calculating stock position at", datetime.now().strftime("%H:%M:%S"))
+    updateStockPosition(database=database)
+    print("End calculating stock position at", datetime.now().strftime("%H:%M:%S"))
     # Optional alternative process: run ip plan, erase the plan, then create constrained plan
     # frepple.erase(False)
   else:
