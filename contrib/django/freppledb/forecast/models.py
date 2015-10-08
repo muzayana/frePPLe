@@ -833,8 +833,6 @@ class ForecastPlan(models.Model):
   # Database fields
   id = models.AutoField(_('identifier'), primary_key=True)
   forecast = models.ForeignKey(Forecast, verbose_name=_('forecast'), db_index=True, related_name='plans')
-  customerlvl = models.PositiveIntegerField(null=True, editable=False, blank=True)
-  itemlvl = models.PositiveIntegerField(null=True, editable=False, blank=True)
   startdate = models.DateTimeField(_('start date'), null=False, db_index=True)
   enddate = models.DateTimeField(_('end date'), null=False, db_index=True)
   orderstotal = models.DecimalField(_('total orders'), max_digits=15, decimal_places=4, default='0.00')

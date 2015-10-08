@@ -74,8 +74,6 @@ class Migration(migrations.Migration):
             name='ForecastPlan',
             fields=[
                 ('id', models.AutoField(primary_key=True, verbose_name='identifier', serialize=False)),
-                ('customerlvl', models.PositiveIntegerField(editable=False, null=True, blank=True)),
-                ('itemlvl', models.PositiveIntegerField(editable=False, null=True, blank=True)),
                 ('startdate', models.DateTimeField(verbose_name='start date', db_index=True)),
                 ('enddate', models.DateTimeField(verbose_name='end date', db_index=True)),
                 ('orderstotal', models.DecimalField(max_digits=15, verbose_name='total orders', default='0.00', decimal_places=4)),
