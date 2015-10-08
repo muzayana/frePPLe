@@ -313,9 +313,9 @@ inspiration for your own deployments.
   # Create frepple database schema
   frepplectl migrate --noinput
   
-***************************
+******************************
 Suse installation instructions
-***************************
+******************************
 
 This section shows the instructions for installing
 and configuring frePPLe with a PostgreSQL database on a SLES 12 server.

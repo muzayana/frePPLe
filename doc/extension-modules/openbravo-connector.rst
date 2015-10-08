@@ -54,6 +54,10 @@ The connector provides the following functionality:
     | For improved security it is recommended to specify this password in the
       setting OPENBRAVO_PASSWORDS in the djangosettings.py file rather then this
       parameter.
+      
+  * | openbravo.date_format: Date format for openbravo webservice filter
+    | Date format defaults to  %Y-%m-%d (i.e. YYYY-MM-DD) but can here be changed
+      to other formats like %m-%d-%Y (i.e. MM-DD-YYYY).
 
 **Importing data from Openbravo to frePPLe**
 
