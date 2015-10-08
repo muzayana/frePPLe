@@ -658,14 +658,14 @@ class GridReport(View):
     for i in reportclass.rows:
       if i.name == sort:
         if 'sord' in request.GET and request.GET['sord'] == 'desc':
-          return idx > 1 and "%d desc, 1 asc" % idx or "1 desc"
+          return idx > 1 and "%d desc nulls last, 1 asc nulls last" % idx or "1 desc nulls last"
         elif prefs and 'sord' in prefs and prefs['sord'] == 'desc':
-          return idx > 1 and "%d desc, 1 asc" % idx or "1 desc"
+          return idx > 1 and "%d desc nulls last, 1 asc nulls last" % idx or "1 desc nulls last"
         else:
-          return idx > 1 and "%d asc, 1 asc" % idx or "1 asc"
+          return idx > 1 and "%d asc nulls last, 1 asc nulls last" % idx or "1 asc nulls last"
       else:
         idx += 1
-    return "1 asc"
+    return "1 asc nulls last"
 
 
   @classmethod
@@ -686,9 +686,9 @@ class GridReport(View):
     except:
       sort = reportclass.default_sort[0]
     if ('sord' in request.GET and request.GET['sord'] == 'desc') or reportclass.default_sort[1] == 'desc':
-      return "%s asc" % sort
+      return "%s asc nulls last" % sort
     else:
-      return "%s desc" % sort
+      return "%s desc nulls last" % sort
 
 
   @classmethod
@@ -1552,6 +1552,7 @@ class GridPivot(GridReport):
   def _apply_sort(reportclass, request, query, prefs=None):
     '''
     Applies a sort to the query.
+    TODO: this sorting function uses the django ORM, which doesn't allows us to add the option "nulls last"
     '''
     asc = True
     sort = None
