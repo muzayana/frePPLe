@@ -201,9 +201,14 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
   // Inventory planning parameters of this buffer
   double leadtime_deviation = b->getDoubleProperty("leadtime_deviation", 0.0);
   double demand_deviation = b->getDoubleProperty("demand_deviation", 0.0);
-  bool nostock = b->getBoolProperty("nostock", false);
   string roq_type = b->getStringProperty("roq_type", "combined");
   string ss_type = b->getStringProperty("ss_type", "combined");
+  bool nostock = b->getBoolProperty("nostock", false);
+  if (nostock)
+  {
+    roq_type = "nostock";
+    ss_type = "nostock";
+  }
   double roq_min_qty = b->getDoubleProperty("roq_min_qty", 1);
   double roq_max_qty = b->getDoubleProperty("roq_max_qty", DBL_MAX);
   Duration roq_min_poc = static_cast<long>(b->getDoubleProperty("roq_min_poc", 0) * 86400);

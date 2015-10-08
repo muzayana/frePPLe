@@ -95,7 +95,7 @@ class DRP(GridReport):
   basequeryset = InventoryPlanningOutput.objects.all()
   model = InventoryPlanningOutput
   height = 150
-  frozenColumns = 1
+  frozenColumns = 3
   multiselect = False
   editable = False
   hasTimeBuckets = True
@@ -103,8 +103,8 @@ class DRP(GridReport):
 
   rows = (
     GridFieldText('buffer', title=_('buffer'), field_name="buffer", key=True, formatter='buffer', hidden=True),
-    GridFieldText('item', title=_('item'), field_name="item", formatter='item'),
-    GridFieldText('location', title=_('location'), field_name="location", formatter='location'),
+    GridFieldText('item', title=_('item'), field_name="buffer__item__name", formatter='item'),
+    GridFieldText('location', title=_('location'), field_name="buffer__location__name", formatter='location'),
     GridFieldInteger('leadtime', title=_('lead time'), extra="formatoptions:{defaultValue:''}"),
     GridFieldInteger('localforecast', title=_('local forecast'), extra="formatoptions:{defaultValue:''}"),
     GridFieldInteger('safetystock', title=_('safety stock'), extra="formatoptions:{defaultValue:''}"),
@@ -117,7 +117,6 @@ class DRP(GridReport):
     GridFieldInteger('proposedpurchases', title=_('proposed purchases'), extra="formatoptions:{defaultValue:''}"),
     GridFieldInteger('proposedtransfers', title=_('proposed transfers'), extra="formatoptions:{defaultValue:''}"),
     #GridFieldNumber('servicelevel', title=_('service level'), extra="formatoptions:{defaultValue:''}"),
-    #GridFieldNumber('localforecast', title=_('local forecast'), extra="formatoptions:{defaultValue:''}"),
     #GridFieldNumber('localorders', title=_('local orders'), extra="formatoptions:{defaultValue:''}"),
     #GridFieldNumber('dependentforecast', title=_('dependent forecast'), extra="formatoptions:{defaultValue:''}"),
     #GridFieldNumber('totaldemand', title=_('total demand'), extra="formatoptions:{defaultValue:''}"),
@@ -133,6 +132,13 @@ class DRP(GridReport):
     cursor = connections[request.database].cursor()
     basesql, baseparams = basequery.query.get_compiler(basequery.db).as_sql(with_col_aliases=False)
     sortsql = DRP._apply_sort_index(request, prefs=request.prefs)
+    print (basesql, sortsql)
+
+    # Value or units
+    if request.prefs and request.prefs.get('units', 'unit') == 'value':
+      suffix = 'value'
+    else:
+      suffix = ''
 
     # Assure the hierarchies are up to date  # TODO skip this check for performance reasons?
     #Buffer.rebuildHierarchy(database=basequery.db)
@@ -145,23 +151,27 @@ class DRP(GridReport):
     query = '''
       select
         buffer_id, item_id, location_id,
-        extract(epoch from results.leadtime)/86400, localforecast,
-        safetystock, reorderquantity, results.onhand,
-        overduesalesorders, opensalesorders, openpurchases, opentransfers,
-        proposedpurchases, proposedtransfers
+        extract(epoch from results.leadtime)/86400, localforecast%s,
+        safetystock%s, reorderquantity%s, results.onhand%s,
+        overduesalesorders%s, opensalesorders%s, openpurchases%s, opentransfers%s,
+        proposedpurchases%s, proposedtransfers%s
       from (%s) results
       inner join buffer
         on buffer.name = results.buffer_id
       order by %s
-      ''' % (basesql, sortsql)
+      ''' % (
+        suffix, suffix, suffix, suffix, suffix,
+        suffix, suffix, suffix, suffix, suffix,
+        basesql, sortsql
+        )
     cursor.execute(query, baseparams)
 
     # Build the python result
     for row in cursor.fetchall():
       yield {
         'buffer': row[0],
-        'item': row[1],
-        'location': row[2],
+        'buffer__item__name': row[1],
+        'buffer__location__name': row[2],
         'leadtime': row[3],
         'localforecast': row[4],
         'safetystock': row[5],
