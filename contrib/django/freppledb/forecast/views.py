@@ -143,8 +143,7 @@ class OverviewReport(GridPivot):
       currentdate = datetime.now().date()
 
     # Value or units
-    prefs = request.user.getPreference(OverviewReport.getKey())
-    if prefs and prefs.get('units', 'unit') == 'value':
+    if request.prefs and request.prefs.get('units', 'unit') == 'value':
       suffix = 'value'
     else:
       suffix = ''
