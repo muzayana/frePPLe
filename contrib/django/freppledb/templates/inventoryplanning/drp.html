@@ -172,27 +172,6 @@ function markSelectedRow(id)
 }
 
 
-function markAllRows()
-{
-  if ($(this).is(':checked'))
-  {
-    $("#actions").removeClass("ui-selectmenu-disabled ui-state-disabled change_status_selectmenu_inactive")
-    .removeClass("ui-selectmenu-disabled ui-state-disabled change_status_selectmenu_inactive")
-    .addClass("change_status_selectmenu_active ui-state-enabled ui-selectmenu-enabled")
-    .prop('disabled', false);
-    $('.cbox').prop("checked", true);
-  }
-  else
-  {
-   $("#actions")
-    .addClass("ui-selectmenu-disabled ui-state-disabled change_status_selectmenu_inactive")
-    .removeClass("change_status_selectmenu_active ui-state-enabled ui-selectmenu-enabled")
-    .prop('disabled', 'disabled');
-    $('.cbox').prop("checked", false);
-  }
-}
-
-
 function updateScreen(newval)
 {
   if (units == newval)
@@ -1011,6 +990,7 @@ function displayResult(data)
       onSelectRow: markSelectedRow
         });
     $("#transactiongrid").jqGrid('setFrozenColumns');
+    $('#cb_transactiongrid.cbox').click(grid.markAllRows);
   }
   else
   {
