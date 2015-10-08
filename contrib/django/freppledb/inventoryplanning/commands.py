@@ -64,11 +64,11 @@ def exportResults(cursor, database):
     cursor.execute("delete from out_inventoryplanning")  # TODO avoid complete rebuild of the table
     cursor.executemany('''
       insert into out_inventoryplanning
-      (buffer_id, leadtime, reorderquantity, reorderquantityvalue, servicelevel, safetystock, totaldemand)
+      (buffer_id, leadtime, reorderquantity, reorderquantityvalue, calculatedsafetystock, safetystock, calculatedreorderquantity)
       values (%s,(%s||' second')::interval ,%s,%s,%s,%s,%s)
       ''',
       [
-        (b.name, b.ip_leadtime, b.ip_eoq, b.ip_eoq * b.item.price, b.ip_service_level, b.ip_ss, b.ip_demand)
+        (b.name, b.ip_leadtime, b.ip_roq, b.ip_roq * b.item.price, b.ip_calculated_ss, b.ip_ss, b.ip_calculated_roq)
         for b in buffers()
       ])
 

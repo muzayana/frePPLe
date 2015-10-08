@@ -206,8 +206,8 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
   string ss_type = b->getStringProperty("ss_type", "combined");
   double roq_min_qty = b->getDoubleProperty("roq_min_qty", 1);
   double roq_max_qty = b->getDoubleProperty("roq_max_qty", DBL_MAX);
-  Duration roq_min_poc = static_cast<long>(b->getDoubleProperty("roq_min_poc", 0));
-  Duration roq_max_poc = static_cast<long>(b->getDoubleProperty("roq_min_poc", 10 * 365 * 86400));
+  Duration roq_min_poc = static_cast<long>(b->getDoubleProperty("roq_min_poc", 0) * 86400);
+  Duration roq_max_poc = static_cast<long>(b->getDoubleProperty("roq_max_poc", 10 * 365) * 86400);
   double roq_multiple = b->getDoubleProperty("roq_multiple", 1);
   string distname = b->getStringProperty("distribution", "Automatic");
   distribution dist = matchDistributionName(distname);
@@ -215,8 +215,8 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
   double ss_min_qty = b->getDoubleProperty("ss_min_qty", 0);
   double ss_max_qty = b->getDoubleProperty("ss_max_qty", DBL_MAX);
   double ss_multiple = b->getDoubleProperty("ss_multiple", 1);
-  Duration ss_min_poc = static_cast<long>(b->getDoubleProperty("ss_min_poc", 0));
-  Duration ss_max_poc = static_cast<long>(b->getDoubleProperty("ss_max_poc", 10 * 365 * 86400));
+  Duration ss_min_poc = static_cast<long>(b->getDoubleProperty("ss_min_poc", 0) * 86400);
+  Duration ss_max_poc = static_cast<long>(b->getDoubleProperty("ss_max_poc", 3650) * 86400);
   double price = 0.0;
   if (b->getItem())
     price = b->getItem()->getPrice();
@@ -338,8 +338,8 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
   CalendarBucket *ss_calendar_bucket = NULL;
 
   // Variables for the output metrics
-  double eoq = 1;
-  double service_level_out = 0.99;
+  double calculated_roq = 1;
+  double calculated_ss = 0;
 
   // Loop over all buckets in the horizon
   Date startdate = Plan::instance().getCurrent() - Duration(horizon_start * 86400L);
@@ -478,39 +478,42 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
     // 4. apply the maximum constraints in quantity and period of cover, and
     //    round down when doing so.
     double roq = 1.0;
-    if (price && (roq_type == "combined" || roq_type == "calculated"))
+    if (price && (roq_type == "combined" || roq_type == "calculated" || firstBucket))
     {
-      roq = ceil(sqrt(2 * 365 * demand_lt * fixed_order_cost / holding_cost / price));
+      double tmp = sqrt(2 * 365 * demand_lt * fixed_order_cost / holding_cost / price);
+      if (roq_type == "combined" || roq_type == "calculated")
+        roq = tmp;
       if (firstBucket)
         // Remember the economic order metric in the first bucket
-        eoq = roq;
+        calculated_roq = tmp;
     }
-    if (roq_type == "combined" || roq_type == "quantity")
+    if (roq < roq_min_qty && (roq_type == "combined" || roq_type == "quantity"))
+      roq = roq_min_qty;
+    if (roq_type == "combined" || roq_type == "periodofcover")
     {
-      if (roq < roq_min_qty)
-        roq = roq_min_qty;
-      double tmp = demand_roq_poc * roq_min_poc;
-      if (roq < tmp && ss_type == "combined")
+      double tmp = demand_roq_poc * roq_min_poc / 86400;
+      if (roq < tmp)
         roq = tmp;
+    }
+    if (roq_multiple > 0)
+      roq = roq_multiple * static_cast<int>(roq / roq_multiple + 0.99999999);
+    if (roq > roq_max_qty && (roq_type == "combined" || roq_type == "quantity"))
+    {
+      roq = roq_max_qty;
       if (roq_multiple > 0)
-        roq = roq_multiple * static_cast<int>(roq / roq_multiple + 0.99999999);
-      if (roq > roq_max_qty)
+        roq = roq_multiple * static_cast<int>(roq / roq_multiple);
+    }
+    if (roq_type == "combined" || roq_type == "periodofcover")
+    {
+      double tmp = demand_roq_poc * roq_max_poc / 86400;
+      if (roq > tmp)
       {
-        roq = roq_max_qty;
+        roq = tmp;
         if (roq_multiple > 0)
           roq = roq_multiple * static_cast<int>(roq / roq_multiple);
       }
     }
-    if (roq_type == "combined" || roq_type == "periodofcover")
-    {
-      if (roq > demand_roq_poc * roq_max_poc)
-      {
-        roq = demand_roq_poc * roq_max_poc;
-        if (roq_multiple > 0 && roq_type == "combined")
-          roq = roq_multiple * static_cast<int>(roq / roq_multiple);
-      }
-    }
-    if (!roq)
+    if (roq < 1)
       roq = 1;
 
     // Compute the safety stock
@@ -520,21 +523,23 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
     // 4. apply the maximum constraints in quantity and period of cover, and
     //    round down when doing so.
     double ss = 0.0;
-    if (service_level > 0 && (ss_type == "combined" || ss_type == "calculated"))
+    if (service_level > 0 && (ss_type == "combined" || ss_type == "calculated" || firstBucket))
     {
-      // Consider situation with multiple replenishments over the lead time.
-      // In such case only the
-      Duration tmp_leadtime = demand_roq_poc ? static_cast<long>(roq / demand_roq_poc) : 0L;
-      if (leadtime > tmp_leadtime)
+      // We compute the service level with the minimum of the replenishment
+      // lead time and the expected time to consume the ROQ quantity.
+      // This is used to consider situations with multiple replenishments
+      // over the lead time.
+      Duration tmp_leadtime = demand_roq_poc ? static_cast<long>(roq / demand_roq_poc * 86400) : 0L;
+      if (leadtime < tmp_leadtime)
         tmp_leadtime = leadtime;
-      ss = calulateStockLevel(
+      double tmp = calulateStockLevel(
         // Argument 1: demand over the "risk period", which is the max of the
         // lead time and the time between replenishments.
         demand_lt * tmp_leadtime / 86400,
         // Argument 2: Variation, as the sum of the demand variation
         // over the risk period and the variation caused by the lead time
         // variance
-        tmp_leadtime / bucket_size * demand_deviation * demand_deviation
+        demand_deviation * demand_deviation * tmp_leadtime / bucket_size
         + leadtime_deviation * leadtime_deviation * demand_lt * demand_lt,
         // Argument 3: Reorder quantity
         static_cast<int>(ceil(roq)),
@@ -547,41 +552,48 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
         // Argument 7: Distribution
         dist
         );
-      ss -= demand_lt * leadtime / 86400;
-      if (ss < 0)
-        ss = 0;
+      tmp -= demand_lt * tmp_leadtime / 86400;
+      if (tmp < 0)
+        tmp = 0;
+      if (firstBucket)
+        calculated_ss = tmp;
+      if (ss_type == "combined" || ss_type == "calculated")
+        ss = tmp;
     }
-    if (ss_type == "combined" || ss_type == "quantity")
+    if (ss < ss_min_qty && (ss_type == "combined" || ss_type == "quantity"))
+      ss = ss_min_qty;
+    if (ss_type == "combined" || ss_type == "periodofcover")
     {
-      if (ss < ss_min_qty)
-        ss = ss_min_qty;
-      if (ss < demand_ss_poc * ss_min_poc && ss_type == "combined")
-        ss = demand_ss_poc * ss_min_poc;
+      double tmp = demand_ss_poc * ss_min_poc / 86400;
+      if (ss < tmp)
+        ss = tmp;
+    }
+    if (ss_multiple > 0)
+      ss = ss_multiple * static_cast<int>(ss / ss_multiple + 0.99999999);
+    if (ss > ss_max_qty && (ss_type == "combined" || ss_type == "quantity"))
+    {
+      ss = ss_max_qty;
       if (ss_multiple > 0)
-        ss = ss_multiple * static_cast<int>(ss / ss_multiple + 0.99999999);
-      if (ss > ss_max_qty)
+        ss = ss_multiple * static_cast<int>(ss / ss_multiple);
+    }
+    if (ss_type == "combined" || ss_type == "periodofcover")
+    {
+      double tmp = demand_ss_poc * ss_max_poc;
+      if (ss > tmp)
       {
-        ss = ss_max_qty;
+        ss = tmp;
         if (ss_multiple > 0)
           ss = ss_multiple * static_cast<int>(ss / ss_multiple);
       }
     }
-    if (ss_type == "combined" || ss_type == "periodofcover")
-    {
-      if (ss > demand_ss_poc * ss_max_poc)
-      {
-        ss = demand_ss_poc * ss_max_poc;
-        if (ss_multiple > 0 && ss_type == "combined")
-          ss = ss_multiple * static_cast<int>(ss / ss_multiple);
-      }
-    }
+    double rop = ss + demand_lt * leadtime / 86400;
 
     // Final result
     if (loglevel > 2)
       logger << "demand: " << demand_lt // << " / " << demand_roq_poc << " / " << demand_ss_poc
         << ", roq: " << roq
         << ", ss: " << ss
-        << ", rop: " << (ss + leadtime * demand_lt / 86400) << endl;
+        << ", rop: " << rop << endl;
 
     // Store the metrics in the first bucket.
     // The values are averaged over the lead time.
@@ -591,10 +603,10 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
       PythonData res;
       res.setDouble(leadtime);
       const_cast<Buffer*>(b)->setProperty("ip_leadtime", res, 3);
-      res.setDouble(eoq);
-      const_cast<Buffer*>(b)->setProperty("ip_eoq", res, 3);
-      res.setDouble(service_level_out);
-      const_cast<Buffer*>(b)->setProperty("ip_service_level", res, 3);
+      res.setDouble(calculated_roq);
+      const_cast<Buffer*>(b)->setProperty("ip_calculated_roq", res, 3);
+      res.setDouble(calculated_ss);
+      const_cast<Buffer*>(b)->setProperty("ip_calculated_ss", res, 3);
       res.setDouble(roq);
       const_cast<Buffer*>(b)->setProperty("ip_roq", res, 3);
       res.setDouble(ss);
@@ -620,11 +632,8 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
         res.setString(distname);
       const_cast<Buffer*>(b)->setProperty("ip_distribution", res, 4);
       /* TODO
-         - local (forecast/)demand per period, averaged over the lead time
-         - local dependent demand per period, averaged over the lead time
          - statistical distribution applied, intermediate result
          - safety stock in the first bucket, unconstrained intermediate result
-         - safety stock in the first bucket, final value
          - reorder quantity in the first bucket
          */
     }

@@ -313,7 +313,7 @@ function save(refresh) {
   prmtr["leadtime_deviation"] = $("#leadtime_deviation").val();
   prmtr["ss_type"] = $('input[name="ss_type"]:checked').val();
   prmtr["ss_min_qty"] = $("#ss_min_qty").val();
-  prmtr["ss_min_poc"] = $("#dd_min_poc").val();
+  prmtr["ss_min_poc"] = $("#ss_min_poc").val();
   prmtr["nostock"] = $("#nostock").prop('checked');
   prmtr["forecastmethod"] = $("#forecastmethod").val();
   if (!$.isEmptyObject(prmtr))
@@ -869,10 +869,10 @@ function displayResult(data)
   $("#roq_type_" + data.parameters.roq_type).prop("checked", true);
   $("#ss_type_" + data.parameters.ss_type).prop("checked", true);
   $("#nostock").prop('checked', data.parameters.nostock == "True");
-  $("#eoq").html(data.parameters.eoq);
+  $("#eoq").html(data.parameters.roq_calculated);
   $("#roq_min_qty").val(data.parameters.roq_min_qty).removeClass('dirty-cell');
   $("#roq_min_poc").val(data.parameters.roq_min_poc).removeClass('dirty-cell');
-  $("#service_level_qty").html(data.parameters.service_level_qty);
+  $("#calculated_ss").html(data.parameters.ss_calculated);
   $("#service_level").val(data.parameters.service_level).removeClass('dirty-cell');
   $("#demand_distribution").val(data.parameters.demand_distribution).removeClass('red');
   $("#demand_deviation").val(data.parameters.demand_deviation).removeClass('dirty-cell');
@@ -1123,11 +1123,11 @@ $(function() {
 <table><tr><td class="bold">{% trans "reorder quantity"|capfirst %}</td>
 <td class="bold">{% trans "safety stock"|capfirst %}</td></tr>
 <tr><td valign="top">
-<input type="radio" id="roq_type_calculated" name="roq_type" value="calculated" onclick="activateSaveUndo()"><label for="roq_type_calculated">{% trans "economic order quantity"|capfirst %}: <span id="eoq">&nbsp;&nbsp;&nbsp;&nbsp;</span> units</label><br/>
-<input type="radio" id="roq_type_quantity" name="roq_type" value="quantity" onclick="activateSaveUndo()"><label for="roq_type_quantity">{% trans "quantity"|capfirst %}&nbsp;<input style="width:80px" type="number" id="roq_min_qty" oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" min="1"> units</label><br/>
-<input type="radio" id="roq_type_periodofcover" name="roq_type" value="periodofcover" onclick="activateSaveUndo()"><label for="roq_type_periodofcover">{% trans "period of cover"|capfirst %}&nbsp;<input style="width:50px" type="number" id="roq_min_poc" oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" min="1" step="7"> days</label><br/>
+<input type="radio" id="roq_type_calculated" name="roq_type" value="calculated" onclick="activateSaveUndo()"><label for="roq_type_calculated">{% trans "economic order quantity"|capfirst %}: <span id="eoq">&nbsp;&nbsp;&nbsp;&nbsp;</span> {% trans "units" %}</label><br/>
+<input type="radio" id="roq_type_quantity" name="roq_type" value="quantity" onclick="activateSaveUndo()"><label for="roq_type_quantity">{% trans "quantity"|capfirst %}&nbsp;<input style="width:80px" type="number" id="roq_min_qty" oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" min="1"> {% trans "units" %}</label><br/>
+<input type="radio" id="roq_type_periodofcover" name="roq_type" value="periodofcover" onclick="activateSaveUndo()"><label for="roq_type_periodofcover">{% trans "period of cover"|capfirst %}&nbsp;<input style="width:50px" type="number" id="roq_min_poc" oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" min="1" step="7"> {% trans "days" %}</label><br/>
 </td><td valign="top">
-<input type="radio" id="ss_type_calculated" name="ss_type" value="calculated" onclick="activateSaveUndo()"><label for="ss_type_calculated">{% trans "service level"|capfirst %}: <span id="service_level_qty">&nbsp;&nbsp;&nbsp;&nbsp;</span>units<br/>
+<input type="radio" id="ss_type_calculated" name="ss_type" value="calculated" onclick="activateSaveUndo()"><label for="ss_type_calculated">{% trans "service level"|capfirst %}: <span id="calculated_ss">&nbsp;&nbsp;&nbsp;&nbsp;</span> {% trans "units" %}<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;{% trans "minimum"|capfirst %} <input type="number" id="service_level" oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" min="0" max="100" size="7"> %<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;{% trans "statistical distribution"|capfirst %}
 <select name="actions" id="demand_distribution" onchange="activateSaveUndo(); $(this).addClass('dirty-cell red')" style="display: initial" class="ui-corner-all ui-selectmenu-default ui-state-enabled">
@@ -1136,10 +1136,10 @@ $(function() {
   <option value="poisson">{% trans "poisson"|capfirst %}</option>
   <option value="negbinomial">{% trans "negative binomial"|capfirst %}</option>
 </select><br/>
-&nbsp;&nbsp;&nbsp;&nbsp;{% trans "demand standard deviation"|capfirst %} <input style="width:80px" type="number" id="demand_deviation" oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" size="7"> units<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;{% trans "lead time standard deviation"|capfirst %} <input style="width:80px" type="number" id="leadtime_deviation" oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" size="7"> days</label><br/>
-<input type="radio" id="ss_type_quantity" name="ss_type" value="quantity" onclick="activateSaveUndo()"><label for="ss_type_quantity">{% trans "quantity"|capfirst %}<input style="width:80px" type="number" id="ss_min_qty" oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" min="1"> units</label><br/>
-<input type="radio" id="ss_type_periodofcover" name="ss_type" value="periodofcover" onclick="activateSaveUndo()"><label for="ss_type_periodofcover">{% trans "period of cover"|capfirst %}<input style="width:50px" type="number" id="ss_min_poc" min="1" step="7" oninput="activateSaveUndo(); $(this).addClass('dirty-cell')"> days</label><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;{% trans "demand standard deviation"|capfirst %} <input style="width:80px" type="number" id="demand_deviation" oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" size="7"> {% trans "units" %}<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;{% trans "lead time standard deviation"|capfirst %} <input style="width:80px" type="number" id="leadtime_deviation" oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" size="7"> {% trans "days" %}</label><br/>
+<input type="radio" id="ss_type_quantity" name="ss_type" value="quantity" onclick="activateSaveUndo()"><label for="ss_type_quantity">{% trans "quantity"|capfirst %}<input style="width:80px" type="number" id="ss_min_qty" oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" min="1"> {% trans "units" %}</label><br/>
+<input type="radio" id="ss_type_periodofcover" name="ss_type" value="periodofcover" onclick="activateSaveUndo()"><label for="ss_type_periodofcover">{% trans "period of cover"|capfirst %}<input style="width:50px" type="number" id="ss_min_poc" min="1" step="7" oninput="activateSaveUndo(); $(this).addClass('dirty-cell')"> {% trans "days" %}</label><br/>
 </td></tr>
 </table>
 <input type="checkbox" id="nostock" onclick="activateSaveUndo(); $(this).addClass('dirty-cell')">&nbsp;&nbsp;<label for="nostock">{% trans "Don't stock" %}</label>

@@ -129,8 +129,8 @@ class InventoryPlanningOutput(models.Model):
 
   # Database fields - computed by the inventory planning run
   leadtime = models.DurationField(_('lead time'), db_index=True, null=True)
-  economicorderquantity = models.DecimalField(_('economic reorder quantity'), max_digits=15, decimal_places=4, null=True)
-  economicorderquantityvalue = models.DecimalField(_('economic reorder quantity value'), max_digits=15, decimal_places=4, null=True)
+  calculatedreorderquantity = models.DecimalField(_('calculated reorder quantity'), max_digits=15, decimal_places=4, null=True)
+  calculatedsafetystock = models.DecimalField(_('calculated safety stock'), max_digits=15, decimal_places=4, null=True)
 
   # Database fields - computed by the inventory planning run
   # The following fields are exported by the inventory planning run as a calendar.

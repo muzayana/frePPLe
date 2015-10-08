@@ -104,18 +104,16 @@ sql = '''
       %s
       group by buffer_id
     ),
-    demand as (
+    salesorders as (
       select
         buffer_id,
         sum(case
           when demand.due < %%s
             then demand.quantity
-          else 0
           end) as overdue,
         sum(case
           when demand.due >= %%s
             then demand.quantity
-          else 0
           end) as open
       from out_inventoryplanning
       inner join buffer
@@ -127,32 +125,61 @@ sql = '''
         and demand.status = 'open'
       %s
       group by buffer_id
-    )
+    ),
+    forecast as (
+      select
+        buffer_id,
+        round(sum(
+          forecasttotal
+          * (extract(epoch from (least(%%s + out_inventoryplanning.leadtime, forecastplan.enddate) - forecastplan.startdate)))
+          / (extract(epoch from out_inventoryplanning.leadtime))
+          )) as total,
+        round(sum(
+          forecastnet
+          * (extract(epoch from (least(%%s + out_inventoryplanning.leadtime, forecastplan.enddate) - forecastplan.startdate)))
+          / (extract(epoch from out_inventoryplanning.leadtime))
+          )) as net
+      from out_inventoryplanning
+      inner join buffer
+        on buffer.name = out_inventoryplanning.buffer_id
+      inner join forecast
+        on buffer.item_id = forecast.item_id
+        and buffer.location_id = forecast.location_id
+      left outer join forecastplan
+        on forecastplan.forecast_id = forecast.name
+        and forecastplan.startdate >= %%s
+        and forecastplan.enddate <= %%s + out_inventoryplanning.leadtime
+      %s
+      group by buffer_id
+      )
   update out_inventoryplanning
   set
     onhand = position.onhand,
-    overduesalesorders = demand.overdue,
-    opensalesorders = demand.open,
-    proposedpurchases = purchases.proposed,
-    openpurchases = purchases.open,
-    proposedtransfers = transfers.proposed,
-    opentransfers = transfers.open,
-    reorderquantity = position.reorderquantity,
-    safetystock = position.safetystock,
-    onhandvalue = position.onhand * position.price,
-    overduesalesordersvalue = demand.overdue * position.price,
-    opensalesordersvalue = demand.open * position.price,
-    proposedpurchasesvalue = purchases.proposed * position.price,
-    openpurchasesvalue = purchases.open * position.price,
-    proposedtransfersvalue = transfers.proposed * position.price,
-    opentransfersvalue = transfers.open * position.price,
-    reorderquantityvalue = position.reorderquantity * position.price,
-    safetystockvalue = position.safetystock * position.price
-  from position, transfers, purchases, demand
+    localforecast = coalesce(forecast.total, 0),
+    overduesalesorders = coalesce(salesorders.overdue, 0),
+    opensalesorders = coalesce(salesorders.open, 0),
+    proposedpurchases = coalesce(purchases.proposed, 0),
+    openpurchases = coalesce(purchases.open, 0),
+    proposedtransfers = coalesce(transfers.proposed, 0),
+    opentransfers = coalesce(transfers.open, 0),
+    reorderquantity = coalesce(position.reorderquantity, 0),
+    safetystock = coalesce(position.safetystock, 0),
+    onhandvalue = coalesce(position.onhand * position.price, 0),
+    localforecastvalue = coalesce(forecast.total * position.price, 0),
+    overduesalesordersvalue = coalesce(salesorders.overdue * position.price, 0),
+    opensalesordersvalue = coalesce(salesorders.open * position.price, 0),
+    proposedpurchasesvalue = coalesce(purchases.proposed * position.price, 0),
+    openpurchasesvalue = coalesce(purchases.open * position.price, 0),
+    proposedtransfersvalue = coalesce(transfers.proposed * position.price, 0),
+    opentransfersvalue = coalesce(transfers.open * position.price, 0),
+    reorderquantityvalue = coalesce(position.reorderquantity * position.price, 0),
+    safetystockvalue = coalesce(position.safetystock * position.price, 0)
+  from position, transfers, purchases, salesorders, forecast
   where out_inventoryplanning.buffer_id = position.buffer_id
   and out_inventoryplanning.buffer_id = transfers.buffer_id
   and out_inventoryplanning.buffer_id = purchases.buffer_id
-  and out_inventoryplanning.buffer_id = demand.buffer_id
+  and out_inventoryplanning.buffer_id = salesorders.buffer_id
+  and out_inventoryplanning.buffer_id = forecast.buffer_id
   '''
 
 
@@ -257,18 +284,21 @@ def updateStockPosition(item=None, database=DEFAULT_DB_ALIAS):
   if item:
     cursor.execute(sql % (
       "where buffer.item_id = %s", "where buffer.item_id = %s",
-      "where buffer.item_id = %s", "where buffer.item_id = %s"
+      "where buffer.item_id = %s", "where buffer.item_id = %s",
+      "where buffer.item_id = %s"
       ), (
       current_date, current_date, current_date, current_date,
       current_date, current_date, current_date, current_date, item,
       current_date, item, current_date, item,
-      current_date, current_date, current_date, item
+      current_date, current_date, current_date, item,
+      current_date, current_date, current_date, current_date, item
       ))
   else:
-    cursor.execute(sql % ('', '', '', ''), (
+    cursor.execute(sql % ('', '', '', '', ''), (
       current_date, current_date, current_date, current_date,
       current_date, current_date, current_date, current_date,
       current_date, current_date,
-      current_date, current_date, current_date
+      current_date, current_date, current_date,
+      current_date, current_date, current_date, current_date
       ))
   # TODO Loop over records to calculate the fill rate

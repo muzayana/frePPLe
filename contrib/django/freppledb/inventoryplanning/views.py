@@ -14,22 +14,28 @@ import json
 
 from django.conf import settings
 from django.contrib.admin.utils import unquote
+from django.contrib.admin.models import LogEntry, CHANGE, ADDITION
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from django.db import connections, transaction
+from django.db.models.fields.related import RelatedField
+from django.forms.models import modelform_factory
 from django.http import Http404
 from django.http.response import StreamingHttpResponse, HttpResponse, HttpResponseServerError
 from django.utils.decorators import method_decorator
 from django.utils.translation import ugettext_lazy as _
+from django.utils.encoding import force_text
+from django.utils.text import get_text_list
 from django.views.generic import View
 
 from freppledb.common.report import GridFieldText, GridReport
 from freppledb.common.report import GridFieldLastModified, GridFieldChoice
-from freppledb.common.report import GridFieldNumber, GridFieldBool
+from freppledb.common.report import GridFieldNumber, GridFieldBool, GridFieldInteger
 
-from freppledb.inventoryplanning.models import InventoryPlanning
-from freppledb.input.models import Buffer, Item, Location, Calendar, CalendarBucket
+from freppledb.inventoryplanning.models import InventoryPlanning, InventoryPlanningOutput
+from freppledb.input.models import Buffer, Location, Calendar, CalendarBucket
+from freppledb.input.models import Item, DistributionOrder, PurchaseOrder
 from freppledb.common.models import Comment, Parameter
 from freppledb.forecast.models import Forecast
 
@@ -86,8 +92,8 @@ class DRP(GridReport):
   '''
   template = 'inventoryplanning/drp.html'
   title = _("Distribution planning")
-  basequeryset = Buffer.objects.all().exclude(inventoryplanning__isnull=True)
-  model = Buffer
+  basequeryset = InventoryPlanningOutput.objects.all()
+  model = InventoryPlanningOutput
   height = 150
   frozenColumns = 1
   multiselect = False
@@ -96,163 +102,77 @@ class DRP(GridReport):
   maxBucketLevel = 3
 
   rows = (
-    GridFieldText('name', title=_('buffer'), field_name="name", key=True, formatter='buffer'),
-    GridFieldText('item', title=_('item'), formatter='item'),
-    GridFieldText('location', title=_('location'), formatter='location'),
-    GridFieldNumber('leadtime', title=_('lead time'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldNumber('servicelevel', title=_('service level'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldNumber('localforecast', title=_('local forecast'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldNumber('localorders', title=_('local orders'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldNumber('localbackorders', title=_('local backorders'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldNumber('dependentforecast', title=_('dependent forecast'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldNumber('totaldemand', title=_('total demand'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldNumber('safetystock', title=_('safety stock'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldNumber('reorderquantity', title=_('reorder quantity'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldNumber('proposedpurchases', title=_('proposed purchases'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldNumber('proposedtransfers', title=_('proposed transfers'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldNumber('localforecastvalue', title=_('local forecast value'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldNumber('localordersvalue', title=_('local orders value'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldNumber('localbackordersvalue', title=_('local backorders value'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldNumber('dependentforecastvalue', title=_('dependent forecast value'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldNumber('localbackordersvalue', title=_('local backorders value'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldNumber('totaldemandvalue', title=_('total demand value'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldNumber('safetystockvalue', title=_('safety stock value'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldNumber('reorderquantityvalue', title=_('reorder quantity value'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldNumber('proposedpurchasesvalue', title=_('proposed purchases value'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldNumber('proposedtransfersvalue', title=_('proposed transfers value'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldNumber('onhand', title=_('on hand'), extra="formatoptions:{defaultValue:''}"),
+    GridFieldText('buffer', title=_('buffer'), field_name="buffer", key=True, formatter='buffer', hidden=True),
+    GridFieldText('item', title=_('item'), field_name="item", formatter='item'),
+    GridFieldText('location', title=_('location'), field_name="location", formatter='location'),
+    GridFieldInteger('leadtime', title=_('lead time'), extra="formatoptions:{defaultValue:''}"),
+    GridFieldInteger('localforecast', title=_('local forecast'), extra="formatoptions:{defaultValue:''}"),
+    GridFieldInteger('safetystock', title=_('safety stock'), extra="formatoptions:{defaultValue:''}"),
+    GridFieldInteger('reorderquantity', title=_('reorder quantity'), extra="formatoptions:{defaultValue:''}"),
+    GridFieldInteger('onhand', title=_('on hand'), extra="formatoptions:{defaultValue:''}"),
+    GridFieldInteger('overduesalesorders', title=_('overdue sales orders'), extra="formatoptions:{defaultValue:''}"),
+    GridFieldInteger('opensalesorders', title=_('open sales orders'), extra="formatoptions:{defaultValue:''}"),
+    GridFieldInteger('openpurchases', title=_('open purchases'), extra="formatoptions:{defaultValue:''}"),
+    GridFieldInteger('opentransfers', title=_('open transfers'), extra="formatoptions:{defaultValue:''}"),
+    GridFieldInteger('proposedpurchases', title=_('proposed purchases'), extra="formatoptions:{defaultValue:''}"),
+    GridFieldInteger('proposedtransfers', title=_('proposed transfers'), extra="formatoptions:{defaultValue:''}"),
+    #GridFieldNumber('servicelevel', title=_('service level'), extra="formatoptions:{defaultValue:''}"),
+    #GridFieldNumber('localforecast', title=_('local forecast'), extra="formatoptions:{defaultValue:''}"),
+    #GridFieldNumber('localorders', title=_('local orders'), extra="formatoptions:{defaultValue:''}"),
+    #GridFieldNumber('dependentforecast', title=_('dependent forecast'), extra="formatoptions:{defaultValue:''}"),
+    #GridFieldNumber('totaldemand', title=_('total demand'), extra="formatoptions:{defaultValue:''}"),
+    #GridFieldNumber('localforecastvalue', title=_('local forecast value'), extra="formatoptions:{defaultValue:''}"),
+    #GridFieldNumber('localordersvalue', title=_('local orders value'), extra="formatoptions:{defaultValue:''}"),
+    #GridFieldNumber('dependentforecastvalue', title=_('dependent forecast value'), extra="formatoptions:{defaultValue:''}"),
+    #GridFieldNumber('totaldemandvalue', title=_('total demand value'), extra="formatoptions:{defaultValue:''}"),
     )
 
   @staticmethod
-  def query(request, basequery, sortsql='1 asc'):
+  def query(request, basequery):
+
     cursor = connections[request.database].cursor()
     basesql, baseparams = basequery.query.get_compiler(basequery.db).as_sql(with_col_aliases=False)
+    sortsql = DRP._apply_sort_index(request, prefs=request.prefs)
 
     # Assure the hierarchies are up to date  # TODO skip this check for performance reasons?
-    Buffer.rebuildHierarchy(database=basequery.db)
-    Item.rebuildHierarchy(database=basequery.db)
-    Location.rebuildHierarchy(database=basequery.db)
-
-    # Get the current date
-    try:
-      current_date = datetime.strptime(
-        Parameter.objects.using(request.database).get(name="currentdate").value,
-        "%Y-%m-%d %H:%M:%S"
-        )
-    except:
-      current_date = datetime.now()
+    #Buffer.rebuildHierarchy(database=basequery.db)
+    #Item.rebuildHierarchy(database=basequery.db)
+    #Location.rebuildHierarchy(database=basequery.db)
 
     # Execute the query
     # TODO don't display buffers, but items and locations, and aggregate stuff
     # TODO add location and item attributes
     query = '''
-      select buf.name, buf.item_id, buf.location_id,
-        extract(epoch from out_inventoryplanning.leadtime)/86400 lead_time,
-        out_inventoryplanning.servicelevel,
-        out_inventoryplanning.totaldemand, out_inventoryplanning.reorderquantity,
-        out_inventoryplanning.safetystock, buf.onhand,
-        coalesce(sum(so.quantity), 0) localorders,
-        coalesce(sum(case when so.due > now() then so.quantity end), 0) localbackorders,
-        coalesce(min(roq_cal.value), 1) roq,
-        coalesce(min(ss_cal.value), 0) ss,
-        coalesce(sum(case when po.status = 'confirmed' then po.quantity end), 0) confirmed_po,
-        coalesce(sum(case when po.status = 'proposed' then po.quantity end), 0) proposed_po,
-        coalesce(sum(case when trf.status = 'confirmed' then trf.quantity end), 0) confirmed_trf,
-        coalesce(sum(case when trf.status = 'proposed' then trf.quantity end), 0) proposed_trf
-      from (%s) buf
-      -- join roq calendar
-      left outer join calendarbucket roq_cal
-        on roq_cal.calendar_id = 'ROQ for ' || buf.name
-        and roq_cal.startdate <= '%s' and roq_cal.enddate > '%s'
-        and roq_cal.priority = (
-           select min(priority) from calendarbucket
-           where calendar_id = 'ROQ for ' || buf.name
-           and roq_cal.startdate <= '%s' and roq_cal.enddate > '%s'
-           )
-      -- join ss calendar
-      left outer join calendarbucket ss_cal
-        on ss_cal.calendar_id = 'SS for ' || buf.name
-        and ss_cal.startdate <= '%s' and ss_cal.enddate > '%s'
-        and ss_cal.priority = (
-           select min(priority) from calendarbucket
-           where calendar_id = 'SS for ' || buf.name
-           and ss_cal.startdate <= '%s' and ss_cal.enddate > '%s'
-           )
-      -- join item and child items
-      inner join item
-        on buf.item_id = item.name
-      left outer join item item2
-        on item2.lft between item.lft and item.rght
-      -- join location and child locations
-      inner join location
-        on buf.location_id = location.name
-      left outer join location location2
-        on location2.lft between location.lft and location.rght
-      -- join inventory planning results
-      inner join inventoryplanning
-        on buf.name = inventoryplanning.buffer_id
-      left outer join out_inventoryplanning
-        on buf.name = out_inventoryplanning.buffer_id
-      -- join demand within lead time
-      left outer join demand so
-        on so.item_id = item2.name
-        and so.location_id = location2.name
-        and so.due < timestamp '%s' + out_inventoryplanning.leadtime
-        and so.status = 'confirmed'
-      -- join purchase orders
-      left outer join purchase_order po
-        on po.item_id = item2.name
-        and po.location_id = location2.name
-        and po.enddate < timestamp '%s' + out_inventoryplanning.leadtime
-        and po.status in ('confirmed','proposed')
-      -- join distribution orders
-      left outer join distribution_order trf
-        on trf.item_id = item2.name
-        and (trf.destination_id = location2.name or trf.origin_id = location2.name)
-        and trf.enddate < timestamp '%s' + out_inventoryplanning.leadtime
-        and trf.status in ('confirmed','proposed')
-      -- grouping and ordering
-      group by buf.name, buf.item_id, buf.location_id,
-        out_inventoryplanning.leadtime, out_inventoryplanning.servicelevel,
-        out_inventoryplanning.totaldemand, out_inventoryplanning.reorderquantity,
-        out_inventoryplanning.safetystock, buf.onhand
+      select
+        buffer_id, item_id, location_id,
+        extract(epoch from results.leadtime)/86400, localforecast,
+        safetystock, reorderquantity, results.onhand,
+        overduesalesorders, opensalesorders, openpurchases, opentransfers,
+        proposedpurchases, proposedtransfers
+      from (%s) results
+      inner join buffer
+        on buffer.name = results.buffer_id
       order by %s
-      ''' % (
-        basesql, current_date, current_date, current_date, current_date,
-        current_date, current_date, current_date, current_date, current_date,
-        current_date, current_date, sortsql
-        )
+      ''' % (basesql, sortsql)
     cursor.execute(query, baseparams)
 
     # Build the python result
     for row in cursor.fetchall():
       yield {
-        'name': row[0],
+        'buffer': row[0],
         'item': row[1],
         'location': row[2],
         'leadtime': row[3],
-        'servicelevel': row[4],
-        'totaldemand': row[5],
+        'localforecast': row[4],
+        'safetystock': row[5],
         'reorderquantity': row[6],
-        'safetystock': row[7],
-        'onhand': row[8],
-        'localorders': row[9],
-        'localbackorders': row[10],
+        'onhand': row[7],
+        'overduesalesorders': row[8],
+        'opensalesorders': row[9],
+        'openpurchases': row[10],
+        'opentransfers': row[11],
         'proposedpurchases': row[12],
-        'proposedtransfers': row[14],
-        'localforecast': 666,
-        'dependentforecast': 666,
-        'totaldemand': 666,
-        'localforecastvalue': 666,
-        'localordersvalue': 666,
-        'localbackordersvalue': 666,
-        'dependentforecastvalue': 666,
-        'localbackordersvalue': 666,
-        'totaldemandvalue': 666,
-        'safetystockvalue': 666,
-        'reorderquantityvalue': 666,
-        'proposedpurchasesvalue': 666,
-        'proposedtransfersvalue': 666
+        'proposedtransfers': row[13]
         }
 
 
@@ -295,7 +215,7 @@ class DRPitemlocation(View):
       union all
       select
         id, startdate, 'DO out', reference, status, -quantity, startdate,
-        enddate, item_id, origin_id, NULL, criticality, lastmodified
+        enddate, item_id, NULL, NULL, criticality, lastmodified
       from distribution_order
       where item_id = %s and origin_id = %s and consume_material = true
       union all
@@ -429,6 +349,7 @@ class DRPitemlocation(View):
 
     # Retrieve parameters
     fcst = Forecast.objects.using(request.database).filter(item=item_name, location=location_name).first()
+    out_ip = InventoryPlanningOutput.objects.using(request.database).filter(pk=itemlocation).first()
     yield ''.join([
       '{"type":"itemlocation", "name":',  json.dumps(itemlocation), ",",
       '"parameters":', json.dumps({
@@ -436,21 +357,21 @@ class DRPitemlocation(View):
         "ss_type": ip.ss_type if ip.ss_type is not None else 'calculated',
         "ss_multiple_qty": str(ip.ss_multiple_qty) if ip.ss_multiple_qty is not None else None,
         "ss_min_qty": str(ip.ss_min_qty) if ip.ss_min_qty is not None else None,
-        "roq_min_poc": str(ip.roq_min_poc) if ip.roq_min_poc is not None else None,
-        "ss_min_poc": str(ip.ss_min_poc) if ip.ss_min_poc is not None else None,
+        "roq_min_poc": int(ip.roq_min_poc) if ip.roq_min_poc is not None else None,
+        "ss_min_poc": int(ip.ss_min_poc) if ip.ss_min_poc is not None else None,
         "roq_min_qty": str(ip.roq_min_qty) if ip.roq_min_qty is not None else None,
         "demand_distribution": ip.demand_distribution if ip.demand_distribution else 'automatic',
-        "ss_max_qty": str(ip.ss_max_qty) if ip.ss_max_qty is not None else None,
+        "ss_max_qty": int(ip.ss_max_qty) if ip.ss_max_qty is not None else None,
         "leadtime_deviation": str(ip.leadtime_deviation) if ip.leadtime_deviation is not None else None,
-        "roq_max_qty": str(ip.roq_max_qty) if ip.roq_max_qty is not None else None,
-        "roq_multiple_qty": str(ip.roq_multiple_qty) if ip.roq_multiple_qty is not None else None,
+        "roq_max_qty": int(ip.roq_max_qty) if ip.roq_max_qty is not None else None,
+        "roq_multiple_qty": int(ip.roq_multiple_qty) if ip.roq_multiple_qty is not None else None,
         "nostock": str(ip.nostock) if ip.nostock is not None else None,
-        "roq_max_poc": str(ip.roq_max_poc) if ip.roq_max_poc is not None else None,
+        "roq_max_poc": int(ip.roq_max_poc) if ip.roq_max_poc is not None else None,
         "service_level": str(ip.service_level) if ip.service_level is not None else None,
-        "demand_deviation": str(ip.demand_deviation) if ip.demand_deviation is not None else None,
-        "ss_max_poc": str(ip.ss_max_poc) if ip.ss_max_poc is not None else None,
-        "eoq": 49,  # TODO comes from output table
-        "service_level_qty": 49, # TODO comes from output table
+        "demand_deviation": int(ip.demand_deviation) if ip.demand_deviation is not None else None,
+        "ss_max_poc": int(ip.ss_max_poc) if ip.ss_max_poc is not None else None,
+        "roq_calculated": int(out_ip.calculatedreorderquantity) if out_ip and out_ip.calculatedreorderquantity is not None else None,
+        "ss_calculated": int(out_ip.calculatedsafetystock) if out_ip and out_ip.calculatedsafetystock is not None else None,
         "forecastmethod": fcst.method if fcst else 'automatic',
         "forecasterror": "12 %"
         })
@@ -775,6 +696,51 @@ class DRPitemlocation(View):
           if val is not None:
             ip.demand_distribution = val
           ip.save(using=request.database)
+
+        # Save transactions  TODO CODE IS INCOMPLETE
+        po_form = None
+        do_form = None
+        if 'transactions' in data:
+          for row in data['transactions']:
+            print (row)
+            transactiontype = row.get('type', '')
+            if transactiontype == 'PO':
+              content_type_id = ContentType.objects.get_for_model(PurchaseOrder).pk
+              if not po_form:
+                obj = PurchaseOrder.objects.using(request.database).get(pk=row['id'])
+                po_form = modelform_factory(PurchaseOrder,
+                  fields=(
+                    'reference', 'status', 'quantity', 'origin', 'id', 'date',
+                    'startdate', 'enddate', 'item'
+                    ),
+                  formfield_callback=lambda f: (isinstance(f, RelatedField) and f.formfield(using=request.database)) or f.formfield()
+                  )
+                form = po_form(row, instance=obj)
+            elif transactiontype == 'DO':
+              content_type_id = ContentType.objects.get_for_model(DistributionOrder).pk
+              if not do_form:
+                do_form = modelform_factory(DistributionOrder,
+                  fields=(
+                    'reference', 'status', 'quantity', 'origin', 'id', 'date',
+                    'startdate', 'enddate', 'item'
+                    ),
+                  formfield_callback=lambda f: (isinstance(f, RelatedField) and f.formfield(using=request.database)) or f.formfield()
+                  )
+              obj = PurchaseOrder.objects.using(request.database).get(pk=row['id'])
+              form = do_form(row, instance=obj)
+              if form.has_changed():
+                obj = form.save(commit=False)
+                obj.save(using=request.database)
+                LogEntry(
+                  user_id=request.user.pk,
+                  content_type_id=content_type_id,
+                  object_id=obj.pk,
+                  object_repr=force_text(obj),
+                  action_flag=CHANGE,
+                  change_message=_('Changed %s.') % get_text_list(form.changed_data, _('and'))
+                ).save(using=request.database)
+            else:
+              raise Exception("Invalid transaction")
 
         # Save the comment
         if 'commenttype' in data and 'comment' in data:
