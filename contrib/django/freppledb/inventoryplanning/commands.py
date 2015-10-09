@@ -126,7 +126,14 @@ def createInventoryPlan(database=DEFAULT_DB_ALIAS):
 
   # Step 2.
   # Calculate the demand deviation from the independent demand
-  # TODO Filter the horizon for this calculation
+  try:
+    current_date = datetime.strptime(
+      Parameter.objects.using(database).get(name="currentdate").value,
+      "%Y-%m-%d %H:%M:%S"
+      )
+  except:
+    current_date = datetime.now()
+  horizon = int(Parameter.getValue('inventoryplanning.horizon_start', database, 0))
   cursor.execute('''
     update inventoryplanning
     set demand_deviation = coalesce(dep_stddev.stdev, 0)
@@ -134,25 +141,32 @@ def createInventoryPlan(database=DEFAULT_DB_ALIAS):
       select buffer.name buffer_id, stddev_pop(indep_demand) stdev
       from buffer
       left outer join (
-      select
-        item_id, location_id, startdate,
-        coalesce(sum(forecastplan.orderstotal),0) + coalesce(sum(forecastplan.ordersadjustment),0) as indep_demand
-      from forecast
-      inner join location
-      on forecast.location_id = location.name
-      inner join item
-      on forecast.item_id = item.name
-      inner join forecastplan
-      on forecastplan.forecast_id = forecast.name
-      group by item_id, location_id, startdate
-      --where startdate > '%s' and startdate < '%s' TODO
-      ) dmd
-      on dmd.item_id = buffer.item_id
-      and dmd.location_id = buffer.location_id
-      group by buffer.name
+        select
+          item_id, location_id, startdate,
+          coalesce(sum(forecastplan.orderstotal),0) + coalesce(sum(forecastplan.ordersadjustment),0) as indep_demand
+        from forecast
+        inner join location
+          on forecast.location_id = location.name
+        inner join item
+          on forecast.item_id = item.name
+        inner join forecastplan
+          on forecastplan.forecast_id = forecast.name
+        left outer join (
+          select forecast_id, min(startdate) period
+          from forecastplan
+          where orderstotal > 0
+          group by forecast_id
+          ) first_hit
+        on forecastplan.forecast_id = first_hit.forecast_id
+        where startdate >= greatest(first_hit.period, timestamp '%s' - %s * interval '1 month') and enddate < timestamp'%s'
+        group by item_id, location_id, startdate
+        ) dmd
+        on dmd.item_id = buffer.item_id
+        and dmd.location_id = buffer.location_id
+        group by buffer.name
      ) dep_stddev
      where inventoryplanning.buffer_id = dep_stddev.buffer_id
-     ''')
+     ''' % (current_date, horizon, current_date) )
 
   # Step 3.
   # Load inventory planning parameters
