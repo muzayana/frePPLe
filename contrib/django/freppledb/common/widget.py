@@ -25,7 +25,7 @@ class WelcomeWidget(Widget):
   name = "welcome"
   title = _("Welcome")
   tooltip = _("Some links to get started")
-  async = False
+  asynchronous = False
 
   def render(self, request=None):
     return _('''Welcome to frePPLe, the world's leading open source production planning tool!<br/><br/>
@@ -44,7 +44,7 @@ class NewsWidget(Widget):
   name = "news"
   title = _("News")
   tooltip = _("Show the latest news items from the frePPLe website")
-  async = False
+  asynchronous = False
 
   def render(self, request=None):
     return '<iframe style="width:100%; border:none;" src="http://frepple.com/news-summary/"></iframe>'
@@ -56,7 +56,7 @@ class RecentActionsWidget(Widget):
   name = "recent_actions"
   title = _("My actions")
   tooltip = _("Display a list of the entities you recently changed")
-  async = False
+  asynchronous = False
   limit = 10
 
   def render(self, request=None):
@@ -96,7 +96,7 @@ class RecentCommentsWidget(Widget):
   title = _("comments")
   tooltip = _("Display a list of recent comments")
   url = '/admin/common/comment/?sord=desc&sidx=lastmodified'
-  async = False
+  asynchronous = False
   limit = 10
 
   def render(self, request=None):
