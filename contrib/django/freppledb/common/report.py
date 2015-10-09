@@ -1592,7 +1592,7 @@ class GridPivot(GridReport):
       query = reportclass.query(
         request,
         reportclass.basequeryset.filter(pk__exact=args[0]).using(request.database),
-        sortsql="1 asc"
+        sortsql="1 asc nulls last"
         )
     else:
       page = 'page' in request.GET and int(request.GET['page']) or 1
@@ -1688,7 +1688,7 @@ class GridPivot(GridReport):
       query = reportclass.query(
         request,
         reportclass.basequeryset.filter(pk__exact=args[0]).using(request.database),
-        sortsql="1 asc"
+        sortsql="1 asc nulls last"
         )
     elif isinstance(reportclass.basequeryset, collections.Callable):
       query = reportclass.query(
@@ -1827,7 +1827,7 @@ class GridPivot(GridReport):
       query = reportclass.query(
         request,
         reportclass.basequeryset.filter(pk__exact=args[0]).using(request.database),
-        sortsql="1 asc"
+        sortsql="1 asc nulls last"
         )
     elif isinstance(reportclass.basequeryset, collections.Callable):
       query = reportclass.query(
