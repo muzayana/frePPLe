@@ -155,25 +155,14 @@ class InventoryPlanningOutput(models.Model):
   proposedtransfersvalue = models.DecimalField(_('proposed transfers value'), max_digits=15, decimal_places=4, null=True)
   openpurchasesvalue = models.DecimalField(_('open purchases value'), max_digits=15, decimal_places=4, null=True)
   opentransfersvalue = models.DecimalField(_('open transfers value'), max_digits=15, decimal_places=4, null=True)
-  # TODO stockoutrisk = models.DecimalField(_('stockout risk'), max_digits=15, decimal_places=4, null=True)
-
-  # Local forecast over the lead time
-  # Local orders within lead time
-  # Dependent demand within lead time
-  # Total demand within lead time
-  #The fields are populated from different source:
-  #   - Populated by a run of the inventory planning module.
-  #       - planned service level in the first bucket
-  #       - local (forecast/)demand per period, averaged over the lead time
-  #       - local dependent demand per period, averaged over the lead time
-
   localforecast = models.DecimalField(_('local forecast'), max_digits=15, decimal_places=4, null=True)
-  dependentforecast = models.DecimalField(_('dependent forecast'), max_digits=15, decimal_places=4, null=True)
+  dependentdemand = models.DecimalField(_('dependent demand'), max_digits=15, decimal_places=4, null=True)
   totaldemand = models.DecimalField(_('total demand'), max_digits=15, decimal_places=4, null=True)
   localforecastvalue = models.DecimalField(_('local forecast value'), max_digits=15, decimal_places=4, null=True)
-  dependentforecastvalue = models.DecimalField(_('dependent forecast value'), max_digits=15, decimal_places=4, null=True)
+  dependentdemandvalue = models.DecimalField(_('dependent demand value'), max_digits=15, decimal_places=4, null=True)
   totaldemandvalue = models.DecimalField(_('total demand value'), max_digits=15, decimal_places=4, null=True)
-
+  # TODO stockoutrisk = models.DecimalField(_('stockout risk'), max_digits=15, decimal_places=4, null=True)
+  
   def __str__(self):
     return self.buffer.name
 

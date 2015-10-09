@@ -148,14 +148,34 @@ sql = '''
       left outer join forecastplan
         on forecastplan.forecast_id = forecast.name
         and forecastplan.startdate >= %%s
-        and forecastplan.enddate <= %%s + out_inventoryplanning.leadtime
+        and forecastplan.startdate < %%s + out_inventoryplanning.leadtime
       %s
       group by buffer_id
-      )
+      ),
+    depdemand as (
+      select thebuffer buffer_id, -sum(out_flowplan.quantity) total
+      from out_inventoryplanning
+      left outer join out_flowplan
+        on out_inventoryplanning.buffer_id = out_flowplan.thebuffer
+      left outer join operationplan
+        on out_flowplan.operationplan_id = operationplan.id
+      left outer join distribution_order
+        on out_flowplan.operationplan_id = distribution_order.id
+      left outer join purchase_order
+        on out_flowplan.operationplan_id = purchase_order.id
+      where out_flowplan.quantity < 0
+        and (operationplan.id is not null
+          or distribution_order.id is not null
+          or purchase_order.id is not null)
+        and out_flowplan.flowdate < %%s + out_inventoryplanning.leadtime
+      %s
+      group by thebuffer
+    )
   update out_inventoryplanning
   set
     onhand = position.onhand,
     localforecast = coalesce(forecast.total, 0),
+    dependentdemand = coalesce(depdemand.total, 0),
     overduesalesorders = coalesce(salesorders.overdue, 0),
     opensalesorders = coalesce(salesorders.open, 0),
     proposedpurchases = coalesce(purchases.proposed, 0),
@@ -166,6 +186,7 @@ sql = '''
     safetystock = coalesce(position.safetystock, 0),
     onhandvalue = coalesce(position.onhand * position.price, 0),
     localforecastvalue = coalesce(forecast.total * position.price, 0),
+    dependentdemandvalue = coalesce(depdemand.total * position.price, 0),
     overduesalesordersvalue = coalesce(salesorders.overdue * position.price, 0),
     opensalesordersvalue = coalesce(salesorders.open * position.price, 0),
     proposedpurchasesvalue = coalesce(purchases.proposed * position.price, 0),
@@ -174,12 +195,13 @@ sql = '''
     opentransfersvalue = coalesce(transfers.open * position.price, 0),
     reorderquantityvalue = coalesce(position.reorderquantity * position.price, 0),
     safetystockvalue = coalesce(position.safetystock * position.price, 0)
-  from position, transfers, purchases, salesorders, forecast
+  from position, transfers, purchases, salesorders, forecast, depdemand
   where out_inventoryplanning.buffer_id = position.buffer_id
   and out_inventoryplanning.buffer_id = transfers.buffer_id
   and out_inventoryplanning.buffer_id = purchases.buffer_id
   and out_inventoryplanning.buffer_id = salesorders.buffer_id
   and out_inventoryplanning.buffer_id = forecast.buffer_id
+  and out_inventoryplanning.buffer_id = depdemand.buffer_id
   '''
 
 
@@ -280,25 +302,28 @@ def updateStockPosition(item=None, database=DEFAULT_DB_ALIAS):
     current_date = datetime.now()
 
   # Run update query
+  # TODO minor issue the current date is passed as a time zone unaware object.
   cursor = connections[database].cursor()
   if item:
     cursor.execute(sql % (
       "where buffer.item_id = %s", "where buffer.item_id = %s",
       "where buffer.item_id = %s", "where buffer.item_id = %s",
-      "where buffer.item_id = %s"
+      "where buffer.item_id = %s", "and buffer.item_id = %s"
       ), (
       current_date, current_date, current_date, current_date,
       current_date, current_date, current_date, current_date, item,
       current_date, item, current_date, item,
       current_date, current_date, current_date, item,
-      current_date, current_date, current_date, current_date, item
+      current_date, current_date, current_date, current_date, item,
+      current_date, item
       ))
   else:
-    cursor.execute(sql % ('', '', '', '', ''), (
+    cursor.execute(sql % ('', '', '', '', '', ''), (
       current_date, current_date, current_date, current_date,
       current_date, current_date, current_date, current_date,
       current_date, current_date,
       current_date, current_date, current_date,
-      current_date, current_date, current_date, current_date
+      current_date, current_date, current_date, current_date,
+      current_date
       ))
   # TODO Loop over records to calculate the fill rate

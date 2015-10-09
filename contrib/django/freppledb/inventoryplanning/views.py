@@ -36,7 +36,7 @@ from freppledb.common.report import GridFieldNumber, GridFieldBool, GridFieldInt
 from freppledb.inventoryplanning.models import InventoryPlanning, InventoryPlanningOutput
 from freppledb.input.models import Buffer, Location, Calendar, CalendarBucket
 from freppledb.input.models import Item, DistributionOrder, PurchaseOrder
-from freppledb.common.models import Comment, Parameter
+from freppledb.common.models import Comment
 from freppledb.forecast.models import Forecast
 
 
@@ -107,6 +107,7 @@ class DRP(GridReport):
     GridFieldText('location', title=_('location'), field_name="buffer__location__name", formatter='location'),
     GridFieldInteger('leadtime', title=_('lead time'), extra="formatoptions:{defaultValue:''}"),
     GridFieldInteger('localforecast', title=_('local forecast'), extra="formatoptions:{defaultValue:''}"),
+    GridFieldInteger('dependentdemand', title=_('dependent demand'), extra="formatoptions:{defaultValue:''}"),
     GridFieldInteger('safetystock', title=_('safety stock'), extra="formatoptions:{defaultValue:''}"),
     GridFieldInteger('reorderquantity', title=_('reorder quantity'), extra="formatoptions:{defaultValue:''}"),
     GridFieldInteger('onhand', title=_('on hand'), extra="formatoptions:{defaultValue:''}"),
@@ -144,7 +145,7 @@ class DRP(GridReport):
       select
         buffer_id, item_id, location_id,
         extract(epoch from results.leadtime)/86400, localforecast%s,
-        safetystock%s, reorderquantity%s, results.onhand%s,
+        dependentdemand%s, safetystock%s, reorderquantity%s, results.onhand%s,
         overduesalesorders%s, opensalesorders%s, openpurchases%s, opentransfers%s,
         proposedpurchases%s, proposedtransfers%s
       from (%s) results
@@ -154,7 +155,7 @@ class DRP(GridReport):
       ''' % (
         suffix, suffix, suffix, suffix, suffix,
         suffix, suffix, suffix, suffix, suffix,
-        basesql, sortsql
+        suffix, basesql, sortsql
         )
     cursor.execute(query, baseparams)
 
@@ -166,15 +167,16 @@ class DRP(GridReport):
         'buffer__location__name': row[2],
         'leadtime': row[3],
         'localforecast': row[4],
-        'safetystock': row[5],
-        'reorderquantity': row[6],
-        'onhand': row[7],
-        'overduesalesorders': row[8],
-        'opensalesorders': row[9],
-        'openpurchases': row[10],
-        'opentransfers': row[11],
-        'proposedpurchases': row[12],
-        'proposedtransfers': row[13]
+        'dependentdemand': row[5],
+        'safetystock': row[6],
+        'reorderquantity': row[7],
+        'onhand': row[8],
+        'overduesalesorders': row[9],
+        'opensalesorders': row[10],
+        'openpurchases': row[11],
+        'opentransfers': row[12],
+        'proposedpurchases': row[13],
+        'proposedtransfers': row[14]
         }
 
 

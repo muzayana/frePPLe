@@ -81,10 +81,10 @@ class Migration(migrations.Migration):
                 ('openpurchasesvalue', models.DecimalField(decimal_places=4, null=True, verbose_name='open purchases value', max_digits=15)),
                 ('opentransfersvalue', models.DecimalField(decimal_places=4, null=True, verbose_name='open transfers value', max_digits=15)),
                 ('localforecast', models.DecimalField(decimal_places=4, null=True, verbose_name='local forecast', max_digits=15)),
-                ('dependentforecast', models.DecimalField(decimal_places=4, null=True, verbose_name='dependent forecast', max_digits=15)),
+                ('dependentdemand', models.DecimalField(decimal_places=4, null=True, verbose_name='dependent demand', max_digits=15)),
                 ('totaldemand', models.DecimalField(decimal_places=4, null=True, verbose_name='total demand', max_digits=15)),
                 ('localforecastvalue', models.DecimalField(decimal_places=4, null=True, verbose_name='local forecast value', max_digits=15)),
-                ('dependentforecastvalue', models.DecimalField(decimal_places=4, null=True, verbose_name='dependent forecast value', max_digits=15)),
+                ('dependentdemandvalue', models.DecimalField(decimal_places=4, null=True, verbose_name='dependent demand value', max_digits=15)),
                 ('totaldemandvalue', models.DecimalField(decimal_places=4, null=True, verbose_name='total demand value', max_digits=15)),
             ],
             options={
