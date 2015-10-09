@@ -116,14 +116,6 @@ class DRP(GridReport):
     GridFieldInteger('opentransfers', title=_('open transfers'), extra="formatoptions:{defaultValue:''}"),
     GridFieldInteger('proposedpurchases', title=_('proposed purchases'), extra="formatoptions:{defaultValue:''}"),
     GridFieldInteger('proposedtransfers', title=_('proposed transfers'), extra="formatoptions:{defaultValue:''}"),
-    #GridFieldNumber('servicelevel', title=_('service level'), extra="formatoptions:{defaultValue:''}"),
-    #GridFieldNumber('localorders', title=_('local orders'), extra="formatoptions:{defaultValue:''}"),
-    #GridFieldNumber('dependentforecast', title=_('dependent forecast'), extra="formatoptions:{defaultValue:''}"),
-    #GridFieldNumber('totaldemand', title=_('total demand'), extra="formatoptions:{defaultValue:''}"),
-    #GridFieldNumber('localforecastvalue', title=_('local forecast value'), extra="formatoptions:{defaultValue:''}"),
-    #GridFieldNumber('localordersvalue', title=_('local orders value'), extra="formatoptions:{defaultValue:''}"),
-    #GridFieldNumber('dependentforecastvalue', title=_('dependent forecast value'), extra="formatoptions:{defaultValue:''}"),
-    #GridFieldNumber('totaldemandvalue', title=_('total demand value'), extra="formatoptions:{defaultValue:''}"),
     )
 
   @staticmethod
@@ -245,17 +237,29 @@ class DRPitemlocation(View):
        avg(roq_override.value) roqoverride,
        avg(ss_calc.value) ss,
        avg(ss_override.value) ssoverride,
-       1 dmdfcstlocal, 1 dmdorderslocal,
-       1 dmddependent,
+       -coalesce(sum(case
+         when out_flowplan.quantity < 0 and purchase_order.status is null and distribution_order.status is null
+           then out_flowplan.quantity
+       end), 0) dmdlocal,
+       -coalesce(sum(case
+         when out_flowplan.quantity < 0 and (purchase_order.status is not null or distribution_order.status is not null)
+           then out_flowplan.quantity
+       end), 0) dmddependent,
        -coalesce(sum(least(out_flowplan.quantity, 0)),0.0) dmdtotal,
-       1 poconfirmed, 1 doconfirmed,
-       1 poproposed, 1 doproposed,
+       coalesce(sum(case
+         when out_flowplan.quantity > 0 and (purchase_order.status = 'confirmed' or distribution_order.status = 'confirmed')
+           then out_flowplan.quantity
+       end), 0) supplyconfirmed,
+       coalesce(sum(case
+         when out_flowplan.quantity > 0 and (purchase_order.status = 'proposed' or distribution_order.status = 'proposed')
+           then out_flowplan.quantity
+       end), 0) supplyproposed,
        coalesce(sum(greatest(out_flowplan.quantity,0)),0.0) supply
     from buffer
     inner join inventoryplanning
-    on buffer.name = inventoryplanning.buffer_id
+      on buffer.name = inventoryplanning.buffer_id
     left outer join out_inventoryplanning
-    on buffer.name = out_inventoryplanning.buffer_id
+      on buffer.name = out_inventoryplanning.buffer_id
     -- join buckets
     cross join (
            select name as bucket, startdate, enddate
@@ -285,11 +289,17 @@ class DRPitemlocation(View):
       and d.startdate < roq_override.enddate
     -- Consumed and produced quantities
     left join out_flowplan
-    on buffer.name = out_flowplan.thebuffer
-    and d.startdate <= out_flowplan.flowdate
-    and d.enddate > out_flowplan.flowdate
-    -- join operationplan TODO
-    where item_id = %s and location_id = %s
+      on buffer.name = out_flowplan.thebuffer
+      and d.startdate <= out_flowplan.flowdate
+      and d.enddate > out_flowplan.flowdate
+    -- join operationplan
+    left outer join purchase_order
+      on purchase_order.id = out_flowplan.operationplan_id
+    left outer join distribution_order
+      on distribution_order.id = out_flowplan.operationplan_id
+    left outer join operationplan
+      on operationplan.id = out_flowplan.operationplan_id
+    where buffer.item_id = %s and buffer.location_id = %s
     group by d.bucket, d.startdate
     order by d.startdate
     """
@@ -313,7 +323,6 @@ class DRPitemlocation(View):
        coalesce(sum(forecastplan.forecasttotalvalue),0) as forecasttotalvalue,
        coalesce(sum(forecastplan.forecastnetvalue),0) as forecastnetvalue,
        coalesce(sum(forecastplan.forecastconsumedvalue),0) as forecastconsumedvalue
-
     from forecast
     -- Join buckets
     cross join (
@@ -445,8 +454,8 @@ class DRPitemlocation(View):
         yield ","
       else:
         first = False
-      dmdtotal = round(rec[8]) if rec[8] is not None else None
-      supply = round(rec[13]) if rec[13] is not None else None
+      dmdtotal = round(rec[7]) if rec[7] is not None else None
+      supply = round(rec[10]) if rec[10] is not None else None
       endoh += supply - dmdtotal
       yield json.dumps({
         'bucket': rec[0],
@@ -455,14 +464,11 @@ class DRPitemlocation(View):
         'ss': round(rec[3]) if rec[3] is not None else None,
         'ssoverride': round(rec[4]) if rec[4] is not None else None,
         'startoh': round(startoh),
-        'dmdfcstlocal': round(rec[5]) if rec[5] is not None else None,
-        'dmdorderslocal': round(rec[6]) if rec[6] is not None else None,
-        'dmddependent': round(rec[7]) if rec[7] is not None else None,
+        'dmdlocal': round(rec[5]) if rec[5] is not None else None,
+        'dmddependent': round(rec[6]) if rec[6] is not None else None,
         'dmdtotal': dmdtotal,
-        'doconfirmed': round(rec[9]) if rec[9] is not None else None,
-        'poconfirmed': round(rec[10]) if rec[10] is not None else None,
-        'poproposed': round(rec[11]) if rec[11] is not None else None,
-        'doproposed': round(rec[12]) if rec[12] is not None else None,
+        'supplyconfirmed': round(rec[8]) if rec[8] is not None else None,
+        'supplyproposed': round(rec[9]) if rec[9] is not None else None,
         'supply': supply,
         'endoh': round(endoh)
         })
