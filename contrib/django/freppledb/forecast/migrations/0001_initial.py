@@ -40,8 +40,8 @@ class Migration(migrations.Migration):
                 ('planned', models.BooleanField(verbose_name='planned', default=True, help_text='Use this forecast for planning')),
                 ('calendar', models.ForeignKey(verbose_name='calendar', to='input.Calendar')),
                 ('customer', models.ForeignKey(verbose_name='customer', to='input.Customer')),
-                ('item', models.ForeignKey(verbose_name='item', to='input.Item')),
-                ('location', models.ForeignKey(verbose_name='location', to='input.Location')),
+                ('item', models.ForeignKey(verbose_name='item', null=True, blank=True, to='input.Item')),
+                ('location', models.ForeignKey(verbose_name='location', null=True, blank=True, to='input.Location')),
                 ('operation', models.ForeignKey(verbose_name='delivery operation', related_name='used_forecast', null=True, blank=True, to='input.Operation', help_text='Operation used to satisfy this demand')),
             ],
             options={

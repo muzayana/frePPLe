@@ -34,9 +34,9 @@ class Forecast(AuditModel):
   description = models.CharField(_('description'), max_length=500, null=True, blank=True)
   category = models.CharField(_('category'), max_length=300, null=True, blank=True, db_index=True)
   subcategory = models.CharField(_('subcategory'), max_length=300, null=True, blank=True, db_index=True)
-  customer = models.ForeignKey(Customer, verbose_name=_('customer'), db_index=True)
+  customer = models.ForeignKey(Customer, verbose_name=_('customer'), db_index=True, null=True, blank=True)
   item = models.ForeignKey(Item, verbose_name=_('item'), db_index=True)
-  location = models.ForeignKey(Location, verbose_name=_('location'), db_index=True)
+  location = models.ForeignKey(Location, verbose_name=_('location'), db_index=True, null=True, blank=True)
   method = models.CharField(
     _('Forecast method'), max_length=20, null=True, blank=True,
     choices=methods, default='automatic',
