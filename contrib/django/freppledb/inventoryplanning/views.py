@@ -186,29 +186,28 @@ class DRPitemlocation(View):
   item_type = None
   location_type = None
 
-  sql_oh = """
-    select
-      buffers.name, sum(oh.onhand)
-    from (%s) buffers
+  sql_oh = '''
+    select out_flowplan.onhand, out_flowplan.onhand * item.price
+    from out_flowplan
     inner join buffer
-    on buffer.lft between buffers.lft and buffers.rght
+      on buffer.name = out_flowplan.thebuffer
+    inner join item
+      on buffer.item_id = item.name
     inner join (
-    select out_flowplan.thebuffer as thebuffer, out_flowplan.onhand as onhand
-    from out_flowplan,
-      (select thebuffer, max(id) as id
-       from out_flowplan
-       where flowdate < '%s'
-       group by thebuffer
+      select max(id) as id
+      from out_flowplan
+      where flowdate < %s
+      and thebuffer = %s
       ) maxid
-    where maxid.thebuffer = out_flowplan.thebuffer
-    and maxid.id = out_flowplan.id
-    ) oh
-    on oh.thebuffer = buffer.name
-    group by buffers.name
-    """
+    on maxid.id = out_flowplan.id
+      and out_flowplan.thebuffer = %s
+    '''
 
   sql_transactions = """
-    select * from
+    select
+      id, date, type, reference, status, quantity, quantity*item.price as value, startdate, enddate,
+      item_id, location_id, supplier_id, criticality, transactions.lastmodified
+    from
       (
       select
         id, enddate as date, 'PO' as type, reference, status, quantity,
@@ -230,43 +229,47 @@ class DRPitemlocation(View):
       from distribution_order
       where item_id = %s and destination_id = %s
       ) transactions
+    inner join item
+      on transactions.item_id = item.name
     order by date, quantity
     """
 
   sql_plan = """
     select d.bucket,
-       avg(roq_calc.value) roq,
-       avg(roq_override.value) roqoverride,
-       avg(ss_calc.value) ss,
-       avg(ss_override.value) ssoverride,
+       avg(roq_calc.value%s) roq,
+       avg(roq_override.value%s) roqoverride,
+       avg(ss_calc.value%s) ss,
+       avg(ss_override.value%s) ssoverride,
        -coalesce(sum(case
          when out_flowplan.quantity < 0 and purchase_order.status is null and distribution_order.status is null
-           then out_flowplan.quantity
+           then out_flowplan.quantity%s
        end), 0) dmdlocal,
        -coalesce(sum(case
          when out_flowplan.quantity < 0 and (purchase_order.status is not null or distribution_order.status is not null)
-           then out_flowplan.quantity
+           then out_flowplan.quantity%s
        end), 0) dmddependent,
-       -coalesce(sum(least(out_flowplan.quantity, 0)),0.0) dmdtotal,
+       -coalesce(sum(least(out_flowplan.quantity%s, 0)),0.0) dmdtotal,
        coalesce(sum(case
          when out_flowplan.quantity > 0 and (purchase_order.status = 'confirmed' or distribution_order.status = 'confirmed')
-           then out_flowplan.quantity
+           then out_flowplan.quantity%s
        end), 0) supplyconfirmed,
        coalesce(sum(case
          when out_flowplan.quantity > 0 and (purchase_order.status = 'proposed' or distribution_order.status = 'proposed')
-           then out_flowplan.quantity
+           then out_flowplan.quantity%s
        end), 0) supplyproposed,
-       coalesce(sum(greatest(out_flowplan.quantity,0)),0.0) supply
+       coalesce(sum(greatest(out_flowplan.quantity%s,0)),0.0) supply
     from buffer
     inner join inventoryplanning
       on buffer.name = inventoryplanning.buffer_id
+    inner join item
+      on buffer.item_id = item.name
     left outer join out_inventoryplanning
       on buffer.name = out_inventoryplanning.buffer_id
     -- join buckets
     cross join (
            select name as bucket, startdate, enddate
            from common_bucketdetail
-           where bucket_id = %s and enddate > %s and startdate < %s
+           where bucket_id = %%s and enddate > %%s and startdate < %%s
            ) d
     -- join calendars
     left outer join calendarbucket ss_calc
@@ -301,7 +304,7 @@ class DRPitemlocation(View):
       on distribution_order.id = out_flowplan.operationplan_id
     left outer join operationplan
       on operationplan.id = out_flowplan.operationplan_id
-    where buffer.item_id = %s and buffer.location_id = %s
+    where buffer.item_id = %%s and buffer.location_id = %%s
     group by d.bucket, d.startdate
     order by d.startdate
     """
@@ -309,28 +312,20 @@ class DRPitemlocation(View):
   # Implicit assumption is that this filter picks up data from a single buffer.
   sql_forecast = """
     select d.bucket as bucket,
-       coalesce(sum(forecastplan.orderstotal),0) as orderstotal,
-       coalesce(sum(forecastplan.ordersopen),0) as ordersopen,
-       sum(forecastplan.ordersadjustment) as ordersadjustment,
-       coalesce(sum(forecastplan.forecastbaseline),0) as forecastbaseline,
-       sum(forecastplan.forecastadjustment) as forecastadjustment,
-       coalesce(sum(forecastplan.forecasttotal),0) as forecasttotal,
-       coalesce(sum(forecastplan.forecastnet),0) as forecastnet,
-       coalesce(sum(forecastplan.forecastconsumed),0) as forecastconsumed,
-       coalesce(sum(forecastplan.orderstotalvalue),0) as orderstotalvalue,
-       coalesce(sum(forecastplan.ordersopenvalue),0) as ordersopenvalue,
-       sum(forecastplan.ordersadjustmentvalue) as ordersadjustmentvalue,
-       coalesce(sum(forecastplan.forecastbaselinevalue),0) as forecastbaselinevalue,
-       sum(forecastplan.forecastadjustmentvalue) as forecastadjustmentvalue,
-       coalesce(sum(forecastplan.forecasttotalvalue),0) as forecasttotalvalue,
-       coalesce(sum(forecastplan.forecastnetvalue),0) as forecastnetvalue,
-       coalesce(sum(forecastplan.forecastconsumedvalue),0) as forecastconsumedvalue
+       coalesce(sum(forecastplan.orderstotal%s),0) as orderstotal,
+       coalesce(sum(forecastplan.ordersopen%s),0) as ordersopen,
+       sum(forecastplan.ordersadjustment%s) as ordersadjustment,
+       coalesce(sum(forecastplan.forecastbaseline%s),0) as forecastbaseline,
+       sum(forecastplan.forecastadjustment%s) as forecastadjustment,
+       coalesce(sum(forecastplan.forecasttotal%s),0) as forecasttotal,
+       coalesce(sum(forecastplan.forecastnet%s),0) as forecastnet,
+       coalesce(sum(forecastplan.forecastconsumed%s),0) as forecastconsumed
     from forecast
     -- Join buckets
     cross join (
        select name as bucket, startdate, enddate
        from common_bucketdetail
-       where bucket_id = %s
+       where bucket_id = %%s
        and startdate between (select min(startdate) from forecastplan)
              and (select max(startdate) from forecastplan)
        ) d
@@ -350,8 +345,8 @@ class DRPitemlocation(View):
     on forecast.item_id = itemjoin.name
       and itemjoin.lft between itemfilter.lft and itemfilter.rght
     -- Filter
-    where locfilter.name = %s
-      and itemfilter.name = %s
+    where locfilter.name = %%s
+      and itemfilter.name = %%s
     -- Grouping
     group by d.bucket, d.startdate
     order by d.startdate
@@ -368,12 +363,20 @@ class DRPitemlocation(View):
     item_name = ip.buffer.item.name if ip.buffer.item else None
     location_name = ip.buffer.location.name if ip.buffer.location else None
 
+    # display value or units?
+    prefs = request.user.getPreference(DRP.getKey())
+    if prefs and prefs.get('units', 'unit') == 'value':
+      displayvalue = True
+    else:
+      displayvalue = False
+
     # Retrieve parameters
     fcst = Forecast.objects.using(request.database).filter(item=item_name, location=location_name).first()
     out_ip = InventoryPlanningOutput.objects.using(request.database).filter(pk=itemlocation).first()
     yield ''.join([
       '{"type":"itemlocation", "name":',  json.dumps(itemlocation), ",",
-      '"parameters":', json.dumps({
+      '"displayvalue":', 'true' if displayvalue else 'false',
+      ',"parameters":', json.dumps({
         "roq_type": ip.roq_type if ip.roq_type is not None else 'calculated',
         "ss_type": ip.ss_type if ip.ss_type is not None else 'calculated',
         "ss_multiple_qty": str(ip.ss_multiple_qty) if ip.ss_multiple_qty is not None else None,
@@ -403,7 +406,14 @@ class DRPitemlocation(View):
     # Retrieve forecast data
     yield ',"forecast":['
     first = True
-    cursor.execute(self.sql_forecast, (buckets, location_name, item_name))
+    if displayvalue:
+      extra = 'value'
+    else:
+      extra = ''
+    cursor.execute(
+      self.sql_forecast % (extra, extra, extra, extra, extra, extra, extra, extra),
+      (buckets, location_name, item_name)
+      )
     for rec in cursor.fetchall():
       if not first:
         yield ","
@@ -418,39 +428,31 @@ class DRPitemlocation(View):
         'forecastadjustment': round(rec[5]) if rec[5] is not None else None,
         'forecasttotal': round(rec[6]),
         'forecastnet': round(rec[7]),
-        'forecastconsumed': round(rec[8]),
-        'orderstotalvalue': round(rec[9]),
-        'ordersopenvalue': round(rec[10]),
-        'ordersadjustmentvalue': round(rec[11]) if rec[11] is not None else None,
-        'forecastbaselinevalue': round(rec[12]),
-        'forecastadjustmentvalue': round(rec[13]) if rec[13] is not None else None,
-        'forecasttotalvalue': round(rec[14]),
-        'forecastnetvalue': round(rec[15]),
-        'forecastconsumedvalue': round(rec[16]),
+        'forecastconsumed': round(rec[8])
         })
 
     # Retrieve onhand at the start of the planning horizon
-    cursor.execute('''
-      select out_flowplan.onhand
-        from out_flowplan
-        inner join (
-          select max(id) as id
-          from out_flowplan
-          where flowdate < '%s'
-          and thebuffer = %%s
-          ) maxid
-        on maxid.id = out_flowplan.id
-        and out_flowplan.thebuffer = %%s
-      ''' % request.report_startdate,
-      (itemlocation, itemlocation)
+    cursor.execute(
+      self.sql_oh,
+      (request.report_startdate, itemlocation, itemlocation)
       )
-    startoh = cursor.fetchone()[0]
+    if displayvalue:
+      startoh = cursor.fetchone()[1]
+    else:
+      startoh = cursor.fetchone()[0]
     endoh = startoh
 
     # Retrieve inventory plan
     yield '],"plan":['
     first = True
-    cursor.execute(self.sql_plan, (request.report_bucket, request.report_startdate, request.report_enddate, item_name, location_name))
+    if displayvalue:
+      extra = '*item.price'
+    else:
+      extra = ''
+    cursor.execute(
+      self.sql_plan % (extra, extra, extra, extra, extra, extra, extra, extra, extra, extra),
+      (request.report_bucket, request.report_startdate, request.report_enddate, item_name, location_name)
+      )
     for rec in cursor.fetchall():
       if not first:
         yield ","
@@ -479,7 +481,10 @@ class DRPitemlocation(View):
     # Retrieve transactions
     yield '],"transactions":['
     first = True
-    cursor.execute(self.sql_transactions, (item_name, location_name, item_name, location_name, item_name, location_name))
+    cursor.execute(
+      self.sql_transactions,
+      (item_name, location_name, item_name, location_name, item_name, location_name)
+      )
     for rec in cursor.fetchall():
       if not first:
         yield ","
@@ -492,13 +497,14 @@ class DRPitemlocation(View):
         'reference': rec[3],
         'status': rec[4],
         'quantity': str(rec[5]),
-        'startdate': str(rec[6]),
-        'enddate': str(rec[7]),
-        'item': rec[8],
-        'location': rec[9],
-        'origin': rec[10],
-        'criticality': str(rec[11]),
-        'lastmodified': str(rec[12])
+        'value': str(rec[6]),
+        'startdate': str(rec[7]),
+        'enddate': str(rec[8]),
+        'item': rec[9],
+        'location': rec[10],
+        'origin': rec[11],
+        'criticality': str(rec[12]),
+        'lastmodified': str(rec[13])
         })
 
     # Retrieve comments
