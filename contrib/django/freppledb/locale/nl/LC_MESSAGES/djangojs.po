@@ -18,7 +18,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 3.0.beta\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-11-08 08:49+0100\n"
+"POT-Creation-Date: 2015-10-12 10:21+0200\n"
 "PO-Revision-Date: 2014-10-26 11:00+0100\n"
 "Last-Translator: Johan De Taeye <jdetaeye@frepple.com>\n"
 "Language-Team: American English <kde-i18n-doc@kde.org>\n"
@@ -33,161 +33,174 @@ msgstr ""
 msgid "There are unsaved changes on this page."
 msgstr "Er zijn onbewaarde wijzigingen op deze pagina."
 
-#: common/static/js/frepple.js:87
+#: common/static/js/frepple.js:92
 msgid "Error saving data"
 msgstr "Foutmelding tijdens wegschrijven gegevens"
 
-#: common/static/js/frepple.js:108
+#: common/static/js/frepple.js:113
 msgid "Save or cancel your changes first"
 msgstr "Bewaar of annuleer eerst de wijzigingen"
 
-#: common/static/js/frepple.js:115
+#: common/static/js/frepple.js:120
 msgid "Save"
 msgstr "Bewaar"
 
-#: common/static/js/frepple.js:122 common/static/js/frepple.js.c:510
-#: common/static/js/frepple.js:679 common/static/js/frepple.js.c:740
-#: common/static/js/frepple.js:800 common/static/js/frepple.js.c:857
-#: common/static/js/frepple.js:1093 common/static/js/frepple.js.c:1337
+#: common/static/js/frepple.js:127 common/static/js/frepple.js:576
+#: common/static/js/frepple.js:784 common/static/js/frepple.js:845
+#: common/static/js/frepple.js:905 common/static/js/frepple.js:962
+#: common/static/js/frepple.js:1300 common/static/js/frepple.js:1544
 msgid "Cancel"
 msgstr "Annuleer"
 
-#: common/static/js/frepple.js:377
+#: common/static/js/frepple.js:420
 msgid "Select"
 msgstr "Selecteer"
 
-#: common/static/js/frepple.js:447 common/static/js/frepple.js.c:1013
+#: common/static/js/frepple.js:513 common/static/js/frepple.js:1216
 msgid "Customize"
 msgstr "Personaliseer"
 
-#: common/static/js/frepple.js:453 common/static/js/frepple.js.c:706
-#: common/static/js/frepple.js:1020
+#: common/static/js/frepple.js:519 common/static/js/frepple.js:811
+#: common/static/js/frepple.js:1223
 msgid "OK"
 msgstr "OK"
 
-#: common/static/js/frepple.js:596 common/static/js/frepple.js.c:980
-#: common/static/js/frepple.js:1081
+#: common/static/js/frepple.js:580
+#, fuzzy
+#| msgid "Reset"
+msgid "reset"
+msgstr "Herstel"
+
+#: common/static/js/frepple.js:596 common/static/js/frepple.js:701
+#: common/static/js/frepple.js:1183 common/static/js/frepple.js:1288
+#: planningboard/static/planningboard/js/planningboard.js:652
+#: planningboard/static/planningboard/js/planningboard.js:1039
 msgid "Error saving report settings"
 msgstr "Foutmelding tijdens wegschrijven rapportconfiguratie"
 
-#: common/static/js/frepple.js:640 common/static/js/frepple.js.c:646
+#: common/static/js/frepple.js:745 common/static/js/frepple.js:751
 msgid "Export format"
 msgstr "Export  formaat"
 
-#: common/static/js/frepple.js:641 common/static/js/frepple.js.c:648
+#: common/static/js/frepple.js:746 common/static/js/frepple.js:753
 msgid "Spreadsheet list"
 msgstr "Spreadsheet lijst"
 
-#: common/static/js/frepple.js:642 common/static/js/frepple.js.c:650
+#: common/static/js/frepple.js:747 common/static/js/frepple.js:755
 msgid "CSV list"
 msgstr "CSV Lijst"
 
-#: common/static/js/frepple.js:647
+#: common/static/js/frepple.js:752
 msgid "Spreadsheet table"
 msgstr "Spreadsheet tabel"
 
-#: common/static/js/frepple.js:649
+#: common/static/js/frepple.js:754
 msgid "CSV table"
 msgstr "CSV tabel"
 
-#: common/static/js/frepple.js:653
+#: common/static/js/frepple.js:758
 msgid "Export CSV or Excel file"
 msgstr "Exporteer CSV of Excel bestand"
 
-#: common/static/js/frepple.js:657
+#: common/static/js/frepple.js:762
 msgid "Export"
 msgstr "Exporteer"
 
-#: common/static/js/frepple.js:760
-#, c-format
+#: common/static/js/frepple.js:865
+#, javascript-format
 msgid "You are about to delete %s objects AND ALL RELATED RECORDS!"
 msgstr ""
 "U staat op het punt %s objecten EN HUN GERELATEERDE RECORDS te verwijderen!"
 
-#: common/static/js/frepple.js:762
+#: common/static/js/frepple.js:867
 msgid "Delete data"
 msgstr "Verwijder gegevens"
 
-#: common/static/js/frepple.js:769 common/static/js/frepple.js.c:826
+#: common/static/js/frepple.js:874 common/static/js/frepple.js:931
 msgid "Confirm"
 msgstr "Bevestig"
 
-#: common/static/js/frepple.js:787
+#: common/static/js/frepple.js:892
 msgid "Error deleting data"
 msgstr "Foutmelding tijdens verwijderen gegevens"
 
-#: common/static/js/frepple.js:817
-#, c-format
+#: common/static/js/frepple.js:922
+#, javascript-format
 msgid "You are about to duplicate %s objects"
 msgstr "U staat op het punt %s objecten te kopieren"
 
-#: common/static/js/frepple.js:819
+#: common/static/js/frepple.js:924
 msgid "Copy data"
 msgstr "Kopieer gegevens"
 
-#: common/static/js/frepple.js:844
+#: common/static/js/frepple.js:949
 msgid "Error copying data"
 msgstr "Foutmelding tijdens kopieren gegevens"
 
-#: common/static/js/frepple.js:881 common/static/js/frepple.js.c:885
+#: common/static/js/frepple.js:986 common/static/js/frepple.js:992
 msgid "Filtered where"
 msgstr "Gefilterd waar"
 
-#: common/static/js/frepple.js:1006
+#: common/static/js/frepple.js:1209
 msgid "Add"
 msgstr "Toevoegen"
 
-#: common/static/js/frepple.js:1067
+#: common/static/js/frepple.js:1270
 msgid "Reset"
 msgstr "Herstel"
 
-#: common/static/js/frepple.js:1300
+#: common/static/js/frepple.js:1507
 msgid "Load an Excel file or a CSV-formatted text file."
 msgstr "Laad een Excel bestand of een tekst bestand in CSV-formaat."
 
-#: common/static/js/frepple.js:1301
+#: common/static/js/frepple.js:1508
 msgid "The first row should contain the field names."
 msgstr "De eerste rij moet de veldnamen bevatten."
 
-#: common/static/js/frepple.js:1302
+#: common/static/js/frepple.js:1509
 msgid "First delete all existing records AND ALL RELATED TABLES"
 msgstr "Verwijder eerst alle huidige records EN ALL GERELATEERDE TABELLEN"
 
-#: common/static/js/frepple.js:1303
+#: common/static/js/frepple.js:1510
 msgid "Data file"
 msgstr "Gegevensbestand"
 
-#: common/static/js/frepple.js:1306
+#: common/static/js/frepple.js:1513
 msgid "Import CSV or Excel file"
 msgstr "Importeer CSV of Excel bestand"
 
-#: common/static/js/frepple.js:1310
+#: common/static/js/frepple.js:1517
 msgid "Import"
 msgstr "Importeer gegevens"
 
-#: common/static/js/frepple.js:1785
+#: common/static/js/frepple.js:1987
 msgid "Guided tour"
 msgstr "Rondleiding"
 
-#: common/static/js/frepple.js:1809
+#: common/static/js/frepple.js:2011
 msgid "Previous"
 msgstr "Vorige"
 
-#: common/static/js/frepple.js:1814 common/static/js/frepple.js.c:1947
+#: common/static/js/frepple.js:2016 common/static/js/frepple.js:2149
 msgid "Stop"
 msgstr "Stop"
 
-#: common/static/js/frepple.js:1814 common/static/js/frepple.js.c:1938
+#: common/static/js/frepple.js:2016 common/static/js/frepple.js:2140
 msgid "Play"
 msgstr "Play"
 
-#: common/static/js/frepple.js:1820
+#: common/static/js/frepple.js:2022
 msgid "Next"
 msgstr "Volgende"
 
-#: common/static/js/frepple.js:1913
+#: common/static/js/frepple.js:2115
 msgid "out of"
 msgstr "van de"
+
+#: planningboard/static/planningboard/js/planningboard.js:598
+#, javascript-format
+msgid "%s allocated out of %s"
+msgstr ""
 
 #~ msgid "Table"
 #~ msgstr "Tabel"
