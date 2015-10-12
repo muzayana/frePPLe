@@ -256,7 +256,7 @@ jQuery.extend($.fn.fmatter, {
     return cellvalue + "<span class='context fa fa-caret-right' role='calendarbucket'></span>";
   },
   location : function(cellvalue, options, rowdata) {
-	  console.log(cellvalue);
+	  // console.log(cellvalue);
     if (cellvalue === undefined || cellvalue === '' || cellvalue === null) return '';
     if (options['colModel']['popup']) return cellvalue;
     return cellvalue + "<span class='context fa fa-caret-right' role='location'></span>";

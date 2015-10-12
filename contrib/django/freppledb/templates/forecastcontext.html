@@ -3,7 +3,7 @@
 {% if perms.forecast.change_forecast %}<li class="ui-menu-item"><a id="{{request.prefix}}/data/forecast/forecast/{value}/">{% trans 'Edit' %}</a><li>
 {% endif %}<li class="ui-menu-item"><a id="{{request.prefix}}/supplypath/forecast/{value}/">{% trans 'Supply Path' %}</a></li>
 <li class="ui-menu-item"><a id="{{request.prefix}}/forecast/{value}/">{% trans 'Plan' %}</a></li>
-<li class="ui-menu-item"><a id="{{request.prefix}}/constraint/?demand__startswith={value} -">{% trans 'Why short or late?' %}</a></li>
+<li class="ui-menu-item"><a id="{{request.prefix}}/constraint/?demand__startswith={value}-">{% trans 'Why short or late?' %}</a></li>
 <li class="ui-menu-item"><a id="{{request.prefix}}/comments/forecast/forecast/{value}/">{% trans 'Comments' %}</a></li>
 <li class="ui-menu-item"><a id="{{request.prefix}}/data/forecast/forecast/{value}/history/">{% trans 'History' %}</a></li>
 </ul></div>
