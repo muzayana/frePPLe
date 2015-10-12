@@ -18,7 +18,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 3.0.beta\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-10-12 10:21+0200\n"
+"POT-Creation-Date: 2015-10-12 10:56+0200\n"
 "PO-Revision-Date: 2014-10-26 11:52+0100\n"
 "Last-Translator: Johan De Taeye <jdetaeye@frepple.com>\n"
 "Language-Team: American English <kde-i18n-doc@kde.org>\n"
@@ -1262,6 +1262,7 @@ msgid "automatic"
 msgstr ""
 
 #: templates/inventoryplanning/drp.html:1129
+msgctxt "statistical distribution"
 msgid "normal"
 msgstr ""
 
@@ -1282,7 +1283,7 @@ msgid "lead time standard deviation"
 msgstr ""
 
 #: templates/inventoryplanning/drp.html:1139
-msgid "Don't stock"
+msgid "don't stock"
 msgstr ""
 
 #: templates/inventoryplanning/drp.html:1146
@@ -1391,49 +1392,53 @@ msgstr ""
 msgid "Confirm"
 msgstr ""
 
-# Translation included with django
 #: templates/registration/password_change_done.html:8
 #: templates/registration/password_change_form.html:9
+msgctxt "Translation included with django"
+msgid "Password change"
+msgstr ""
+
+#: templates/registration/password_change_done.html:10
+#: templates/registration/password_change_done.html:14
+msgctxt "Translation included with django"
+msgid "Password change successful"
+msgstr ""
+
+#: templates/registration/password_change_done.html:16
+msgctxt "Translation included with django"
+msgid "Your password was changed."
+msgstr ""
+
+# Translation included with django
 #: templates/registration/password_change_form.html:11
 #: templates/registration/password_change_form.html:15
 msgid "Password change"
 msgstr ""
 
-# Translation included with django
-#: templates/registration/password_change_done.html:10
-#: templates/registration/password_change_done.html:14
-msgid "Password change successful"
-msgstr ""
-
-# Translation included with django
-#: templates/registration/password_change_done.html:16
-msgid "Your password was changed."
-msgstr ""
-
-# Translation included with django
 #: templates/registration/password_change_form.html:17
+msgctxt "Translation included with django"
 msgid ""
 "Please enter your old password, for security's sake, and then enter your new "
 "password twice so we can verify you typed it in correctly."
 msgstr ""
 
-# Translation included with django
 #: templates/registration/password_change_form.html:22
+msgctxt "Translation included with django"
 msgid "Old password:"
 msgstr ""
 
-# Translation included with django
 #: templates/registration/password_change_form.html:24
+msgctxt "Translation included with django"
 msgid "New password:"
 msgstr ""
 
-# Translation included with django
 #: templates/registration/password_change_form.html:26
+msgctxt "Translation included with django"
 msgid "Confirm password:"
 msgstr ""
 
-# Translation included with django
 #: templates/registration/password_change_form.html:28
+msgctxt "Translation included with django"
 msgid "Change my password"
 msgstr ""
 

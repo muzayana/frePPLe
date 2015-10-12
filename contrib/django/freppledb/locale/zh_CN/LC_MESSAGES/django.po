@@ -18,7 +18,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 2.1.beta\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-10-12 10:21+0200\n"
+"POT-Creation-Date: 2015-10-12 10:56+0200\n"
 "PO-Revision-Date: 2014-11-12 16:53+0800\n"
 "Last-Translator: Johan De Taeye <jdetaeye@frepple.com>\n"
 "Language-Team: American English <kde-i18n-doc@kde.org>\n"
@@ -1374,6 +1374,7 @@ msgid "automatic"
 msgstr "自动"
 
 #: templates/inventoryplanning/drp.html:1129
+msgctxt "statistical distribution"
 msgid "normal"
 msgstr ""
 
@@ -1398,7 +1399,7 @@ msgstr ""
 #: templates/inventoryplanning/drp.html:1139
 #, fuzzy
 #| msgid "Safety stock"
-msgid "Don't stock"
+msgid "don't stock"
 msgstr "安全库存"
 
 #: templates/inventoryplanning/drp.html:1146
@@ -1514,24 +1515,42 @@ msgstr "确认"
 # Translation included with django
 #: templates/registration/password_change_done.html:8
 #: templates/registration/password_change_form.html:9
-#: templates/registration/password_change_form.html:11
-#: templates/registration/password_change_form.html:15
+#, fuzzy
+#| msgid "Password change"
+msgctxt "Translation included with django"
 msgid "Password change"
 msgstr "修改密码"
 
 # Translation included with django
 #: templates/registration/password_change_done.html:10
 #: templates/registration/password_change_done.html:14
+#, fuzzy
+#| msgid "Password change successful"
+msgctxt "Translation included with django"
 msgid "Password change successful"
 msgstr "密码修改成功"
 
 # Translation included with django
 #: templates/registration/password_change_done.html:16
+#, fuzzy
+#| msgid "Your password was changed."
+msgctxt "Translation included with django"
 msgid "Your password was changed."
 msgstr "你的密码已经被修改"
 
 # Translation included with django
+#: templates/registration/password_change_form.html:11
+#: templates/registration/password_change_form.html:15
+msgid "Password change"
+msgstr "修改密码"
+
+# Translation included with django
 #: templates/registration/password_change_form.html:17
+#, fuzzy
+#| msgid ""
+#| "Please enter your old password, for security's sake, and then enter your "
+#| "new password twice so we can verify you typed it in correctly."
+msgctxt "Translation included with django"
 msgid ""
 "Please enter your old password, for security's sake, and then enter your new "
 "password twice so we can verify you typed it in correctly."
@@ -1541,27 +1560,43 @@ msgstr ""
 
 # Translation included with django
 #: templates/registration/password_change_form.html:22
+#, fuzzy
+#| msgid "Old password:"
+msgctxt "Translation included with django"
 msgid "Old password:"
 msgstr "旧密码："
 
 # Translation included with django
 #: templates/registration/password_change_form.html:24
+#, fuzzy
+#| msgid "New password:"
+msgctxt "Translation included with django"
 msgid "New password:"
 msgstr "新密码："
 
 # Translation included with django
 #: templates/registration/password_change_form.html:26
+#, fuzzy
+#| msgid "Confirm password:"
+msgctxt "Translation included with django"
 msgid "Confirm password:"
 msgstr "确认密码："
 
 # Translation included with django
 #: templates/registration/password_change_form.html:28
+#, fuzzy
+#| msgid "Change my password"
+msgctxt "Translation included with django"
 msgid "Change my password"
 msgstr "修改密码"
 
 #: templates/resourcecontext.html:7 templates/resourcetabs.html:8
 msgid "Gantt chart"
 msgstr "甘特图"
+
+# Translation included with django
+#~ msgid "Password change successful"
+#~ msgstr "密码修改成功"
 
 #~ msgid "Input"
 #~ msgstr "输入"

@@ -19,8 +19,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 2.4\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-10-12 10:21+0200\n"
-"PO-Revision-Date: 2015-10-12 10:39+0200\n"
+"POT-Creation-Date: 2015-10-12 10:56+0200\n"
+"PO-Revision-Date: 2015-10-12 10:58+0200\n"
 "Last-Translator: Chris Zajaczkowski <info@businesstec.net>\n"
 "Language-Team: Spanish; Castilian <info@businesstec.net>\n"
 "Language: es_CR\n"
@@ -1301,6 +1301,7 @@ msgid "automatic"
 msgstr "Automático"
 
 #: templates/inventoryplanning/drp.html:1129
+msgctxt "statistical distribution"
 msgid "normal"
 msgstr ""
 
@@ -1313,26 +1314,20 @@ msgid "negative binomial"
 msgstr ""
 
 #: templates/inventoryplanning/drp.html:1133
-#, fuzzy
-#| msgid "Demand plan detail"
 msgid "demand standard deviation"
-msgstr "plan de órdenes en detalle"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:1134
 msgid "lead time standard deviation"
 msgstr ""
 
 #: templates/inventoryplanning/drp.html:1139
-#, fuzzy
-#| msgid "Safety stock"
-msgid "Don't stock"
-msgstr "Inventario de seguridad"
+msgid "don't stock"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:1146
-#, fuzzy
-#| msgid "comment"
 msgid "new item comment"
-msgstr "comentario"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:1148
 msgid "new item-location comment"
@@ -1441,55 +1436,68 @@ msgstr "Confirmar"
 # Translation included with django
 #: templates/registration/password_change_done.html:8
 #: templates/registration/password_change_form.html:9
+msgctxt "Translation included with django"
+msgid "Password change"
+msgstr ""
+
+# Translation included with django
+#: templates/registration/password_change_done.html:10
+#: templates/registration/password_change_done.html:14
+msgctxt "Translation included with django"
+msgid "Password change successful"
+msgstr ""
+
+# Translation included with django
+#: templates/registration/password_change_done.html:16
+msgctxt "Translation included with django"
+msgid "Your password was changed."
+msgstr ""
+
+# Translation included with django
 #: templates/registration/password_change_form.html:11
 #: templates/registration/password_change_form.html:15
 msgid "Password change"
 msgstr "Cambio de contraseña"
 
 # Translation included with django
-#: templates/registration/password_change_done.html:10
-#: templates/registration/password_change_done.html:14
-msgid "Password change successful"
-msgstr "Cambio de contraseña exitoso"
-
-# Translation included with django
-#: templates/registration/password_change_done.html:16
-msgid "Your password was changed."
-msgstr "Su contraseña fue cambiada."
-
-# Translation included with django
 #: templates/registration/password_change_form.html:17
+msgctxt "Translation included with django"
 msgid ""
 "Please enter your old password, for security's sake, and then enter your new "
 "password twice so we can verify you typed it in correctly."
 msgstr ""
-"Introduzca su contraseña antigua, por razones de seguridad, y, a "
-"continuación, introduzca la nueva contraseña dos veces  para que podamos "
-"verificar está bien escrita."
 
 # Translation included with django
 #: templates/registration/password_change_form.html:22
+msgctxt "Translation included with django"
 msgid "Old password:"
-msgstr "Contraseña anterior:"
+msgstr ""
 
 # Translation included with django
 #: templates/registration/password_change_form.html:24
+msgctxt "Translation included with django"
 msgid "New password:"
-msgstr "Nueva contraseña:"
+msgstr ""
 
 # Translation included with django
 #: templates/registration/password_change_form.html:26
+msgctxt "Translation included with django"
 msgid "Confirm password:"
-msgstr "Confirmar contraseña:"
+msgstr ""
 
 # Translation included with django
 #: templates/registration/password_change_form.html:28
+msgctxt "Translation included with django"
 msgid "Change my password"
-msgstr "Cambiar mi contraseña"
+msgstr ""
 
 #: templates/resourcecontext.html:7 templates/resourcetabs.html:8
 msgid "Gantt chart"
 msgstr "diagrama de gantt"
+
+# Translation included with django
+#~ msgid "Password change successful"
+#~ msgstr "Cambio de contraseña exitoso"
 
 #~ msgid "Input"
 #~ msgstr "Entrada"
