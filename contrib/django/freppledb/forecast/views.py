@@ -13,6 +13,7 @@ from decimal import Decimal
 import json
 from openpyxl import load_workbook
 
+from django.conf import settings
 from django.contrib.admin.util import unquote
 from django.db import connections, transaction
 from django.http import HttpResponse, HttpResponseForbidden, Http404
@@ -220,7 +221,7 @@ class OverviewReport(GridPivot):
     resp = HttpResponse()
     ok = True
     with transaction.atomic(request.database, savepoint=False):
-      for rec in json.JSONDecoder().decode(request.read()):
+      for rec in json.JSONDecoder().decode(request.read().decode(request.encoding or settings.DEFAULT_CHARSET)):
         try:
           with transaction.atomic(request.database, savepoint=False):
             fcst = Forecast.objects.all().using(request.database).get(name=rec['id'])

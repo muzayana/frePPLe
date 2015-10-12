@@ -256,7 +256,6 @@ jQuery.extend($.fn.fmatter, {
     return cellvalue + "<span class='context fa fa-caret-right' role='calendarbucket'></span>";
   },
   location : function(cellvalue, options, rowdata) {
-	  console.log(cellvalue);
     if (cellvalue === undefined || cellvalue === '' || cellvalue === null) return '';
     if (options['colModel']['popup']) return cellvalue;
     return cellvalue + "<span class='context fa fa-caret-right' role='location'></span>";
@@ -421,7 +420,6 @@ var grid = {
    },
 
    runAction: function(next_action) {
-    console.log($("#actions").val());
     if ($("#actions").val() != "no_action")
        actions[$("#actions").val()]();
    },
@@ -432,7 +430,6 @@ var grid = {
     for ( i in sel ) {
       jQuery("#grid").jqGrid("setCell", sel[i], "status", newstatus, "dirty-cell");
       jQuery("#grid").jqGrid("setRowData", sel[i], false, "edited");
-      console.log(sel[i]);
     };
 
     $("#actions").prop("selectedIndex",0);
