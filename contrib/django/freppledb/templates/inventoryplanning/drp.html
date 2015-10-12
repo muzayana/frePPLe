@@ -327,7 +327,7 @@ function save(refresh) {
       },
     error: function (result, stat, errorThrown) {
       // Error message
-      $('#popup').html(result.responseText + ":<br/>" + errorThrown)
+      $('#popup').html(result.responseText)
         .dialog({
         title: gettext("Error saving data"),
         autoOpen: true,
@@ -958,7 +958,7 @@ function displayResult(data)
       colModel:[
          {name:'id',index:'id',editable:false,label:'{% trans "identifier"|capfirst %}',align:'center',title:false,key:true,hidden:true,counter:0,frozen:true,searchoptions:{searchhidden: true}},
          {name:'date',index:'date',editable:false,label:'{% trans "date"|capfirst %}',align:'center',title:false,formatter:'date',formatoptions:{srcformat:'Y-m-d H:i:s',newformat:'Y-m-d H:i:s'},width:140,counter:1,searchoptions:{searchhidden: true}},
-         {name:'type',index:'status',editable:true,label:'{% trans "type"|capfirst %}',align:'center',title:false,formatter:'select', edittype:'select', editoptions:{value:'confirmed:confirmed;approved:approved;proposed:proposed'},width:100,counter:2,searchoptions:{searchhidden: true}},
+         {name:'type',index:'status',editable:false,label:'{% trans "type"|capfirst %}',align:'center',title:false,formatter:'select', edittype:'select', editoptions:{value:'DO out:DO out;DO in:DO in;PO:PO'},width:100,counter:2,searchoptions:{searchhidden: true}},
          {name:'reference',index:'reference',editable:true,label:'{% trans "reference"|capfirst %}',align:'left',title:false,width:200,counter:3,searchoptions:{searchhidden: true}},
          {name:'status',index:'status',editable:true,label:'{% trans "status"|capfirst %}',align:'center',title:false,formatter:'select', edittype:'select', editoptions:{value:'proposed:proposed;confirmed:confirmed;closed:closed'},width:100,counter:4,searchoptions:{searchhidden: true}},
          {name:'item',index:'item',editable:true,label:'{% trans "item"|capfirst %}',align:'left',title:false,formatter:'item',width:200,counter:5,searchoptions:{searchhidden: true}},

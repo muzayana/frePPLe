@@ -125,7 +125,6 @@ class DRP(GridReport):
     cursor = connections[request.database].cursor()
     basesql, baseparams = basequery.query.get_compiler(basequery.db).as_sql(with_col_aliases=False)
     sortsql = DRP._apply_sort_index(request, prefs=request.prefs)
-    print (basesql, sortsql)
 
     # Value or units
     if request.prefs and request.prefs.get('units', 'unit') == 'value':
@@ -218,7 +217,7 @@ class DRPitemlocation(View):
       union all
       select
         id, startdate, 'DO out', reference, status, -quantity, startdate,
-        enddate, item_id, NULL, NULL, criticality, lastmodified
+        enddate, item_id, destination_id, origin_id, criticality, lastmodified
       from distribution_order
       where item_id = %s and origin_id = %s and consume_material = true
       union all
@@ -231,6 +230,7 @@ class DRPitemlocation(View):
       ) transactions
     inner join item
       on transactions.item_id = item.name
+    where status <> 'closed'
     order by date, quantity
     """
 
@@ -573,6 +573,7 @@ class DRPitemlocation(View):
     # Only accept ajax requests on this URL
     if not request.is_ajax():
       raise Http404('Only ajax requests allowed')
+    errors = []
 
     try:
       # Unescape special characters in the argument, which is encoded django-admin style.
@@ -583,7 +584,6 @@ class DRPitemlocation(View):
 
       # Retrieve the posted data
       data = json.JSONDecoder().decode(request.read().decode(request.encoding or settings.DEFAULT_CHARSET))
-      print("posted:", itemlocation, data)
 
       # Save comments
       with transaction.atomic(using=request.database):
@@ -721,50 +721,71 @@ class DRPitemlocation(View):
             ip.demand_distribution = val
           ip.save(using=request.database)
 
-        # Save transactions  TODO CODE IS INCOMPLETE
+        # Save transactions
         po_form = None
         do_form = None
         if 'transactions' in data:
           for row in data['transactions']:
-            print (row)
             transactiontype = row.get('type', '')
             if transactiontype == 'PO':
               content_type_id = ContentType.objects.get_for_model(PurchaseOrder).pk
+              obj = PurchaseOrder.objects.using(request.database).get(pk=row['id'])
               if not po_form:
-                obj = PurchaseOrder.objects.using(request.database).get(pk=row['id'])
                 po_form = modelform_factory(PurchaseOrder,
                   fields=(
-                    'reference', 'status', 'quantity', 'origin', 'id', 'date',
+                    'reference', 'status', 'quantity', 'supplier',
                     'startdate', 'enddate', 'item'
                     ),
                   formfield_callback=lambda f: (isinstance(f, RelatedField) and f.formfield(using=request.database)) or f.formfield()
                   )
-                form = po_form(row, instance=obj)
-            elif transactiontype == 'DO':
+              form = po_form({
+                'reference': row['reference'],
+                'status': row['status'],
+                'quantity': row['quantity'],
+                'supplier': row['origin'],
+                'startdate': row['startdate'],
+                'enddate': row['enddate'],
+                'item': row['item'],
+                }, instance=obj)
+            elif transactiontype in ('DO out', 'DO in'):
               content_type_id = ContentType.objects.get_for_model(DistributionOrder).pk
               if not do_form:
                 do_form = modelform_factory(DistributionOrder,
                   fields=(
-                    'reference', 'status', 'quantity', 'origin', 'id', 'date',
+                    'reference', 'status', 'quantity', 'origin',
                     'startdate', 'enddate', 'item'
                     ),
                   formfield_callback=lambda f: (isinstance(f, RelatedField) and f.formfield(using=request.database)) or f.formfield()
                   )
-              obj = PurchaseOrder.objects.using(request.database).get(pk=row['id'])
-              form = do_form(row, instance=obj)
-              if form.has_changed():
-                obj = form.save(commit=False)
-                obj.save(using=request.database)
-                LogEntry(
-                  user_id=request.user.pk,
-                  content_type_id=content_type_id,
-                  object_id=obj.pk,
-                  object_repr=force_text(obj),
-                  action_flag=CHANGE,
-                  change_message=_('Changed %s.') % get_text_list(form.changed_data, _('and'))
-                ).save(using=request.database)
+              obj = DistributionOrder.objects.using(request.database).get(pk=row['id'])
+              form = do_form({
+                'reference': row['reference'],
+                'status': row['status'],
+                'quantity': row['quantity'],
+                'origin': row['origin'],
+                'startdate': row['startdate'],
+                'enddate': row['enddate'],
+                'item': row['item'],
+                }, instance=obj)
             else:
-              raise Exception("Invalid transaction")
+              errors.append("Invalid transaction type: '%s'" % transactiontype)
+            if not form.is_valid():
+              errors = []
+              errors.extend([e for e in form.non_field_errors()])
+              for field in form:
+                errors.extend(["%s : %s" % (field.name, e) for e in field.errors ])
+            elif form.has_changed():
+              obj = form.save(commit=False)
+              obj.quantity = abs(obj.quantity)
+              obj.save(using=request.database)
+              LogEntry(
+                user_id=request.user.pk,
+                content_type_id=content_type_id,
+                object_id=obj.pk,
+                object_repr=force_text(obj),
+                action_flag=CHANGE,
+                change_message=_('Changed %s.') % get_text_list(form.changed_data, _('and'))
+                ).save(using=request.database)
 
         # Save the comment
         if 'commenttype' in data and 'comment' in data:
@@ -787,13 +808,16 @@ class DRPitemlocation(View):
               comment=data['comment']
               ).save(using=request.database)
           else:
-            raise Exception("Invalid comment data")
-
-      return HttpResponse(content="OK")
+            errors.append("Invalid comment data")
 
     except Exception as e:
-      logger.error("Error saving DRP updates: %s" % e)
-      return HttpResponseServerError('Error saving updates')
+      errors.append(str(e))
+
+    if errors:
+      logger.error("Error saving DRP updates: %s" % "".join(errors))
+      return HttpResponseServerError('Error saving DRP updates: %s' % "<br/>".join(errors))
+    else:
+      return HttpResponse(content="OK")
 
 
 class DRPitem(DRPitemlocation):
