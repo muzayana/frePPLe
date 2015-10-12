@@ -966,8 +966,9 @@ function displayResult(data)
          {name:'startdate',index:'startdate',editable:true,label:'{% trans "start date"|capfirst %}',align:'center',title:false,formatter:'date',formatoptions:{srcformat:'Y-m-d H:i:s',newformat:'Y-m-d H:i:s'},width:140,counter:7,searchoptions:{searchhidden: true}},
          {name:'enddate',index:'enddate',editable:true,label:'{% trans "end date"|capfirst %}',align:'center',title:false,formatter:'date',formatoptions:{srcformat:'Y-m-d H:i:s',newformat:'Y-m-d H:i:s'},width:140,counter:8,searchoptions:{searchhidden: true}},
          {name:'quantity',index:'quantity',editable:true,label:'{% trans "quantity"|capfirst %}',align:'center',title:false,formatter:'number',searchrules:{number:true},width:70,counter:9,searchoptions:{searchhidden: true}},
-         {name:'criticality',index:'criticality',editable:false,label:'{% trans "criticality"|capfirst %}',align:'center',title:false,formatter:'number',searchrules:{number:true},width:70,counter:10,searchoptions:{searchhidden: true}},
-         {name:'lastmodified',index:'lastmodified',editable:false,label:'Last Modified',align:'center',title:false,formatter:'date',formatoptions:{srcformat:'Y-m-d H:i:s',newformat:'Y-m-d H:i:s'},width:140,counter:11,searchoptions:{searchhidden: true}}
+         {name:'value',index:'value',editable:true,label:'{% trans "value"|capfirst %}',align:'center',title:false,formatter:'number',searchrules:{number:true},width:70,counter:10,searchoptions:{searchhidden: true}},
+         {name:'criticality',index:'criticality',editable:false,label:'{% trans "criticality"|capfirst %}',align:'center',title:false,formatter:'number',searchrules:{number:true},width:70,counter:11,searchoptions:{searchhidden: true}},
+         {name:'lastmodified',index:'lastmodified',editable:false,label:'Last Modified',align:'center',title:false,formatter:'date',formatoptions:{srcformat:'Y-m-d H:i:s',newformat:'Y-m-d H:i:s'},width:140,counter:12,searchoptions:{searchhidden: true}}
          ],
       rowNum:20,
       rowList:[20, 30, 50],
@@ -1125,7 +1126,7 @@ $(function() {
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{% trans "statistical distribution"|capfirst %}
 <select name="actions" id="demand_distribution" onchange="activateSaveUndo(); $(this).addClass('dirty-cell red')" style="display: initial" class="ui-corner-all ui-selectmenu-default ui-state-enabled">
   <option value="automatic">{% trans "automatic"|capfirst %}</option>
-  <option value="normal">{% trans "normal"|capfirst %}</option>
+  <option value="normal">{% trans "normal" context "statistical distribution"|capfirst %}</option>
   <option value="poisson">{% trans "poisson"|capfirst %}</option>
   <option value="negbinomial">{% trans "negative binomial"|capfirst %}</option>
 </select><br/>
@@ -1135,7 +1136,7 @@ $(function() {
 <input type="radio" id="ss_type_periodofcover" name="ss_type" value="periodofcover" onclick="activateSaveUndo()"><label for="ss_type_periodofcover">&nbsp;{% trans "period of cover"|capfirst %}<input style="width:50px" type="number" id="ss_min_poc" min="1" step="7" oninput="activateSaveUndo(); $(this).addClass('dirty-cell')"> {% trans "days" %}</label><br/>
 </td></tr>
 </table>
-<input type="checkbox" id="nostock" onclick="activateSaveUndo(); $(this).addClass('dirty-cell')">&nbsp;&nbsp;<label for="nostock">{% trans "Don't stock" %}</label>
+<input type="checkbox" id="nostock" onclick="activateSaveUndo(); $(this).addClass('dirty-cell')">&nbsp;&nbsp;<label for="nostock">{% trans "don't stock"|capfirst %}</label>
 </div>
 
 <div id="transactionsdata" class="clear" style="display:none">
