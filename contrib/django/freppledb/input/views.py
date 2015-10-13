@@ -1043,9 +1043,10 @@ class PurchaseOrderList(GridReport):
     GridFieldLastModified('lastmodified'),
     )
 
-  actions = [
-    {"name": 'proposed', "label": _("change status to %(status)s") % {'status': _("Proposed")}, "function": "grid.setStatus('proposed')"},
-    {"name": 'confirmed', "label": _("change status to %(status)s") % {'status': _("Confirmed")}, "function": "grid.setStatus('confirmed')"},
-    {"name": 'closed', "label": _("change status to %(status)s") % {'status': _("Closed")}, "function": "grid.setStatus('closed')"},
-    ]
+  if 'freppledb.openbravo' in settings.INSTALLED_APPS:
+    actions = [
+      {"name": 'proposed', "label": _("change status to %(status)s") % {'status': _("Proposed")}, "function": "grid.setStatus('proposed')"},
+      {"name": 'confirmed', "label": _("change status to %(status)s") % {'status': _("Confirmed")}, "function": "grid.setStatus('confirmed')"},
+      {"name": 'closed', "label": _("change status to %(status)s") % {'status': _("Closed")}, "function": "grid.setStatus('closed')"},
+      ]
 
