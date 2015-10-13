@@ -89,6 +89,15 @@ class TaskReport(GridReport):
       planForecast = 0
       planProduction = 1
 
+    # Check if inventory planning module is activated
+    inventoryModule = 'freppledb.inventoryplanning' in settings.INSTALLED_APPS
+    if inventoryModule:
+      planInventory = request.session.get('planInventory', '1') == '1' and 1 or -1
+      evalInventory = request.session.get('evalInventory', '1') == '1' and 1 or -1
+    else:
+      planInventory = 0
+      evalInventory = 1
+
     # Loop over all fixtures of all apps and directories
     fixtures = set()
     folders = list(settings.FIXTURE_DIRS)
@@ -108,21 +117,25 @@ class TaskReport(GridReport):
 
     # Send to template
     odoo = 'freppledb.odoo' in settings.INSTALLED_APPS
-    return {'capacityconstrained': constraint & 4,
-            'materialconstrained': constraint & 2,
-            'leadtimeconstrained': constraint & 1,
-            'fenceconstrained': constraint & 8,
-            'webservice': webservice,
-            'forecastModule': forecastModule,
-            'planForecast': planForecast,
-            'planProduction': planProduction,
-            'scenarios': Scenario.objects.all(),
-            'fixtures': fixtures,
-            'openbravo': 'freppledb.openbravo' in settings.INSTALLED_APPS,
-            'odoo': odoo,
-            'odoo_read': odoo and request.session.get('odoo_read', False),
-            'odoo_write': odoo and request.session.get('odoo_write', False)
-            }
+    return {
+      'capacityconstrained': constraint & 4,
+      'materialconstrained': constraint & 2,
+      'leadtimeconstrained': constraint & 1,
+      'fenceconstrained': constraint & 8,
+      'webservice': webservice,
+      'forecastModule': forecastModule,
+      'planForecast': planForecast,
+      'planProduction': planProduction,
+      'inventoryModule': inventoryModule,
+      'planInventory': planInventory,
+      'evalInventory': evalInventory,
+      'scenarios': Scenario.objects.all(),
+      'fixtures': fixtures,
+      'openbravo': 'freppledb.openbravo' in settings.INSTALLED_APPS,
+      'odoo': odoo,
+      'odoo_read': odoo and request.session.get('odoo_read', False),
+      'odoo_write': odoo and request.session.get('odoo_write', False)
+      }
 
 
 @basicauthentication(allow_logged_in=True)
@@ -210,6 +223,10 @@ def wrapTask(request, action):
       env.append("noforecast")
     if request.POST.get('planProduction', '0') != '1':
       env.append("noproduction")
+    if request.POST.get('planInventory', '0') != '1':
+      env.append("noinventory")
+    if request.POST.get('evalInventory', '0') != '1':
+      env.append("noevaluation")
     if request.POST.get('odoo_read', None) == '1':
       env.append("odoo_read")
       request.session['odoo_read'] = True
@@ -229,6 +246,8 @@ def wrapTask(request, action):
     request.session['webservice'] = request.POST.get('webservice', '0')
     request.session['planForecast'] = request.POST.get('planForecast', '0')
     request.session['planProduction'] = request.POST.get('planProduction', '0')
+    request.session['planInventory'] = request.POST.get('planInventory', '0')
+    request.session['evalInventory'] = request.POST.get('evalInventory', '0')
   # B
   elif action == 'frepple_createmodel':
     task = Task(name='generate model', submitted=now, status='Waiting', user=request.user)

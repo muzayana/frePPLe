@@ -86,43 +86,29 @@ def createPlan(database=DEFAULT_DB_ALIAS):
     else:
       solver.loglevel = 0
 
-  # TODO: move this completely into the inventory planning app
-  with_inventoryplanning = 'solver_inventoryplanning' in [ a[0] for a in inspect.getmembers(frepple) ]
-  if with_inventoryplanning:
-    # Calculating the SS and ROQ values
-    from freppledb.inventoryplanning.commands import createInventoryPlan
-    createInventoryPlan(database=database)
-    # Calculating the stock position compared to the targets
-    from freppledb.inventoryplanning.management.commands.frepple_updatestockposition import updateStockPosition
-    print("\nStart calculating stock position at", datetime.now().strftime("%H:%M:%S"))
-    updateStockPosition(database=database)
-    print("End calculating stock position at", datetime.now().strftime("%H:%M:%S"))
-    # Optional alternative process: run ip plan, erase the plan, then create constrained plan
-    # frepple.erase(False)
-  else:
-    # Create a solver where the plan type are defined by an environment variable
-    try:
-      plantype = int(os.environ['FREPPLE_PLANTYPE'])
-    except:
-      plantype = 1  # Default is a constrained plan
-    try:
-      constraint = int(os.environ['FREPPLE_CONSTRAINT'])
-    except:
-      constraint = 15  # Default is with all constraints enabled
-    solver = frepple.solver_mrp(
-      constraints=constraint,
-      plantype=plantype,
-      loglevel=int(Parameter.getValue('plan.loglevel', database, 0)),
-      lazydelay=int(Parameter.getValue('lazydelay', database, '86400')),
-      allowsplits=(Parameter.getValue('allowsplits', database, 'true') == "true"),
-      plansafetystockfirst=(Parameter.getValue('plan.planSafetyStockFirst', database, 'false') == "false"),
-      iterationmax=int(Parameter.getValue('plan.iterationmax', database, '0'))
-      #userexit_resource=debugResource,
-      #userexit_demand=debugDemand
-      )
-    print("Plan type: ", plantype)
-    print("Constraints: ", constraint)
-    solver.solve()
+  # Create a solver where the plan type are defined by an environment variable
+  try:
+    plantype = int(os.environ['FREPPLE_PLANTYPE'])
+  except:
+    plantype = 1  # Default is a constrained plan
+  try:
+    constraint = int(os.environ['FREPPLE_CONSTRAINT'])
+  except:
+    constraint = 15  # Default is with all constraints enabled
+  solver = frepple.solver_mrp(
+    constraints=constraint,
+    plantype=plantype,
+    loglevel=int(Parameter.getValue('plan.loglevel', database, 0)),
+    lazydelay=int(Parameter.getValue('lazydelay', database, '86400')),
+    allowsplits=(Parameter.getValue('allowsplits', database, 'true') == "true"),
+    plansafetystockfirst=(Parameter.getValue('plan.planSafetyStockFirst', database, 'false') == "false"),
+    iterationmax=int(Parameter.getValue('plan.iterationmax', database, '0'))
+    #userexit_resource=debugResource,
+    #userexit_demand=debugDemand
+    )
+  print("Plan type: ", plantype)
+  print("Constraints: ", constraint)
+  solver.solve()
 
 
 def exportPlan(database=DEFAULT_DB_ALIAS):

@@ -716,6 +716,9 @@ def generate_plan():
   # Detect whether the forecast module is available
   with_forecasting = 'demand_forecast' in [ a[0] for a in inspect.getmembers(frepple) ]
 
+  # Detect whether the inventory planning module is available
+  with_inventoryplanning = 'solver_inventoryplanning' in [ a[0] for a in inspect.getmembers(frepple) ]
+
   if with_forecasting:
     print("\nStart loading forecast data from the database at", datetime.now().strftime("%H:%M:%S"))
     try:
@@ -764,7 +767,14 @@ def generate_plan():
       frepple.printsize()
       logProgress(83, db)
 
+  if not 'noinventory' in os.environ and with_inventoryplanning:
+    from freppledb.inventoryplanning.commands import createInventoryPlan
+    createInventoryPlan(database=db)
+
   if not 'noproduction' in os.environ:
+    if not 'noinventory' in os.environ and with_inventoryplanning:
+      # Remove the unconstrained inventory plan
+      frepple.erase(False)
     print("\nStart plan generation at", datetime.now().strftime("%H:%M:%S"))
     createPlan(db)
     frepple.printsize()
@@ -792,6 +802,12 @@ def generate_plan():
       else:
         # Export both the computed forecast and the planned quantities
         exportForecastFull(cursor)
+
+  if not 'noevaluation' in os.environ and with_inventoryplanning:
+    from freppledb.inventoryplanning.management.commands.frepple_updatestockposition import updateStockPosition
+    print("\nStart calculating stock position at", datetime.now().strftime("%H:%M:%S"))
+    updateStockPosition(database=db)
+    print("End calculating stock position at", datetime.now().strftime("%H:%M:%S"))
 
   if 'odoo_write' in os.environ:
     from freppledb.odoo.commands import odoo_write
