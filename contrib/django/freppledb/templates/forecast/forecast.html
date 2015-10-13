@@ -190,7 +190,7 @@ function drawGraphs(jsondata)
            + ((d['ordersadjustment'] === null) ? '' : Math.round((d['ordersadjustment'])*10)/10)
            + '</td></tr><tr><td>{{_('forecast baseline')|capfirst}}</td><td style="text-align:right">'
            + (Math.round((d['forecastbaseline'])*10)/10)
-           + '</td></tr><tr><td>{{_('forecast adjustment')|capfirst}}</td><td style="text-align:right">'
+           + '</td></tr><tr><td>{{_('forecast override')|capfirst}}</td><td style="text-align:right">'
            + ((d['forecastadjustment'] === null) ? '' : Math.round((d['forecastadjustment'])*10)/10)
            + '</td></tr><tr><td>{{_('forecast total')|capfirst}}</td><td style="text-align:right">'
            + (Math.round((d['forecasttotal'])*10)/10)
@@ -396,7 +396,7 @@ function crosses (cellvalue, options, rowdata)
         else
           result += '<br>';
         break;
-      case 4: // Forecast adjustment{% if perms.forecast.change_forecastdemand %}
+      case 4: // Forecast override{% if perms.forecast.change_forecastdemand %}
         if (cellvalue[11] == 1)
           result += '<input type="text" class="smallpadding adjforecast" value="' + ((cellvalue[4] === null) ? '' : (Math.round(cellvalue[4]*10)/10)) + '" size="5" oninput="onChange(event)" onclick="$(this).select();"/><br>';
         else

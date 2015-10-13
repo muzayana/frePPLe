@@ -110,7 +110,7 @@ class OverviewReport(GridPivot):
     ('ordersopen', {'title': _('open orders')}),
     ('ordersadjustment', {'title': _('orders adjustment'), 'editable': lambda req: req.user.has_perm('input.change_forecastdemand')}),
     ('forecastbaseline', {'title': _('forecast baseline')}),
-    ('forecastadjustment', {'title': _('forecast adjustment'), 'editable': lambda req: req.user.has_perm('input.change_forecastdemand')}),
+    ('forecastadjustment', {'title': _('forecast override'), 'editable': lambda req: req.user.has_perm('input.change_forecastdemand')}),
     ('forecasttotal', {'title': _('forecast total')}),
     ('forecastnet', {'title': _('forecast net')}),
     ('forecastconsumed', {'title': _('forecast consumed')}),
