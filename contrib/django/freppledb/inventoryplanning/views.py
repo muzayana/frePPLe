@@ -14,7 +14,7 @@ import json
 
 from django.conf import settings
 from django.contrib.admin.utils import unquote
-from django.contrib.admin.models import LogEntry, CHANGE, ADDITION
+from django.contrib.admin.models import LogEntry, CHANGE
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
@@ -92,6 +92,7 @@ class DRP(GridReport):
   '''
   template = 'inventoryplanning/drp.html'
   title = _("Distribution planning")
+  permissions = (('view_distribution_report', 'Can view distribution report'),)
   basequeryset = InventoryPlanningOutput.objects.all()
   model = InventoryPlanningOutput
   height = 150
@@ -590,136 +591,144 @@ class DRPitemlocation(View):
 
         # Save the plan overrides
         if 'plan' in data:
-          roq_calendar = None
-          ss_calendar = None
-          for row in data['plan']:
-            if 'roqoverride' in row:
-              if not roq_calendar:
-                roq_calendar, created = Calendar.objects.using(request.database).get_or_create(name="ROQ for %s" % itemlocation)
-                if created:
-                  roq_calendar.source = 'Inventory planning'
-                  roq_calendar.default = 1
-                  roq_calendar.save(using=request.database)
-              if row['roqoverride'] == '':
-                # Delete a bucket
-                CalendarBucket.objects.using(request.database).filter(calendar=roq_calendar, startdate=datetime.strptime(row['startdate'], '%Y-%m-%d')).exclude(source='Inventory planning').delete()
-              else:
-                # Create or update a bucket
-                cal_bucket, created = CalendarBucket.objects.using(request.database).get_or_create(calendar=roq_calendar, startdate=datetime.strptime(row['startdate'], '%Y-%m-%d'))
-                cal_bucket.value = row['roqoverride']
-                cal_bucket.enddate = datetime.strptime(row['enddate'], '%Y-%m-%d')
-                cal_bucket.priority = 0
-                if cal_bucket.source == 'Inventory planning':
-                  cal_bucket.source = None
-                cal_bucket.save(using=request.database)
-            if 'ssoverride' in row:
-              if not ss_calendar:
-                ss_calendar, created = Calendar.objects.using(request.database).get_or_create(name="SS for %s" % itemlocation)
-                if created:
-                  ss_calendar.source = 'Inventory planning'
-                  ss_calendar.default = 1
-                  ss_calendar.save(using=request.database)
-              if row['ssoverride'] == '':
-                # Delete a bucket
-                CalendarBucket.objects.using(request.database).filter(calendar=ss_calendar, startdate=datetime.strptime(row['startdate'], '%Y-%m-%d')).exclude(source='Inventory planning').delete()
-              else:
-                cal_bucket, created = CalendarBucket.objects.using(request.database).get_or_create(calendar=ss_calendar, startdate=datetime.strptime(row['startdate'], '%Y-%m-%d'))
-                cal_bucket.value = row['ssoverride']
-                cal_bucket.enddate = datetime.strptime(row['enddate'], '%Y-%m-%d')
-                cal_bucket.priority = 0
-                if cal_bucket.source == 'Inventory planning':
-                  cal_bucket.source = None
-                cal_bucket.save(using=request.database)
+          if not request.user.has_perm('input.change_calendarbucket'):
+            errors.append(force_text(_('Permission denied')))
+          else:
+            roq_calendar = None
+            ss_calendar = None
+            for row in data['plan']:
+              if 'roqoverride' in row:
+                if not roq_calendar:
+                  roq_calendar, created = Calendar.objects.using(request.database).get_or_create(name="ROQ for %s" % itemlocation)
+                  if created:
+                    roq_calendar.source = 'Inventory planning'
+                    roq_calendar.default = 1
+                    roq_calendar.save(using=request.database)
+                if row['roqoverride'] == '':
+                  # Delete a bucket
+                  CalendarBucket.objects.using(request.database).filter(calendar=roq_calendar, startdate=datetime.strptime(row['startdate'], '%Y-%m-%d')).exclude(source='Inventory planning').delete()
+                else:
+                  # Create or update a bucket
+                  cal_bucket, created = CalendarBucket.objects.using(request.database).get_or_create(calendar=roq_calendar, startdate=datetime.strptime(row['startdate'], '%Y-%m-%d'))
+                  cal_bucket.value = row['roqoverride']
+                  cal_bucket.enddate = datetime.strptime(row['enddate'], '%Y-%m-%d')
+                  cal_bucket.priority = 0
+                  if cal_bucket.source == 'Inventory planning':
+                    cal_bucket.source = None
+                  cal_bucket.save(using=request.database)
+              if 'ssoverride' in row:
+                if not ss_calendar:
+                  ss_calendar, created = Calendar.objects.using(request.database).get_or_create(name="SS for %s" % itemlocation)
+                  if created:
+                    ss_calendar.source = 'Inventory planning'
+                    ss_calendar.default = 1
+                    ss_calendar.save(using=request.database)
+                if row['ssoverride'] == '':
+                  # Delete a bucket
+                  CalendarBucket.objects.using(request.database).filter(calendar=ss_calendar, startdate=datetime.strptime(row['startdate'], '%Y-%m-%d')).exclude(source='Inventory planning').delete()
+                else:
+                  cal_bucket, created = CalendarBucket.objects.using(request.database).get_or_create(calendar=ss_calendar, startdate=datetime.strptime(row['startdate'], '%Y-%m-%d'))
+                  cal_bucket.value = row['ssoverride']
+                  cal_bucket.enddate = datetime.strptime(row['enddate'], '%Y-%m-%d')
+                  cal_bucket.priority = 0
+                  if cal_bucket.source == 'Inventory planning':
+                    cal_bucket.source = None
+                  cal_bucket.save(using=request.database)
 
         # Save the forecast overrides
         if 'forecast' in data:
-          fcst = None
-          for row in data['forecast']:
-            if not fcst:
-              # Assumption: we find only a single forecast matching this
-              # item+location combination
-              fcst = Forecast.objects.all().using(request.database).get(item=ip.buffer.item, location=ip.buffer.location)
-            strt = datetime.strptime(row['startdate'], '%Y-%m-%d').date()
-            nd = datetime.strptime(row['enddate'], '%Y-%m-%d').date()
-            if 'adjHistory3' in row:
-              fcst.updatePlan(
-                strt.replace(year=strt.year - 3),
-                nd.replace(year=nd.year - 3),
-                None,
-                Decimal(row['adjHistory3']) if (row.get('adjHistory3','') != '') else None,
-                True,  # Units
-                request.database
-                )
-            elif 'adjHistory2' in row:
-              fcst.updatePlan(
-                strt.replace(year=strt.year - 2),
-                nd.replace(year=nd.year - 2),
-                None,
-                Decimal(row['adjHistory2']) if (row.get('adjHistory2','') != '') else None,
-                True,  # Units
-                request.database
-                )
-            elif 'adjHistory1' in row:
-              fcst.updatePlan(
-                strt.replace(year=strt.year - 1),
-                nd.replace(year=nd.year - 1),
-                None,
-                Decimal(row['adjHistory1']) if (row.get('adjHistory1','') != '') else None,
-                True,  # Units
-                request.database
-                )
-            elif 'adjForecast' in row:
-              fcst.updatePlan(
-                datetime.strptime(row['startdate'], '%Y-%m-%d').date(),
-                datetime.strptime(row['enddate'], '%Y-%m-%d').date(),
-                Decimal(row['adjForecast']) if (row.get('adjForecast','') != '') else None,
-                None,
-                True,  # Units
-                request.database
-                )
+          if not request.user.has_perm('forecast.change_forecastdemand'):
+            errors.append(force_text(_('Permission denied')))
+          else:
+            fcst = None
+            for row in data['forecast']:
+              if not fcst:
+                # Assumption: we find only a single forecast matching this
+                # item+location combination
+                fcst = Forecast.objects.all().using(request.database).get(item=ip.buffer.item, location=ip.buffer.location)
+              strt = datetime.strptime(row['startdate'], '%Y-%m-%d').date()
+              nd = datetime.strptime(row['enddate'], '%Y-%m-%d').date()
+              if 'adjHistory3' in row:
+                fcst.updatePlan(
+                  strt.replace(year=strt.year - 3),
+                  nd.replace(year=nd.year - 3),
+                  None,
+                  Decimal(row['adjHistory3']) if (row.get('adjHistory3','') != '') else None,
+                  True,  # Units
+                  request.database
+                  )
+              elif 'adjHistory2' in row:
+                fcst.updatePlan(
+                  strt.replace(year=strt.year - 2),
+                  nd.replace(year=nd.year - 2),
+                  None,
+                  Decimal(row['adjHistory2']) if (row.get('adjHistory2','') != '') else None,
+                  True,  # Units
+                  request.database
+                  )
+              elif 'adjHistory1' in row:
+                fcst.updatePlan(
+                  strt.replace(year=strt.year - 1),
+                  nd.replace(year=nd.year - 1),
+                  None,
+                  Decimal(row['adjHistory1']) if (row.get('adjHistory1','') != '') else None,
+                  True,  # Units
+                  request.database
+                  )
+              elif 'adjForecast' in row:
+                fcst.updatePlan(
+                  datetime.strptime(row['startdate'], '%Y-%m-%d').date(),
+                  datetime.strptime(row['enddate'], '%Y-%m-%d').date(),
+                  Decimal(row['adjForecast']) if (row.get('adjForecast','') != '') else None,
+                  None,
+                  True,  # Units
+                  request.database
+                  )
 
         # Save the inventory parameters
         # TODO better error handling using a modelform
         if 'parameters' in data:
           param = data['parameters']
-          val = param.get('forecastmethod', '').lower()
-          if val != '':
-            fcst = Forecast.objects.all().using(request.database).get(item=ip.buffer.item, location=ip.buffer.location)
-            fcst.method = val
-            fcst.save(using=request.database)
-          ip.roq_type = param.get('roq_type', None)
-          val = param.get('roq_min_qty', '')
-          if val != '':
-            ip.roq_min_qty = float(val)
-          val = param.get('roq_min_poc', '')
-          if val != '':
-            ip.roq_min_poc = float(val)
-          ip.ss_type = param.get('ss_type', None)
-          val = param.get('ss_min_qty', '')
-          if val != '':
-            ip.ss_min_qty = float(val)
-          val = param.get('ss_min_poc', '')
-          if val != '':
-            ip.ss_min_poc = float(val)
-          val = param.get('demand_deviation', '')
-          if val != '':
-            ip.demand_deviation = float(val)
-          val = param.get('leadtime_deviation', '')
-          if val != '':
-            ip.leadtime_deviation = float(val)
-          val = param.get('service_level', '')
-          if val != '':
-            ip.service_level = float(val)
-          val = param.get('nostock', '')
-          if val != '':
-            if val:
-              ip.nostock = True
-            else:
-              ip.nostock = False
-          val = param.get('demand_distribution', None)
-          if val is not None:
-            ip.demand_distribution = val
-          ip.save(using=request.database)
+          if request.user.has_perm('forecast.change_forecast'):
+            val = param.get('forecastmethod', '').lower()
+            if val != '':
+              fcst = Forecast.objects.all().using(request.database).get(item=ip.buffer.item, location=ip.buffer.location)
+              fcst.method = val
+              fcst.save(using=request.database)
+          if request.user.has_perm('inventoryplanning.change_inventoryplanning'):
+            ip.roq_type = param.get('roq_type', None)
+            val = param.get('roq_min_qty', '')
+            if val != '':
+              ip.roq_min_qty = float(val)
+            val = param.get('roq_min_poc', '')
+            if val != '':
+              ip.roq_min_poc = float(val)
+            ip.ss_type = param.get('ss_type', None)
+            val = param.get('ss_min_qty', '')
+            if val != '':
+              ip.ss_min_qty = float(val)
+            val = param.get('ss_min_poc', '')
+            if val != '':
+              ip.ss_min_poc = float(val)
+            val = param.get('demand_deviation', '')
+            if val != '':
+              ip.demand_deviation = float(val)
+            val = param.get('leadtime_deviation', '')
+            if val != '':
+              ip.leadtime_deviation = float(val)
+            val = param.get('service_level', '')
+            if val != '':
+              ip.service_level = float(val)
+            val = param.get('nostock', '')
+            if val != '':
+              if val:
+                ip.nostock = True
+              else:
+                ip.nostock = False
+            val = param.get('demand_distribution', None)
+            if val is not None:
+              ip.demand_distribution = val
+            ip.save(using=request.database)
 
         # Save transactions
         po_form = None
@@ -728,6 +737,9 @@ class DRPitemlocation(View):
           for row in data['transactions']:
             transactiontype = row.get('type', '')
             if transactiontype == 'PO':
+              if not request.user.has_perm('input.change_purchaseorder'):
+                errors.append(force_text(_('Permission denied')))
+                continue
               content_type_id = ContentType.objects.get_for_model(PurchaseOrder).pk
               obj = PurchaseOrder.objects.using(request.database).get(pk=row['id'])
               if not po_form:
@@ -748,6 +760,9 @@ class DRPitemlocation(View):
                 'item': row['item'],
                 }, instance=obj)
             elif transactiontype in ('DO out', 'DO in'):
+              if not request.user.has_perm('input.change_distributionorder'):
+                errors.append(force_text(_('Permission denied')))
+                continue
               content_type_id = ContentType.objects.get_for_model(DistributionOrder).pk
               if not do_form:
                 do_form = modelform_factory(DistributionOrder,
@@ -770,7 +785,6 @@ class DRPitemlocation(View):
             else:
               errors.append("Invalid transaction type: '%s'" % transactiontype)
             if not form.is_valid():
-              errors = []
               errors.extend([e for e in form.non_field_errors()])
               for field in form:
                 errors.extend(["%s : %s" % (field.name, e) for e in field.errors ])
@@ -789,7 +803,9 @@ class DRPitemlocation(View):
 
         # Save the comment
         if 'commenttype' in data and 'comment' in data:
-          if data['commenttype'] == 'item' and ip.buffer.item:
+          if not request.user.has_perm('common.add_comment'):
+            errors.append(force_text(_('Permission denied')))
+          elif data['commenttype'] == 'item' and ip.buffer.item:
             Comment(
               content_object=ip.buffer.item,
               user=request.user,

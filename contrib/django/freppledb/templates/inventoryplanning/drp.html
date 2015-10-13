@@ -4,9 +4,7 @@
 {% comment %}
   TODO:
   - view history
-  - sorting and filtering in the top grid not working
   - different views for the top section
-  - tree in top grid
 {% endcomment %}
 
 {% block contextmenus %}
@@ -26,6 +24,17 @@ var result = null;
 var forecastcurrentbucket = 0;
 var units = '{% if not "units" in preferences or preferences.units == 'units' %}units{% else %}value{% endif %}';
 var timebuckets = [ {% for f in request.report_bucketlist %}{% if not forloop.first %},{% endif %}{'name':'{{f.name}}','startdate':'{{f.startdate|date:"Y-m-d"}}','enddate':'{{f.enddate|date:"Y-m-d"}}'}{% endfor %} ];
+
+
+function switchMode()
+{
+  var mode = $("#grouping").val();
+  if (mode != 'itemlocation')
+  {
+    alert("Not implemented yet"); // TODO
+    $("#grouping").val('itemlocation');
+  }
+}
 
 
 function selectRow(id)
@@ -194,15 +203,15 @@ function setStatus(newstatus)
   $(window).on('beforeunload', warnUnsavedChanges);
 }
 
-
+{% if perms.forecast.change_forecast %}
 function setForecastMethod(newmethod)
 {
   $('#save').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
   $('#undo').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
-  $('#forecastmethod').addClass('dirty-cell');
+  $('#forecastmethod').addClass('dirty-cell red');
   $(window).on('beforeunload', warnUnsavedChanges);
 }
-
+{% endif %}
 
 function save(refresh) {
   if (result == null)
@@ -211,6 +220,7 @@ function save(refresh) {
   // Build the results to send back to the server
   var data = {};
 
+  {% if perms.common.add_comment %}
   // Get a new entered comment
   $("#commentitemlocation.comment_button_active").each(function() {
     data["comment"] = $("#newcomment").val();
@@ -224,8 +234,9 @@ function save(refresh) {
     data["comment"] = $("#newcomment").val();
     data["commenttype"] = "item";
     });
+  {% endif %}
 
-  // Get forecast data changes
+  {% if perms.forecast.change_forecastdemand %}// Get forecast data changes
   var fcstchanges = [];
   $("#forecastgrid .dirty-cell").each( function() {
      var curCol = jQuery.jgrid.getCellIndex($(this).closest("td,th"));
@@ -254,8 +265,9 @@ function save(refresh) {
   });
   if (!$.isEmptyObject(fcstchanges))
     data["forecast"] = fcstchanges;
+  {% endif %}
 
-  // Get inventory override changes
+  {% if perms.input.calendarbucket %}// Get inventory override changes
   var planchanges = [];
   $("#plangrid .dirty-cell").each( function() {
      var curCol = jQuery.jgrid.getCellIndex($(this).closest("td,th"));
@@ -272,7 +284,9 @@ function save(refresh) {
   });
   if (!$.isEmptyObject(planchanges))
     data["plan"] = planchanges;
+  {% endif %}
 
+  {% if perms.input.change_purchaseorder or perms.input.change_distributionorder %}
   // Get transaction changes
   var transchange = [];
   $("#transactiongrid .dirty-cell").each( function() {
@@ -289,9 +303,12 @@ function save(refresh) {
   });
   if (!$.isEmptyObject(transchange))
     data["transactions"] = transchange;
+  {% endif %}
 
+  {% if perms.inventoryplanning.change_inventoryplanning or perms.forecast.change_forecast %}
   // Get inventory planning and forecast parameter changes
   var prmtr = {};
+  {% if perms.inventoryplanning.change_inventoryplanning %}
   prmtr["roq_type"] = $('input[name="roq_type"]:checked').val();
   prmtr["roq_min_qty"] = $("#roq_min_qty").val();
   prmtr["roq_min_poc"] = $("#roq_min_poc").val();
@@ -303,45 +320,51 @@ function save(refresh) {
   prmtr["ss_min_qty"] = $("#ss_min_qty").val();
   prmtr["ss_min_poc"] = $("#ss_min_poc").val();
   prmtr["nostock"] = $("#nostock").prop('checked');
+  {% endif %}
+  {% if perms.forecast.change_forecast %}
   prmtr["forecastmethod"] = $("#forecastmethod").val();
+  {% endif %}
   if (!$.isEmptyObject(prmtr))
     data["parameters"] = prmtr;
+  {% endif %}
 
   // Send the results back to the server
-  $.ajax({
-    url: '{{request.prefix}}/inventoryplanning/drpitemlocation/' + admin_escape(result.name) + '/',
-    type: 'POST',
-    data: JSON.stringify(data),
-    contentType: 'application/json',
-    success: function() {
-      // Reset the buttons
-      $('#undo').addClass("save_undo_button_inactive").removeClass("save_undo_button_active");
-      $('#save').addClass("save_undo_button_inactive").removeClass("save_undo_button_active");
-      $(window).off('beforeunload', warnUnsavedChanges);
-      // Refresh the detail pane from the server after successful save.
-      // TODO This could be optimized: the server could return the updated
-      // data immediately, rather than the client asking here for the new data.
-      var entity = result.name;
-      result = null;
-      selectRow(entity);
-      },
-    error: function (result, stat, errorThrown) {
-      // Error message
-      $('#popup').html(result.responseText)
-        .dialog({
-        title: gettext("Error saving data"),
-        autoOpen: true,
-        resizable: false,
-        width: 'auto',
-        height: 'auto'
-      });
-      }
-    });
+  if (!$.isEmptyObject(fcstchanges))
+	  $.ajax({
+	    url: '{{request.prefix}}/inventoryplanning/drpitemlocation/' + admin_escape(result.name) + '/',
+	    type: 'POST',
+	    data: JSON.stringify(data),
+	    contentType: 'application/json',
+	    success: function() {
+	      // Reset the buttons
+	      $('#undo').addClass("save_undo_button_inactive").removeClass("save_undo_button_active");
+	      $('#save').addClass("save_undo_button_inactive").removeClass("save_undo_button_active");
+	      $(window).off('beforeunload', warnUnsavedChanges);
+	      // Refresh the detail pane from the server after successful save.
+	      // TODO This could be optimized: the server could return the updated
+	      // data immediately, rather than the client asking here for the new data.
+	      var entity = result.name;
+	      result = null;
+	      selectRow(entity);
+	      },
+	    error: function (result, stat, errorThrown) {
+	      // Error message
+	      $('#popup').html(result.responseText)
+	        .dialog({
+	        title: gettext("Error saving data"),
+	        autoOpen: true,
+	        resizable: false,
+	        width: 'auto',
+	        height: 'auto'
+	      });
+	      }
+	    });
 }
 
 
 function forecastfields() {
   var col =
+	{% if perms.forecast.change_forecastdemand %}
     '{{_("total orders 3 years ago")|capfirst}}<br/>' +
     '<span class="editablepivotcol">{{_("orders adjustment 3 years ago")|capfirst}}</span><br/>' +
     '{{_("total orders 2 years ago")|capfirst}}<br/>' +
@@ -351,14 +374,27 @@ function forecastfields() {
     '{{_("total orders")|capfirst}}<br/>' +
     '{{_("open orders")|capfirst}}<br/>' +
     '<span class="bold">{{_("forecast baseline")|capfirst}}</span><br/>' +
-    '<span class="editablepivotcol">{{_("forecast adjustment")|capfirst}}</span><br/>';
+    '<span class="editablepivotcol">{{_("forecast override")|capfirst}}</span><br/>';
+  {% else %}
+	  '{{_("total orders 3 years ago")|capfirst}}<br/>' +
+	  '{{_("orders adjustment 3 years ago")|capfirst}}<br/>' +
+	  '{{_("total orders 2 years ago")|capfirst}}<br/>' +
+	  '{{_("orders adjustment 2 years ago")|capfirst}}<br/>' +
+	  '{{_("total orders 1 year ago")|capfirst}}<br/>' +
+	  '{{_("orders adjustment 1 year ago")|capfirst}}<br/>' +
+	  '{{_("total orders")|capfirst}}<br/>' +
+	  '{{_("open orders")|capfirst}}<br/>' +
+	  '<span class="bold">{{_("forecast baseline")|capfirst}}</span><br/>' +
+	  '{{_("forecast override")|capfirst}}<br/>';
+  {% endif %}
   return col;
 }
 
 
 function planfields() {
   var col =
-    '{{_('reorder quantity')|capfirst}}' + "<br/>" +
+  {% if perms.input.change_calendarbucket %}
+    '{{_("reorder quantity")|capfirst}}' + "<br/>" +
     '<span class="editablepivotcol">{{_("reorder quantity override")|capfirst}}</span><br/>' +
     '{{_("safety stock")|capfirst}}<br/>' +
     '<span class="editablepivotcol">{{_("safety stock override")|capfirst}}</span><br/>' +
@@ -370,6 +406,20 @@ function planfields() {
     '{{_("proposed supply")|capfirst}}<br/>' +
     '<span class="bold">{{_("total supply")|capfirst}}</span><br/>' +
     '{{_("ending inventory")|capfirst}}<br/>';
+  {% else %}
+	  '{{_("reorder quantity")|capfirst}}' + "<br/>" +
+	  '{{_("reorder quantity override")|capfirst}}<br/>' +
+	  '{{_("safety stock")|capfirst}}<br/>' +
+	  '{{_("safety stock override")|capfirst}}<br/>' +
+	  '{{_("starting inventory")|capfirst}}<br/>' +
+	  '{{_("local demand")|capfirst}}<br/>' +
+	  '{{_("dependent demand")|capfirst}}<br/>' +
+	  '<span class="bold">{{_("total demand")|capfirst}}</span><br/>' +
+	  '{{_("confirmed supply")|capfirst}}<br/>' +
+	  '{{_("proposed supply")|capfirst}}<br/>' +
+	  '<span class="bold">{{_("total supply")|capfirst}}</span><br/>' +
+	  '{{_("ending inventory")|capfirst}}<br/>';
+  {% endif %}
   return col;
 }
 
@@ -383,7 +433,11 @@ function forecastcell(cellvalue, options, rowObject) {
   if (bucketdate - currentdate > 365 * 86400 * 1000)
   {
     // Beyond 1 year we don't show the order adjustment values
-    cellstring += "<br/><span class='editablepivotcol'></span><br/><br/><span class='editablepivotcol'></span><br/><br/><span class='editablepivotcol'></span><br/>";
+    {% if perms.forecast.change_forecastdemand %}
+    cellstring += "<br><span class='editablepivotcol'></span><br><br><span class='editablepivotcol'></span><br><br><span class='editablepivotcol'></span><br>";
+    {% else %}
+    cellstring += "<br><br><br><br><br><br>";
+    {% endif %}
   }
   else
   {
@@ -392,30 +446,44 @@ function forecastcell(cellvalue, options, rowObject) {
     var cell_min2 = result.forecast[parseInt(options.pos) + parseInt(forecastcurrentbucket) - 25];
     var cell_min3 = result.forecast[parseInt(options.pos) + parseInt(forecastcurrentbucket) - 37];
     if (!cell_min3)
-      cellstring += "<br/><br/>";
+      cellstring += "<br><br>";
     else {
-      cellstring += cell_min3.orderstotal + "<br/>";
-      cellstring += '<input type="text" class="smallpadding adjhistory-3" value="' + ((cell_min3.ordersadjustment === null) ? '' : Math.round(cell_min3.ordersadjustment)) + '" size="5" oninput="onChange(event)" onclick="$(this).select();"/><br/>';
+      cellstring += cell_min3.orderstotal + "<br>";
+      {% if perms.forecast.change_forecastdemand %}
+      cellstring += '<input type="text" class="smallpadding adjhistory-3" value="' + ((cell_min3.ordersadjustment === null) ? '' : Math.round(cell_min3.ordersadjustment)) + '" size="5" oninput="onChange(event)" onclick="$(this).select();"/><br>';
+      {% else %}
+      cellstring += ((cell_min3.ordersadjustment === null) ? '' : Math.round(cell_min3.ordersadjustment)) + '<br>';
+      {% endif %}
     }
     if (!cell_min2)
       cellstring += "<br/><br/>";
     else {
       cellstring += cell_min2.orderstotal + "<br/>";
-      cellstring += '<input type="text" class="smallpadding adjhistory-2" value="' + ((cell_min2.ordersadjustment === null) ? '' : Math.round(cell_min2.ordersadjustment)) + '" size="5" oninput="onChange(event)" onclick="$(this).select();"/><br/>';
+      {% if perms.forecast.change_forecastdemand %}
+      cellstring += '<input type="text" class="smallpadding adjhistory-2" value="' + ((cell_min2.ordersadjustment === null) ? '' : Math.round(cell_min2.ordersadjustment)) + '" size="5" oninput="onChange(event)" onclick="$(this).select();"/><br>';
+      {% else %}
+      cellstring += ((cell_min2.ordersadjustment === null) ? '' : Math.round(cell_min2.ordersadjustment)) + '<br>';
+      {% endif %}
     }
     if (!cell_min1)
       cellstring += "<br/><br/>";
     else {
       cellstring += cell_min1.orderstotal + "<br/>";
-      cellstring += '<input type="text" class="smallpadding adjhistory-1" value="' + ((cell_min1.ordersadjustment === null) ? '' : Math.round(cell_min1.ordersadjustment)) + '" size="5" oninput="onChange(event)" onclick="$(this).select();"/><br/>';
+      {% if perms.forecast.change_forecastdemand %}
+      cellstring += '<input type="text" class="smallpadding adjhistory-1" value="' + ((cell_min1.ordersadjustment === null) ? '' : Math.round(cell_min1.ordersadjustment)) + '" size="5" oninput="onChange(event)" onclick="$(this).select();"/><br>';
+      {% else %}
+      cellstring += ((cell_min1.ordersadjustment === null) ? '' : Math.round(cell_min1.ordersadjustment)) + '<br>';
+      {% endif %}
     }
   }
-  cellstring += cell.orderstotal + "<br/>";
-  cellstring += cell.ordersopen + "<br/>";
-  cellstring += '<span class="bold">' + cell.forecastbaseline + "</span><br/>";{% if perms.forecast.change_forecastdemand %}
-  cellstring += '<input type="text" class="smallpadding adjforecast" value="' + ((cell.forecastadjustment === null) ? '' : Math.round(cell.forecastadjustment)) + '" size="5" oninput="onChange(event)" onclick="$(this).select();"/><br/>';
+  cellstring += cell.orderstotal + "<br>";
+  cellstring += cell.ordersopen + "<br>";
+  cellstring += '<span class="bold">' + cell.forecastbaseline + "</span><br>";
+  {% if perms.forecast.change_forecastdemand %}
+  cellstring += '<input type="text" class="smallpadding adjforecast" value="' + ((cell.forecastadjustment === null) ? '' : Math.round(cell.forecastadjustment)) + '" size="5" oninput="onChange(event)" onclick="$(this).select();"/><br>';
   {% else %}
-  cellstring += Math.round(cell.forecastadjustment) + '<br/>';{% endif %}
+  cellstring += Math.round(cell.forecastadjustment) + '<br>';
+  {% endif %}
   return cellstring;
 }
 
@@ -425,29 +493,29 @@ function plancell(cellvalue, options, rowObject)
   var cell = result.plan[parseInt(options.pos) - 1];
   if (!cell) return "s";
   var cellstring = "";
-  cellstring += cell.roq + "<br/>"{% if perms.forecast.change_forecastdemand %}
-  cellstring += '<input type="text" class="smallpadding roqoverride" value="' + ((cell.roqoverride === null) ? '' : Math.round(cell.roqoverride)) + '" size="5" oninput="onChange(event)" onclick="$(this).select();"/><br/>';
+  cellstring += cell.roq + "<br>"{% if perms.input.change_purchaseorder %}
+  cellstring += '<input type="text" class="smallpadding roqoverride" value="' + ((cell.roqoverride === null) ? '' : Math.round(cell.roqoverride)) + '" size="5" oninput="onChange(event)" onclick="$(this).select();"/><br>';
   {% else %}
-  cellstring += Math.round(cell.roqoverride) + '<br/>';{% endif %}
-  cellstring += cell.ss + "<br/>"{% if perms.forecast.change_forecastdemand %}
-  cellstring += '<input type="text" class="smallpadding ssoverride" value="' + ((cell.ssoverride === null) ? '' : Math.round(cell.ssoverride)) + '" size="5" oninput="onChange(event);;" onclick="$(this).select();"/><br/>';
+  cellstring += Math.round(cell.roqoverride) + '<br>';{% endif %}
+  cellstring += cell.ss + "<br>"{% if perms.input.change_purchaseorder %}
+  cellstring += '<input type="text" class="smallpadding ssoverride" value="' + ((cell.ssoverride === null) ? '' : Math.round(cell.ssoverride)) + '" size="5" oninput="onChange(event);;" onclick="$(this).select();"/><br>';
   {% else %}
-  cellstring += Math.round(cell.ssoverride) + '<br/>';{% endif %}
-  cellstring += cell.startoh + "<br/>";
-  cellstring += cell.dmdlocal + "<br/>";
-  cellstring += cell.dmddependent + "<br/>";
-  cellstring += '<span class="bold">' + cell.dmdtotal + "</span><br/>";
-  cellstring += cell.supplyconfirmed + "<br/>";
-  cellstring += cell.supplyproposed + "<br/>";
-  cellstring += '<span class="bold">' + cell.supply + "</span><br/>";
-  cellstring += cell.endoh + "<br/>";
+  cellstring += Math.round(cell.ssoverride) + '<br>';{% endif %}
+  cellstring += cell.startoh + "<br>";
+  cellstring += cell.dmdlocal + "<br>";
+  cellstring += cell.dmddependent + "<br>";
+  cellstring += '<span class="bold">' + cell.dmdtotal + "</span><br>";
+  cellstring += cell.supplyconfirmed + "<br>";
+  cellstring += cell.supplyproposed + "<br>";
+  cellstring += '<span class="bold">' + cell.supply + "</span><br>";
+  cellstring += cell.endoh + "<br>";
   return cellstring;
 }
 
 
 function displayPlanGraph()
 {
-  var margin = {top: 0, right: 100, bottom: 30, left: 50};
+  var margin = {top: 0, right: 130, bottom: 30, left: 50};
   var width = $("#content-main").width() - margin.left - margin.right;
   var height = $("#plangraph").height() - margin.top - margin.bottom;
 
@@ -656,7 +724,7 @@ function displayPlanGraph()
 
 function displayForecastGraph()
 {
-  var margin = {top: 0, right: 100, bottom: 30, left: 50};
+  var margin = {top: 0, right: 130, bottom: 30, left: 50};
   var width = $("#content-main").width() - margin.left - margin.right;
   var height = $("#forecastgraph").height() - margin.top - margin.bottom;
 
@@ -733,7 +801,7 @@ function displayForecastGraph()
          + ((d.ordersadjustment === null) ? '' : (Math.round(d.ordersadjustment*10)/10))
          + '</td></tr><tr><td>{{_('forecast baseline')|capfirst}}</td><td style="text-align:right">'
          + (Math.round(d.forecastbaseline*10)/10)
-         + '</td></tr><tr><td>{{_('forecast adjustment')|capfirst}}</td><td style="text-align:right">'
+         + '</td></tr><tr><td>{{_('forecast override')|capfirst}}</td><td style="text-align:right">'
          + ((d.forecastadjustment === null) ? '' : Math.round(d.forecastadjustment*10)/10)
          + '</td></tr><tr><td>{{_('forecast total')|capfirst}}</td><td style="text-align:right">'
          + (Math.round(d.forecasttotal*10)/10)
@@ -846,7 +914,11 @@ function displayResult(data)
     $("#detailtitle").html("{{_('location')|capfirst|escape}} " + result.name);
 
   // Update the forecasting parameters
+  {% if perms.forecast.change_forecast %}
   $("#forecastmethod").val(data.parameters.forecastmethod).removeClass('red');
+  {% else %}
+  $("#forecastmethod").html(data.parameters.forecastmethod);
+  {% endif %}
   $("#forecasterror").html(data.parameters.forecasterror);
 
   // Update the inventory planning parameters
@@ -888,7 +960,7 @@ function displayResult(data)
       jsonReader: { repeatitems: false },
       hoverrows: false,
       colModel:[
-         {name:'fields',index:'fields',editable:false,label:'{% trans "fields"|capfirst %}',align:'left',title:false,key:true,counter:0,frozen:true,sortable:false,formatter:forecastfields},
+         {name:'fields',index:'fields',width:180,editable:false,label:'{% trans "fields"|capfirst %}',align:'left',title:false,key:true,counter:0,frozen:true,sortable:false,formatter:forecastfields},
          {% for f in request.report_bucketlist %}{% if not forloop.first %},
          {% endif %}{ name:'{{f.name|safe}}',startdate:'{{f.startdate|date:"Y-m-d"}}',enddate:'{{f.enddate|date:"Y-m-d"}}',sortable:false,width:90,align:'center',formatter:forecastcell,search:false,title:false }{% endfor %}
          ],
@@ -896,10 +968,11 @@ function displayResult(data)
       width: $('#content-main').width(),
       shrinkToFit: false,
       loadonce: true,
-      beforeSelectRow: function() {return false;},
+      beforeSelectRow: function() {return false},
       height: 'auto'
       });
     jQuery("#forecastgrid").jqGrid('setFrozenColumns');
+    $("#forecastgrid").unbind("contextmenu");
   }
   else
   {
@@ -934,6 +1007,7 @@ function displayResult(data)
       height: 'auto'
       });
     jQuery("#plangrid").jqGrid('setFrozenColumns');
+    $("#plangrid").unbind("contextmenu");
   }
   else
   {
@@ -977,8 +1051,10 @@ function displayResult(data)
       sortorder: "asc",
       width: $('#content-main').width(),
       height: 200,
+      {% if perms.input.change_purchaseorder or perms.input.change_distributionorder %}
       multiselect: true,
       cellEdit: true,
+      {% endif %}
       cellsubmit: 'clientArray',
       editurl: location.pathname,   //afterEditCell: afterEditCell,
       beforeSaveCell: select,
@@ -1065,6 +1141,12 @@ $(function() {
 </script>
 {% endblock %}
 
+{% block save_undo_buttons %}<div style="float:left"><select id="grouping" onchange="switchMode()">
+  <option value="itemlocation">{% filter capfirst %}{% trans "no grouping" %}{% endfilter %}</option>
+  <option value="item">{% filter capfirst %}{% trans "group by item" %}{% endfilter %}</option>
+  <option value="location">{% filter capfirst %}{% trans "group by location" %}{% endfilter %}</option>
+</select></div>{% endblock %}
+
 {% block actions %}<form style="display: inline"><span id="units">
 <input type="radio" id="unitsmode" name="units" value="value" {% if not "units" in preferences or preferences.units == 'value' %}checked{% endif %}><label for="unitsmode"><span title="{% trans "Display value"|escape %}" class="fa fa-dollar fa-lg" style="color:#4c3000"></span></label>
 <input type="radio" id="valuemode" name="units" value="units" {% if "units" in preferences and preferences.units == 'units' %}checked{% endif %}><label for="valuemode"><span title="{% trans "Display units"|escape %}" class="fa fa-truck fa-lg" style="color:#4c3000"></span></label>
@@ -1075,15 +1157,18 @@ $(function() {
 {% block after_table %}
 <br/>
 <div id="detail"><h1 id="detailtitle">{% trans "Detail" %}</h1>
+{% if perms.input.change_purchaseorder or perms.input.change_distributionorder or perms.forecast.change_forecastdemand or perms.input.change_calendarbucket or perms.forecast.change_forecast or perms.inventoryplanning.change_inventoryplanning %}
 &nbsp;&nbsp;<input type="submit" value="{% filter upper %}{% trans "save" %}{% endfilter %}" id="save" class="button ui-corner-all save_undo_button_inactive" role="button" onclick="save(true)" title="{% trans 'Save changes'|escape %}">
 &nbsp;&nbsp;<input type="submit" value="{% filter upper %}{% trans "undo" %}{% endfilter %}" id="undo" class="button ui-corner-all save_undo_button_inactive" role="button" onclick="undo()" title="{% trans 'Undo changes'|escape %}">
-&nbsp;&nbsp;
-<select disabled='disabled' name="actions" id="actions" onchange="setStatus($(this).val());" style="display: initial" class="ui-corner-all ui-selectmenu-disabled ui-state-disabled change_status_selectmenu_inactive" >
+{% endif %}
+{% if perms.input.change_purchaseorder or perms.input.change_distributionorder %}
+&nbsp;&nbsp;<select disabled='disabled' name="actions" id="actions" onchange="setStatus($(this).val());" style="display: initial" class="ui-corner-all ui-selectmenu-disabled ui-state-disabled change_status_selectmenu_inactive" >
   <option value='no_action'>{% trans "Select action" %}</option>
   <option value='proposed'>{% filter capfirst %}{% blocktrans with status=_("proposed") %}change status to {{status}}{% endblocktrans %}{% endfilter %}</option>
   <option value='confirmed'>{% filter capfirst %}{% blocktrans with status=_("confirmed") %}change status to {{status}}{% endblocktrans %}{% endfilter %}</option>
   <option value='closed'>{% filter capfirst %}{% blocktrans with status=_("closed") %}change status to {{status}}{% endblocktrans %}{% endfilter %}</option>
 </select>
+{% endif %}
 <div class="frepple-tabs" id="tabs">
 <ul role="tablist">
 <li id="forecasttab" role="tab"><a class="ui-tabs-anchor" onclick="return selectTab('forecast')">{% trans 'forecast'|capfirst %}</a></li>
@@ -1098,16 +1183,16 @@ $(function() {
 <div id="forecastgraph" style="clear: both; height: 200px; padding: 10px; "></div>
 <table id="forecastgrid"></table><br/>
 <h2>{% trans "parameters"|capfirst %}</h2>
-<table><tr><td>{% trans "Forecast method"|capfirst %}</td><td><select id="forecastmethod" onchange="setForecastMethod($(this).val()); $(this).addClass('dirty-cell red')">
-<option value="automatic">Automatic</option>
-<option value="constant">Constant</option>
-<option value="trend">Trend</option>
-<option value="seasonal">Seasonal</option>
-<option value="intermittent">Intermittent</option>
-<option value="moving average">Moving average</option>
-<option value="manual" selected="selected">Manual</option>
-</select></td></tr>
-<tr><td>{% trans "SMAPE Forecast error"|capfirst %}</td><td><span id="forecasterror"></span></td></tr></table>
+<table><tr><td>{% trans "Forecast method"|capfirst %}</td><td>&nbsp;&nbsp;{% if perms.forecast.change_forecast %}<select id="forecastmethod" onchange="setForecastMethod($(this).val())">
+<option value="automatic">{% trans "Automatic" %}</option>
+<option value="constant">{% trans "Constant" context "forecast method" %}</option>
+<option value="trend">{% trans "Trend" context "forecast method" %}</option>
+<option value="seasonal">{% trans "Seasonal" context "forecast method" %}</option>
+<option value="intermittent">{% trans "Intermittent" context "forecast method" %}</option>
+<option value="moving average">{% trans "Moving average" context "forecast method" %}</option>
+<option value="manual" selected="selected">{% trans "Manual" %}</option>
+</select>{% else %}<span id="forecastmethod"></span>{% endif %}</td></tr>
+<tr><td>{% trans "SMAPE Forecast error"|capfirst %}</td><td>&nbsp;&nbsp;<span id="forecasterror"></span></td></tr></table>
 </div>
 
 <div id="plandata" class="clear" style="display:none">
@@ -1117,39 +1202,39 @@ $(function() {
 <table><tr><td class="bold">{% trans "reorder quantity"|capfirst %}</td>
 <td class="bold">{% trans "safety stock"|capfirst %}</td></tr>
 <tr><td valign="top">
-<input type="radio" id="roq_type_calculated" name="roq_type" value="calculated" onclick="activateSaveUndo()"><label for="roq_type_calculated">&nbsp;{% trans "economic order quantity"|capfirst %}: <span id="eoq">&nbsp;&nbsp;&nbsp;&nbsp;</span> {% trans "units" %}&nbsp;&nbsp;&nbsp;&nbsp;</label><br/>
-<input type="radio" id="roq_type_quantity" name="roq_type" value="quantity" onclick="activateSaveUndo()"><label for="roq_type_quantity">&nbsp;{% trans "quantity"|capfirst %}&nbsp;<input style="width:80px" type="number" id="roq_min_qty" oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" min="1"> {% trans "units" %}</label><br/>
-<input type="radio" id="roq_type_periodofcover" name="roq_type" value="periodofcover" onclick="activateSaveUndo()"><label for="roq_type_periodofcover">&nbsp;{% trans "period of cover"|capfirst %}&nbsp;<input style="width:50px" type="number" id="roq_min_poc" oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" min="1" step="7"> {% trans "days" %}</label><br/>
+<input type="radio" id="roq_type_calculated" name="roq_type" value="calculated" {% if perms.change_inventoryplanning %}onclick="activateSaveUndo()"{% else %}disabled="disabled"{% endif %}><label for="roq_type_calculated">&nbsp;{% trans "economic order quantity"|capfirst %}: <span id="eoq">&nbsp;&nbsp;&nbsp;&nbsp;</span> {% trans "units" %}&nbsp;&nbsp;&nbsp;&nbsp;</label><br/>
+<input type="radio" id="roq_type_quantity" name="roq_type" value="quantity" {% if perms.change_inventoryplanning %}onclick="activateSaveUndo()"{% else %}disabled="disabled"{% endif %}><label for="roq_type_quantity">&nbsp;{% trans "quantity"|capfirst %}&nbsp;<input style="width:80px" type="number" id="roq_min_qty"{% if perms.change_inventoryplanning %} oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" {% else %} readonly="true" {% endif %}min="1"> {% trans "units" %}</label><br/>
+<input type="radio" id="roq_type_periodofcover" name="roq_type" value="periodofcover" {% if perms.change_inventoryplanning %}onclick="activateSaveUndo()"{% else %}disabled="disabled"{% endif %}><label for="roq_type_periodofcover">&nbsp;{% trans "period of cover"|capfirst %}&nbsp;<input style="width:50px" type="number" id="roq_min_poc"{% if perms.change_inventoryplanning %} oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" {% else %} readonly="true" {% endif %}min="1" step="7"> {% trans "days" %}</label><br/>
 </td><td valign="top">
-<input type="radio" id="ss_type_calculated" name="ss_type" value="calculated" onclick="activateSaveUndo()"><label for="ss_type_calculated">&nbsp;{% trans "service level"|capfirst %}: <span id="calculated_ss">&nbsp;&nbsp;&nbsp;&nbsp;</span> {% trans "units" %}<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{% trans "minimum"|capfirst %} <input type="number" id="service_level" oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" min="0" max="100" size="7"> %<br/>
+<input type="radio" id="ss_type_calculated" name="ss_type" value="calculated" {% if perms.change_inventoryplanning %}onclick="activateSaveUndo()"{% else %}disabled="disabled"{% endif %}><label for="ss_type_calculated">&nbsp;{% trans "service level"|capfirst %}: <span id="calculated_ss">&nbsp;&nbsp;&nbsp;&nbsp;</span> {% trans "units" %}<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{% trans "minimum"|capfirst %} <input type="number" id="service_level"{% if perms.change_inventoryplanning %} oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" {% else %} readonly="true" {% endif %}min="0" max="100" size="7"> %<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{% trans "statistical distribution"|capfirst %}
-<select name="actions" id="demand_distribution" onchange="activateSaveUndo(); $(this).addClass('dirty-cell red')" style="display: initial" class="ui-corner-all ui-selectmenu-default ui-state-enabled">
-  <option value="automatic">{% trans "automatic"|capfirst %}</option>
-  <option value="normal">{% trans "normal" context "statistical distribution"|capfirst %}</option>
-  <option value="poisson">{% trans "poisson"|capfirst %}</option>
-  <option value="negbinomial">{% trans "negative binomial"|capfirst %}</option>
+<select name="actions" id="demand_distribution"{% if perms.change_inventoryplanning %} onchange="activateSaveUndo(); $(this).addClass('dirty-cell red')" {% else %} disabled="disabled" {% endif %}style="display: initial" class="ui-corner-all ui-selectmenu-default ui-state-enabled">
+  <option value="automatic">{% filter capfirst %}{% trans "automatic" %}{% endfilter %}</option>
+  <option value="normal">{% filter capfirst %}{% trans "normal" context "statistical distribution" %}{% endfilter %}</option>
+  <option value="poisson">{% filter capfirst %}{% trans "poisson" context "statistical distribution" %}{% endfilter %}</option>
+  <option value="negbinomial">{% filter capfirst %}{% trans "negative binomial" context "statistical distribution" %}{% endfilter %}</option>
 </select><br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{% trans "demand standard deviation"|capfirst %} <input style="width:80px" type="number" id="demand_deviation" oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" size="7"> {% trans "units" %}<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{% trans "lead time standard deviation"|capfirst %} <input style="width:80px" type="number" id="leadtime_deviation" oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" size="7"> {% trans "days" %}</label><br/>
-<input type="radio" id="ss_type_quantity" name="ss_type" value="quantity" onclick="activateSaveUndo()"><label for="ss_type_quantity">&nbsp;{% trans "quantity"|capfirst %}<input style="width:80px" type="number" id="ss_min_qty" oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" min="1"> {% trans "units" %}</label><br/>
-<input type="radio" id="ss_type_periodofcover" name="ss_type" value="periodofcover" onclick="activateSaveUndo()"><label for="ss_type_periodofcover">&nbsp;{% trans "period of cover"|capfirst %}<input style="width:50px" type="number" id="ss_min_poc" min="1" step="7" oninput="activateSaveUndo(); $(this).addClass('dirty-cell')"> {% trans "days" %}</label><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{% trans "demand standard deviation"|capfirst %} <input style="width:80px" type="number" id="demand_deviation"{% if perms.change_inventoryplanning %} oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" {% else %} readonly="true" {% endif %}size="7"> {% trans "units" %}<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{% trans "lead time standard deviation"|capfirst %} <input style="width:80px" type="number" id="leadtime_deviation"{% if perms.change_inventoryplanning %} oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" {% else %} readonly="true" {% endif %}size="7"> {% trans "days" %}</label><br/>
+<input type="radio" id="ss_type_quantity" name="ss_type" value="quantity" {% if perms.change_inventoryplanning %}onclick="activateSaveUndo()"{% else %}disabled="disabled"{% endif %}><label for="ss_type_quantity">&nbsp;{% trans "quantity"|capfirst %}<input style="width:80px" type="number" id="ss_min_qty"{% if perms.change_inventoryplanning %}  oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" {% else %} readonly="true" {% endif %}min="1"> {% trans "units" %}</label><br/>
+<input type="radio" id="ss_type_periodofcover" name="ss_type" value="periodofcover" {% if perms.change_inventoryplanning %}onclick="activateSaveUndo()"{% else %}disabled="disabled"{% endif %}><label for="ss_type_periodofcover">&nbsp;{% trans "period of cover"|capfirst %}<input style="width:50px" type="number" id="ss_min_poc" min="1" step="7"{% if perms.change_inventoryplanning %}  oninput="activateSaveUndo(); $(this).addClass('dirty-cell')"{% else %} readonly="true"{% endif %}> {% trans "days" %}</label><br/>
 </td></tr>
 </table>
-<input type="checkbox" id="nostock" onclick="activateSaveUndo(); $(this).addClass('dirty-cell')">&nbsp;&nbsp;<label for="nostock">{% trans "don't stock"|capfirst %}</label>
+<input type="checkbox" id="nostock" {% if perms.change_inventoryplanning %}onclick="activateSaveUndo(); $(this).addClass('dirty-cell')"{% else %}disabled="disabled"{% endif %}>&nbsp;&nbsp;<label for="nostock">{% trans "don't stock"|capfirst %}</label>
 </div>
 
 <div id="transactionsdata" class="clear" style="display:none">
 <table id="transactiongrid"></table>
 </div>
 <div id="commentsdata" class="clear" style="display:none">
-<input type="submit"  role="button" id="commentitem" value="{% trans 'new item comment'|capfirst %}" onclick="return setCommentType('item')" aria-disabled="false" style="font-size:12px" disabled="disabled" class="ui-button ui-widget ui-state-default ui-state-disabled ui-corner-all" />
+{% if perms.common.add_comment %}<input type="submit"  role="button" id="commentitem" value="{% trans 'new item comment'|capfirst %}" onclick="return setCommentType('item')" aria-disabled="false" style="font-size:12px" disabled="disabled" class="ui-button ui-widget ui-state-default ui-state-disabled ui-corner-all" />
 &nbsp;&nbsp;
 <input type="submit"  role="button" id="commentitemlocation" value="{% trans 'new item-location comment'|capfirst %}" onclick="return setCommentType('itemlocation')" aria-disabled="false" style="font-size:12px" disabled="disabled" class="ui-button ui-widget ui-state-default ui-state-disabled ui-corner-all" />
 &nbsp;&nbsp;
 <input type="submit"  role="button" id="commentlocation" value="{% trans 'new location comment'|capfirst %}" onclick="return setCommentType('location')" aria-disabled="false" style="font-size:12px" disabled="disabled" class="ui-button ui-widget ui-state-default ui-state-disabled ui-corner-all" />
 &nbsp;&nbsp;
-<textarea style="display:none; width:100%" id="newcomment" name="comment" rows="5" oninput="activateSaveUndo()"></textarea><br/>
+<textarea style="display:none; width:100%" id="newcomment" name="comment" rows="5" oninput="activateSaveUndo()"></textarea><br/>{% endif %}
 <span id="pastcomments">{% trans "no comments yet"|capfirst %}</span>
 </div>
 

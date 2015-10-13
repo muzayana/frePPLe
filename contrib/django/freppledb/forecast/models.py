@@ -11,7 +11,7 @@
 from decimal import Decimal
 
 from django.db import models, DEFAULT_DB_ALIAS
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import pgettext, ugettext_lazy as _
 
 from freppledb.common.models import AuditModel
 from freppledb.input.models import Customer, Operation, Item, Calendar, Demand, Location
@@ -21,11 +21,11 @@ class Forecast(AuditModel):
   # Forecasting methods
   methods = (
     ('automatic', _('Automatic')),
-    ('constant', _('Constant')),
-    ('trend', _('Trend')),
-    ('seasonal', _('Seasonal')),
-    ('intermittent', _('Intermittent')),
-    ('moving average', _('Moving average')),
+    ('constant', pgettext("forecast method", 'Constant')),
+    ('trend', pgettext("forecast method", 'Trend')),
+    ('seasonal', pgettext("forecast method", 'Seasonal')),
+    ('intermittent', pgettext("forecast method", 'Intermittent')),
+    ('moving average', pgettext("forecast method", 'Moving average')),
     ('manual', _('Manual')),
   )
 

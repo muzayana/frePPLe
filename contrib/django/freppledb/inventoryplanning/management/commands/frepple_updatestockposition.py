@@ -24,15 +24,15 @@ sql = '''
   with position as (
       select
         buffer_id,
-        coalesce(max(item.price), 0) as price,
-        max(buffer.onhand) as onhand,
-        max(out_inventoryplanning.leadtime) as leadtime,
+        coalesce(max(item.price), 0) price,
+        coalesce(max(buffer.onhand), 0) onhand,
+        coalesce(max(out_inventoryplanning.leadtime), interval '0 day') leadtime,
         coalesce(max(roq_cal.value), 1) reorderquantity,
         coalesce(max(ss_cal.value), 0) safetystock
       from out_inventoryplanning
       inner join buffer
         on buffer.name = out_inventoryplanning.buffer_id
-      inner join item
+      left outer join item
         on item.name = buffer.item_id
       left outer join calendarbucket roq_cal
         on roq_cal.calendar_id = 'ROQ for ' || out_inventoryplanning.buffer_id
@@ -56,43 +56,43 @@ sql = '''
     purchases as (
       select
         buffer_id,
-        sum(case
+        coalesce(sum(case
           when purchase_order.status = 'proposed'
             then purchase_order.quantity
           else 0
-          end) as proposed,
-        sum(case
+          end),0) as proposed,
+        coalesce(sum(case
           when purchase_order.status = 'confirmed'
             then purchase_order.quantity
           else 0
-          end) as open
+          end),0) as open
       from out_inventoryplanning
       inner join buffer
         on buffer.name = out_inventoryplanning.buffer_id
       left outer join purchase_order
         on purchase_order.item_id = buffer.item_id
         and purchase_order.location_id = buffer.location_id
-        and purchase_order.enddate < %%s + out_inventoryplanning.leadtime
+        and purchase_order.enddate <= %%s + out_inventoryplanning.leadtime + interval '7 day'
       %s
       group by buffer_id
     ),
     transfers as (
       select
       buffer_id,
-      sum(case
+      coalesce(sum(case
         when distribution_order.status = 'proposed' and distribution_order.destination_id = buffer.location_id
           then distribution_order.quantity
         when distribution_order.status = 'proposed' and distribution_order.origin_id = buffer.location_id and consume_material = true
           then -distribution_order.quantity
         else 0
-        end) as proposed,
-      sum(case
+        end),0) as proposed,
+      coalesce(sum(case
         when distribution_order.status = 'confirmed' and distribution_order.destination_id = buffer.location_id
           then distribution_order.quantity
         when distribution_order.status = 'confirmed' and distribution_order.origin_id = buffer.location_id and consume_material = true
           then -distribution_order.quantity
         else 0
-        end) as open
+        end),0) as open
       from out_inventoryplanning
       inner join buffer
         on buffer.name = out_inventoryplanning.buffer_id
@@ -107,14 +107,14 @@ sql = '''
     salesorders as (
       select
         buffer_id,
-        sum(case
+        coalesce(sum(case
           when demand.due < %%s
             then demand.quantity
-          end) as overdue,
-        sum(case
+          end),0) as overdue,
+        coalesce(sum(case
           when demand.due >= %%s
             then demand.quantity
-          end) as open
+          end),0) as open
       from out_inventoryplanning
       inner join buffer
         on buffer.name = out_inventoryplanning.buffer_id
@@ -129,20 +129,20 @@ sql = '''
     forecast as (
       select
         buffer_id,
-        round(sum(
+        coalesce(round(sum(
           forecasttotal
           * (extract(epoch from (least(%%s + out_inventoryplanning.leadtime, forecastplan.enddate) - forecastplan.startdate)))
           / (extract(epoch from out_inventoryplanning.leadtime))
-          )) as total,
-        round(sum(
+          )),0) as total,
+        coalesce(round(sum(
           forecastnet
           * (extract(epoch from (least(%%s + out_inventoryplanning.leadtime, forecastplan.enddate) - forecastplan.startdate)))
           / (extract(epoch from out_inventoryplanning.leadtime))
-          )) as net
+          )),0) as net
       from out_inventoryplanning
       inner join buffer
         on buffer.name = out_inventoryplanning.buffer_id
-      inner join forecast
+      left outer join forecast
         on buffer.item_id = forecast.item_id
         and buffer.location_id = forecast.location_id
       left outer join forecastplan
@@ -153,23 +153,25 @@ sql = '''
       group by buffer_id
       ),
     depdemand as (
-      select thebuffer buffer_id, -sum(out_flowplan.quantity) total
+      select
+        out_inventoryplanning.buffer_id buffer_id,
+        coalesce(-sum(
+          case when operationplan.id is not null or distribution_order.id is not null or purchase_order.id is not null
+          then out_flowplan.quantity end
+          ),0) total
       from out_inventoryplanning
       left outer join out_flowplan
         on out_inventoryplanning.buffer_id = out_flowplan.thebuffer
+        and out_flowplan.quantity < 0
+        and out_flowplan.flowdate < %%s + out_inventoryplanning.leadtime
       left outer join operationplan
         on out_flowplan.operationplan_id = operationplan.id
       left outer join distribution_order
         on out_flowplan.operationplan_id = distribution_order.id
       left outer join purchase_order
         on out_flowplan.operationplan_id = purchase_order.id
-      where out_flowplan.quantity < 0
-        and (operationplan.id is not null
-          or distribution_order.id is not null
-          or purchase_order.id is not null)
-        and out_flowplan.flowdate < %%s + out_inventoryplanning.leadtime
       %s
-      group by thebuffer
+      group by buffer_id
     )
   update out_inventoryplanning
   set
