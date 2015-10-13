@@ -36,7 +36,6 @@ $(function() {
       {% for f in request.report_bucketlist %}{% if not forloop.first %},
       {% endif %}{ name:'{{f.name|safe}}',startdate:'{{f.startdate|date:"Y-m-d"}}',enddate:'{{f.enddate|date:"Y-m-d"}}',sortable:false,width:90,align:'center',formatter:crosses,search:false,title:false }{% endfor %}
       {% endif %}],{% if reportclass.editable and haschangeperm %}
-    cellEdit: true,
     cellsubmit: 'clientArray',
     editurl: location.pathname,
     beforeSaveCell: upload.select,{% else %}
@@ -57,7 +56,6 @@ $(function() {
     onPaging: grid.saveColumnConfiguration,
     altRows: true,
     altclass:'altRow',
-    //scroll: 1,      // Enables scrolling over all records, instead of paging. But not compatible with frozen columns.
     autowidth: true,
 	  shrinkToFit: {% if mode == "table" %}false{% else %}true{% endif %},
 	  loadError: function(xhr,st,err) {

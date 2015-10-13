@@ -372,61 +372,60 @@ function crosses (cellvalue, options, rowdata)
     {
       case 0: // Total orders
         if (cellvalue[cross_idx[i]] != 0.0)
-          result += cellvalue[cross_idx[i]] + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail0'></span></br>";
+          result += cellvalue[cross_idx[i]] + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail0'></span><br>";
         else
-          result += '0.0</br>';
+          result += '0.0<br>';
         break;
       case 1: // Open orders
         if (cellvalue[cross_idx[i]] != 0.0)
-          result += cellvalue[cross_idx[i]] + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail1'></span></br>";
+          result += cellvalue[cross_idx[i]] + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail1'></span><br>";
         else
-          result += '0.0</br>';
+          result += '0.0<br>';
         break;
       case 2: // Orders adjustment{% if perms.forecast.change_forecastdemand %}
         if (cellvalue[10] == 1)
-          //result += '<input type="text" class="smallpadding adjhistory" value="' + ((cellvalue[2] === null) ? '' : Math.round(cellvalue[2])) + '" size="5" oninput="onChange(event)" onclick="$(this).select();"/><br/>';
-          result += '<input type="text" class="smallpadding adjhistory" value="' + ((cellvalue[2] === null) ? '' : Math.round(cellvalue[2])) + '" size="5" /><br/>';
+          result += '<input type="text" class="smallpadding adjhistory" value="' + ((cellvalue[2] === null) ? '' : Math.round(cellvalue[2])) + '" size="5" oninput="onChange(event)" onclick="$(this).select();"/><br>';
         else
-          result += '<br/>';
+          result += '<br>';
         {% else %}
-        result += Math.round(cellvalue[2]) + '<br/>';{% endif %}
+        result += Math.round(cellvalue[2]) + '<br>';{% endif %}
         break;
       case 3: // Baseline forecast
         if (cellvalue[11] == 1)
-          result += (Math.round(cellvalue[3]*10)/10) + '<br/>';
+          result += (Math.round(cellvalue[3]*10)/10) + '<br>';
         else
-          result += '<br/>';
+          result += '<br>';
         break;
       case 4: // Forecast adjustment{% if perms.forecast.change_forecastdemand %}
         if (cellvalue[11] == 1)
-          result += '<input type="text" class="smallpadding adjforecast" value="' + ((cellvalue[4] === null) ? '' : (Math.round(cellvalue[4]*10)/10)) + '" size="5" oninput="onChange(event)" onclick="$(this).select();"/><br/>';
+          result += '<input type="text" class="smallpadding adjforecast" value="' + ((cellvalue[4] === null) ? '' : (Math.round(cellvalue[4]*10)/10)) + '" size="5" oninput="onChange(event)" onclick="$(this).select();"/><br>';
         else
-          result += '<br/>';
+          result += '<br>';
         {% else %}
         if (cellvalue[11] == 1)
-          result += (Math.round(cellvalue[4]*10)/10) + '<br/>';
+          result += (Math.round(cellvalue[4]*10)/10) + '<br>';
         else
-        result += '<br/>';{% endif %}
+        result += '<br>';{% endif %}
         break;
       case 5: // Forecast total
       case 6: // Forecast net
       case 7: // Forecast consumed
         if (cellvalue[11] == 1)
-          result += (Math.round(cellvalue[cross_idx[i]]*10)/10) + "<br/>";
+          result += (Math.round(cellvalue[cross_idx[i]]*10)/10) + "<br>";
         else
-          result += '<br/>';
+          result += '<br>';
         break;
       case 8: // Orders planned
       case 9: // Forecast planned
         if (cellvalue[11] == 1)
         {
           if (cellvalue[cross_idx[i]] != 0.0)
-            result += (Math.round(cellvalue[cross_idx[i]]*10)/10) + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail9'></span><br/>";
+            result += (Math.round(cellvalue[cross_idx[i]]*10)/10) + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail9'></span><br>";
           else
-            result += '0<br/>';
+            result += '0<br>';
         }
         else
-          result += '<br/>';
+          result += '<br>';
     }
   return result;
 };
