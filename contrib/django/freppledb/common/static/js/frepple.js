@@ -735,7 +735,58 @@ var grid = {
     $(cell).select();
   },
 
-  // Display dialog for exporting CSV-files
+  // Display dialog for incremental export from openbravo
+  openbravoIncrExport: function() {
+    $('#popup').html(
+    gettext("export selected records to openbravo")
+    );
+    
+    var sel = jQuery("#grid").jqGrid('getGridParam','selarrrow');
+    console.log(JSON.stringify(sel));
+    
+    $('#popup').dialog({
+      title: gettext("export"),
+      autoOpen: true, resizable: false, width: 390, height: 'auto',
+      buttons: [
+        {
+          text: gettext("export"),
+          click: function() {
+            if (sel != null && sel.length > 0)
+            // Send the update to the server
+              $.ajax({
+                  url: "/openbravo/upload/",
+                  data: JSON.stringify(sel),
+                  type: "POST",
+                  contentType: "application/json",
+                  success: function () {
+                    upload.undo();
+                    $(this).dialog("close");
+                  },
+                  error: function (result, stat, errorThrown) {
+                    $('#popup').html(result.responseText)
+                      .dialog({
+                        title: gettext("error exporting data"),
+                        autoOpen: true,
+                        resizable: false,
+                        width: 'auto',
+                        height: 'auto'
+                      });
+//                    $.jgrid.hideModal("#searchmodfbox_grid");
+                  }
+              });
+        
+            $(this).dialog("close");
+          }
+        },
+        {
+          text: gettext("cancel"),
+          click: function() { $(this).dialog("close"); }
+        }
+        ]
+    });
+    $("#actions").prop("selectedIndex",0);
+  },
+  
   showExport: function(only_list)
   {
     // The argument is true when we show a "list" report.
