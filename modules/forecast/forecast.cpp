@@ -24,6 +24,8 @@ unsigned long Forecast::Forecast_Skip(5);
 const Keyword Forecast::tag_planned("planned");
 const Keyword Forecast::tag_methods("methods");
 const Keyword Forecast::tag_method("method");
+const Keyword Forecast::tag_deviation("deviation");
+const Keyword Forecast::tag_smape_error("smape_error");
 const Keyword ForecastBucket::tag_weight("weight");
 const Keyword ForecastBucket::tag_total("total");
 const Keyword ForecastBucket::tag_consumed("consumed");

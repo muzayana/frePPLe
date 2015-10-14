@@ -919,7 +919,8 @@ function displayResult(data)
   {% else %}
   $("#forecastmethod").html(data.parameters.forecastmethod);
   {% endif %}
-  $("#forecasterror").html(data.parameters.forecasterror);
+  $("#forecast_out_smape").html(data.parameters.forecast_out_smape);
+  $("#forecast_out_method").html(data.parameters.forecast_out_method);
 
   // Update the inventory planning parameters
   $("#roq_type_" + data.parameters.roq_type).prop("checked", true);
@@ -1192,7 +1193,8 @@ $(function() {
 <option value="moving average">{% trans "Moving average" context "forecast method" %}</option>
 <option value="manual" selected="selected">{% trans "Manual" %}</option>
 </select>{% else %}<span id="forecastmethod"></span>{% endif %}</td></tr>
-<tr><td>{% trans "SMAPE Forecast error"|capfirst %}</td><td>&nbsp;&nbsp;<span id="forecasterror"></span></td></tr></table>
+<tr><td>{% trans "Selected forecast method"|capfirst %}</td><td>&nbsp;&nbsp;<span id="forecast_out_method"></span></td></tr>
+<tr><td>{% trans "SMAPE Forecast error"|capfirst %}</td><td>&nbsp;&nbsp;<span id="forecast_out_smape"></span>&nbsp;%</td></tr></table>
 </div>
 
 <div id="plandata" class="clear" style="display:none">

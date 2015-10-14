@@ -141,8 +141,6 @@ void ForecastSolver::solve(const Demand* l, void* v)
   // Forecast don't net themselves, and hidden demands either...
   if (!l || dynamic_cast<const Forecast*>(l) || l->getHidden()) return;
 
-  // TODO Add also a location matching in the forecast netting
-
   // Message
   if (getLogLevel()>0)
     logger << "  Netting of demand '" << l << "'  ('" << l->getCustomer()
@@ -209,8 +207,10 @@ Forecast* ForecastSolver::matchDemandToForecast(const Demand* l)
       // Loop through all matching keys
       while (x != Forecast::ForecastDictionary.end() && x->first == key)
       {
-        if (!getMatchUsingDeliveryOperation()
-            || x->second->getDeliveryOperation() == l->getDeliveryOperation())
+        if (
+          (!getMatchUsingDeliveryOperation() || x->second->getDeliveryOperation() == l->getDeliveryOperation())
+          && (l->getLocation() && x->second->getLocation() && l->getLocation()->isMemberOf(x->second->getLocation()) )
+          )
           // Bingo! Found a matching key, if required plus matching delivery operation
           return x->second;
         else
@@ -279,6 +279,16 @@ void ForecastSolver::netDemandFromForecast(const Demand* dmd, Forecast* fcst)
   if (!zerobucket)
     throw LogicException("Can't find forecast bucket for "
         + string(dmd->getDue()) + " in forecast '" + fcst->getName() + "'");
+
+  if (zerobucket->getEndDate() <= Plan::instance().getCurrent())
+  {
+    // The order is due in a bucket in the past.
+    // Such orders shouldn't be considered for netting, as we can assume
+    // they consumed from past buckets we're not concerned with any longer.
+    if (getLogLevel()>1)
+      logger << "    Overdue order doesn't require netting" << endl;
+    return;
+  }
 
   // Netting - looking for time buckets with net forecast
   double remaining = dmd->getQuantity();

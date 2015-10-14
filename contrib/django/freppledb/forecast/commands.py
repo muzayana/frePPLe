@@ -193,6 +193,12 @@ def processForecastDemand(cursor):
 
 
 def generateBaseline(solver_fcst, cursor):
+
+  def generatorFcst(cursor):
+    for i in frepple.demands():
+      if isinstance(i, frepple.demand_forecast):
+        yield i
+
   data = []
   curfcst = None
 
@@ -256,25 +262,34 @@ def generateBaseline(solver_fcst, cursor):
   print("Exporting baseline forecast...")
   cursor.execute('''
     update forecastplan
-    set forecastbaseline=0, forecastbaselinevalue=0, method=null
+    set forecastbaseline=0, forecastbaselinevalue=0
     where startdate>='%s'
-      and (forecastbaseline<>0 or forecastbaselinevalue<>0 or method is not null)
+      and (forecastbaseline<>0 or forecastbaselinevalue<>0)
       and exists (select 1 from forecast where name = forecastplan.forecast_id and forecast.planned = 't')
     ''' % frepple.settings.current)
   cursor.executemany('''
     update forecastplan
-    set forecastbaseline=%s, forecastbaselinevalue=%s, method=%s
+    set forecastbaseline=%s, forecastbaselinevalue=%s
     where forecast_id = %s and startdate=%s
     ''', [
       (
         round(i.total, 4),
         round(i.total * i.forecast.item.price, 4),
-        i.forecast.method,
         i.forecast.name, str(i.start)
       )
       for i in frepple.demands()
       if isinstance(i, frepple.demand_forecastbucket) and i.total != 0.0
     ])
+
+  print("Exporting forecast metrics")
+  cursor.execute('update forecast set out_smape=null, out_method=null, out_deviation=null')
+  cursor.executemany('''
+    update forecast
+    set out_smape=%s, out_method=%s, out_deviation=%s
+    where name = %s
+    ''',
+    [ (i.smape_error * 100, i.method, i.deviation, i.name) for i in generatorFcst(cursor) ]
+    )
 
 
 def applyForecastAdjustments(cursor):
@@ -334,6 +349,7 @@ def createSolver(cursor):
       kw[key[9:]] = int(value)
     else:
       kw[key[9:]] = float(value)
+  print(kw)
   return frepple.solver_forecast(**kw)
 
 

@@ -23,7 +23,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.utils.text import capfirst
 from django.utils.encoding import force_text
 
-from freppledb.forecast.models import Forecast, ForecastDemand, ForecastPlan
+from freppledb.forecast.models import Forecast, ForecastDemand
 from freppledb.common.db import python_date
 from freppledb.common.models import BucketDetail
 from freppledb.common.report import GridPivot, GridFieldText, GridFieldInteger, GridFieldDate
@@ -103,7 +103,9 @@ class OverviewReport(GridPivot):
     GridFieldText('forecast', title=_('forecast'), key=True, field_name='name', formatter='forecast', editable=False),
     GridFieldText('item', title=_('item'), field_name='item__name', formatter='item', editable=False),
     GridFieldText('customer', title=_('customer'), field_name='customer__name', formatter='customer', editable=False),
-    GridFieldText('location', title=_('location'), field_name='location__name', formatter='location', editable=False)
+    GridFieldText('location', title=_('location'), field_name='location__name', formatter='location', editable=False),
+    GridFieldText('out_method', title=_('Selected forecast method'), field_name='out_method', editable=False, hidden=True),
+    GridFieldNumber('out_smape', title=_('Estimated forecast error'), field_name='out_smape', editable=False, hidden=True)
     )
   crosses = (
     ('orderstotal', {'title': _('total orders')}),
@@ -151,7 +153,7 @@ class OverviewReport(GridPivot):
 
     query = '''
         select fcst.name as row1, fcst.item_id as row2, fcst.customer_id as row3,
-           fcst.location_id as row4,
+           fcst.location_id as row4, fcst.out_method as row5, fcst.out_smape as row6,
            d.bucket as col1, d.startdate as col2, d.enddate as col3,
            coalesce(sum(forecastplan.orderstotal%s),0) as orderstotal,
            coalesce(sum(forecastplan.ordersopen%s),0) as ordersopen,
@@ -177,7 +179,7 @@ class OverviewReport(GridPivot):
         and forecastplan.startdate < d.enddate
         -- Grouping
         group by fcst.name, fcst.item_id, fcst.customer_id, fcst.location_id,
-               d.bucket, d.startdate, d.enddate
+          fcst.out_method, fcst.out_smape, d.bucket, d.startdate, d.enddate
         order by %s, d.startdate
         ''' % (
           suffix, suffix, suffix, suffix, suffix, suffix, suffix, suffix, suffix, suffix,
@@ -193,21 +195,23 @@ class OverviewReport(GridPivot):
         'item': row[1],
         'customer': row[2],
         'location': row[3],
-        'bucket': row[4],
-        'startdate': python_date(row[5]),
-        'enddate': python_date(row[6]),
-        'past': python_date(row[5]) < currentdate and 1 or 0,
-        'future': python_date(row[6]) > currentdate and 1 or 0,
-        'orderstotal': row[7],
-        'ordersopen': row[8],
-        'ordersadjustment': row[9],
-        'forecastbaseline': row[10],
-        'forecastadjustment': row[11],
-        'forecasttotal': row[12],
-        'forecastnet': row[13],
-        'forecastconsumed': row[14],
-        'ordersplanned': row[15],
-        'forecastplanned': row[16],
+        'out_method': row[4],
+        'out_smape': row[5],
+        'bucket': row[6],
+        'startdate': python_date(row[7]),
+        'enddate': python_date(row[8]),
+        'past': python_date(row[7]) < currentdate and 1 or 0,
+        'future': python_date(row[8]) > currentdate and 1 or 0,
+        'orderstotal': row[9],
+        'ordersopen': row[10],
+        'ordersadjustment': row[11],
+        'forecastbaseline': row[12],
+        'forecastadjustment': row[13],
+        'forecasttotal': row[14],
+        'forecastnet': row[15],
+        'forecastconsumed': row[16],
+        'ordersplanned': row[17],
+        'forecastplanned': row[18]
         }
 
 

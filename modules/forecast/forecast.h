@@ -516,6 +516,8 @@ class Forecast : public Demand
     static const Keyword tag_methods;
     static const Keyword tag_method;
     static const Keyword tag_planned;
+    static const Keyword tag_smape_error;
+    static const Keyword tag_deviation;
 
     /** Constants for each forecast method. */
     static const unsigned long METHOD_CONSTANT = 1;
@@ -1241,8 +1243,8 @@ class Forecast : public Demand
 
   public:
     /** Default constructor. */
-    explicit Forecast()
-      : calptr(NULL), discrete(true), planned(true), methods(METHOD_ALL)
+    explicit Forecast() : calptr(NULL), discrete(true), planned(true),
+      methods(METHOD_ALL), smape_error(0.0), deviation(0.0)
     {
       initType(metadata);
     }
@@ -1290,8 +1292,10 @@ class Forecast : public Demand
       m->addPointerField<Cls, Calendar>(Tags::calendar, &Cls::getCalendar, &Cls::setCalendar);
       m->addBoolField<Cls>(Tags::discrete, &Cls::getDiscrete, &Cls::setDiscrete, BOOL_TRUE);
       m->addUnsignedLongField<Cls>(tag_methods, &Cls::getMethods, &Cls::setMethods, METHOD_ALL);
-      m->addStringField<Cls>(tag_method, &Cls::getMethod, NULL, "", DETAIL);
       m->addBoolField<Cls>(tag_planned, &Cls::getPlanned, &Cls::setPlanned, BOOL_TRUE);
+      m->addStringField<Cls>(tag_method, &Cls::getMethod, NULL, "", DONT_SERIALIZE);
+      m->addDoubleField<Cls>(tag_deviation, &Cls::getDeviation, NULL, 0.0, DONT_SERIALIZE);
+      m->addDoubleField<Cls>(tag_smape_error, &Cls::getSMAPEerror, NULL, 0.0, DONT_SERIALIZE);
       m->addIteratorField<Cls, ForecastBucket::bucketiterator, ForecastBucket>(
         Tags::buckets, Tags::bucket, &Cls::getBuckets, BASE + WRITE_FULL + WRITE_HIDDEN
         );
@@ -1401,6 +1405,16 @@ class Forecast : public Demand
       throw DataException("Can't set due date of a forecast");
     }
 
+    double getDeviation() const
+    {
+      return deviation;
+    }
+
+    double getSMAPEerror() const
+    {
+      return smape_error;
+    }
+
     virtual const MetaClass& getType() const {return *metadata;}
     static const MetaClass *metadata;
     virtual size_t getSize() const
@@ -1444,7 +1458,7 @@ class Forecast : public Demand
     }
 
     /** Updates the value of the Forecast_Skip module parameter. */
-    static void setForecastSkip(unsigned int t)
+    static void setForecastSkip(unsigned long t)
     {
       if (t<0) throw DataException(
           "Parameter Forecast.Skip must be bigger than or equal to 0"
@@ -1509,6 +1523,12 @@ class Forecast : public Demand
 
     /** Applied forecast method. */
     string method;
+
+    /** SMAPE forecast error. */
+    double smape_error;
+
+    /** Demand standard deviation. */
+    double deviation;
 
     /** A dictionary of all forecasts. */
     static MapOfForecasts ForecastDictionary;

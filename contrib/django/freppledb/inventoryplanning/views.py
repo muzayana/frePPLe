@@ -398,7 +398,8 @@ class DRPitemlocation(View):
         "roq_calculated": int(out_ip.calculatedreorderquantity) if out_ip and out_ip.calculatedreorderquantity is not None else None,
         "ss_calculated": int(out_ip.calculatedsafetystock) if out_ip and out_ip.calculatedsafetystock is not None else None,
         "forecastmethod": fcst.method if fcst else 'automatic',
-        "forecasterror": "12 %"
+        "forecast_out_method": fcst.out_method,
+        "forecast_out_smape": round(float(fcst.out_smape if fcst.out_smape else 0), 1)
         })
       ])
 

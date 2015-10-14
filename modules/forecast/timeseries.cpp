@@ -47,6 +47,27 @@ void Forecast::generateFutureValues(
     --historycount;
   }
 
+  // Compute the corrected standard deviation of the demand history
+  if (historycount)
+  {
+    double mean = 0.0;
+    for (unsigned int i = 0; i < historycount; ++i)
+      mean += history[i];
+    mean /= historycount;
+    deviation = 0.0;
+    for (unsigned int i = 0; i < historycount; ++i)
+    {
+      double tmp = history[i] - mean;
+      deviation += tmp * tmp;
+    }
+    if (historycount > 1)
+      deviation = sqrt(deviation / (historycount - 1));
+    else
+      deviation = sqrt(deviation / historycount);
+  }
+  else
+    deviation = 0.0;
+
   // We create the forecasting objects in stack memory for best performance.
   MovingAverage moving_avg;
   Croston croston;
@@ -147,9 +168,18 @@ void Forecast::generateFutureValues(
   if (best_method >= 0)
   {
     if (solver->getLogLevel()>0)
-      logger << getName() << ": chosen method: " << qualifiedmethods[best_method]->getName() << endl;
+      logger << getName()
+        << ": chosen method: " << qualifiedmethods[best_method]->getName()
+        << ", standard deviation: " << deviation
+        << endl;
     qualifiedmethods[best_method]->applyForecast(this, buckets, bucketcount);
     method = qualifiedmethods[best_method]->getName();
+    smape_error = best_error;
+  }
+  else
+  {
+    method = "None";
+    smape_error = 0.0;
   }
 }
 
@@ -165,7 +195,7 @@ unsigned int Forecast::MovingAverage::defaultorder = 5;
 double Forecast::MovingAverage::generateForecast
 (Forecast* fcst, const double history[], unsigned int count, const double weight[], ForecastSolver* solver)
 {
-  double error_smape = 0.0;
+  double error_smape = 0.0, error_smape_weights = 0.0;
 
   // Calculate the forecast and forecast error.
   for (unsigned int i = 1; i <= count; ++i)
@@ -184,11 +214,16 @@ double Forecast::MovingAverage::generateForecast
         sum += history[i-j-1];
       avg = sum / i;
     }
-    if (i >= fcst->getForecastSkip() && i < count && avg + history[i] > ROUNDING_ERROR)
+    if (i >= fcst->getForecastSkip() && i < count && fabs(avg + history[i]) > ROUNDING_ERROR)
+    {
       error_smape += fabs(avg - history[i]) / (avg + history[i]) * weight[i];
+      error_smape_weights += weight[i];
+    }
   }
 
   // Echo the result
+  if (error_smape_weights)
+    error_smape /= error_smape_weights;
   if (solver->getLogLevel()>0)
     logger << (fcst ? fcst->getName() : "") << ": moving average : "
         << "smape " << error_smape
@@ -230,7 +265,7 @@ double Forecast::SingleExponential::generateForecast
   unsigned int iteration = 1;
   bool upperboundarytested = false;
   bool lowerboundarytested = false;
-  double error = 0.0, error_smape = 0.0, best_smape = 0.0, delta, df_dalfa_i, sum_11, sum_12;
+  double error = 0.0, error_smape = 0.0, error_smape_weights = 0.0, best_smape = 0.0, delta, df_dalfa_i, sum_11, sum_12;
   double best_error = DBL_MAX, best_alfa = initial_alfa, best_f_i = 0.0;
   double best_standarddeviation = 0.0;
   for (; iteration <= Forecast::getForecastIterations(); ++iteration)
@@ -242,7 +277,7 @@ double Forecast::SingleExponential::generateForecast
     for (short outliers = 0; outliers<=1; outliers++)
     {
       // Initialize variables
-      df_dalfa_i = sum_11 = sum_12 = error_smape = error = 0.0;
+      df_dalfa_i = sum_11 = sum_12 = error_smape = error_smape_weights = error = 0.0;
 
       // Initialize the iteration with the average of the first 3 values.
       f_i = (history[0] + history[1] + history[2]) / 3;
@@ -303,8 +338,11 @@ double Forecast::SingleExponential::generateForecast
         if (i >= fcst->getForecastSkip())
         {
           error += (f_i - history_i) * (f_i - history_i) * weight[i];
-          if (f_i + history[i] > ROUNDING_ERROR)
+          if (fabs(f_i + history[i]) > ROUNDING_ERROR)
+          {
             error_smape += fabs(f_i - history_i) / (f_i + history_i) * weight[i];
+            error_smape_weights += weight[i];
+          }
         }
       }
 
@@ -322,7 +360,7 @@ double Forecast::SingleExponential::generateForecast
     if (error < best_error)
     {
       best_error = error;
-      best_smape = error_smape;
+      best_smape = error_smape_weights ? error_smape / error_smape_weights : 0.0;
       best_alfa = alfa;
       best_f_i = f_i;
       best_standarddeviation = standarddeviation;
@@ -344,7 +382,7 @@ double Forecast::SingleExponential::generateForecast
       logger << (fcst ? fcst->getName() : "")
         << ": single exponential : iteration " << iteration
         << ": alfa " << alfa
-        << ", smape " << error_smape << endl;
+        << ", smape " << (error_smape_weights ? error_smape / error_smape_weights : 0.0) << endl;
 
     // New alfa
     alfa += delta;
@@ -414,7 +452,7 @@ double Forecast::DoubleExponential::generateForecast
     return DBL_MAX;
 
   // Define variables
-  double error = 0.0, error_smape = 0.0, delta_alfa, delta_gamma, determinant;
+  double error=0.0, error_smape=0.0, error_smape_weights=0.0, delta_alfa, delta_gamma, determinant;
   double constant_i_prev, trend_i_prev, d_constant_d_gamma_prev,
          d_constant_d_alfa_prev, d_constant_d_alfa, d_constant_d_gamma,
          d_trend_d_alfa, d_trend_d_gamma, d_forecast_d_alfa, d_forecast_d_gamma,
@@ -432,9 +470,8 @@ double Forecast::DoubleExponential::generateForecast
     double maxdeviation = 0.0;
     for (short outliers = 0; outliers<=1; outliers++)
     {
-
       // Initialize variables
-      error = error_smape = sum11 = sum12 = sum22 = sum13 = sum23 = 0.0;
+      error = error_smape = error_smape_weights = sum11 = sum12 = sum22 = sum13 = sum23 = 0.0;
       d_constant_d_alfa = d_constant_d_gamma = d_trend_d_alfa = d_trend_d_gamma = 0.0;
       d_forecast_d_alfa = d_forecast_d_gamma = 0.0;
 
@@ -526,8 +563,11 @@ double Forecast::DoubleExponential::generateForecast
         if (i >= fcst->getForecastSkip()) // Don't measure during the warmup period
         {
           error += (constant_i + trend_i - history_i) * (constant_i + trend_i - history_i) * weight[i];
-          if (constant_i + trend_i + history_i > ROUNDING_ERROR)
+          if (fabs(constant_i + trend_i + history_i) > ROUNDING_ERROR)
+          {
             error_smape += fabs(constant_i + trend_i - history_i) / (constant_i + trend_i + history_i) * weight[i];
+            error_smape_weights += weight[i];
+          }
         }
       }
 
@@ -545,7 +585,7 @@ double Forecast::DoubleExponential::generateForecast
     if (error < best_error)
     {
       best_error = error;
-      best_smape = error_smape;
+      best_smape = error_smape_weights ? error_smape / error_smape_weights : 0.0;
       best_alfa = alfa;
       best_gamma = gamma;
       best_constant_i = constant_i;
@@ -585,7 +625,7 @@ double Forecast::DoubleExponential::generateForecast
       logger << (fcst ? fcst->getName() : "")
         << ": double exponential : iteration " << iteration
         << ": alfa " << alfa << ", gamma " << gamma
-        << ", smape " << error_smape << endl;
+        << ", smape " << (error_smape_weights ? error_smape / error_smape_weights : 0) << endl;
 
     // New values for the next iteration
     alfa += delta_alfa;
@@ -743,7 +783,7 @@ double Forecast::Seasonal::generateForecast  // TODO No outlier detection in thi
   if (!period) return DBL_MAX;
 
   // Define variables
-  double error = 0.0, error_smape = 0.0, determinant, delta_alfa, delta_beta;
+  double error=0.0, error_smape=0.0, error_smape_weights=0.0, determinant, delta_alfa, delta_beta;
   double forecast_i, d_forecast_d_alfa, d_forecast_d_beta;
   double d_L_d_alfa, d_L_d_beta;
   double d_T_d_alfa, d_T_d_beta;
@@ -791,7 +831,7 @@ double Forecast::Seasonal::generateForecast  // TODO No outlier detection in thi
   for (; iteration <= Forecast::getForecastIterations(); ++iteration)
   {
     // Initialize variables
-    error = error_smape = sum11 = sum12 = sum13 = sum22 = sum23 = 0.0;
+    error = error_smape = error_smape_weights = sum11 = sum12 = sum13 = sum22 = sum23 = 0.0;
     d_L_d_alfa = d_L_d_beta = 0.0;
     d_T_d_alfa = d_T_d_beta = 0.0;
     L_i = L_i_initial;
@@ -880,8 +920,11 @@ double Forecast::Seasonal::generateForecast  // TODO No outlier detection in thi
       {
         double fcst = (L_i + T_i) * S_i[cycleindex];
         error += (fcst - history[i]) * (fcst - history[i]) * weight[i];
-        if (fcst + history[i] > ROUNDING_ERROR)
+        if (fabs(fcst + history[i]) > ROUNDING_ERROR)
+        {
           error_smape += fabs(fcst - history[i]) / (fcst + history[i]) * weight[i];
+          error_smape_weights += weight[i];
+        }
       }
       if (++cycleindex >= period) cycleindex = 0;
     }
@@ -891,7 +934,7 @@ double Forecast::Seasonal::generateForecast  // TODO No outlier detection in thi
     if (error < best_error)
     {
       best_error = error;
-      best_smape = error_smape;
+      best_smape = error_smape_weights ? error_smape / error_smape_weights : 0.0;
       best_alfa = alfa;
       best_beta = beta;
       best_L_i = L_i;
@@ -933,7 +976,7 @@ double Forecast::Seasonal::generateForecast  // TODO No outlier detection in thi
       logger << (fcst ? fcst->getName() : "")
         << ": seasonal : iteration " << iteration
         << ": alfa " << alfa << ", beta " << beta
-        << ", smape " << error_smape << endl;
+        << ", smape " << (error_smape_weights ? error_smape / error_smape_weights : 0.0) << endl;
 
     // New values for the next iteration
     alfa += delta_alfa;
@@ -1037,7 +1080,7 @@ double Forecast::Croston::generateForecast
     }
 
   unsigned int iteration = 0;
-  double error_smape = 0.0, best_smape = 0.0;
+  double error_smape = 0.0, error_smape_weights = 0.0, best_smape = 0.0;
   double q_i, p_i;
   double best_error = DBL_MAX, best_alfa = min_alfa, best_f_i = 0.0;
   double best_standarddeviation = 0.0;
@@ -1055,7 +1098,7 @@ double Forecast::Croston::generateForecast
       // Initialize variables.
       // We initialize to the overall average, since we potentially have
       // very few data points to adjust the forecast.
-      error_smape = 0.0;
+      error_smape = error_smape_weights = 0.0;
       q_i = totalsum / nonzero;
       p_i = count / nonzero;
       f_i = (1 - alfa / 2) * q_i / p_i;
@@ -1095,8 +1138,11 @@ double Forecast::Croston::generateForecast
         }
         if (i >= fcst->getForecastSkip() && p_i > 0) // Don't measure during the warmup period
         {
-          if (f_i + history[i] > ROUNDING_ERROR)
+          if (fabs(f_i + history[i]) > ROUNDING_ERROR)
+          {
             error_smape += fabs(f_i - history_i) / (f_i + history_i) * weight[i];
+            error_smape_weights += weight[i];
+          }
         }
       }
 
@@ -1114,6 +1160,7 @@ double Forecast::Croston::generateForecast
     if (error_smape < best_error)
     {
       best_error = error_smape;
+      best_smape = error_smape_weights ? error_smape / error_smape_weights : 0.0;
       best_alfa = alfa;
       best_f_i = f_i;
       best_standarddeviation = standarddeviation;
@@ -1124,7 +1171,7 @@ double Forecast::Croston::generateForecast
       logger << (fcst ? fcst->getName() : "")
         << ": croston: iteration " << iteration
         << ": alfa " << alfa
-        << ", smape " << error_smape << endl;
+        << ", smape " << (error_smape_weights ? error_smape / error_smape_weights : 0.0) << endl;
 
     // New alfa
     if (delta)

@@ -68,6 +68,17 @@ class Forecast(AuditModel):
     _('planned'), default=True,
     help_text=_('Use this forecast for planning')
     )
+  out_smape = models.DecimalField(
+    _('calculated SMAPE forecast error'), null=True, blank=True,
+    max_digits=15, decimal_places=4
+    )
+  out_method = models.CharField(
+    _('calculated forecast method'), max_length=20, null=True, blank=True
+    )
+  out_deviation = models.DecimalField(
+    _('calculated standard deviation'), null=True, blank=True,
+    max_digits=15, decimal_places=4
+    )
 
   class Meta(AuditModel.Meta):
     db_table = 'forecast'
@@ -855,7 +866,6 @@ class ForecastPlan(models.Model):
   forecastnetvalue = models.DecimalField(_('forecast net'), max_digits=15, decimal_places=4, default='0.00')
   forecastconsumedvalue = models.DecimalField(_('forecast consumed'), max_digits=15, decimal_places=4, default='0.00')
   forecastplannedvalue = models.DecimalField(_('planned forecast'), max_digits=15, decimal_places=4, default='0.00')
-  method = models.CharField(_('method'), max_length=60, editable=False, db_index=True, null=True)
 
   def __str__(self):
     return "%s - %s" % (self.forecast.name, str(self.startdate))
