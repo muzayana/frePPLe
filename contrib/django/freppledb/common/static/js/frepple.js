@@ -759,8 +759,16 @@ var grid = {
                   type: "POST",
                   contentType: "application/json",
                   success: function () {
+                    $('#popup').html(gettext("export: OK"))
+                      .dialog({
+                        title: gettext("data exported to openbravo"),
+                        autoOpen: true,
+                        resizable: false,
+                        width: 'auto',
+                        height: 'auto'
+                      });
                     upload.undo();
-                    $(this).dialog("close");
+                   // $(this).dialog("close");
                   },
                   error: function (result, stat, errorThrown) {
                     $('#popup').html(result.responseText)
