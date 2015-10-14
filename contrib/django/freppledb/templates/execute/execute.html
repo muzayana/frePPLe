@@ -7,7 +7,7 @@
 
   function extraPreference() {
     return {
-       "height": $("#gbox_grid").height() - 48,
+       "height": Math.round($("#gbox_grid").height() - 48),
        "refresh": (refresh !== null)
        };
   }

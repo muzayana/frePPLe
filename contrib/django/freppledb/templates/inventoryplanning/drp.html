@@ -97,7 +97,7 @@ function extraPreference()
 {
   // TODO save settings on forecast, planning and transaction tabs
   return {
-    "height": $("#gbox_grid").height() - 48,
+    "height": Math.round($("#gbox_grid").height() - 48),
     "showtab": showtab,
     "type": result ? result.type : null,
     "name": result ? result.name : null,

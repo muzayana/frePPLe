@@ -1016,6 +1016,8 @@ class DistributionOrderList(GridReport):
     {"name": 'proposed', "label": _("change status to %(status)s") % {'status': _("Proposed")}, "function": "grid.setStatus('proposed')"},
     {"name": 'confirmed', "label": _("change status to %(status)s") % {'status': _("Confirmed")}, "function": "grid.setStatus('confirmed')"},
     {"name": 'closed', "label": _("change status to %(status)s") % {'status': _("Closed")}, "function": "grid.setStatus('closed')"},
+    {"name": 'openbravo_incr_import', "label": _("Openbravo Incremental Export"), "function": "openbravoIncrExport()"},
+    {"name": 'openbravo_incr_export', "label": _("Openbravo Incremental Import"), "function": "openbravoIncrImport()"},
     ]
 
 class PurchaseOrderList(GridReport):
@@ -1048,5 +1050,7 @@ class PurchaseOrderList(GridReport):
       {"name": 'proposed', "label": _("change status to %(status)s") % {'status': _("Proposed")}, "function": "grid.setStatus('proposed')"},
       {"name": 'confirmed', "label": _("change status to %(status)s") % {'status': _("Confirmed")}, "function": "grid.setStatus('confirmed')"},
       {"name": 'closed', "label": _("change status to %(status)s") % {'status': _("Closed")}, "function": "grid.setStatus('closed')"},
+      {"name": 'openbravo_incr_import', "label": _("Openbravo Incremental Export"), "function": "openbravoIncrExport()"},
+      {"name": 'openbravo_incr_export', "label": _("Openbravo Incremental Import"), "function": "openbravoIncrImport()"},
       ]
 
