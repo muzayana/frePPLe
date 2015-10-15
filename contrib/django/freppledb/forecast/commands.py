@@ -349,7 +349,6 @@ def createSolver(cursor):
       kw[key[9:]] = int(value)
     else:
       kw[key[9:]] = float(value)
-  print(kw)
   return frepple.solver_forecast(**kw)
 
 

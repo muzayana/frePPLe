@@ -329,7 +329,7 @@ function save(refresh) {
   {% endif %}
 
   // Send the results back to the server
-  if (!$.isEmptyObject(fcstchanges))
+  if (!$.isEmptyObject(data))
 	  $.ajax({
 	    url: '{{request.prefix}}/inventoryplanning/drpitemlocation/' + admin_escape(result.name) + '/',
 	    type: 'POST',
@@ -962,11 +962,11 @@ function displayResult(data)
 {
   result = data;
 
-  // Debugging
-  $("#parameters").html(JSON.stringify(data));
-
   // Enable input elements
   $("#save, #undo, #commentitem, #commentitemlocation, #commentlocation").prop('disabled', false);
+
+  // Debugging
+  // console.log(result);
 
   // Update title
   if (result.type == "itemlocation")
@@ -999,19 +999,6 @@ function displayResult(data)
   $("#leadtime_deviation").val(data.parameters.leadtime_deviation).removeClass('dirty-cell');
   $("#ss_min_qty").val(data.parameters.ss_min_qty).removeClass('dirty-cell');
   $("#ss_min_poc").val(data.parameters.ss_min_poc).removeClass('dirty-cell');
-
-  // Show comments
-  $("#commentlocation, #commentitem, #commentitemlocation").removeClass("comment_button_active ui-state-disabled");
-  $("#newcomment:visible").css("display", "none");
-  var comments = $("#pastcomments");
-  comments.empty();
-  for (var c in result.comments)
-  {
-    $("<hr/>").appendTo(comments);
-    $("<h3/>").text(result.comments[c].user + " " + result.comments[c].type).appendTo(comments);
-    $("<span class='float_right'></span>").text(result.comments[c].lastmodified).appendTo(comments);
-    $("<pre/>").text(result.comments[c].comment).appendTo(comments);
-  }
 
   // Show forecast tab
   displayForecastGraph(); // this function also sets the variable firstforecastbucket
@@ -1135,6 +1122,31 @@ function displayResult(data)
       .jqGrid('setGridParam', {data: result.transactions})
       .trigger('reloadGrid');
   }
+
+  // Show comments
+  $("#commentlocation, #commentitem, #commentitemlocation").removeClass("comment_button_active ui-state-disabled");
+  $("#newcomment:visible").css("display", "none");
+  var comments = $("#pastcomments");
+  comments.empty();
+  for (var c in result.comments)
+  {
+    $("<hr/>").appendTo(comments);
+    $("<h3/>").text(result.comments[c].user + " " + result.comments[c].type).appendTo(comments);
+    $("<span class='float_right'></span>").text(result.comments[c].lastmodified).appendTo(comments);
+    $("<pre/>").text(result.comments[c].comment).appendTo(comments);
+  }
+
+  // Show history tab
+  var history = $("#history");
+  history.empty();
+  for (var c in result.history)
+	{
+    var i = $("<div/>");
+    $("<span style='font-weight: bold'/>").text(result.history[c].content_type + ' ' + result.history[c].object_id + ': ').appendTo(i);
+    $("<span class='float_right'/>").text(result.history[c].user + " " + result.history[c].action_time).appendTo(i);
+    $("<span/>").text(result.history[c].change_message).appendTo(i);
+    i.appendTo(history);
+	}
 }
 
 
@@ -1304,6 +1316,6 @@ $(function() {
 <span id="pastcomments">{% trans "no comments yet"|capfirst %}</span>
 </div>
 
-<div id="historydata" class="clear" style="display:none"><span id="parameters"></span></div>
+<div id="historydata" class="clear" style="display:none"><span id="history"></span></div>
 </div>
 {% endblock %}

@@ -23,13 +23,15 @@ class InventoryPlanning_admin(MultiDBModelAdmin):
     (None, {'fields': ('buffer', 'nostock')}),
     (_('Reorder quantity'), {
       'fields': (
+        ('roq_type'),
         ('roq_min_qty', 'roq_max_qty', 'roq_multiple_qty'), 
         ('roq_min_poc', 'roq_max_poc')
         ),
       }),
     (_('Safety stock quantity'), {
       'fields': (
-        'service_level', 
+        ('ss_type'),
+        ('service_level', 'demand_distribution', 'demand_deviation', 'leadtime_deviation'),
         ('ss_min_qty', 'ss_max_qty', 'ss_multiple_qty'), 
         ('ss_min_poc', 'ss_max_poc')
         ),

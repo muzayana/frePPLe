@@ -17,13 +17,13 @@ from freppledb.input.models import Buffer
 
 class InventoryPlanning(AuditModel):
   distributions = (
-    ('Automatic', _('Automatic')),
+    ('automatic', _('Automatic')),
     # Translators: Normal statistical distribution, aka Gaussian distribution
-    ('Normal', _('Normal')),
+    ('normal', _('Normal')),
     # Translators: Poisson statistical distribution
-    ('Poisson', _('Poisson')),
+    ('poisson', _('Poisson')),
     # Translators: Negative binomial statistical distribution
-    ('Negative Binomial', _('Negative Binomial')),
+    ('negative binomial', _('Negative Binomial')),
   )
 
   # TODO combined method is currently disabled
@@ -97,7 +97,10 @@ class InventoryPlanning(AuditModel):
     _('safety stock maximum period of cover'), max_digits=15,
     decimal_places=4, null=True, blank=True
     )
-  nostock = models.BooleanField(_("Do not stock"), blank=True, default=False)
+  nostock = models.BooleanField(
+    _("Do not stock"), blank=True, default=False,
+    help_text=_("Enforces a safety stock of 0 and a reorder quantity of 1")
+    )
 
   class Meta(AuditModel.Meta):
     db_table = 'inventoryplanning'

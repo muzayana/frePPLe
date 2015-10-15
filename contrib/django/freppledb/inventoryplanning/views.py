@@ -514,6 +514,7 @@ class DRPitemlocation(View):
       self.buffer_type = ContentType.objects.get_for_model(Buffer)
       self.item_type = ContentType.objects.get_for_model(Item)
       self.location_type = ContentType.objects.get_for_model(Location)
+      self.inventoryplanning_type = ContentType.objects.get_for_model(InventoryPlanning) 
     comments = Comment.objects.using(request.database).filter(
       Q(content_type=self.buffer_type.id, object_pk=ip.buffer.name)
       | Q(content_type=self.item_type.id, object_pk=ip.buffer.item.name if ip.buffer.item else None)
@@ -538,9 +539,29 @@ class DRPitemlocation(View):
         "comment": i.comment,
         "type": t
         })
-    yield "]}"
+    yield '],"history":['
 
-    # Retrieve history: lazy?
+    # Retrieve history
+    history = LogEntry.objects.using(request.database).filter(
+      Q(content_type=self.buffer_type.id, object_id=ip.buffer.name)
+      | Q(content_type=self.item_type.id, object_id=ip.buffer.item.name if ip.buffer.item else None)
+      | Q(content_type=self.location_type.id, object_id=ip.buffer.location.name if ip.buffer.location else None)
+      | Q(content_type=self.inventoryplanning_type.id, object_id=ip.buffer.name)
+      ).order_by('-action_time')[:20]
+    first = True
+    for i in history:
+      if first:
+        first = False
+      else:
+        yield ","
+      yield json.dumps({
+        "user": "%s (%s)" % (i.user.username, i.user.get_full_name()),
+        "object_id": i.object_id,
+        "content_type": i.content_type.name,
+        "change_message": i.change_message,
+        "action_time": str(i.action_time)
+        })
+    yield ']}'
 
     # Save current selected item-location detail to the preferences
     prefs = request.user.getPreference(DRP.getKey())
