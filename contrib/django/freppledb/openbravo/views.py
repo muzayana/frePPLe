@@ -22,4 +22,4 @@ def Upload(request):
   
   print(data)
 #  return HttpResponse(content="OK", status = 200)
-  return HttpResponse(content="Simulated Error", status = 402)
+  return HttpResponse(content="Not implemented yet...", status = 402)
