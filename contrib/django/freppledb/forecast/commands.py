@@ -7,7 +7,7 @@ from django.db import connections, transaction, DEFAULT_DB_ALIAS
 from django.conf import settings
 
 from freppledb.common.models import Parameter
-from freppledb.input.models import Item, Customer
+from freppledb.input.models import Item, Customer, Location
 from freppledb.execute.commands import printWelcome, logProgress, createPlan, exportPlan
 
 import frepple
@@ -746,6 +746,7 @@ def generate_plan():
     # Assure the hierarchies are up to date
     print("\nStart building hierarchies at", datetime.now().strftime("%H:%M:%S"))
     Item.rebuildHierarchy(database=db)
+    Location.rebuildHierarchy(database=db)
     Customer.rebuildHierarchy(database=db)
     logProgress(33, db)
 
