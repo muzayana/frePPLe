@@ -750,6 +750,7 @@ var grid = {
       buttons: [
         {
           text: gettext("export"),
+          id: 'button_export',
           click: function() {
             if (sel != null && sel.length > 0)
             // Send the update to the server
@@ -767,8 +768,9 @@ var grid = {
                         width: 'auto',
                         height: 'auto'
                       });
+                    $('#button_close').find('.ui-button-text').text(gettext('close'));
+                    $('#button_export').removeClass("ui-state-default").addClass("ui-state-disabled").prop('disabled', 'disabled');
                     upload.undo();
-                   // $(this).dialog("close");
                   },
                   error: function (result, stat, errorThrown) {
                     $('#popup').html(result.responseText)
@@ -780,6 +782,7 @@ var grid = {
                         height: 'auto'
                       });
 //                    $.jgrid.hideModal("#searchmodfbox_grid");
+                    $('#button_export').find('.ui-button-text').text(gettext('retry'));
                   }
               });
         
@@ -788,6 +791,7 @@ var grid = {
         },
         {
           text: gettext("cancel"),
+          id: 'button_close',
           click: function() { $(this).dialog("close"); }
         }
         ]

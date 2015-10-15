@@ -17,6 +17,9 @@ from django.http import HttpResponse
 @login_required
 @csrf_protect
 def Upload(request):
-  data = json.loads(request.body.decode(request.encoding))
+
+  data = json.loads(request.body.decode('utf-8'))
+  
   print(data)
-  return HttpResponse(content="OK")
+#  return HttpResponse(content="OK", status = 200)
+  return HttpResponse(content="Simulated Error", status = 402)

@@ -375,6 +375,7 @@ function openbravoIncrExport() {
     buttons: [
       {
         text: gettext("export"),
+        id: 'button_export',
         click: function() {
           if (sel != null && sel.length > 0)
           // Send the update to the server
@@ -392,6 +393,8 @@ function openbravoIncrExport() {
                       width: 'auto',
                       height: 'auto'
                     });
+                  $('#button_close').find('.ui-button-text').text(gettext('close'));
+                  $('#button_export').removeClass("ui-state-default").addClass("ui-state-disabled").prop('disabled', 'disabled');
                   upload.undo();
                  // $(this).dialog("close");
                 },
@@ -405,6 +408,7 @@ function openbravoIncrExport() {
                       height: 'auto'
                     });
 //                    $.jgrid.hideModal("#searchmodfbox_grid");
+                  $('#button_export').find('.ui-button-text').text(gettext('retry'));
                 }
             });
       
@@ -413,6 +417,7 @@ function openbravoIncrExport() {
       },
       {
         text: gettext("cancel"),
+        id: 'button_close',
         click: function() { $(this).dialog("close"); }
       }
       ]
