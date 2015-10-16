@@ -32,12 +32,11 @@ from django.views.generic import View
 from freppledb.common.report import GridFieldText, GridReport
 from freppledb.common.report import GridFieldLastModified, GridFieldChoice
 from freppledb.common.report import GridFieldNumber, GridFieldBool, GridFieldInteger
-
-from freppledb.inventoryplanning.models import InventoryPlanning, InventoryPlanningOutput
+from freppledb.common.models import Comment, Parameter
+from freppledb.forecast.models import Forecast
 from freppledb.input.models import Buffer, Location, Calendar, CalendarBucket
 from freppledb.input.models import Item, DistributionOrder, PurchaseOrder
-from freppledb.common.models import Comment
-from freppledb.forecast.models import Forecast
+from freppledb.inventoryplanning.models import InventoryPlanning, InventoryPlanningOutput
 
 
 import logging
@@ -87,8 +86,9 @@ class InventoryPlanningList(GridReport):
 
 class DRP(GridReport):
   '''
-     Data assumptions:
-       - No overlapping calendar entries in the ROQ or SS calendars
+  Assumptions:
+    - No overlapping calendar entries in the ROQ or SS calendars
+    - Assumes lowest time level is 'month'
   '''
   template = 'inventoryplanning/drp.html'
   title = _("Distribution planning")
@@ -100,6 +100,7 @@ class DRP(GridReport):
   multiselect = False
   editable = False
   hasTimeBuckets = True
+  showOnlyFutureTimeBuckets = True
   maxBucketLevel = 3
 
   rows = (
@@ -120,6 +121,7 @@ class DRP(GridReport):
     GridFieldInteger('proposedtransfers', title=_('proposed transfers'), extra="formatoptions:{defaultValue:''}"),
     )
 
+
   @staticmethod
   def query(request, basequery):
 
@@ -132,11 +134,6 @@ class DRP(GridReport):
       suffix = 'value'
     else:
       suffix = ''
-
-    # Assure the hierarchies are up to date  # TODO skip this check for performance reasons?
-    #Buffer.rebuildHierarchy(database=basequery.db)
-    #Item.rebuildHierarchy(database=basequery.db)
-    #Location.rebuildHierarchy(database=basequery.db)
 
     # Execute the query
     # TODO don't display buffers, but items and locations, and aggregate stuff
@@ -354,17 +351,13 @@ class DRPitemlocation(View):
     """
 
   def getData(self, request, itemlocation):
-    # This query retrieves all data for a certain itemlocation.
-    # Advantage is that all data are sent to the user's browser in a single response,
-    # and the user can navigate them without
-
-    buckets = request.user.horizonbuckets
+    # This view retrieves all relevant data for a certain itemlocation.
     DRP.getBuckets(request)
     ip = InventoryPlanning.objects.using(request.database).get(pk=itemlocation)
     item_name = ip.buffer.item.name if ip.buffer.item else None
     location_name = ip.buffer.location.name if ip.buffer.location else None
 
-    # display value or units?
+    # Display value or units?
     prefs = request.user.getPreference(DRP.getKey())
     if prefs and prefs.get('units', 'unit') == 'value':
       displayvalue = True
@@ -414,7 +407,7 @@ class DRPitemlocation(View):
       extra = ''
     cursor.execute(
       self.sql_forecast % (extra, extra, extra, extra, extra, extra, extra, extra),
-      (buckets, location_name, item_name)
+      (request.report_bucket, location_name, item_name)
       )
     for rec in cursor.fetchall():
       if not first:
@@ -514,7 +507,7 @@ class DRPitemlocation(View):
       self.buffer_type = ContentType.objects.get_for_model(Buffer)
       self.item_type = ContentType.objects.get_for_model(Item)
       self.location_type = ContentType.objects.get_for_model(Location)
-      self.inventoryplanning_type = ContentType.objects.get_for_model(InventoryPlanning) 
+      self.inventoryplanning_type = ContentType.objects.get_for_model(InventoryPlanning)
     comments = Comment.objects.using(request.database).filter(
       Q(content_type=self.buffer_type.id, object_pk=ip.buffer.name)
       | Q(content_type=self.item_type.id, object_pk=ip.buffer.item.name if ip.buffer.item else None)
