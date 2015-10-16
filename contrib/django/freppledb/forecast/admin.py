@@ -31,9 +31,9 @@ class ForecastDemand_inline(MultiDBTabularInline):
 
 class Forecast_admin(MultiDBModelAdmin):
   model = Forecast
-  raw_id_fields = ('customer', 'item', 'calendar', 'operation')
+  raw_id_fields = ('customer', 'item', 'operation')
   fieldsets = (
-    (None, {'fields': ('name', 'item', 'customer', 'calendar', 'method', 'description', 'category', 'subcategory', 'priority')}),
+    (None, {'fields': ('name', 'item', 'customer', 'method', 'description', 'category', 'subcategory', 'priority')}),
     (_('Planning parameters'), {'fields': ('discrete', 'planned', 'operation', 'minshipment', 'maxlateness'), 'classes': ('collapse')}),
     )
   save_on_top = True

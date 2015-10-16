@@ -41,7 +41,6 @@ class Migration(migrations.Migration):
                 ('out_smape', models.DecimalField(blank=True, max_digits=15, decimal_places=4, verbose_name='calculated SMAPE forecast error', null=True)),
                 ('out_method', models.CharField(blank=True, max_length=20, verbose_name='calculated forecast method', null=True)),
                 ('out_deviation', models.DecimalField(blank=True, max_digits=15, decimal_places=4, verbose_name='calculated standard deviation', null=True)),
-                ('calendar', models.ForeignKey(to='input.Calendar', verbose_name='calendar')),
                 ('customer', models.ForeignKey(blank=True, to='input.Customer', null=True, verbose_name='customer')),
                 ('item', models.ForeignKey(to='input.Item', verbose_name='item')),
                 ('location', models.ForeignKey(blank=True, to='input.Location', null=True, verbose_name='location')),

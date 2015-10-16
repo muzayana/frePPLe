@@ -1243,7 +1243,7 @@ class Forecast : public Demand
 
   public:
     /** Default constructor. */
-    explicit Forecast() : calptr(NULL), discrete(true), planned(true),
+    explicit Forecast() : discrete(true), planned(true),
       methods(METHOD_ALL), smape_error(0.0), deviation(0.0)
     {
       initType(metadata);
@@ -1289,7 +1289,6 @@ class Forecast : public Demand
 
     template<class Cls> static inline void registerFields(MetaClass* m)
     {
-      m->addPointerField<Cls, Calendar>(Tags::calendar, &Cls::getCalendar, &Cls::setCalendar);
       m->addBoolField<Cls>(Tags::discrete, &Cls::getDiscrete, &Cls::setDiscrete, BOOL_TRUE);
       m->addUnsignedLongField<Cls>(tag_methods, &Cls::getMethods, &Cls::setMethods, METHOD_ALL);
       m->addBoolField<Cls>(tag_planned, &Cls::getPlanned, &Cls::setPlanned, BOOL_TRUE);
@@ -1373,10 +1372,18 @@ class Forecast : public Demand
     /** Specify a bucket calendar for the forecast. Once forecasted
       * quantities have been entered for the forecast, the calendar
       * can't be updated any more. */
-    virtual void setCalendar(Calendar*);
+    static void setCalendar(Calendar* c)
+    {
+      if (calptr && c != calptr)
+        throw DataException("Forecasting buckets can't be changed once specified");
+      calptr = c;
+    }
 
-    /** Returns a reference to the calendar used for this forecast. */
-    Calendar* getCalendar() const
+    /** Returns a reference to the calendar used for this forecast. 
+      * This is a static method: all forecast use the exact same
+      * forecasting buckets.
+      */
+    static Calendar* getCalendar()
     {
       return calptr;
     }
@@ -1510,7 +1517,7 @@ class Forecast : public Demand
     void instantiate();
 
     /** A void calendar to define the time buckets. */
-    Calendar* calptr;
+    static Calendar* calptr;
 
     /** Flags whether fractional forecasts are allowed. */
     bool discrete;
@@ -1645,6 +1652,16 @@ class ForecastSolver : public Solver
 
     /** Callback function, used for netting orders against the forecast. */
     bool callback(Demand* l, const Signal a);
+
+    void setCalendar(Calendar* c)
+    {
+      Forecast::setCalendar(c);
+    }
+
+    Calendar* getCalendar() const
+    {
+      return Forecast::getCalendar();
+    }
 
     string getDueWithinBucket() const
     {
@@ -2009,6 +2026,7 @@ class ForecastSolver : public Solver
     {
       // Forecast buckets
       m->addStringField<Cls>(ForecastSolver::tag_DueWithinBucket, &Cls::getDueWithinBucket, &Cls::setDueWithinBucket);
+      m->addPointerField<Cls, Calendar>(Tags::calendar, &Cls::getCalendar, &Cls::setCalendar);
       // Netting
       m->addBoolField<Cls>(ForecastSolver::tag_Net_CustomerThenItemHierarchy, &Cls::getCustomerThenItemHierarchy, &Cls::setCustomerThenItemHierarchy);
       m->addBoolField<Cls>(ForecastSolver::tag_Net_MatchUsingDeliveryOperation, &Cls::getMatchUsingDeliveryOperation, &Cls::setMatchUsingDeliveryOperation);

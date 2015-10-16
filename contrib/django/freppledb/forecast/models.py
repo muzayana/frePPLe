@@ -42,7 +42,6 @@ class Forecast(AuditModel):
     choices=methods, default='automatic',
     help_text=_('Method used to generate a base forecast')
     )
-  calendar = models.ForeignKey(Calendar, verbose_name=_('calendar'), null=False)
   operation = models.ForeignKey(
     Operation, verbose_name=_('delivery operation'), null=True, blank=True,
     related_name='used_forecast', help_text=_('Operation used to satisfy this demand')

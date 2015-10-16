@@ -18,12 +18,12 @@ def loadForecast(cursor):
   cnt = 0
   starttime = time()
   cursor.execute('''SELECT name, customer_id, item_id, priority,
-    operation_id, minshipment, calendar_id, discrete, maxlateness,
+    operation_id, minshipment, discrete, maxlateness,
     category, subcategory, method, planned, location_id
     FROM forecast''')
   for i in cursor.fetchall():
     cnt += 1
-    fcst = frepple.demand_forecast(name=i[0], priority=i[3], category=i[9], subcategory=i[10])
+    fcst = frepple.demand_forecast(name=i[0], priority=i[3], category=i[8], subcategory=i[9])
     if i[1]:
       fcst.customer = frepple.customer(name=i[1])
     if i[2]:
@@ -32,29 +32,27 @@ def loadForecast(cursor):
       fcst.operation = frepple.operation(name=i[4])
     if i[5]:
       fcst.minshipment = i[5]
-    if i[6]:
-      fcst.calendar = frepple.calendar(name=i[6])
-    if not i[7]:
+    if not i[6]:
       fcst.discrete = False  # null value -> False
-    if i[8] is not None:
-      fcst.maxlateness = i[8]
-    if i[11]:
-      if i[11] == 'constant':
+    if i[7] is not None:
+      fcst.maxlateness = i[7]
+    if i[10]:
+      if i[10] == 'constant':
         fcst.methods = 1
-      elif i[11] == 'trend':
+      elif i[10] == 'trend':
         fcst.methods = 2
-      elif i[11] == 'seasonal':
+      elif i[10] == 'seasonal':
         fcst.methods = 4
-      elif i[11] == 'intermittent':
+      elif i[10] == 'intermittent':
         fcst.methods = 8
-      elif i[11] == 'moving average':
+      elif i[10] == 'moving average':
         fcst.methods = 16
-      elif i[11] == 'manual':
+      elif i[10] == 'manual':
         fcst.methods = 0
-    if i[12] is not None and not i[12]:
+    if i[11] is not None and not i[11]:
       fcst.planned = False  # null value -> True
-    if i[13]:
-      fcst.location = frepple.location(name=i[13])
+    if i[12]:
+      fcst.location = frepple.location(name=i[12])
   print('Loaded %d forecasts in %.2f seconds' % (cnt, time() - starttime))
 
 
@@ -88,8 +86,9 @@ def aggregateDemand(cursor):
       inner join item as fitem on ditem.lft between fitem.lft and fitem.rght
       inner join customer as fcustomer on dcustomer.lft between fcustomer.lft and fcustomer.rght
       inner join forecast on fitem.name = forecast.item_id and fcustomer.name = forecast.customer_id
+      inner join common_parameter on common_parameter.name = 'forecast.calendar'
       inner join calendarbucket
-        on forecast.calendar_id = calendarbucket.calendar_id
+        on common_parameter.value = calendarbucket.calendar_id
         and calendarbucket.startdate <= demand.due
         and calendarbucket.enddate > demand.due
       where demand.status in ('open','closed')
@@ -142,6 +141,7 @@ def aggregateDemand(cursor):
   starttime = time()
   horizon_future = int(Parameter.getValue('forecast.Horizon_future', cursor.db.alias, 365))
   horizon_history = int(Parameter.getValue('forecast.Horizon_history', cursor.db.alias, 10000))
+  fcst_calendar = Parameter.getValue('forecast.calendar', cursor.db.alias, None)
   cursor.execute('''
     insert into forecastplan (
         forecast_id, startdate, enddate, orderstotal, ordersopen,
@@ -157,16 +157,17 @@ def aggregateDemand(cursor):
       inner join item on forecast.item_id = item.name
       inner join customer on forecast.customer_id = customer.name
       inner join calendarbucket
-        on forecast.calendar_id = calendarbucket.calendar_id
-        and calendarbucket.startdate >= '%s'
-        and calendarbucket.startdate < '%s'
+        on calendarbucket.calendar_id = %s
+        and calendarbucket.startdate >= %s
+        and calendarbucket.startdate < %s
       left outer join forecastplan
         on forecastplan.startdate = calendarbucket.startdate
         and forecastplan.forecast_id = forecast.name
       where forecastplan.forecast_id is null
       group by forecast.name, customer.lft, item.lft,
         calendarbucket.startdate, calendarbucket.enddate
-    ''' % (
+    ''', (
+      fcst_calendar,
       frepple.settings.current - timedelta(days=horizon_history),
       frepple.settings.current + timedelta(days=horizon_future)
       )
@@ -205,42 +206,40 @@ def generateBaseline(solver_fcst, cursor):
   # Build bucket lists
   horizon_history = int(Parameter.getValue('forecast.Horizon_history', cursor.db.alias, 10000))
   horizon_future = int(Parameter.getValue('forecast.Horizon_future', cursor.db.alias, 365))
-  thebuckets = {}
-  cursor.execute('''select calendarbucket.calendar_id, startdate
+  fcst_calendar = Parameter.getValue('forecast.calendar', cursor.db.alias, None)
+  if not fcst_calendar:
+    raise Exception("Parameter forecast.calendar not set")
+  # TODO Do validation checks on the forecast calendar: no overlapping entries allowed, no gaps between entries
+  cursor.execute('''select distinct startdate
      from calendarbucket
-     where calendarbucket.calendar_id in (select distinct forecast.calendar_id  from forecast)
-       and startdate >= '%s' and startdate < '%s'
-     order by calendarbucket.calendar_id, startdate
-     ''' % (frepple.settings.current, frepple.settings.current + timedelta(days=horizon_future)))
-  curname = None
-  curlist = []
-  for i, j in cursor.fetchall():
-    if i != curname:
-      if curname:
-        thebuckets[curname] = curlist
-        curlist = []
-      curname = i
-    curlist.append(j)
-  if curname:
-    thebuckets[curname] = curlist
+     where calendarbucket.calendar_id = %s
+       and startdate >= %s and startdate < %s
+     order by startdate
+     ''', (
+    fcst_calendar, frepple.settings.current,
+    frepple.settings.current + timedelta(days=horizon_future)
+    ))
+  thebuckets = [ i[0] for i in cursor.fetchall() ]
+  if not thebuckets:
+    raise Exception("No calendar buckets found in forecast.calendar")
 
   # Read history data and generate forecast
   cursor.execute('''SELECT forecast.name, calendarbucket.startdate,
      coalesce(forecastplan.orderstotal, 0) + coalesce(forecastplan.ordersadjustment, 0) as r
      FROM forecast
      INNER JOIN calendarbucket
-       ON calendarbucket.calendar_id = forecast.calendar_id
+       ON calendarbucket.calendar_id = %s
      LEFT OUTER JOIN forecastplan
        ON forecastplan.forecast_id = forecast.name
        AND calendarbucket.startdate = forecastplan.startdate
-     WHERE calendarbucket.startdate >= '%s'
-      AND calendarbucket.startdate < '%s'
-      AND forecast.planned = 't'
-     ORDER BY forecast.name, calendarbucket.startdate''' % (
-       frepple.settings.current - timedelta(days=horizon_history),
+     WHERE calendarbucket.startdate >= %s
+      AND calendarbucket.startdate < %s
+      AND forecast.planned = true
+     ORDER BY forecast.name, calendarbucket.startdate
+     ''', (
+       fcst_calendar, frepple.settings.current - timedelta(days=horizon_history),
        frepple.settings.current
-       )
-     )
+     ))
   first = True
   for rec in cursor.fetchall():
     fcst = frepple.demand(name=rec[0])
@@ -248,7 +247,7 @@ def generateBaseline(solver_fcst, cursor):
       # First demand bucket of a new forecast
       if curfcst:
         # Generate the forecast
-        solver_fcst.timeseries(curfcst, data, thebuckets[fcst.calendar.name])
+        solver_fcst.timeseries(curfcst, data, thebuckets)
       curfcst = fcst
       data = []
       first = True
@@ -257,16 +256,16 @@ def generateBaseline(solver_fcst, cursor):
       first = False
   if curfcst:
     # Generate the forecast
-    solver_fcst.timeseries(curfcst, data, thebuckets[fcst.calendar.name])
+    solver_fcst.timeseries(curfcst, data, thebuckets)
 
   print("Exporting baseline forecast...")
   cursor.execute('''
     update forecastplan
     set forecastbaseline=0, forecastbaselinevalue=0
-    where startdate>='%s'
+    where startdate >= %s
       and (forecastbaseline<>0 or forecastbaselinevalue<>0)
       and exists (select 1 from forecast where name = forecastplan.forecast_id and forecast.planned = 't')
-    ''' % frepple.settings.current)
+    ''', (frepple.settings.current,) )
   cursor.executemany('''
     update forecastplan
     set forecastbaseline=%s, forecastbaselinevalue=%s
@@ -294,30 +293,35 @@ def generateBaseline(solver_fcst, cursor):
 
 def applyForecastAdjustments(cursor):
   horizon_future = int(Parameter.getValue('forecast.Horizon_future', cursor.db.alias, 365))
+  fcst_calendar = Parameter.getValue('forecast.calendar', cursor.db.alias, None)
   cursor.execute('''select
        forecast.name, calendarbucket.startdate, forecastplan.forecastadjustment
      from forecast
      inner join calendarbucket
-       on calendarbucket.calendar_id = forecast.calendar_id
+       on calendarbucket.calendar_id = %s
      left outer join forecastplan
        on forecastplan.forecast_id = forecast.name
        and calendarbucket.startdate = forecastplan.startdate
-     where calendarbucket.enddate >= '%s'
-       and calendarbucket.startdate < '%s'
+     where calendarbucket.enddate >= %s
+       and calendarbucket.startdate < %s
        and forecastplan.forecastadjustment is not null
        and forecastplan.forecastadjustment > 0
-     order by forecast.name, calendarbucket.startdate''' % (frepple.settings.current, frepple.settings.current + timedelta(days=horizon_future)))
+     order by forecast.name, calendarbucket.startdate''', (
+    fcst_calendar, frepple.settings.current,
+    frepple.settings.current + timedelta(days=horizon_future)
+    ))
   for fcstname, start, qty in cursor.fetchall():
     frepple.demand(name=fcstname).setQuantity(qty, start, start, False)
 
 
 def loadForecastValues(cursor):
   horizon_future = int(Parameter.getValue('forecast.Horizon_future', cursor.db.alias, 365))
+  fcst_calendar = Parameter.getValue('forecast.calendar', cursor.db.alias, None)
   cursor.execute('''select
        forecast.name, calendarbucket.startdate, forecastplan.forecasttotal
      from forecast
      inner join calendarbucket
-       on calendarbucket.calendar_id = forecast.calendar_id
+       on calendarbucket.calendar_id = %s
      left outer join forecastplan
        on forecastplan.forecast_id = forecast.name
        and calendarbucket.startdate = forecastplan.startdate
@@ -325,7 +329,10 @@ def loadForecastValues(cursor):
        and calendarbucket.startdate < '%s'
        and forecastplan.forecasttotal > 0
        and forecast.planned = 't'
-     order by forecast.name, calendarbucket.startdate''' % (frepple.settings.current, frepple.settings.current + timedelta(days=horizon_future)))
+     order by forecast.name, calendarbucket.startdate''' % (
+    fcst_calendar, frepple.settings.current,
+    frepple.settings.current + timedelta(days=horizon_future)
+    ))
   for fcstname, start, qty in cursor.fetchall():
     frepple.demand(name=fcstname).setQuantity(qty, start, start, False)
 
@@ -342,6 +349,8 @@ def createSolver(cursor):
       continue
     elif key in ('forecast.DueWithinBucket',):
       kw[key[9:]] = value
+    elif key == 'forecast.calendar':
+      kw[key[9:]] = frepple.calendar(name=value, action="C")
     elif key in ('forecast.Iterations', 'forecast.loglevel', 'forecast.Skip'
                  'forecast.MovingAverage_order', 'forecast.Net_CustomerThenItemHierarchy',
                  'forecast.Net_MatchUsingDeliveryOperation', 'forecast.Net_NetEarly',
@@ -384,6 +393,7 @@ def exportForecastFull(cursor):
       for i in generator(cursor)
     ])
   transaction.commit(using=cursor.db.alias)
+  fcst_calendar = Parameter.getValue('forecast.calendar', cursor.db.alias, None)
   cursor.execute('''
     update forecastplan
       set ordersplanned=coalesce(plannedquantities.planneddemand,0),
@@ -412,7 +422,7 @@ def exportForecastFull(cursor):
           on fitem.name = forecast.item_id
           and fcustomer.name = forecast.customer_id
         inner join calendarbucket
-          on calendarbucket.calendar_id = forecast.calendar_id
+          on calendarbucket.calendar_id = %s
           and out_demand.plandate >= calendarbucket.startdate
           and out_demand.plandate < calendarbucket.enddate
         group by forecast.name, calendarbucket.startdate
@@ -425,7 +435,7 @@ def exportForecastFull(cursor):
           or forecastplan.ordersplannedvalue <> plannedquantities.planneddemandvalue
           or forecastplan.forecastplannedvalue <> plannedquantities.plannedforecastvalue
           )
-    ''')
+    ''', (fcst_calendar,))
   transaction.commit(using=cursor.db.alias)
   print('Updated planned quantity fields in %.2f seconds' % (time() - starttime))
   starttime = time()
@@ -523,6 +533,7 @@ def exportForecastPlanned(cursor):
       for i in generator(cursor)
     ])
   transaction.commit(using=cursor.db.alias)
+  fcst_calendar = Parameter.getValue('forecast.calendar', cursor.db.alias, None)
   cursor.execute('''
     update forecastplan
       set ordersplanned=coalesce(plannedquantities.planneddemand,0),
@@ -551,7 +562,7 @@ def exportForecastPlanned(cursor):
           on fitem.name = forecast.item_id
           and fcustomer.name = forecast.customer_id
         inner join calendarbucket
-          on calendarbucket.calendar_id = forecast.calendar_id
+          on calendarbucket.calendar_id = %s
           and out_demand.plandate >= calendarbucket.startdate
           and out_demand.plandate < calendarbucket.enddate
         group by forecast.name, calendarbucket.startdate
@@ -564,7 +575,7 @@ def exportForecastPlanned(cursor):
           or forecastplan.ordersplannedvalue <> plannedquantities.planneddemandvalue
           or forecastplan.forecastplannedvalue <> plannedquantities.plannedforecastvalue
           )
-    ''')
+    ''', (fcst_calendar,))
   transaction.commit(using=cursor.db.alias)
   print('Updated planned quantity fields in %.2f seconds' % (time() - starttime))
   starttime = time()

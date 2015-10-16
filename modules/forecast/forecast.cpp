@@ -20,6 +20,7 @@ Forecast::MapOfForecasts Forecast::ForecastDictionary;
 unsigned long Forecast::Forecast_Iterations(15L);
 double Forecast::Forecast_SmapeAlfa(0.95);
 unsigned long Forecast::Forecast_Skip(5);
+Calendar* Forecast::calptr = NULL;
 
 const Keyword Forecast::tag_planned("planned");
 const Keyword Forecast::tag_methods("methods");
@@ -162,11 +163,12 @@ bool Forecast::callback(Calendar* l, const Signal a)
   // This function is called when a calendar is about to be deleted.
   // If that calendar is being used for a forecast we reset the calendar
   // pointer to null.
-  for (MapOfForecasts::iterator x = ForecastDictionary.begin();
+  if (calptr == l)
+  {
+    for (MapOfForecasts::iterator x = ForecastDictionary.begin();
       x != ForecastDictionary.end(); ++x)
-    if (x->second->calptr == l)
-      // Calendar in use for this forecast
-      x->second->calptr = NULL;
+        x->second->calptr = NULL;
+  }
   return true;
 }
 
@@ -316,15 +318,6 @@ void Forecast::setTotalQuantity(const Date d, double f, bool add)
       return;
     }
   }
-}
-
-
-void Forecast::setCalendar(Calendar* c)
-{
-  if (isGroup())
-    throw DataException(
-      "Changing the calendar of an initialized forecast isn't allowed");
-  calptr = c;
 }
 
 
