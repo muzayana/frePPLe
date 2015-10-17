@@ -41,4 +41,9 @@ urlpatterns = patterns(
   (r'^admin/common/parameter/$', freppledb.common.views.ParameterList.as_view()),
   (r'^comments/([^/]+)/([^/]+)/(.+)/$', freppledb.common.views.Comments),
   (r'^admin/common/comment/$', freppledb.common.views.CommentList.as_view()),
+
+  (r'^prevtab/$', freppledb.common.views.prevtab),
+  (r'^tabA/$', freppledb.common.views.tabA),
+  (r'^tabB/$', freppledb.common.views.tabB),
+  (r'^tabC/$', freppledb.common.views.tabC),
 )

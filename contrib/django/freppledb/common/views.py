@@ -367,3 +367,91 @@ class BucketDetailList(GridReport):
     GridFieldText('source', title=_('source')),
     GridFieldLastModified('lastmodified'),
     )
+
+
+@staff_member_required
+def prevtab(request, *args, **kwargs):
+  # In actual implementation, we will need to look up the view function to call:
+  #  - from the url, we will get as arguments a) app name, b) model name and c) object id
+  #    see the url and view function for freppledb.common.views.Comments do this
+  #  - once we know the app and model, we can pick up the admin model for it
+  #    code should be something like:
+  #        from freppledb.admin import data_site
+  #        data_site._registry  -> this is a dictionary with all registered admin classes
+  #  - All of the admin classes in freppledb.input.admin will need a new line with its tabs
+  #    This will be a list of tuples (view function, optional required permission) such as:
+  #         class Item_admin(MultiDBModelAdmin):
+  #           model = Item
+  #           save_on_top = True
+  #           raw_id_fields = ('operation', 'owner',)
+  #           inlines = [ ItemSupplier_inline, ]
+  #           exclude = ('source',)
+  #           tabs = [
+  #             'edit': (view function name, 'change_item'), 
+  #             'supply path': (view function name, 'change_item'), 
+  #             'where used': (view function name, 'change_item'), 
+  #             ]
+  #         data_site.register(Item, Item_admin)    
+  if request.session['lasttab'] == 'C':
+    return tabC(request, *args, **kwargs)
+  elif request.session['lasttab'] == 'B':
+    return tabB(request, *args, **kwargs)
+  else:
+    return tabA(request, *args, **kwargs)
+
+
+@staff_member_required
+def tabA(request, *args, **kwargs):
+  request.session['lasttab'] = 'A'
+  return HttpResponse('''
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset=utf-8 />
+      <title>page A</title>
+    </head>
+    <body>
+       This is page A.<br>
+       <a href="/tabB/">link to page B</a>
+       <a href="/tabC/">link to page C</a>
+    </body>
+    </html>'''
+    )
+
+
+@staff_member_required
+def tabB(request, *args, **kwargs):
+  request.session['lasttab'] = 'B'
+  return HttpResponse('''
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset=utf-8 />
+      <title>page B</title>
+    </head>
+    <body>
+       This is page B.<br>
+       <a href="/tabA/">link to page A</a>
+       <a href="/tabC/">link to page C</a>
+    </body>
+    </html>'''
+    )
+
+
+@staff_member_required
+def tabC(request, *args, **kwargs):
+  request.session['lasttab'] = 'C'
+  return HttpResponse('''
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset=utf-8 />
+      <title>page C</title>
+    </head>
+    <body>
+       This is page C.<br>
+       <a href="/tabA/">link to page A</a>
+       <a href="/tabB/">link to page B</a>
+    </body>
+    </html>'''
+    )
