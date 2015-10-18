@@ -737,9 +737,9 @@ var grid = {
     $('#popup').html(
     gettext("export selected records to openbravo")
     );
-    
+
     var sel = jQuery("#grid").jqGrid('getGridParam','selarrrow');
-    
+
     $('#popup').dialog({
       title: gettext("export"),
       autoOpen: true, resizable: false, width: 390, height: 'auto',
@@ -780,7 +780,7 @@ var grid = {
                     $('#button_export').find('.ui-button-text').text(gettext('retry'));
                   }
               });
-        
+
             $(this).dialog("close");
           }
         },
@@ -793,7 +793,7 @@ var grid = {
     });
     $("#actions").prop("selectedIndex",0);
   },
-  
+
   showExport: function(only_list)
   {
     // The argument is true when we show a "list" report.

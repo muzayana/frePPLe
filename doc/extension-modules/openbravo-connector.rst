@@ -59,6 +59,10 @@ The connector provides the following functionality:
     | Date format defaults to  %Y-%m-%d (i.e. YYYY-MM-DD) but can here be changed
       to other formats like %m-%d-%Y (i.e. MM-DD-YYYY).
 
+  * | openbravo.date_format: Date format for openbravo webservice filter
+    | Date format defaults to  %Y-%m-%d (i.e. YYYY-MM-DD) but can here be changed
+      to other formats like %m-%d-%Y (i.e. MM-DD-YYYY).
+
 **Importing data from Openbravo to frePPLe**
 
 You can run the import interface in 2 ways:
