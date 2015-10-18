@@ -431,10 +431,13 @@ class DRPitemlocation(View):
       self.sql_oh,
       (request.report_startdate, itemlocation, itemlocation)
       )
-    if displayvalue:
-      startoh = cursor.fetchone()[1]
-    else:
-      startoh = cursor.fetchone()[0]
+    try:
+      if displayvalue:
+        startoh = cursor.fetchone()[1]
+      else:
+        startoh = cursor.fetchone()[0]
+    except:
+      startoh = 0
     endoh = startoh
 
     # Retrieve inventory plan

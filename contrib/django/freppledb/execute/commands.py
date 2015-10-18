@@ -7,7 +7,6 @@
 # You are not allowed to distribute the software, either in the form of source code
 # or in the form of compiled binaries.
 #
-import inspect
 import os
 import sys
 from datetime import datetime

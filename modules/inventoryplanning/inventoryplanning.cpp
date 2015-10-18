@@ -485,7 +485,7 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
     double roq = 1.0;
     if (price && (roq_type == "combined" || roq_type == "calculated" || firstBucket))
     {
-      double tmp = sqrt(2 * 365 * demand_lt * fixed_order_cost / holding_cost / price);
+      double tmp = ceil(sqrt(2 * 365 * demand_lt * fixed_order_cost / holding_cost / price));
       if (roq_type == "combined" || roq_type == "calculated")
         roq = tmp;
       if (firstBucket)
@@ -496,17 +496,17 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
       roq = roq_min_qty;
     if (roq_type == "combined" || roq_type == "periodofcover")
     {
-      double tmp = demand_roq_poc * roq_min_poc / 86400;
+      double tmp = ceil(demand_roq_poc * roq_min_poc / 86400);
       if (roq < tmp)
         roq = tmp;
     }
     if (roq_multiple > 0)
-      roq = roq_multiple * static_cast<int>(roq / roq_multiple + 0.99999999);
+      roq = ceil(roq_multiple * static_cast<int>(roq / roq_multiple + 0.99999999));
     if (roq > roq_max_qty && (roq_type == "combined" || roq_type == "quantity"))
     {
       roq = roq_max_qty;
       if (roq_multiple > 0)
-        roq = roq_multiple * static_cast<int>(roq / roq_multiple);
+        roq = floor(roq_multiple * static_cast<int>(roq / roq_multiple));
     }
     if (roq_type == "combined" || roq_type == "periodofcover")
     {
@@ -515,11 +515,11 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
       {
         roq = tmp;
         if (roq_multiple > 0)
-          roq = roq_multiple * static_cast<int>(roq / roq_multiple);
+          roq = ceil(roq_multiple * static_cast<int>(roq / roq_multiple));
       }
     }
-    if (roq < 1)
-      roq = 1;
+    if (roq < 1.0)
+      roq = 1.0;
 
     // Compute the safety stock
     // 1. start with the value based on the desired service level
@@ -569,17 +569,17 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
       ss = ss_min_qty;
     if (ss_type == "combined" || ss_type == "periodofcover")
     {
-      double tmp = demand_ss_poc * ss_min_poc / 86400;
+      double tmp = ceil(demand_ss_poc * ss_min_poc / 86400);
       if (ss < tmp)
         ss = tmp;
     }
     if (ss_multiple > 0)
-      ss = ss_multiple * static_cast<int>(ss / ss_multiple + 0.99999999);
+      ss = ceil(ss_multiple * static_cast<int>(ss / ss_multiple + 0.99999999));
     if (ss > ss_max_qty && (ss_type == "combined" || ss_type == "quantity"))
     {
       ss = ss_max_qty;
       if (ss_multiple > 0)
-        ss = ss_multiple * static_cast<int>(ss / ss_multiple);
+        ss = ceil(ss_multiple * static_cast<int>(ss / ss_multiple));
     }
     if (ss_type == "combined" || ss_type == "periodofcover")
     {
@@ -588,7 +588,7 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
       {
         ss = tmp;
         if (ss_multiple > 0)
-          ss = ss_multiple * static_cast<int>(ss / ss_multiple);
+          ss = ceil(ss_multiple * static_cast<int>(ss / ss_multiple));
       }
     }
     double rop = ss + demand_lt * leadtime / 86400;

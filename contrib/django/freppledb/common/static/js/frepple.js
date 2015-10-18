@@ -777,7 +777,6 @@ var grid = {
                         width: 'auto',
                         height: 'auto'
                       });
-//                    $.jgrid.hideModal("#searchmodfbox_grid");
                     $('#button_export').find('.ui-button-text').text(gettext('retry'));
                   }
               });
