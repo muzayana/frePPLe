@@ -27,6 +27,7 @@ from django.utils.text import capfirst
 from freppledb.common.fields import JSONField
 
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -414,6 +415,9 @@ class UserPreference(models.Model):
     verbose_name_plural = 'preferences'
 
 
+@receiver(pre_delete, sender=User)
+def delete_user(sender, instance, **kwargs):
+  raise PermissionDenied
 class Comment(models.Model):
   id = models.AutoField(_('identifier'), primary_key=True)
   content_type = models.ForeignKey(

@@ -172,6 +172,7 @@ def aggregateDemand(cursor):
       frepple.settings.current + timedelta(days=horizon_future)
       )
   )
+  cursor.execute('vacuum analyze forecastplan')
   print('Aggregate - init future records in %.2f seconds' % (time() - starttime))
 
 
@@ -191,6 +192,7 @@ def processForecastDemand(cursor):
     if cnt:
       fcsts.update(forecastadjustment=qty / cnt)
   cursor.execute('delete from forecastdemand')
+  cursor.execute('vacuum analyze forecastdemand')
 
 
 def generateBaseline(solver_fcst, cursor):
@@ -279,6 +281,7 @@ def generateBaseline(solver_fcst, cursor):
       for i in frepple.demands()
       if isinstance(i, frepple.demand_forecastbucket) and i.total != 0.0
     ])
+  cursor.execute('vacuum analyze forecastplan')
 
   print("Exporting forecast metrics")
   cursor.execute('update forecast set out_smape=null, out_method=null, out_deviation=null')
@@ -289,6 +292,7 @@ def generateBaseline(solver_fcst, cursor):
     ''',
     [ (i.smape_error * 100, i.method, i.deviation, i.name) for i in generatorFcst(cursor) ]
     )
+  cursor.execute('vacuum analyze forecast')
 
 
 def applyForecastAdjustments(cursor):
@@ -500,6 +504,7 @@ def exportForecastFull(cursor):
       and forecastplan.startdate = aggfcst.startdate
     ''')
   transaction.commit(using=cursor.db.alias)
+  cursor.execute('vacuum analyze forecastplan')
   print('Updated aggregated values in %.2f seconds' % (time() - starttime))
 
 
@@ -621,6 +626,7 @@ def exportForecastPlanned(cursor):
       and forecastplan.startdate = aggfcst.startdate
     ''')
   transaction.commit(using=cursor.db.alias)
+  cursor.execute('vacuum analyze forecastplan')
   print('Updated aggregated values in %.2f seconds' % (time() - starttime))
 
 
@@ -652,6 +658,7 @@ def exportForecastValues(cursor):
       for i in generator(cursor)
     ])
   transaction.commit(using=cursor.db.alias)
+  cursor.execute('vacuum analyze forecastplan')
   print('Updated total values in %.2f seconds' % (time() - starttime))
   starttime = time()
   cursor.execute('''
@@ -693,6 +700,7 @@ def exportForecastValues(cursor):
       and forecastplan.startdate = aggfcst.startdate
     ''')
   transaction.commit(using=cursor.db.alias)
+  cursor.execute('vacuum analyze forecastplan')
   print('Updated aggregated values in %.2f seconds' % (time() - starttime))
 
 

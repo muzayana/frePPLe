@@ -692,14 +692,14 @@ class GridReport(View):
     for i in reportclass.rows:
       if i.name == sort:
         if 'sord' in request.GET and request.GET['sord'] == 'desc':
-          return idx > 1 and "%d desc nulls last, 1 asc nulls last" % idx or "1 desc nulls last"
+          return idx > 1 and "%d desc, 1 asc" % idx or "1 desc"
         elif prefs and 'sord' in prefs and prefs['sord'] == 'desc':
-          return idx > 1 and "%d desc nulls last, 1 asc nulls last" % idx or "1 desc nulls last"
+          return idx > 1 and "%d desc, 1 asc" % idx or "1 desc"
         else:
-          return idx > 1 and "%d asc nulls last, 1 asc nulls last" % idx or "1 asc nulls last"
+          return idx > 1 and "%d asc, 1 asc" % idx or "1 asc"
       else:
         idx += 1
-    return "1 asc nulls last"
+    return "1 asc"
 
 
   @classmethod
@@ -720,9 +720,9 @@ class GridReport(View):
     except:
       sort = reportclass.default_sort[0]
     if ('sord' in request.GET and request.GET['sord'] == 'desc') or reportclass.default_sort[1] == 'desc':
-      return "%s asc nulls last" % sort
+      return "%s asc" % sort
     else:
-      return "%s desc nulls last" % sort
+      return "%s desc" % sort
 
 
   @classmethod
@@ -1581,7 +1581,6 @@ class GridPivot(GridReport):
   def _apply_sort(reportclass, request, query, prefs=None):
     '''
     Applies a sort to the query.
-    TODO: this sorting function uses the django ORM, which doesn't allows us to add the option "nulls last"
     '''
     asc = True
     sort = None
@@ -1621,7 +1620,7 @@ class GridPivot(GridReport):
       query = reportclass.query(
         request,
         reportclass.basequeryset.filter(pk__exact=args[0]).using(request.database),
-        sortsql="1 asc nulls last"
+        sortsql="1 asc"
         )
     else:
       page = 'page' in request.GET and int(request.GET['page']) or 1
@@ -1717,7 +1716,7 @@ class GridPivot(GridReport):
       query = reportclass.query(
         request,
         reportclass.basequeryset.filter(pk__exact=args[0]).using(request.database),
-        sortsql="1 asc nulls last"
+        sortsql="1 asc"
         )
     elif isinstance(reportclass.basequeryset, collections.Callable):
       query = reportclass.query(
@@ -1856,7 +1855,7 @@ class GridPivot(GridReport):
       query = reportclass.query(
         request,
         reportclass.basequeryset.filter(pk__exact=args[0]).using(request.database),
-        sortsql="1 asc nulls last"
+        sortsql="1 asc"
         )
     elif isinstance(reportclass.basequeryset, collections.Callable):
       query = reportclass.query(
