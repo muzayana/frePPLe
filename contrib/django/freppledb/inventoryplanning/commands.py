@@ -102,7 +102,11 @@ def exportResults(cursor, database):
         for i in buckets()
       ])
 
-    print('Exported inventory planning results in %.2f seconds' % (time() - starttime))
+  # Keep the database healthy after this bulky data change
+  cursor.execute('vacuum analyze out_inventoryplanning')
+  cursor.execute('vacuum analyze calendarbucket')
+
+  print('Exported inventory planning results in %.2f seconds' % (time() - starttime))
 
 
 def createInventoryPlan(database=DEFAULT_DB_ALIAS):
@@ -140,6 +144,7 @@ def createInventoryPlan(database=DEFAULT_DB_ALIAS):
       ) dep_stddev
     where inventoryplanning.buffer_id = dep_stddev.name
     ''')
+  cursor.execute('vacuum analyze inventoryplanning')
   # # Alternative method: compute the standard deviation directly
   # try:
   #   current_date = datetime.strptime(
