@@ -15,13 +15,17 @@ from django.contrib.admin.utils import quote
 from django.contrib.auth.models import AbstractUser
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import NoReverseMatch, reverse
 from django.db import models, DEFAULT_DB_ALIAS, connections, transaction
+from django.db.models.signals import pre_delete
+from django.dispatch.dispatcher import receiver
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from django.utils.text import capfirst
 
 from freppledb.common.fields import JSONField
+
 
 logger = logging.getLogger(__name__)
 
@@ -317,15 +321,27 @@ class User(AbstractUser):
         update_fields2.remove('is_superuser')
     if update_fields2 or newuser:
       for db in scenarios:
-        with transaction.atomic(using=db, savepoint=False):
-          if db == using:
-            continue
-          super(User, self).save(
-            force_insert=force_insert,
-            force_update=force_update,
-            using=db,
-            update_fields=update_fields2 if not newuser else None
-            )
+        if db == using:
+          continue
+        try:
+          with transaction.atomic(using=db, savepoint=True):
+            super(User, self).save(
+              force_insert=force_insert,
+              force_update=force_update,
+              using=db,
+              update_fields=update_fields2 if not newuser else None
+              )
+        except:
+          with transaction.atomic(using=db, savepoint=False):
+            newuser = True
+            self.is_active = False
+            self.is_superuser = False
+            super(User, self).save(
+              force_insert=force_insert,
+              force_update=force_update,
+              using=db
+              )
+
 
     # Continue with the regular save, as if nothing happened.
     self.is_active = tmp_is_active
@@ -336,6 +352,7 @@ class User(AbstractUser):
       using=using,
       update_fields=update_fields
       )
+
 
 
   def joined_age(self):
@@ -379,6 +396,10 @@ class User(AbstractUser):
       # Always saved in the main database, to have the same preferences for all scenarios
       pref.save(update_fields=['value'])
 
+@receiver(pre_delete, sender=User)
+def delete_user(sender, instance, **kwargs):
+  print(11111)
+  raise PermissionDenied
 
 class UserPreference(models.Model):
   id = models.AutoField(_('identifier'), primary_key=True)
