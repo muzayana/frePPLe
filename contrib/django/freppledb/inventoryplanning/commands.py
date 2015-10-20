@@ -111,6 +111,16 @@ def exportResults(cursor, database):
 
 def createInventoryPlan(database=DEFAULT_DB_ALIAS):
 
+  try:
+    ip_calendar = frepple.calendar(
+      name=Parameter.getValue('inventoryplanning.calendar', database),
+      action='C'
+      )
+  except:
+    print("Warning: Parameter inventoryplanning.calendar not configured.")
+    print("Warning: All inventory planning related calculations will be skipped.")
+    return
+
   print("Start inventory planning at", datetime.now().strftime("%H:%M:%S"))
 
   cursor = connections[database].cursor()
@@ -249,7 +259,7 @@ def createInventoryPlan(database=DEFAULT_DB_ALIAS):
   # Step 4.
   # Run the inventory planning solver to compute the safety stock and reorder quantities
   frepple.solver_inventoryplanning(
-    calendar=frepple.calendar(name=Parameter.getValue('inventoryplanning.calendar', database), action='C'),
+    calendar=ip_calendar,
     horizon_start=int(Parameter.getValue('inventoryplanning.horizon_start', database, 0)),
     horizon_end=int(Parameter.getValue('inventoryplanning.horizon_end', database, 365)),
     holding_cost=float(Parameter.getValue('inventoryplanning.holding_cost', database, 0.05)),

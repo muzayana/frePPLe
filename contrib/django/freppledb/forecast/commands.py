@@ -354,7 +354,13 @@ def createSolver(cursor):
     elif key in ('forecast.DueWithinBucket',):
       kw[key[9:]] = value
     elif key == 'forecast.calendar':
-      kw[key[9:]] = frepple.calendar(name=value, action="C")
+      try:
+        kw[key[9:]] = frepple.calendar(name=value, action="C")
+      except:
+        print("Warning: Parameter forecast.calendar not configured.")
+        print("Warning: All forecast related calculations will be skipped.")
+        print("")
+        return None
     elif key in ('forecast.Iterations', 'forecast.loglevel', 'forecast.Skip'
                  'forecast.MovingAverage_order', 'forecast.Net_CustomerThenItemHierarchy',
                  'forecast.Net_MatchUsingDeliveryOperation', 'forecast.Net_NetEarly',
@@ -754,13 +760,16 @@ def generate_plan():
   with_inventoryplanning = 'solver_inventoryplanning' in [ a[0] for a in inspect.getmembers(frepple) ]
 
   if with_forecasting:
+    solver_fcst = createSolver(cursor)
+    if not solver_fcst:
+      with_forecasting = False
+
+  if with_forecasting:
     print("\nStart loading forecast data from the database at", datetime.now().strftime("%H:%M:%S"))
     try:
       loadForecast(cursor)
     except Exception as e:
       print(e)
-
-    solver_fcst = createSolver(cursor)
 
     # Assure the hierarchies are up to date
     print("\nStart building hierarchies at", datetime.now().strftime("%H:%M:%S"))
@@ -788,15 +797,16 @@ def generate_plan():
       processForecastDemand(cursor)
       logProgress(58, db)
 
-      print("\nStart generation of baseline forecast at", datetime.now().strftime("%H:%M:%S"))
-      generateBaseline(solver_fcst, cursor)
+      if solver_fcst:
+        print("\nStart generation of baseline forecast at", datetime.now().strftime("%H:%M:%S"))
+        generateBaseline(solver_fcst, cursor)
       logProgress(66, db)
 
       print("\nStart applying forecast adjustments at", datetime.now().strftime("%H:%M:%S"))
       applyForecastAdjustments(cursor)
       logProgress(75, db)
 
-    if not 'noproduction' in os.environ:
+    if not 'noproduction' in os.environ and solver_fcst:
       print("\nStart forecast netting at", datetime.now().strftime("%H:%M:%S"))
       solver_fcst.solve()
       frepple.printsize()
