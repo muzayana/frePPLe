@@ -64,7 +64,6 @@ def exportProblems(process):
 
 def exportConstraints(process):
   print("Exporting constraints...")
-  return
   starttime = time()
   process.stdin.write('COPY out_constraint (demand,entity,name,owner,description,startdate,enddate,weight) FROM STDIN;\n'.encode(encoding))
   for d in frepple.demands():
@@ -218,13 +217,6 @@ def exportDemand(process):
 
 def exportPegging(process):
   print("Exporting pegging...")
-
-  # TODO exporting forecast pegging crashes on windows
-  # A Pythoniterator object is created in the fcst dll. When the iterator
-  # is incremented in the frepple dll this crashes the application!
-  # We need to stay completely in a single dll.
-  return
-
   starttime = time()
   process.stdin.write('COPY out_demandpegging (demand,level,operationplan,quantity) FROM STDIN;\n'.encode(encoding))
   for i in frepple.demands():
