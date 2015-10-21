@@ -31,8 +31,8 @@
 {% endblock %}
 
 {% block extra_toolicons %}<form style="display: inline"><span id="units">
-<input type="radio" id="unitsmode" name="units" value="value" {% if not "units" in preferences or preferences.units == 'value' %}checked{% endif %}><label for="unitsmode"><span title="{% trans "Display value"|escape %}" class="fa fa-dollar fa-lg" style="color:#4c3000"></span></label>
-<input type="radio" id="valuemode" name="units" value="units" {% if "units" in preferences and preferences.units == 'units' %}checked{% endif %}><label for="valuemode"><span title="{% trans "Display units"|escape %}" class="fa fa-truck fa-lg" style="color:#4c3000"></span></label>
+<input type="radio" id="unitsmode" name="units" value="value" {% if not "units" in preferences or preferences.units == 'value' %}checked{% endif %}><label for="unitsmode"><span title="{% trans "display value"|capfirst|escape %}" class="fa fa-dollar fa-lg" style="color:#4c3000"></span></label>
+<input type="radio" id="valuemode" name="units" value="units" {% if "units" in preferences and preferences.units == 'units' %}checked{% endif %}><label for="valuemode"><span title="{% trans "display units"|capfirst|escape %}" class="fa fa-truck fa-lg" style="color:#4c3000"></span></label>
 </span></form>&nbsp;&nbsp;{% endblock %}
 
 {% block contextmenus %}
@@ -41,13 +41,13 @@
 {% include "forecastcontext.html" %}
 {% include "customercontext.html" %}
 <div id="detail0context" class="ContextMenu"><ul class="ui-menu ui-widget ui-widget-content ui-corner-all ui-state-default">
-<li class="ui-menu-item"><a id="{{request.prefix}}/forecast/demand/?forecast={value}&amp;o=5a&amp;due__gte={startdate}&amp;due__lt={enddate}">{% trans 'Detail' %}</a></li>
+<li class="ui-menu-item"><a id="{{request.prefix}}/forecast/demand/?forecast={value}&amp;o=5a&amp;due__gte={startdate}&amp;due__lt={enddate}">{% trans 'detail'|capfirst %}</a></li>
 </ul></div>
 <div id="detail1context" class="ContextMenu"><ul class="ui-menu ui-widget ui-widget-content ui-corner-all ui-state-default">
-<li class="ui-menu-item"><a id="{{request.prefix}}/forecast/demand/?forecast={value}&amp;o=5a&amp;due__gte={startdate}&amp;due__lt={enddate}&amp;status=open">{% trans 'Detail' %}</a></li>
+<li class="ui-menu-item"><a id="{{request.prefix}}/forecast/demand/?forecast={value}&amp;o=5a&amp;due__gte={startdate}&amp;due__lt={enddate}&amp;status=open">{% trans 'detail'|capfirst %}</a></li>
 </ul></div>
 <div id="detail9context" class="ContextMenu"><ul class="ui-menu ui-widget ui-widget-content ui-corner-all ui-state-default">
-<li class="ui-menu-item"><a id="{{request.prefix}}/demandplan/?demand__startswith={value}&amp;o=5a&amp;plandate__gte={startdate}&amp;plandate__lt={enddate}">{% trans 'Detail' %}</a></li>
+<li class="ui-menu-item"><a id="{{request.prefix}}/demandplan/?demand__startswith={value}&amp;o=5a&amp;plandate__gte={startdate}&amp;plandate__lt={enddate}">{% trans 'detail'|capfirst %}</a></li>
 </ul></div>
 {% if mode == "graph" %}<div id="tooltip" role="tooltip" class="ui-tooltip ui-widget ui-corner-all ui-widget-content" style="display: none; position: absolute;"/>
 {% endif %}{% endblock %}

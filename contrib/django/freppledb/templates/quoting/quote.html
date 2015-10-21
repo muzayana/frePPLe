@@ -70,7 +70,7 @@ function getQuote(event)
       $("#id_due_0").val(due.substring(0,10));
       $("#id_due_1").val(due.substring(11,19));
       $("#id_minshipment").val($(xmldata).find('demands > demand > minshipment').text());
-      status = '<h1>{% trans "Deliveries" %}</h1>';
+      status = '<h1>{% trans "deliveries"|capfirst %}</h1>';
       $(xmldata).find('demands > demand > operationplans > operationplan').each(function() {
         status += '&nbsp;&nbsp;' + $(this).find('quantity').text() + '&nbsp;&nbsp;' + $(this).find('end').text() + '<br/>';
         })
@@ -139,7 +139,7 @@ function inquireQuote(event)
       $("#id_due_1").val(due.substring(11,19));
       $("#id_minshipment").val($(xmldata).find('demands > demand > minshipment').text());
       $("#id_maxlateness").val($(xmldata).find('demands > demand > maxlateness').text());
-      status = '<h1>{% trans "Deliveries" %}</h1>';
+      status = '<h1>{% trans "deliveries"|capfirst %}</h1>';
       $(xmldata).find('demands > demand > operationplans > operationplan').each(function() {
         status += '&nbsp;&nbsp;' + $(this).find('quantity').text() + '&nbsp;&nbsp;' + $(this).find('end').text() + '<br/>';
         })
@@ -254,7 +254,7 @@ function displayInfo(rowid) {
       $("#id_due_1").val(due.substring(11,19));
       $("#id_minshipment").val($(xmldata).find('demands > demand > minshipment').text());
       $("#id_maxlateness").val($(xmldata).find('demands > demand > maxlateness').text());
-      status = '<h1>{% trans "Deliveries" %}</h1>';
+      status = '<h1>{% trans "deliveries"|capfirst %}</h1>';
       $(xmldata).find('demands > demand > operationplans > operationplan').each(function() {
         status += '&nbsp;&nbsp;' + $(this).find('quantity').text() + '&nbsp;&nbsp;' + $(this).find('end').text() + '<br/>';
         })
@@ -311,7 +311,7 @@ $(function() {
 <br/>
 <div style="padding: 5px; float:left; width:100%; white-space: nowrap; overflow:hidden">
 <div id="fields" style="display: inline-block; width:{% if "heigth" in preferences %}{{preferences.width}}{% else %}600{% endif %}px">
-<h1>{% trans "Quote" %}</h1>
+<h1>{% trans "quote"|capfirst %}</h1>
 <form class="form" id="quoteform" class="form">{% csrf_token %}
 <table><tbody>{% for field in form %}<tr>
 <th style="text-align:right; vertical-align:middle;">{{ field.label_tag }}</th>
@@ -319,13 +319,13 @@ $(function() {
 </tr>
 {% endfor %}</tbody></table>
 <br/>
-<div class="quotebutton"><button style="width:100%" id="form_inquiry">{% trans 'Inquiry' %}</button></div>
-<div class="quotebutton"><button style="width:100%" id="form_quote">{% trans 'Quote' %}</button></div>
-<div class="quotebutton"><button style="width:100%" id="form_cancel">{% trans 'Cancel' %}</button></div>
-<div class="quotebutton"><button style="width:100%" id="form_confirm">{% trans 'Confirm' %}</button></div>
+<div class="quotebutton"><button style="width:100%" id="form_inquiry">{% trans 'inquiry'|capfirst %}</button></div>
+<div class="quotebutton"><button style="width:100%" id="form_quote">{% trans 'quote'|capfirst %}</button></div>
+<div class="quotebutton"><button style="width:100%" id="form_cancel">{% trans 'cancel'|capfirst %}</button></div>
+<div class="quotebutton"><button style="width:100%" id="form_confirm">{% trans 'confirm'|capfirst %}</button></div>
 </form>
 </div>
-<div id="status" style="display: inline-block; overflow-x: auto; vertical-align:top"><h1>{% trans "Deliveries" %}</h1><br/>
+<div id="status" style="display: inline-block; overflow-x: auto; vertical-align:top"><h1>{% trans "deliveries"|capfirst %}</h1><br/>
 <h1>{% trans "problems"|capfirst %}</h1><br/>
 <h1>{% trans "Why short or late?" %}</h1></div>
 {% endblock %}

@@ -83,12 +83,12 @@ $(function() {
 {% endblock %}
 {% block content %}
 <div id="toolicons">
-<span onclick="gantt.zoom(0.5,0)" class="fa fa-search-plus fa-lg" title="{% trans 'Zoom in'|escape %}"></span>&nbsp;&nbsp;
-<span onclick="gantt.zoom(1.5,0)" class="fa fa-search-minus fa-lg" title="{% trans 'Zoom out'|escape %}"></span>&nbsp;&nbsp;
-<span onclick="gantt.zoom(1,-86400000)" class="fa fa-backward fa-lg" title="{% trans 'Move in'|escape %}"></span>&nbsp;&nbsp;
-<span onclick="gantt.zoom(1,86400000)" class="fa fa-forward fa-lg" title="{% trans 'Move out'|escape %}"></span>&nbsp;&nbsp;
-<span onclick="resetBoard()" class="fa fa-square fa-lg" title="{% trans 'Reset'|escape %}"></span>&nbsp;&nbsp;
-<span onclick="grid.showBucket()" title="{% trans 'Configure time buckets'|escape %}" id="bucketconfig" class="fa fa-clock-o fa-lg"></span>
+<span onclick="gantt.zoom(0.5,0)" class="fa fa-search-plus fa-lg" title="{% trans 'zoom in'|capfirst|force_escape %}"></span>&nbsp;&nbsp;
+<span onclick="gantt.zoom(1.5,0)" class="fa fa-search-minus fa-lg" title="{% trans 'zoom out'|capfirst|force_escape %}"></span>&nbsp;&nbsp;
+<span onclick="gantt.zoom(1,-86400000)" class="fa fa-backward fa-lg" title="{% trans 'move in'|capfirst|force_escape context 'Gantt' %}"></span>&nbsp;&nbsp;
+<span onclick="gantt.zoom(1,86400000)" class="fa fa-forward fa-lg" title="{% trans 'move out'|capfirst|force_escape context 'Gantt' %}"></span>&nbsp;&nbsp;
+<span onclick="resetBoard()" class="fa fa-square fa-lg" title="{% trans 'reset'|capfirst|force_escape %}"></span>&nbsp;&nbsp;
+<span onclick="grid.showBucket()" title="{% trans 'configure time buckets'|capfirst|force_escape %}" id="bucketconfig" class="fa fa-clock-o fa-lg"></span>
 </div>
 <div id="content-main" style="width:100%; border: 1px solid; border-radius: 10px">
 <div id="ganttdiv" style="margin: 5px 1px 5px 0px; overflow-x: hide; overflow-y: scroll"><svg id="gantt"></svg></div>
@@ -96,50 +96,50 @@ $(function() {
 
 <div id="tabs" style="width:100%; margin-top:10px">
   <ul>
-    <li><a href="#demand">{% trans "Demand" %}</a></li>
-    <li><a href="#resource">{% trans "Resource" %}</a></li>
-    <li><a href="#buffer">{% trans "Buffer" %}</a></li>
-    <li><a href="#operation">{% trans "Operation" %}</a></li>
-    <li><a href="#supplier">{% trans "Supplier" %}</a></li>
-    <li><a href="#chat">{% trans "Messages" %}</a></li>
-    <li><a href="#chart">{% trans "Chart" %}</a></li>
+    <li><a href="#demand">{% trans "demand"|capfirst %}</a></li>
+    <li><a href="#resource">{% trans "resource"|capfirst %}</a></li>
+    <li><a href="#buffer">{% trans "buffer"|capfirst %}</a></li>
+    <li><a href="#operation">{% trans "operation"|capfirst %}</a></li>
+    <li><a href="#supplier">{% trans "supplier"|capfirst %}</a></li>
+    <li><a href="#chat">{% trans "messages"|capfirst %}</a></li>
+    <li><a href="#chart">{% trans "chart"|capfirst %}</a></li>
   </ul>
   <div id="demand">
     <div style="float: right">
-    <span onclick="actionSelectedDemand('/solve/erase/', '/solve/unplan/')" title="{% trans 'Clear the plan of selected demands'|escape %}" class="fa fa-stop fa-lg spacing"></span>
-    <span onclick="actionSelectedDemand('/solve/replan/backward/', '/solve/demand/backward/')" title="{% trans 'Plan selected demands backward from their due date'|escape %}" class="fa fa-fast-backward fa-lg spacing"></span>
-    <span onclick="actionSelectedDemand('/solve/replan/forward/', '/solve/demand/forward/')" title="{% trans 'Plan selected demands forward from the current date'|escape %}" class="fa fa-fast-forward fa-lg spacing"></span>
-    <span onclick="addSelected('demand')" title="{% trans 'Add to the graph'|escape %}" class="fa fa-tasks fa-lg"></span>
+    <span onclick="actionSelectedDemand('/solve/erase/', '/solve/unplan/')" title="{% trans 'clear the plan of selected demands'|capfirst|force_escape %}" class="fa fa-stop fa-lg spacing"></span>
+    <span onclick="actionSelectedDemand('/solve/replan/backward/', '/solve/demand/backward/')" title="{% trans 'plan selected demands backward from their due date'|capfirst|force_escape %}" class="fa fa-fast-backward fa-lg spacing"></span>
+    <span onclick="actionSelectedDemand('/solve/replan/forward/', '/solve/demand/forward/')" title="{% trans 'plan selected demands forward from the current date'|capfirst|force_escape %}" class="fa fa-fast-forward fa-lg spacing"></span>
+    <span onclick="addSelected('demand')" title="{% trans 'add to the graph'|escape %}" class="fa fa-tasks fa-lg"></span>
     </div>
     <div class="clear"><table id="demandlist"></table></div>
   </div>
   <div id="resource">
     <div style="float: right">
-    <span onclick="addSelected('resource')" title="{% trans 'Add to the graph'|escape %}" class="fa fa-tasks fa-lg spacing"></span>
+    <span onclick="addSelected('resource')" title="{% trans 'add to the graph'|capfirst|force_escape %}" class="fa fa-tasks fa-lg spacing"></span>
     </div>
     <div class="clear"><table id="resourcelist"></table></div>
   </div>
   <div id="buffer">
     <div style="float: right">
-    <span onclick="addSelected('buffer')" title="{% trans 'Add to the graph'|escape %}" class="fa fa-tasks fa-lg spacing"></span>
+    <span onclick="addSelected('buffer')" title="{% trans 'add to the graph'|capfirst|force_escape %}" class="fa fa-tasks fa-lg spacing"></span>
     </div>
     <div class="clear"><table id="bufferlist"></table></div>
   </div>
   <div id="operation">
     <div style="float: right">
-    <span onclick="addSelected('operation')" title="{% trans 'Add to the graph'|escape %}" class="fa fa-tasks fa-lg spacing"></span>
+    <span onclick="addSelected('operation')" title="{% trans 'add to the graph'|capfirst|force_escape %}" class="fa fa-tasks fa-lg spacing"></span>
     </div>
     <div class="clear"><table id="operationlist"></table></div>
   </div>
   <div id="supplier">
     <div style="float: right">
-    <span onclick="addSelected('supplier')" title="{% trans 'Add to the graph'|escape %}" class="fa fa-tasks fa-lg spacing"></span>
+    <span onclick="addSelected('supplier')" title="{% trans trans 'add to the graph'|capfirst|force_escape %}" class="fa fa-tasks fa-lg spacing"></span>
     </div>
     <div class="clear"><table id="supplierlist"></table></div>
   </div>
   <div id="chat">
     <div style="width: 100%; height: 200px; overflow-y: scroll"><table id="chathistory"></table></div>
-    <input id="chatsend" onclick="sendChat()" type="button" value="{% trans "Send" %}">
+    <input id="chatsend" onclick="sendChat()" type="button" value="{% trans "send"|capfirst %}">
     <input id="chatmsg" type="text" size="40">
   </div>
   <div id="chart">
@@ -151,9 +151,9 @@ $(function() {
   </div>
 </div>
 
-<div id="timebuckets" style="display:none" title="{% trans 'Time buckets' %}">
+<div id="timebuckets" style="display:none" title="{% trans 'time buckets|capfirst' %}">
 <form method="get" action="">
-{% trans 'Bucket size' %}&nbsp;&nbsp;<select name="horizonbuckets" id="horizonbuckets">
+{% trans 'bucket size'|capfirst %}&nbsp;&nbsp;<select name="horizonbuckets" id="horizonbuckets">
 {% for i in bucketnames %}<option value="{{i}}"{% ifequal i request.user.horizonbuckets %} selected="selected"{% endifequal %}>{% trans i %}</option>
 {% endfor %}</select><br/>
 <input type="radio" name="horizontype" value="0"{% if not request.user.horizontype %} checked{% endif %}/>&nbsp;&nbsp;

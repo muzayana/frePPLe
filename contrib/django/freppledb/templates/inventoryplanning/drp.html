@@ -51,12 +51,12 @@ function selectRow(id)
         width: 'auto',
         height: 'auto',
         buttons : {
-            "{% trans "Save"|escapejs %}" : function() {
+            "{% trans "save"|capfirst|escapejs %}" : function() {
               $(this).dialog("close");
               save(false);
               selectRow(id);
             },
-            "{% trans "No"|escapejs %}" : function() {
+            "{% trans "no"|capfirst|escapejs %}" : function() {
               $('#save').removeClass("save_undo_button_active");
               selectRow(id);
               $(this).dialog("close");
@@ -1228,29 +1228,29 @@ $(function() {
 {% endblock %}
 
 {% block save_undo_buttons %}<div style="float:left"><select id="grouping" onchange="switchMode()">
-  <option value="itemlocation">{% filter capfirst %}{% trans "no grouping" %}{% endfilter %}</option>
-  <option value="item">{% filter capfirst %}{% trans "group by item" %}{% endfilter %}</option>
-  <option value="location">{% filter capfirst %}{% trans "group by location" %}{% endfilter %}</option>
+  <option value="itemlocation">{% filter capfirst %}{% trans "no grouping"|capfirst %}{% endfilter %}</option>
+  <option value="item">{% filter capfirst %}{% trans "group by item"|capfirst %}{% endfilter %}</option>
+  <option value="location">{% filter capfirst %}{% trans "group by location"|capfirst %}{% endfilter %}</option>
 </select></div>{% endblock %}
 
 {% block actions %}<form style="display: inline"><span id="units">
-<input type="radio" id="unitsmode" name="units" value="value" {% if not "units" in preferences or preferences.units == 'value' %}checked{% endif %}><label for="unitsmode"><span title="{% trans "Display value"|escape %}" class="fa fa-dollar fa-lg" style="color:#4c3000"></span></label>
-<input type="radio" id="valuemode" name="units" value="units" {% if "units" in preferences and preferences.units == 'units' %}checked{% endif %}><label for="valuemode"><span title="{% trans "Display units"|escape %}" class="fa fa-truck fa-lg" style="color:#4c3000"></span></label>
+<input type="radio" id="unitsmode" name="units" value="value" {% if not "units" in preferences or preferences.units == 'value' %}checked{% endif %}><label for="unitsmode"><span title="{% trans "display value"|capfirst|force_escape %}" class="fa fa-dollar fa-lg" style="color:#4c3000"></span></label>
+<input type="radio" id="valuemode" name="units" value="units" {% if "units" in preferences and preferences.units == 'units' %}checked{% endif %}><label for="valuemode"><span title="{% trans "display units"|capfirst|force_escape %}" class="fa fa-truck fa-lg" style="color:#4c3000"></span></label>
 </span></form>&nbsp;&nbsp;
-<span id="filter" onclick="grid.showFilter()" title="{% trans 'Filter data'|escape %}" class="fa fa-search fa-lg"></span>
+<span id="filter" onclick="grid.showFilter()" title="{% trans 'filter data'|capfirst|force_escape %}" class="fa fa-search fa-lg"></span>
 <span onclick="grid.showBucket()" title="{% trans 'Configure time buckets'|escape %}" id="bucketconfig" class="fa fa-clock-o fa-lg"></span>
 <span onclick="grid.showExport(true)" title="{% trans 'Export as CSV or Excel file'|escape %}" class="fa fa-arrow-down fa-lg"></span>
-<span onclick="grid.showCustomize(false);" title="{% trans 'Customize'|escape %}" class="fa fa-wrench fa-lg"></span>{% endblock %}
+<span onclick="grid.showCustomize(false);" title="{% trans 'customize'|capfirst|force_escape %}" class="fa fa-wrench fa-lg"></span>{% endblock %}
 {% block after_table %}
 <br/>
-<div id="detail"><h1 id="detailtitle">{% trans "Detail" %}</h1>
+<div id="detail"><h1 id="detailtitle">{% trans "detail"|capfirst %}</h1>
 {% if perms.input.change_purchaseorder or perms.input.change_distributionorder or perms.forecast.change_forecastdemand or perms.input.change_calendarbucket or perms.forecast.change_forecast or perms.inventoryplanning.change_inventoryplanning %}
-&nbsp;&nbsp;<input type="submit" value="{% filter upper %}{% trans "save" %}{% endfilter %}" id="save" class="button ui-corner-all save_undo_button_inactive" role="button" onclick="save(true)" title="{% trans 'Save changes'|escape %}">
-&nbsp;&nbsp;<input type="submit" value="{% filter upper %}{% trans "undo" %}{% endfilter %}" id="undo" class="button ui-corner-all save_undo_button_inactive" role="button" onclick="undo()" title="{% trans 'Undo changes'|escape %}">
+&nbsp;&nbsp;<input type="submit" value="{% filter upper %}{% trans "save"|capfirst %}{% endfilter %}" id="save" class="button ui-corner-all save_undo_button_inactive" role="button" onclick="save(true)" title="{% trans 'save changes'|capfirst|force_escape %}">
+&nbsp;&nbsp;<input type="submit" value="{% filter upper %}{% trans "undo"|capfirst %}{% endfilter %}" id="undo" class="button ui-corner-all save_undo_button_inactive" role="button" onclick="undo()" title="{% trans 'undo changes'|capfirst|force_escape %}">
 {% endif %}
 {% if perms.input.change_purchaseorder or perms.input.change_distributionorder %}
 &nbsp;&nbsp;<select disabled='disabled' name="actions" id="actions" onchange="javascript: if ( $(this).val() == 'openbravo_incr_export') {openbravoIncrExport();} else {setStatus($(this).val());}" style="display: initial" class="ui-corner-all ui-selectmenu-disabled ui-state-disabled change_status_selectmenu_inactive" >
-  <option value='no_action'>{% trans "select actions" %}</option>
+  <option value='no_action'>{% trans "select actions"|capfirst %}</option>
   <option value='proposed'>{% filter capfirst %}{% blocktrans with status=_("proposed") %}change status to {{status}}{% endblocktrans %}{% endfilter %}</option>
   <option value='confirmed'>{% filter capfirst %}{% blocktrans with status=_("confirmed") %}change status to {{status}}{% endblocktrans %}{% endfilter %}</option>
   <option value='closed'>{% filter capfirst %}{% blocktrans with status=_("closed") %}change status to {{status}}{% endblocktrans %}{% endfilter %}</option>
@@ -1260,10 +1260,10 @@ $(function() {
 <div class="frepple-tabs" id="tabs">
 <ul role="tablist">
 <li id="forecasttab" role="tab"><a class="ui-tabs-anchor" onclick="return selectTab('forecast')">{% trans 'forecast'|capfirst %}</a></li>
-<li id="plantab" role="tab"><a class="ui-tabs-anchor" onclick="return selectTab('plan')">{% trans 'Plan'|capfirst %}</a></li>
-<li id="transactionstab" role="tab"><a class="ui-tabs-anchor" onclick="return selectTab('transactions')">{% trans 'Transactions'|capfirst %}</a></li>
-<li id="commentstab" role="tab"><a class="ui-tabs-anchor" onclick="return selectTab('comments')">{% trans 'Comments'|capfirst %}</a></li>
-<li id="historytab" role="tab"><a class="ui-tabs-anchor" onclick="return selectTab('history')">{% trans 'History'|capfirst %}</a></li>
+<li id="plantab" role="tab"><a class="ui-tabs-anchor" onclick="return selectTab('plan')">{% trans 'plan'|capfirst %}</a></li>
+<li id="transactionstab" role="tab"><a class="ui-tabs-anchor" onclick="return selectTab('transactions')">{% trans 'transactions'|capfirst %}</a></li>
+<li id="commentstab" role="tab"><a class="ui-tabs-anchor" onclick="return selectTab('comments')">{% trans 'comments'|capfirst %}</a></li>
+<li id="historytab" role="tab"><a class="ui-tabs-anchor" onclick="return selectTab('history')">{% trans 'history'|capfirst %}</a></li>
 </ul>
 </div>
 
@@ -1271,17 +1271,17 @@ $(function() {
 <div id="forecastgraph" style="clear: both; height: 200px; padding: 10px; "></div>
 <table id="forecastgrid"></table><br/>
 <h2>{% trans "parameters"|capfirst %}</h2>
-<table><tr><td>{% trans "Forecast method"|capfirst %}</td><td>&nbsp;&nbsp;{% if perms.forecast.change_forecast %}<select id="forecastmethod" onchange="setForecastMethod($(this).val())">
-<option value="automatic">{% trans "Automatic" %}</option>
-<option value="constant">{% trans "Constant" context "forecast method" %}</option>
-<option value="trend">{% trans "Trend" context "forecast method" %}</option>
-<option value="seasonal">{% trans "Seasonal" context "forecast method" %}</option>
-<option value="intermittent">{% trans "Intermittent" context "forecast method" %}</option>
-<option value="moving average">{% trans "Moving average" context "forecast method" %}</option>
-<option value="manual" selected="selected">{% trans "Manual" %}</option>
+<table><tr><td>{% trans "forecast method"|capfirst %}</td><td>&nbsp;&nbsp;{% if perms.forecast.change_forecast %}<select id="forecastmethod" onchange="setForecastMethod($(this).val())">
+<option value="automatic">{% trans "automatic"|capfirst %}</option>
+<option value="constant">{% trans "constant"|capfirst context "forecast method" %}</option>
+<option value="trend">{% trans "trend"|capfirst context "forecast method" %}</option>
+<option value="seasonal">{% trans "seasonal"|capfirst context "forecast method" %}</option>
+<option value="intermittent">{% trans "intermittent"|capfirst context "forecast method" %}</option>
+<option value="moving average">{% trans "moving average"|capfirst context "forecast method" %}</option>
+<option value="manual" selected="selected">{% trans "manual"|capfirst context "forecast method" %}</option>
 </select>{% else %}<span id="forecastmethod"></span>{% endif %}</td></tr>
-<tr><td>{% trans "Selected forecast method"|capfirst %}</td><td>&nbsp;&nbsp;<span id="forecast_out_method"></span></td></tr>
-<tr><td>{% trans "SMAPE Forecast error"|capfirst %}</td><td>&nbsp;&nbsp;<span id="forecast_out_smape"></span>&nbsp;%</td></tr></table>
+<tr><td>{% trans "selected forecast method"|capfirst %}</td><td>&nbsp;&nbsp;<span id="forecast_out_method"></span></td></tr>
+<tr><td>{% trans "SMAPE forecast error"|capfirst %}</td><td>&nbsp;&nbsp;<span id="forecast_out_smape"></span>&nbsp;%</td></tr></table>
 </div>
 
 <div id="plandata" class="clear" style="display:none">
@@ -1291,8 +1291,8 @@ $(function() {
 <table><tr><td class="bold">{% trans "reorder quantity"|capfirst %}</td>
 <td class="bold">{% trans "safety stock"|capfirst %}</td></tr>
 <tr><td valign="top">
-<input type="radio" id="roq_type_calculated" name="roq_type" value="calculated" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="activateSaveUndo()"{% else %}disabled="disabled"{% endif %}><label for="roq_type_calculated">&nbsp;{% trans "economic order quantity"|capfirst %}: <span id="eoq">&nbsp;&nbsp;&nbsp;&nbsp;</span> {% trans "units" %}&nbsp;&nbsp;&nbsp;&nbsp;</label><br/>
-<input type="radio" id="roq_type_quantity" name="roq_type" value="quantity" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="activateSaveUndo()"{% else %}disabled="disabled"{% endif %}><label for="roq_type_quantity">&nbsp;{% trans "quantity"|capfirst %}&nbsp;<input style="width:80px" type="number" id="roq_min_qty"{% if perms.change_inventoryplanning %} oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" {% else %} readonly="true" {% endif %}min="1"> {% trans "units" %}</label><br/>
+<input type="radio" id="roq_type_calculated" name="roq_type" value="calculated" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="activateSaveUndo()"{% else %}disabled="disabled"{% endif %}><label for="roq_type_calculated">&nbsp;{% trans "economic order quantity"|capfirst %}: <span id="eoq">&nbsp;&nbsp;&nbsp;&nbsp;</span> {% trans "units"|capfirst %}&nbsp;&nbsp;&nbsp;&nbsp;</label><br/>
+<input type="radio" id="roq_type_quantity" name="roq_type" value="quantity" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="activateSaveUndo()"{% else %}disabled="disabled"{% endif %}><label for="roq_type_quantity">&nbsp;{% trans "quantity"|capfirst %}&nbsp;<input style="width:80px" type="number" id="roq_min_qty"{% if perms.change_inventoryplanning %} oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" {% else %} readonly="true" {% endif %}min="1"> {% trans "units"|capfirst %}</label><br/>
 <input type="radio" id="roq_type_periodofcover" name="roq_type" value="periodofcover" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="activateSaveUndo()"{% else %}disabled="disabled"{% endif %}><label for="roq_type_periodofcover">&nbsp;{% trans "period of cover"|capfirst %}&nbsp;<input style="width:50px" type="number" id="roq_min_poc"{% if perms.inventoryplanning.change_inventoryplanning %} oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" {% else %} readonly="true" {% endif %}min="1" step="7"> {% trans "days" %}</label><br/>
 </td><td valign="top">
 <input type="radio" id="ss_type_calculated" name="ss_type" value="calculated" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="activateSaveUndo()"{% else %}disabled="disabled"{% endif %}><label for="ss_type_calculated">&nbsp;{% trans "service level"|capfirst %}: <span id="calculated_ss">&nbsp;&nbsp;&nbsp;&nbsp;</span> {% trans "units" %}<br/>
@@ -1306,7 +1306,7 @@ $(function() {
 </select><br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{% trans "demand standard deviation"|capfirst %} <input style="width:80px" type="number" id="demand_deviation"{% if perms.inventoryplanning.change_inventoryplanning %} oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" {% else %} readonly="true" {% endif %}size="7"> {% trans "units" %}<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{% trans "lead time standard deviation"|capfirst %} <input style="width:80px" type="number" id="leadtime_deviation"{% if perms.inventoryplanning.change_inventoryplanning %} oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" {% else %} readonly="true" {% endif %}size="7"> {% trans "days" %}</label><br/>
-<input type="radio" id="ss_type_quantity" name="ss_type" value="quantity" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="activateSaveUndo()"{% else %}disabled="disabled"{% endif %}><label for="ss_type_quantity">&nbsp;{% trans "quantity"|capfirst %}<input style="width:80px" type="number" id="ss_min_qty"{% if perms.change_inventoryplanning %}  oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" {% else %} readonly="true" {% endif %}min="1"> {% trans "units" %}</label><br/>
+<input type="radio" id="ss_type_quantity" name="ss_type" value="quantity" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="activateSaveUndo()"{% else %}disabled="disabled"{% endif %}><label for="ss_type_quantity">&nbsp;{% trans "quantity"|capfirst %}<input style="width:80px" type="number" id="ss_min_qty"{% if perms.change_inventoryplanning %}  oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" {% else %} readonly="true" {% endif %}min="1"> {% trans "units"|capfirst %}</label><br/>
 <input type="radio" id="ss_type_periodofcover" name="ss_type" value="periodofcover" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="activateSaveUndo()"{% else %}disabled="disabled"{% endif %}><label for="ss_type_periodofcover">&nbsp;{% trans "period of cover"|capfirst %}<input style="width:50px" type="number" id="ss_min_poc" min="1" step="7"{% if perms.inventoryplanning.change_inventoryplanning %}  oninput="activateSaveUndo(); $(this).addClass('dirty-cell')"{% else %} readonly="true"{% endif %}> {% trans "days" %}</label><br/>
 </td></tr>
 </table>
