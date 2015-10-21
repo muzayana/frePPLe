@@ -48,7 +48,6 @@ class ForecastList(GridReport):
     GridFieldText('item', title=_('item'), field_name='item__name', formatter='item'),
     GridFieldText('location', title=_('location'), field_name='location__name', formatter='location'),
     GridFieldText('customer', title=_('customer'), field_name='customer__name', formatter='customer'),
-    GridFieldText('calendar', title=_('calendar'), field_name='calendar__name', formatter='calendar'),
     GridFieldText('description', title=_('description')),
     GridFieldText('category', title=_('category')),
     GridFieldText('subcategory', title=_('subcategory')),
