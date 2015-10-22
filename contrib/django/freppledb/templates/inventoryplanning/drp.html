@@ -51,7 +51,7 @@ function selectRow(id)
         width: 'auto',
         height: 'auto',
         buttons : {
-            "{% trans "save"|capfirst|escapejs %}" : function() {
+            "{% trans "Save"|escapejs context "Included in Django translations" %}" : function() {
               $(this).dialog("close");
               save(false);
               selectRow(id);
@@ -980,11 +980,11 @@ function displayResult(data)
 
   // Update title
   if (result.type == "itemlocation")
-    $("#detailtitle").html("{{_('buffer')|capfirst|escape}} " + result.name);
+    $("#detailtitle").html("{{_('buffer')|capfirst|force_escape}} " + result.name);
   else if (result.type == "item")
-    $("#detailtitle").html("{{_('item')|capfirst|escape}} " + result.name);
+    $("#detailtitle").html("{{_('item')|capfirst|force_escape}} " + result.name);
   else if (result.type == "itemlocation")
-    $("#detailtitle").html("{{_('location')|capfirst|escape}} " + result.name);
+    $("#detailtitle").html("{{_('location')|capfirst|force_escape}} " + result.name);
 
   // Update the forecasting parameters
   {% if perms.forecast.change_forecast %}
@@ -1245,8 +1245,8 @@ $(function() {
 <br/>
 <div id="detail"><h1 id="detailtitle">{% trans "detail"|capfirst %}</h1>
 {% if perms.input.change_purchaseorder or perms.input.change_distributionorder or perms.forecast.change_forecastdemand or perms.input.change_calendarbucket or perms.forecast.change_forecast or perms.inventoryplanning.change_inventoryplanning %}
-&nbsp;&nbsp;<input type="submit" value="{% filter upper %}{% trans "save"|capfirst %}{% endfilter %}" id="save" class="button ui-corner-all save_undo_button_inactive" role="button" onclick="save(true)" title="{% trans 'save changes'|capfirst|force_escape %}">
-&nbsp;&nbsp;<input type="submit" value="{% filter upper %}{% trans "undo"|capfirst %}{% endfilter %}" id="undo" class="button ui-corner-all save_undo_button_inactive" role="button" onclick="undo()" title="{% trans 'undo changes'|capfirst|force_escape %}">
+&nbsp;&nbsp;<input type="submit" value="{% filter upper %}{% trans "Save"|escape context "Included in Django translations" %}{% endfilter %}" id="save" class="button ui-corner-all save_undo_button_inactive" role="button" onclick="save(true)" title="{% trans 'save changes'|capfirst|force_escape %}">
+&nbsp;&nbsp;<input type="submit" value="{% filter upper %}{% trans "Undo"|escape context "Translation included with Django" %}{% endfilter %}" id="undo" class="button ui-corner-all save_undo_button_inactive" role="button" onclick="undo()" title="{% trans 'undo changes'|capfirst|force_escape %}">
 {% endif %}
 {% if perms.input.change_purchaseorder or perms.input.change_distributionorder %}
 &nbsp;&nbsp;<select disabled='disabled' name="actions" id="actions" onchange="javascript: if ( $(this).val() == 'openbravo_incr_export') {openbravoIncrExport();} else {setStatus($(this).val());}" style="display: initial" class="ui-corner-all ui-selectmenu-disabled ui-state-disabled change_status_selectmenu_inactive" >
