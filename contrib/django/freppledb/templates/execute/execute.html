@@ -37,11 +37,11 @@
         && !('finished' in rowdata)
         && cellvalue.charAt(cellvalue.length-1) == "%"
         )
-      return cellvalue + "&nbsp;&nbsp;<button class='ui-button ui-widget ui-state-default ui-corner-all' style='padding:0 0.5em 0 0.5em; font-size:66%' onclick='cancelTask(" + rowdata['id'] + ")'>{% trans 'cancel'|capfirst %}</button>";
+      return cellvalue + "&nbsp;&nbsp;<button class='ui-button ui-widget ui-state-default ui-corner-all' style='padding:0 0.5em 0 0.5em; font-size:66%' onclick='cancelTask(" + rowdata['id'] + ")'>{% trans 'Cancel'|escape context "Included in Django" %}</button>";
     if (cellvalue == 'Failed')
       return "<span class='taskfailed'>{% trans 'failed'|capfirst %}</span>";
     else if (cellvalue == 'Waiting')
-      return "{% trans 'waiting'|capfirst %}&nbsp;&nbsp;<button class='ui-button ui-widget ui-state-default ui-corner-all' style='padding:0 0.5em 0 0.5em; font-size:66%' onclick='cancelTask(" + rowdata['id'] + ")'>{% trans 'cancel'|capfirst %}</button>";
+      return "{% trans 'waiting'|capfirst %}&nbsp;&nbsp;<button class='ui-button ui-widget ui-state-default ui-corner-all' style='padding:0 0.5em 0 0.5em; font-size:66%' onclick='cancelTask(" + rowdata['id'] + ")'>{% trans 'Cancel'|escape context "Included in Django" %}</button>";
     else if (cellvalue == 'Done')
       return "{% trans 'done'|capfirst %}";
     else if (cellvalue == 'Canceled')
@@ -247,7 +247,7 @@ and create a plan in frePPLe...<br>
 and export results.<br>
 <br>
 <b>Plan type</b><br>{% endblocktrans %}
-{% if forecastModule %}<input type="checkbox" name="planForecast" {% if planForecast == 1 %}checked {% endif %}value="1" id="planForecast"/><label for="planForecast">&nbsp;&nbsp;{% blocktrans %}<span title="Compute the statistical sales forecast">Generate forecast</span>{% endblocktrans %}
+{% if forecastModule %}<input type="checkbox" name="planForecast" {% if planForecast == 1 %}checked {% endif %}value="1" id="planForecast"/><label for="planForecast">&nbsp;&nbsp;{% blocktrans %}<span title = "Compute the statistical sales forecast" >Generate forecast</span>{% endblocktrans %}
 <span class="fa fa-question-circle" style="display:inline-block;"></span></label><br>{% endif %}
 {% if inventoryModule %}<input type="checkbox" name="planInventory" {% if planInventory == 1 %}checked {% endif %}value="1" id="planInventory"/><label for="planInventory">&nbsp;&nbsp;{% blocktrans %}<span title="Compute the safety stock and reorder points">Generate inventory planning parameters</span>{% endblocktrans %}
 <span class="fa fa-question-circle" style="display:inline-block;"></span></label><br>{% endif %}
