@@ -602,7 +602,7 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
 
     // Store the metrics in the first bucket.
     // The values are averaged over the lead time.
-    if (firstBucket)
+    if (firstBucket && Plan::instance().getCurrent() >= bucketstart && Plan::instance().getCurrent() < bucketend)
     {
       firstBucket = false;
       PythonData res;
