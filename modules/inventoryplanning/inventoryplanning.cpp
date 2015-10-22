@@ -385,24 +385,27 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
     Date last_bucket_end_roq_poc;
     Date last_bucket_start_ss_poc;
     Date last_bucket_end_ss_poc;
-    for (Calendar::EventIterator tmp(cal, startdate, true);
-      tmp.getDate() < enddate; ++tmp)
+    Date prev;
+    for (Calendar::EventIterator tmp(cal, bucketstart, true);
+      !last_bucket_start_lt || !last_bucket_start_roq_poc || !last_bucket_start_ss_poc;
+      ++tmp)
     {
-      if (last_bucket_end_lt < fence_lt)
+      if (prev <= fence_lt && tmp.getDate() >= fence_lt)
       {
-        last_bucket_start_lt = last_bucket_end_lt;
+        last_bucket_start_lt = prev;
         last_bucket_end_lt = tmp.getDate();
       }
-      if (last_bucket_end_roq_poc < fence_roq_poc)
+      if (prev <= fence_roq_poc && tmp.getDate() >= fence_roq_poc)
       {
-        last_bucket_start_roq_poc = last_bucket_end_roq_poc;
+        last_bucket_start_roq_poc = prev;
         last_bucket_end_roq_poc = tmp.getDate();
       }
-      if (last_bucket_end_ss_poc < fence_ss_poc)
+      if (prev <= fence_ss_poc && tmp.getDate() >= fence_ss_poc)
       {
-        last_bucket_start_ss_poc = last_bucket_end_ss_poc;
+        last_bucket_start_ss_poc = prev;
         last_bucket_end_ss_poc = tmp.getDate();
       }
+      prev = tmp.getDate();
     }
     for (Buffer::flowplanlist::const_iterator i = b->getFlowPlans().begin();
       i != b->getFlowPlans().end(); ++i)
@@ -441,6 +444,7 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
       if (beyond == 3)
         break;
     }
+
     if (lastdemand_lt > 0)
       demand_lt += lastdemand_lt
         * (fence_lt - last_bucket_start_lt)
@@ -465,16 +469,17 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
       // Normal case
       demand_roq_poc = demand_roq_poc / roq_min_poc * 86400;
     else
-      // Special case when the leadtime is zero. We then consider the
-      // average demand of the current bucket.
-      demand_roq_poc = demand_roq_poc / static_cast<long>(last_bucket_end_roq_poc - last_bucket_start_roq_poc) * 86400;
+      // Special case when the period of cover is zero. We then use the same
+      // demand as measured over the leadtile.
+      demand_roq_poc = demand_lt;
     if (ss_min_poc)
       // Normal case
       demand_ss_poc = demand_ss_poc / ss_min_poc * 86400;
     else
-      // Special case when the leadtime is zero. We then consider the
-      // average demand of the current bucket.
-      demand_ss_poc = demand_ss_poc / static_cast<long>(last_bucket_end_ss_poc - last_bucket_start_ss_poc) * 86400;
+      // Special case when the period of cover is zero. We then use the same
+      // demand as measured over the leadtile.
+      demand_ss_poc = demand_lt;
+    logger << "    qty  " << demand_lt << "   " << demand_roq_poc  << "   " << demand_ss_poc << endl;
 
     // Compute the reorder quantity
     // 1. start with the wilson formula for the optimal reorder quantity
@@ -595,7 +600,7 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
 
     // Final result
     if (loglevel > 2)
-      logger << "demand: " << demand_lt // << " / " << demand_roq_poc << " / " << demand_ss_poc
+      logger << "demand: " << demand_lt << " / " << demand_roq_poc << " / " << demand_ss_poc
         << ", roq: " << roq
         << ", ss: " << ss
         << ", rop: " << rop << endl;
@@ -636,11 +641,6 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
       else
         res.setString(distname);
       const_cast<Buffer*>(b)->setProperty("ip_distribution", res, 4);
-      /* TODO
-         - statistical distribution applied, intermediate result
-         - safety stock in the first bucket, unconstrained intermediate result
-         - reorder quantity in the first bucket
-         */
     }
 
     // Store the result on the ROQ and SS calendars
