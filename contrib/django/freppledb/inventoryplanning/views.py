@@ -609,6 +609,7 @@ class DRPitemlocation(View):
 
         # Save the plan overrides
         if 'plan' in data:
+          ip_calendar = None
           if not request.user.has_perm('input.change_calendarbucket'):
             errors.append(force_text(_('Permission denied')))
           else:
@@ -623,17 +624,31 @@ class DRPitemlocation(View):
                     roq_calendar.default = 1
                     roq_calendar.save(using=request.database)
                 if row['roqoverride'] == '':
-                  # Delete a bucket
-                  CalendarBucket.objects.using(request.database).filter(calendar=roq_calendar, startdate=datetime.strptime(row['startdate'], '%Y-%m-%d')).exclude(source='Inventory planning').delete()
+                  # Delete buckets in the date range
+                  CalendarBucket.objects.using(request.database).filter(
+                    calendar=roq_calendar,
+                    startdate__gte=datetime.strptime(row['startdate'], '%Y-%m-%d'),
+                    enddate__lte=datetime.strptime(row['enddate'], '%Y-%m-%d')
+                    ).exclude(source='Inventory planning').delete()
                 else:
-                  # Create or update a bucket
-                  cal_bucket, created = CalendarBucket.objects.using(request.database).get_or_create(calendar=roq_calendar, startdate=datetime.strptime(row['startdate'], '%Y-%m-%d'))
-                  cal_bucket.value = row['roqoverride']
-                  cal_bucket.enddate = datetime.strptime(row['enddate'], '%Y-%m-%d')
-                  cal_bucket.priority = 0
-                  if cal_bucket.source == 'Inventory planning':
-                    cal_bucket.source = None
-                  cal_bucket.save(using=request.database)
+                  # Create or update buckets in the date range
+                  if not ip_calendar:
+                    ip_calendar = Parameter.getValue('inventoryplanning.calendar', request.database)
+                  bckts = CalendarBucket.objects.using(request.database).filter(
+                    calendar__name=ip_calendar,
+                    startdate__gte=datetime.strptime(row['startdate'], '%Y-%m-%d'),
+                    enddate__lte=datetime.strptime(row['enddate'], '%Y-%m-%d')
+                    )
+                  for bckt in bckts:
+                    cal_bucket, created = CalendarBucket.objects.using(request.database).get_or_create(
+                      calendar=roq_calendar,
+                      startdate=bckt.startdate,
+                      enddate=bckt.enddate,
+                      source=None
+                      )
+                    cal_bucket.value = row['roqoverride']
+                    cal_bucket.priority = 0
+                    cal_bucket.save(using=request.database)
               if 'ssoverride' in row:
                 if not ss_calendar:
                   ss_calendar, created = Calendar.objects.using(request.database).get_or_create(name="SS for %s" % itemlocation)
@@ -642,16 +657,31 @@ class DRPitemlocation(View):
                     ss_calendar.default = 1
                     ss_calendar.save(using=request.database)
                 if row['ssoverride'] == '':
-                  # Delete a bucket
-                  CalendarBucket.objects.using(request.database).filter(calendar=ss_calendar, startdate=datetime.strptime(row['startdate'], '%Y-%m-%d')).exclude(source='Inventory planning').delete()
+                  # Delete buckets in the date range
+                  CalendarBucket.objects.using(request.database).filter(
+                    calendar=ss_calendar,
+                    startdate__gte=datetime.strptime(row['startdate'], '%Y-%m-%d'),
+                    enddate__lte=datetime.strptime(row['enddate'], '%Y-%m-%d')
+                    ).exclude(source='Inventory planning').delete()
                 else:
-                  cal_bucket, created = CalendarBucket.objects.using(request.database).get_or_create(calendar=ss_calendar, startdate=datetime.strptime(row['startdate'], '%Y-%m-%d'))
-                  cal_bucket.value = row['ssoverride']
-                  cal_bucket.enddate = datetime.strptime(row['enddate'], '%Y-%m-%d')
-                  cal_bucket.priority = 0
-                  if cal_bucket.source == 'Inventory planning':
-                    cal_bucket.source = None
-                  cal_bucket.save(using=request.database)
+                  # Create or update buckets in the date range
+                  if not ip_calendar:
+                    ip_calendar = Parameter.getValue('inventoryplanning.calendar', request.database)
+                  bckts = CalendarBucket.objects.using(request.database).filter(
+                    calendar__name=ip_calendar,
+                    startdate__gte=datetime.strptime(row['startdate'], '%Y-%m-%d'),
+                    enddate__lte=datetime.strptime(row['enddate'], '%Y-%m-%d')
+                    )
+                  for bckt in bckts:
+                    cal_bucket, created = CalendarBucket.objects.using(request.database).get_or_create(
+                      calendar=ss_calendar,
+                      startdate=bckt.startdate,
+                      enddate=bckt.enddate,
+                      source=None
+                      )
+                    cal_bucket.value = row['ssoverride']
+                    cal_bucket.priority = 0
+                    cal_bucket.save(using=request.database)
 
         # Save the forecast overrides
         if 'forecast' in data:

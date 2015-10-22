@@ -125,8 +125,6 @@ def createInventoryPlan(database=DEFAULT_DB_ALIAS):
 
   cursor = connections[database].cursor()
 
-  # TODO Current assumption: only independent/direct demand
-
   # Step 1.
   # Create inventoryplanning records for all buffers, where they don't exist yet.
   # TODO Only create for the lowest level item+location combinations
