@@ -502,9 +502,9 @@ function forecastcell(cellvalue, options, rowObject) {
     // Show order adjustment values
     if (bucketsize == 'year')
     {
-      var cell_min1 = result.forecast[parseInt(options.pos) + forecastcurrentbucket - 1];
-      var cell_min2 = result.forecast[parseInt(options.pos) + forecastcurrentbucket - 2];
-      var cell_min3 = result.forecast[parseInt(options.pos) + forecastcurrentbucket - 3];
+      var cell_min1 = result.forecast[parseInt(options.pos) + forecastcurrentbucket - 2];
+      var cell_min2 = result.forecast[parseInt(options.pos) + forecastcurrentbucket - 3];
+      var cell_min3 = result.forecast[parseInt(options.pos) + forecastcurrentbucket - 4];
     }
     else if (bucketsize == 'quarter')
     {
