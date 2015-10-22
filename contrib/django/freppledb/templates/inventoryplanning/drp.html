@@ -51,7 +51,7 @@ function selectRow(id)
         width: 'auto',
         height: 'auto',
         buttons : {
-            "{% trans "Save"|escapejs context "Included in Django translations" %}" : function() {
+            "{% filter escapejs %}{% trans "Save" context "Included in Django translations" %}{% endfilter %}" : function() {
               $(this).dialog("close");
               save(false);
               selectRow(id);
@@ -1245,8 +1245,8 @@ $(function() {
 <br/>
 <div id="detail"><h1 id="detailtitle">{% trans "detail"|capfirst %}</h1>
 {% if perms.input.change_purchaseorder or perms.input.change_distributionorder or perms.forecast.change_forecastdemand or perms.input.change_calendarbucket or perms.forecast.change_forecast or perms.inventoryplanning.change_inventoryplanning %}
-&nbsp;&nbsp;<input type="submit" value="{% filter upper %}{% trans "Save"|escape context "Included in Django translations" %}{% endfilter %}" id="save" class="button ui-corner-all save_undo_button_inactive" role="button" onclick="save(true)" title="{% trans 'save changes'|capfirst|force_escape %}">
-&nbsp;&nbsp;<input type="submit" value="{% filter upper %}{% trans "Undo"|escape context "Translation included with Django" %}{% endfilter %}" id="undo" class="button ui-corner-all save_undo_button_inactive" role="button" onclick="undo()" title="{% trans 'undo changes'|capfirst|force_escape %}">
+&nbsp;&nbsp;<input type="submit" value="{% filter upper|force_escape %}{% trans 'Save' context 'Translation included with Django' %}{% endfilter %}" id="save" class="button ui-corner-all save_undo_button_inactive" role="button" onclick="save(true)" title="{% trans 'save changes'|capfirst|force_escape %}">
+&nbsp;&nbsp;<input type="submit" value="{% filter upper|force_escape %}{% trans 'Undo' context 'Translation included with Django' %}{% endfilter %}" id="undo" class="button ui-corner-all save_undo_button_inactive" role="button" onclick="undo()" title="{% trans 'undo changes'|capfirst|force_escape %}">
 {% endif %}
 {% if perms.input.change_purchaseorder or perms.input.change_distributionorder %}
 &nbsp;&nbsp;<select disabled='disabled' name="actions" id="actions" onchange="javascript: if ( $(this).val() == 'openbravo_incr_export') {openbravoIncrExport();} else {setStatus($(this).val());}" style="display: initial" class="ui-corner-all ui-selectmenu-disabled ui-state-disabled change_status_selectmenu_inactive" >
@@ -1273,12 +1273,12 @@ $(function() {
 <h2>{% trans "parameters"|capfirst %}</h2>
 <table><tr><td>{% trans "forecast method"|capfirst %}</td><td>&nbsp;&nbsp;{% if perms.forecast.change_forecast %}<select id="forecastmethod" onchange="setForecastMethod($(this).val())">
 <option value="automatic">{% trans "automatic"|capfirst %}</option>
-<option value="constant">{% trans "constant"|capfirst context "forecast method" %}</option>
-<option value="trend">{% trans "trend"|capfirst context "forecast method" %}</option>
-<option value="seasonal">{% trans "seasonal"|capfirst context "forecast method" %}</option>
-<option value="intermittent">{% trans "intermittent"|capfirst context "forecast method" %}</option>
-<option value="moving average">{% trans "moving average"|capfirst context "forecast method" %}</option>
-<option value="manual" selected="selected">{% trans "manual"|capfirst context "forecast method" %}</option>
+<option value="constant">{% filter capfirst %}{% trans "constant" context "forecast method" %}{% endfilter %}</option>
+<option value="trend">{% filter capfirst %}{% trans "trend" context "forecast method" %}{% endfilter %}</option>
+<option value="seasonal">{% filter capfirst %}{% trans "seasonal" context "forecast method" %}{% endfilter %}</option>
+<option value="intermittent">{% filter capfirst %}{% trans "intermittent" context "forecast method" %}{% endfilter %}</option>
+<option value="moving average">{% filter capfirst %}{% trans "moving average" context "forecast method" %}{% endfilter %}</option>
+<option value="manual" selected="selected">{% filter capfirst %}{% trans "manual" context "forecast method" %}{% endfilter %}</option>
 </select>{% else %}<span id="forecastmethod"></span>{% endif %}</td></tr>
 <tr><td>{% trans "selected forecast method"|capfirst %}</td><td>&nbsp;&nbsp;<span id="forecast_out_method"></span></td></tr>
 <tr><td>{% trans "SMAPE forecast error"|capfirst %}</td><td>&nbsp;&nbsp;<span id="forecast_out_smape"></span>&nbsp;%</td></tr></table>

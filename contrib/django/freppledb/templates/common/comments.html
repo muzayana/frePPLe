@@ -18,7 +18,7 @@
 {% if perms.common.add_comment %}<form method="post" action="">
   {% csrf_token %}
   <textarea id="comment" name="comment" rows="10" style="width:100%" ></textarea>
-  <input id="submit" type="submit" value="{% trans 'Save'|escape context "Included in Django translations" %}"/>
+  <input id="submit" type="submit" value="{% filter force_escape %}{% trans 'Save' context "Included in Django translations" %}{% endfilter %}"/>
 </form>{% endif%}
 
 {% for c in comments %}
