@@ -151,7 +151,7 @@ $(function() {
   </div>
 </div>
 
-<div id="timebuckets" style="display:none" title="{% trans 'time buckets|capfirst' %}">
+<div id="timebuckets" style="display:none" title="{% trans 'time buckets'|capfirst %}">
 <form method="get" action="">
 {% trans 'bucket size'|capfirst %}&nbsp;&nbsp;<select name="horizonbuckets" id="horizonbuckets">
 {% for i in bucketnames %}<option value="{{i}}"{% ifequal i request.user.horizonbuckets %} selected="selected"{% endifequal %}>{% trans i %}</option>
