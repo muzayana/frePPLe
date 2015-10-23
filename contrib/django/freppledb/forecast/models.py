@@ -316,7 +316,7 @@ class Forecast(AuditModel):
         else:
           curOrdersAdj += i.ordersadjustment
       else:
-        curWithoutOrdersAdj += 1
+        curWithoutOrdersAdj += i.orderstotal
       if i.forecastadjustment is not None:
         if curFcstAdjValue is None:
           curFcstAdjValue = i.forecastadjustmentvalue
@@ -650,7 +650,7 @@ class Forecast(AuditModel):
                   parents[j].ordersadjustmentvalue -= deltavalue
         else:
           # Case C: Scale non-overriden values to sum up correctly
-          factor = (ordersadj - curOrdersAdj) / (curOrdersTotal - curOrdersAdj)
+          factor = (ordersadj - curOrdersAdj) / curWithoutOrdersAdj
           for i in leafPlan:
             if i.ordersadjustment is None:
               delta = (Decimal(1)-factor) * i.orderstotal

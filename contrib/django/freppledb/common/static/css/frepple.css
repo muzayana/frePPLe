@@ -591,6 +591,7 @@ table thead th.sorted {
 .smallpadding {
   padding: 0 3px;
   text-align: center;
+  width: 100%;
 }
 
 .editablepivotcol {

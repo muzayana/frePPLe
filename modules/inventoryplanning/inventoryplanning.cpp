@@ -479,7 +479,6 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
       // Special case when the period of cover is zero. We then use the same
       // demand as measured over the leadtile.
       demand_ss_poc = demand_lt;
-    logger << "    qty  " << demand_lt << "   " << demand_roq_poc  << "   " << demand_ss_poc << endl;
 
     // Compute the reorder quantity
     // 1. start with the wilson formula for the optimal reorder quantity

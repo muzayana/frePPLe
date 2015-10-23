@@ -607,6 +607,14 @@ class DRPitemlocation(View):
       # Save comments
       with transaction.atomic(using=request.database):
 
+        # Edits by value or by units?
+        if data.get("editvalue", True):
+          factor = ip.buffer.item.price
+          if not factor:
+            factor = 1.0
+        else:
+          factor = 1.0
+
         # Save the plan overrides
         if 'plan' in data:
           ip_calendar = None
@@ -632,6 +640,14 @@ class DRPitemlocation(View):
                     ).exclude(source='Inventory planning').delete()
                 else:
                   # Create or update buckets in the date range
+                  try:
+                    val = float(row['roqoverride']) / factor
+                    if val < 0:
+                      errors.append(force_text(_('Invalid number')))
+                      continue
+                  except ValueError:
+                    errors.append(force_text(_('Invalid number')))
+                    continue
                   if not ip_calendar:
                     ip_calendar = Parameter.getValue('inventoryplanning.calendar', request.database)
                   bckts = CalendarBucket.objects.using(request.database).filter(
@@ -646,7 +662,7 @@ class DRPitemlocation(View):
                       enddate=bckt.enddate,
                       source=None
                       )
-                    cal_bucket.value = row['roqoverride']
+                    cal_bucket.value = val
                     cal_bucket.priority = 0
                     cal_bucket.save(using=request.database)
               if 'ssoverride' in row:
@@ -665,6 +681,14 @@ class DRPitemlocation(View):
                     ).exclude(source='Inventory planning').delete()
                 else:
                   # Create or update buckets in the date range
+                  try:
+                    val = float(row['ssoverride']) / factor
+                    if val < 0:
+                      errors.append(force_text(_('Invalid number')))
+                      continue
+                  except ValueError:
+                    errors.append(force_text(_('Invalid number')))
+                    continue
                   if not ip_calendar:
                     ip_calendar = Parameter.getValue('inventoryplanning.calendar', request.database)
                   bckts = CalendarBucket.objects.using(request.database).filter(
@@ -679,7 +703,7 @@ class DRPitemlocation(View):
                       enddate=bckt.enddate,
                       source=None
                       )
-                    cal_bucket.value = row['ssoverride']
+                    cal_bucket.value = val
                     cal_bucket.priority = 0
                     cal_bucket.save(using=request.database)
 
@@ -701,7 +725,7 @@ class DRPitemlocation(View):
                   strt.replace(year=strt.year - 3),
                   nd.replace(year=nd.year - 3),
                   None,
-                  Decimal(row['adjHistory3']) if (row.get('adjHistory3','') != '') else None,
+                  Decimal(row['adjHistory3']) / Decimal(factor) if (row.get('adjHistory3','') != '') else None,
                   True,  # Units
                   request.database
                   )
@@ -710,7 +734,7 @@ class DRPitemlocation(View):
                   strt.replace(year=strt.year - 2),
                   nd.replace(year=nd.year - 2),
                   None,
-                  Decimal(row['adjHistory2']) if (row.get('adjHistory2','') != '') else None,
+                  Decimal(row['adjHistory2']) / Decimal(factor) if (row.get('adjHistory2','') != '') else None,
                   True,  # Units
                   request.database
                   )
@@ -719,7 +743,7 @@ class DRPitemlocation(View):
                   strt.replace(year=strt.year - 1),
                   nd.replace(year=nd.year - 1),
                   None,
-                  Decimal(row['adjHistory1']) if (row.get('adjHistory1','') != '') else None,
+                  Decimal(row['adjHistory1']) / Decimal(factor) if (row.get('adjHistory1','') != '') else None,
                   True,  # Units
                   request.database
                   )
@@ -727,7 +751,7 @@ class DRPitemlocation(View):
                 fcst.updatePlan(
                   datetime.strptime(row['startdate'], '%Y-%m-%d').date(),
                   datetime.strptime(row['enddate'], '%Y-%m-%d').date(),
-                  Decimal(row['adjForecast']) if (row.get('adjForecast','') != '') else None,
+                  Decimal(row['adjForecast']) / Decimal(factor) if (row.get('adjForecast','') != '') else None,
                   None,
                   True,  # Units
                   request.database
