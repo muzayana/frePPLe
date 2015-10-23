@@ -325,7 +325,8 @@ function save(refresh) {
   {% endif %}
 
   // Send the results back to the server
-  if (!$.isEmptyObject(data))
+  if (!$.isEmptyObject(data)) {
+	  data['editvalue'] = result.displayvalue;
 	  $.ajax({
 	    url: '{{request.prefix}}/inventoryplanning/drpitemlocation/' + admin_escape(result.name) + '/',
 	    type: 'POST',
@@ -355,6 +356,7 @@ function save(refresh) {
 	      });
 	      }
 	    });
+	  }
 }
 
 function openbravoIncrExport() {
