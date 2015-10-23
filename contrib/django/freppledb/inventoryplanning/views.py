@@ -632,6 +632,14 @@ class DRPitemlocation(View):
                     ).exclude(source='Inventory planning').delete()
                 else:
                   # Create or update buckets in the date range
+                  try:
+                    val = float(row['roqoverride'])
+                    if val < 0:
+                      errors.append(force_text(_('Invalid number')))
+                      continue
+                  except ValueError:
+                    errors.append(force_text(_('Invalid number')))
+                    continue
                   if not ip_calendar:
                     ip_calendar = Parameter.getValue('inventoryplanning.calendar', request.database)
                   bckts = CalendarBucket.objects.using(request.database).filter(
@@ -646,7 +654,7 @@ class DRPitemlocation(View):
                       enddate=bckt.enddate,
                       source=None
                       )
-                    cal_bucket.value = row['roqoverride']
+                    cal_bucket.value = val
                     cal_bucket.priority = 0
                     cal_bucket.save(using=request.database)
               if 'ssoverride' in row:
@@ -665,6 +673,14 @@ class DRPitemlocation(View):
                     ).exclude(source='Inventory planning').delete()
                 else:
                   # Create or update buckets in the date range
+                  try:
+                    val = float(row['ssoverride'])
+                    if val < 0:
+                      errors.append(force_text(_('Invalid number')))
+                      continue
+                  except ValueError:
+                    errors.append(force_text(_('Invalid number')))
+                    continue
                   if not ip_calendar:
                     ip_calendar = Parameter.getValue('inventoryplanning.calendar', request.database)
                   bckts = CalendarBucket.objects.using(request.database).filter(
@@ -679,7 +695,7 @@ class DRPitemlocation(View):
                       enddate=bckt.enddate,
                       source=None
                       )
-                    cal_bucket.value = row['ssoverride']
+                    cal_bucket.value = val
                     cal_bucket.priority = 0
                     cal_bucket.save(using=request.database)
 

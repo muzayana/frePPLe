@@ -384,7 +384,7 @@ function crosses (cellvalue, options, rowdata)
         break;
       case 2: // Orders adjustment{% if perms.forecast.change_forecastdemand %}
         if (cellvalue[10] == 1)
-          result += '<input type="text" class="smallpadding adjhistory" value="' + ((cellvalue[2] === null) ? '' : Math.round(cellvalue[2])) + '" size="5" oninput="onChange(event)" onclick="$(this).select();"/><br>';
+          result += '<input type="number" class="smallpadding adjhistory" value="' + ((cellvalue[2] === null) ? '' : Math.round(cellvalue[2])) + '" oninput="onChange(event)" onclick="$(this).select();"/><br>';
         else
           result += '<br>';
         {% else %}
@@ -398,7 +398,7 @@ function crosses (cellvalue, options, rowdata)
         break;
       case 4: // Forecast override{% if perms.forecast.change_forecastdemand %}
         if (cellvalue[11] == 1)
-          result += '<input type="text" class="smallpadding adjforecast" value="' + ((cellvalue[4] === null) ? '' : (Math.round(cellvalue[4]*10)/10)) + '" size="5" oninput="onChange(event)" onclick="$(this).select();"/><br>';
+          result += '<input type="number" min="0" class="smallpadding adjforecast" value="' + ((cellvalue[4] === null) ? '' : (Math.round(cellvalue[4]*10)/10)) + '" oninput="onChange(event)" onclick="$(this).select();"/><br>';
         else
           result += '<br>';
         {% else %}
