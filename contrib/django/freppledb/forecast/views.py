@@ -103,8 +103,8 @@ class OverviewReport(GridPivot):
     GridFieldText('item', title=_('item'), field_name='item__name', formatter='item', editable=False),
     GridFieldText('customer', title=_('customer'), field_name='customer__name', formatter='customer', editable=False),
     GridFieldText('location', title=_('location'), field_name='location__name', formatter='location', editable=False),
-    GridFieldText('out_method', title=_('Selected forecast method'), field_name='out_method', editable=False, hidden=True),
-    GridFieldNumber('out_smape', title=_('Estimated forecast error'), field_name='out_smape', editable=False, hidden=True)
+    GridFieldText('out_method', title=_('selected forecast method'), field_name='out_method', editable=False, hidden=True),
+    GridFieldNumber('out_smape', title=_('estimated forecast error'), field_name='out_smape', editable=False, hidden=True)
     )
   crosses = (
     ('orderstotal', {'title': _('total orders')}),

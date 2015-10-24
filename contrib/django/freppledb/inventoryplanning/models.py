@@ -71,7 +71,7 @@ class InventoryPlanning(AuditModel):
     _('demand distribution'), null=True, blank=True, max_length=20, choices=distributions
     )
   ss_type = models.CharField(
-    _('Safety stock type'), null=True, blank=True, max_length=20, choices=calculationtype
+    _('safety stock type'), null=True, blank=True, max_length=20, choices=calculationtype
     )
   service_level = models.DecimalField(
     _('service level'), max_digits=15,

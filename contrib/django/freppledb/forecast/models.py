@@ -68,7 +68,7 @@ class Forecast(AuditModel):
     help_text=_('Use this forecast for planning')
     )
   out_smape = models.DecimalField(
-    _('calculated SMAPE forecast error'), null=True, blank=True,
+    _('estimated forecast error'), null=True, blank=True,
     max_digits=15, decimal_places=4
     )
   out_method = models.CharField(
