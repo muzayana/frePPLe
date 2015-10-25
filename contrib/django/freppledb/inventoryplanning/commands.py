@@ -35,16 +35,12 @@ def exportResults(cursor, database):
         yield c
 
   def buckets():
-    cursor.execute("SELECT max(id) FROM calendarbucket")
-    cnt = cursor.fetchone()[0] or 1
     for c in frepple.calendars():
       if c.source != 'Inventory planning':
         continue
       for i in c.buckets:
-        if i.source != 'Inventory planning':
-          continue
-        cnt += 1
-        yield i, cnt
+        if i.source == 'Inventory planning':
+          yield i
 
   def int_to_time(i):
     hour = i // 3600
@@ -84,20 +80,20 @@ def exportResults(cursor, database):
       )
     cursor.executemany(
       '''insert into calendarbucket
-      (calendar_id,startdate,enddate,id,priority,value,
+      (calendar_id,startdate,enddate,priority,value,
        sunday,monday,tuesday,wednesday,thursday,friday,saturday,
        starttime,endtime,source,lastmodified)
-      values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)''',
+      values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)''',
       [
         (
-          i[0].calendar.name, str(i[0].start), str(i[0].end), i[1], i[0].priority,
-          round(i[0].value, 4),
-          (i[0].days & 1) and True or False, (i[0].days & 2) and True or False,
-          (i[0].days & 4) and True or False, (i[0].days & 8) and True or False,
-          (i[0].days & 16) and True or False, (i[0].days & 32) and True or False,
-          (i[0].days & 64) and True or False,
-          int_to_time(i[0].starttime), int_to_time(i[0].endtime - 1),
-          i[0].source, timestamp
+          i.calendar.name, str(i.start), str(i.end), i.priority,
+          round(i.value, 4),
+          (i.days & 1) and True or False, (i.days & 2) and True or False,
+          (i.days & 4) and True or False, (i.days & 8) and True or False,
+          (i.days & 16) and True or False, (i.days & 32) and True or False,
+          (i.days & 64) and True or False,
+          int_to_time(i.starttime), int_to_time(i.endtime - 1),
+          i.source, timestamp
         )
         for i in buckets()
       ])
