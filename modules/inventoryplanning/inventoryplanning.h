@@ -182,19 +182,24 @@ class NormalDistribution
 	  static double calculateFillRate(double mean, double variance, int rop, int roq);
 
   private:
-	  static inline double getNormalProbabilityDensityFunction(double mean, double variance, double x)
+	  static inline double getNormalProbabilityDensityFunction(double mean, double stddev, double x)
     {
-      if (!variance)
+      if (!stddev)
         return (x > mean) ? 1.0 : 0.0;
-	    double z = (x - mean) / sqrt(variance);
+	    double z = (x - mean) / stddev;
 	    return (1 / sqrt(2*3.14159265358979323846)) * exp(-0.5 * z * z);
     }
 
-	  static inline double getNormalDistributionFunction(double mean, double variance, int x)
+	  static inline double getNormalDistributionFunction(double mean, double stddev, int x)
     {
-      if (!variance)
+      if (!stddev)
         return (x > mean) ? 1.0 : 0.0;
-	    return phi((x - mean) / sqrt(variance));
+      double z = (x - mean) / stddev;
+      if (z < -4)
+        return 0.0;
+      if (z > 8)
+        return 1.0;
+	    return phi(z);
     }
 
     static double phi(double x);

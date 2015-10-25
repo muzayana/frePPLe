@@ -145,11 +145,40 @@ double NormalDistribution::calculateFillRate(double mean, double variance, int r
 	if (rop+roq == 0)
 		return 0;
 
+  double stddev = sqrt(variance);
 	double sumFillRate = 0;
-	for (int i = 1 ; i <= roq ; ++i)
-		sumFillRate += getNormalDistributionFunction(mean, variance, rop+i);
-
-	return sumFillRate/roq;
+  if (roq <= 100)
+  {
+    // For low ROQ values, we evaluate all possible values between ROP+1 and ROP+ROQ
+	  for (int i = 1 ; i <= roq ; ++i)
+    {
+		  double tmp = getNormalDistributionFunction(mean, stddev, rop+i);
+      if (tmp < 1e-06 && i > mean)
+        // Contribution is getting ridiculously low and will get even lower
+        break;
+      sumFillRate += tmp;
+    }
+	  return sumFillRate/roq;
+  }
+  else
+  {
+    // For high ROQ values, we sample 100 values between ROP+1 and ROP+ROQ
+    unsigned short samples = 0;
+    double counter = 0.0;
+    double prevcounter = -1.0;
+    double step = 100.0 / roq;
+	  for (int i = 1 ; i <= roq ; ++i)
+    {
+		  counter += step;
+      double tmp = floor(counter);
+      if (tmp <= prevcounter)
+        continue;
+      ++samples;
+      prevcounter = tmp;
+      sumFillRate += getNormalDistributionFunction(mean, stddev, rop+i);
+    }
+	  return sumFillRate / samples;
+  }
 }
 
 
