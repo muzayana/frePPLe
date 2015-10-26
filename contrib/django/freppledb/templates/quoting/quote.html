@@ -78,7 +78,7 @@ function getQuote(event)
       $(xmldata).find('demands > demand > problems > problem').each(function() {
         status += '&nbsp;&nbsp;' + $(this).find('description').text() + '<br/>';
         })
-      status += '<h1>{% trans "Why short or late?" %}</h1>';
+      status += '<h1>{% trans "why short or late?"|capfirst %}</h1>';
       $(xmldata).find('demands > demand > constraints > problem').each(function() {
         status += '&nbsp;&nbsp;' + $(this).find('name').text() + '&nbsp;&nbsp;' + $(this).find('description').text() + '&nbsp;&nbsp;' + $(this).find('start').text() + '&nbsp;&nbsp;' + $(this).find('end').text() + '<br/>';
         })
@@ -147,7 +147,7 @@ function inquireQuote(event)
       $(xmldata).find('demands > demand > problems > problem').each(function() {
         status += '&nbsp;&nbsp;' + $(this).find('description').text() + '<br/>';
         })
-      status += '<h1>{% trans "Why short or late?" %}</h1>';
+      status += '<h1>{% trans "why short or late?"|capfirst %}</h1>';
       $(xmldata).find('demands > demand > constraints > problem').each(function() {
         status += '&nbsp;&nbsp;' + $(this).find('name').text() + '&nbsp;&nbsp;' + $(this).find('description').text() + '&nbsp;&nbsp;' + $(this).find('start').text() + '&nbsp;&nbsp;' + $(this).find('end').text() + '<br/>';
         })
@@ -262,7 +262,7 @@ function displayInfo(rowid) {
       $(xmldata).find('demands > demand > problems > problem').each(function() {
         status += '&nbsp;&nbsp;' + $(this).find('description').text() + '<br/>';
         })
-      status += '<h1>{% trans "Why short or late?" %}</h1>';
+      status += '<h1>{% trans "why short or late?"|capfirst %}</h1>';
       $(xmldata).find('demands > demand > constraints > problem').each(function() {
         status += '&nbsp;&nbsp;' + $(this).find('name').text() + '&nbsp;&nbsp;' + $(this).find('description').text() + '&nbsp;&nbsp;' + $(this).find('start').text() + '&nbsp;&nbsp;' + $(this).find('end').text() + '<br/>';
         })
@@ -327,5 +327,5 @@ $(function() {
 </div>
 <div id="status" style="display: inline-block; overflow-x: auto; vertical-align:top"><h1>{% trans "deliveries"|capfirst %}</h1><br/>
 <h1>{% trans "problems"|capfirst %}</h1><br/>
-<h1>{% trans "Why short or late?" %}</h1></div>
+<h1>{% trans "why short or late?"|capfirst %}</h1></div>
 {% endblock %}
