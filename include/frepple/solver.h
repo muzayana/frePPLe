@@ -105,6 +105,8 @@ class SolverMRP : public Solver
 
     bool allowSplits;
 
+    bool rotateResources;
+
     /** Behavior of this solver method is:
       *  - It will ask the consuming flows for the required quantity.
       *  - The quantity asked for takes into account the quantity_per of the
@@ -294,7 +296,7 @@ class SolverMRP : public Solver
 
     /** Constructor. */
     DECLARE_EXPORT SolverMRP(const string& n) : Solver(n), constrts(15),
-      allowSplits(true), plantype(1), lazydelay(86400L),
+      allowSplits(true), rotateResources(true), plantype(1), lazydelay(86400L),
       iteration_threshold(1), iteration_accuracy(0.01), iteration_max(0),
       autocommit(true), planSafetyStockFirst(false)
     { initType(metadata); }
@@ -530,6 +532,16 @@ class SolverMRP : public Solver
     /** Python method for undoing the plan changes. */
     static DECLARE_EXPORT PyObject* rollback(PyObject*, PyObject*);
 
+    bool getRotateResources() const
+    {
+      return rotateResources;
+    }
+
+    void setRotateResources(bool b)
+    {
+      rotateResources = b;
+    }
+
     bool getAllowSplits() const {return allowSplits;}
     void setAllowSplits(bool b) {allowSplits = b;}
 
@@ -541,6 +553,8 @@ class SolverMRP : public Solver
     typedef vector< deque<Demand*> > classified_demand;
     typedef classified_demand::iterator cluster_iterator;
     classified_demand demands_per_cluster;
+
+    static const Keyword tag_rotateresources;
 
     /** Type of plan to be created. */
     short plantype;
