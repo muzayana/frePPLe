@@ -647,10 +647,7 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
     {
       if (ss_calendar_bucket)
         ss_calendar_bucket->setEnd(bucketstart);
-      ss_calendar_bucket = new CalendarBucket();
-      ss_calendar_bucket->setStart(bucketstart);
-      ss_calendar_bucket->setCalendar(ss_calendar);
-      ss_calendar_bucket->setValue(ss);
+      ss_calendar_bucket = ss_calendar->addBucket(bucketstart, Date::infiniteFuture, ss);
       ss_calendar_bucket->setSource(SOURCE_IP);
       ss_calendar_bucket->setPriority(999);
     }
@@ -658,10 +655,7 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
     {
       if (roq_calendar_bucket)
         roq_calendar_bucket->setEnd(bucketstart);
-      roq_calendar_bucket = new CalendarBucket();
-      roq_calendar_bucket->setStart(bucketstart);
-      roq_calendar_bucket->setCalendar(roq_calendar);
-      roq_calendar_bucket->setValue(roq);
+      roq_calendar_bucket = roq_calendar->addBucket(bucketstart, Date::infiniteFuture, roq);
       roq_calendar_bucket->setSource(SOURCE_IP);
       roq_calendar_bucket->setPriority(999);
     }
