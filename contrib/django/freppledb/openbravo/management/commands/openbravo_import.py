@@ -301,6 +301,7 @@ class Command(BaseCommand):
           update.append( (description, objectid, unique_name) )
         else:
           insert.append( (description, unique_name, objectid) )
+          frepple_keys[unique_name] = objectid
         unused_keys.pop(unique_name, None)
         # Clean the XML hierarchy
         root.clear()
@@ -387,7 +388,6 @@ class Command(BaseCommand):
         if event != 'end' or elem.tag != 'BusinessPartner':
           continue
         records += 1
-        #print(records)
         organization = self.organizations.get(elem.find("organization").get("id"), None)
         if not organization:
           continue
@@ -402,9 +402,9 @@ class Command(BaseCommand):
           update.append( (description, objectid, unique_name) )
         else:
           insert.append( (description, unique_name, objectid) )
+          frepple_keys[unique_name] = objectid
         unused_keys.pop(unique_name, None)
         # Clean the XML hierarchy
-        #print('root.clear here')
         root.clear()
       return records
 
@@ -513,6 +513,7 @@ class Command(BaseCommand):
           update.append( (description, objectid, unique_name) )
         else:
           insert.append( (unique_name, description, objectid) )
+          frepple_keys[unique_name] = objectid
         # Clean the XML hierarchy
         root.clear()
       return records
@@ -905,6 +906,7 @@ class Command(BaseCommand):
           update.append( (objectid, unique_name) )
         else:
           insert.append( (unique_name, objectid) )
+          frepple_keys.add(unique_name)
         unused_keys.discard(unique_name)
         self.resources[objectid] = unique_name
         # Clean the XML hierarchy
