@@ -998,8 +998,12 @@ class DistributionOrderList(GridReport):
 
   rows = (
     GridFieldInteger('id', title=_('identifier'), key=True),
-    GridFieldText('reference', title=_('reference')),
-    GridFieldChoice('status', title=_('status'), choices=DistributionOrder.orderstatus),
+    GridFieldText('reference', title=_('reference'),
+      editable='freppledb.openbravo' not in settings.INSTALLED_APPS
+      ),
+    GridFieldChoice('status', title=_('status'), choices=DistributionOrder.orderstatus,
+      editable='freppledb.openbravo' not in settings.INSTALLED_APPS
+      ),
     GridFieldText('item', title=_('item'), field_name='item__name', formatter='item'),
     GridFieldText('origin', title=_('origin'), field_name='origin__name', formatter='location'),
     GridFieldText('destination', title=_('destination'), field_name='destination__name', formatter='location'),
@@ -1011,14 +1015,18 @@ class DistributionOrderList(GridReport):
     GridFieldText('source', title=_('source')),
     GridFieldLastModified('lastmodified'),
     )
-  
-  actions = [
-    {"name": 'proposed', "label": _("change status to %(status)s") % {'status': _("Proposed")}, "function": "grid.setStatus('proposed')"},
-    {"name": 'confirmed', "label": _("change status to %(status)s") % {'status': _("Confirmed")}, "function": "grid.setStatus('confirmed')"},
-    {"name": 'closed', "label": _("change status to %(status)s") % {'status': _("Closed")}, "function": "grid.setStatus('closed')"},
-    ]
+
   if 'freppledb.openbravo' in settings.INSTALLED_APPS:
-    actions.append({"name": 'openbravo_incr_export', "label": _("incremental export to openbravo"), "function": "grid.openbravoIncrExport()"})
+    actions = [
+      {"name": 'openbravo_incr_export', "label": _("incremental export to openbravo"), "function": "grid.openbravoIncrExport()"},
+    ]
+  else:
+    actions = [
+      {"name": 'proposed', "label": _("change status to %(status)s") % {'status': _("Proposed")}, "function": "grid.setStatus('proposed')"},
+      {"name": 'confirmed', "label": _("change status to %(status)s") % {'status': _("Confirmed")}, "function": "grid.setStatus('confirmed')"},
+      {"name": 'closed', "label": _("change status to %(status)s") % {'status': _("Closed")}, "function": "grid.setStatus('closed')"},
+      ]
+
 
 class PurchaseOrderList(GridReport):
   '''
@@ -1032,8 +1040,12 @@ class PurchaseOrderList(GridReport):
 
   rows = (
     GridFieldInteger('id', title=_('identifier'), key=True),
-    GridFieldText('reference', title=_('reference')),
-    GridFieldChoice('status', title=_('status'), choices=PurchaseOrder.orderstatus),
+    GridFieldText('reference', title=_('reference'),
+      editable='freppledb.openbravo' not in settings.INSTALLED_APPS
+      ),
+    GridFieldChoice('status', title=_('status'),
+      choices=PurchaseOrder.orderstatus, editable='freppledb.openbravo' not in settings.INSTALLED_APPS
+      ),
     GridFieldText('item', title=_('item'), field_name='item__name', formatter='item'),
     GridFieldText('location', title=_('location'), field_name='location__name', formatter='location'),
     GridFieldText('supplier', title=_('supplier'), field_name='supplier__name', formatter='supplier'),
@@ -1045,11 +1057,13 @@ class PurchaseOrderList(GridReport):
     GridFieldLastModified('lastmodified'),
     )
 
-  actions = [
-    {"name": 'proposed', "label": _("change status to %(status)s") % {'status': _("Proposed")}, "function": "grid.setStatus('proposed')"},
-    {"name": 'confirmed', "label": _("change status to %(status)s") % {'status': _("Confirmed")}, "function": "grid.setStatus('confirmed')"},
-    {"name": 'closed', "label": _("change status to %(status)s") % {'status': _("Closed")}, "function": "grid.setStatus('closed')"},
-    ]
   if 'freppledb.openbravo' in settings.INSTALLED_APPS:
-    actions.append({"name": 'openbravo_incr_export', "label": _("incremental export to openbravo"), "function": "grid.openbravoIncrExport()"})
-
+    actions = [
+      {"name": 'openbravo_incr_export', "label": _("incremental export to openbravo"), "function": "grid.openbravoIncrExport()"},
+    ]
+  else:
+    actions = [
+      {"name": 'proposed', "label": _("change status to %(status)s") % {'status': _("Proposed")}, "function": "grid.setStatus('proposed')"},
+      {"name": 'confirmed', "label": _("change status to %(status)s") % {'status': _("Confirmed")}, "function": "grid.setStatus('confirmed')"},
+      {"name": 'closed', "label": _("change status to %(status)s") % {'status': _("Closed")}, "function": "grid.setStatus('closed')"},
+      ]

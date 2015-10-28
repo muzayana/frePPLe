@@ -130,7 +130,7 @@ function onChange(event) {
   select();
 }
 
-function undo(){
+function undo() {
   // Reset the buttons
   $('#undo').addClass("save_undo_button_inactive").removeClass("save_undo_button_active");
   $('#save').addClass("save_undo_button_inactive").removeClass("save_undo_button_active");
@@ -141,7 +141,6 @@ function undo(){
 //  $("#newcomment").val(""); //clear comments textarea
 
   $(window).off('beforeunload', warnUnsavedChanges);
-
   selectRow(result.name); //Fetch data
   displayResult(result); //redraw all tabs
 }
@@ -359,57 +358,67 @@ function save(refresh) {
 	  }
 }
 
-function openbravoIncrExport() {
-  $('#popup').html(
-  gettext("export selected records to openbravo")
-  );
 
+function openbravoIncrExport()
+{
+	// Collect all selected rows in the status 'proposed'
   var sel = jQuery("#transactiongrid").jqGrid('getGridParam','selarrrow');
+  if (sel === null || sel.length == 0)
+    return;
+  var data = [];
+  for (var i in sel)
+  {
+	  var r = jQuery("#transactiongrid").jqGrid('getRowData', sel[i]);
+	  if (r.status == 'proposed')
+	    data.push(r);
+  }
+  if (data == [])
+	  return;
 
-  $('#popup').dialog({
+  // Send to the server for upload into openbravo
+  $('#popup')
+  .html(gettext("export selected records to openbravo"))
+  .dialog({
     title: gettext("export"),
-    autoOpen: true, resizable: false, width: 390, height: 'auto',
+    autoOpen: true, resizable: false, width: 390, height: 'auto', modal: true,
     buttons: [
       {
         text: gettext("export"),
         id: 'button_export',
         click: function() {
-          if (sel != null && sel.length > 0)
-          // Send the update to the server
-            $.ajax({
-                url: "/openbravo/upload/",
-                data: JSON.stringify(sel),
-                type: "POST",
-                contentType: "application/json",
-                success: function () {
-                  $('#popup').html(gettext("export: OK"))
-                    .dialog({
-                      title: gettext("data exported to openbravo"),
-                      autoOpen: true,
-                      resizable: false,
-                      width: 'auto',
-                      height: 'auto'
-                    });
-                  $('#button_close').find('.ui-button-text').text(gettext('close'));
-                  $('#button_export').removeClass("ui-state-default").addClass("ui-state-disabled").prop('disabled', 'disabled');
-                  upload.undo();
-                 // $(this).dialog("close");
-                },
-                error: function (result, stat, errorThrown) {
-                  $('#popup').html(result.responseText)
-                    .dialog({
-                      title: gettext("error exporting data"),
-                      autoOpen: true,
-                      resizable: false,
-                      width: 'auto',
-                      height: 'auto'
-                    });
-//                    $.jgrid.hideModal("#searchmodfbox_grid");
-                  $('#button_export').find('.ui-button-text').text(gettext('retry'));
-                }
-            });
 
-          $(this).dialog("close");
+          $('#popup').html(gettext("connecting to openbravo..."));
+          // Send the update to the server
+          $.ajax({
+               url: "{{request.prefix}}/openbravo/upload/",
+               data: JSON.stringify(data),
+               type: "POST",
+               contentType: "application/json",
+               success: function () {
+                 $('#popup').html(gettext("Export successful"))
+                   .dialog({
+                     autoOpen: true,
+                     resizable: false,
+                     width: 'auto',
+                     height: 'auto',
+                     model: false
+                   });
+                 $('#button_close').find('.ui-button-text').text(gettext('close'));
+                 $('#button_export').removeClass("ui-state-default").addClass("ui-state-disabled").prop('disabled', 'disabled');
+                 // Mark selected rows as "approved" if the original status was "proposed".
+                 for (var i in sel)
+                 {
+                   var cur = jQuery("#transactiongrid").jqGrid('getCell', sel[i], 'status');
+                   if (cur == 'proposed')
+                     jQuery("#transactiongrid").jqGrid('setCell', sel[i], 'status', 'approved');
+                 }
+               },
+               error: function (result, stat, errorThrown) {
+            	   fmts = ngettext("Error during export")
+                 $('#popup').html(gettext("Error during export") + ':' + result.responseText);
+                 $('#button_export').find('.ui-button-text').text(gettext('retry'));
+               }
+           });
         }
       },
       {
@@ -1023,7 +1032,7 @@ function displayResult(data)
       jsonReader: { repeatitems: false },
       hoverrows: false,
       colModel:[
-         {name:'fields',index:'fields',width:180,editable:false,label:'{% trans "fields"|capfirst %}',align:'left',title:false,key:true,counter:0,frozen:true,sortable:false,formatter:forecastfields},
+         {name:'fields',index:'fields',width:180,editable:false,label:' ',align:'left',title:false,key:true,counter:0,frozen:true,sortable:false,formatter:forecastfields},
          {% for f in request.report_bucketlist %}{% if not forloop.first %},
          {% endif %}{ name:'{{f.name|safe}}',startdate:'{{f.startdate|date:"Y-m-d"}}',enddate:'{{f.enddate|date:"Y-m-d"}}',sortable:false,width:90,align:'center',formatter:forecastcell,search:false,title:false }{% endfor %}
          ],
@@ -1058,7 +1067,7 @@ function displayResult(data)
       jsonReader: { repeatitems: false },
       hoverrows: false,
       colModel:[
-         {name:'fields',index:'fields',editable:false,label:'{% trans "fields"|capfirst %}',align:'left',title:false,key:true,counter:0,frozen:true,sortable:false,formatter:planfields},
+         {name:'fields',index:'fields',editable:false,label:' ',align:'left',title:false,key:true,counter:0,frozen:true,sortable:false,formatter:planfields},
          {% for f in request.report_bucketlist %}{% if not forloop.first %},
          {% endif %}{ name:'{{f.name|safe}}',startdate:'{{f.startdate|date:"Y-m-d"}}',enddate:'{{f.enddate|date:"Y-m-d"}}',sortable:false,width:90,align:'center',formatter:plancell,search:false,title:false }{% endfor %}
          ],
@@ -1096,8 +1105,8 @@ function displayResult(data)
          {name:'id',index:'id',editable:false,label:'{% trans "identifier"|capfirst %}',align:'center',title:false,key:true,hidden:true,counter:0,frozen:true,searchoptions:{searchhidden: true}},
          {name:'date',index:'date',editable:false,label:'{% trans "date"|capfirst %}',align:'center',title:false,formatter:'date',formatoptions:{srcformat:'Y-m-d H:i:s',newformat:'Y-m-d H:i:s'},width:140,counter:1,searchoptions:{searchhidden: true}},
          {name:'type',index:'status',editable:false,label:'{% trans "type"|capfirst %}',align:'center',title:false,formatter:'select', edittype:'select', editoptions:{value:'DO out:DO out;DO in:DO in;PO:PO'},width:100,counter:2,searchoptions:{searchhidden: true}},
-         {name:'reference',index:'reference',editable:true,label:'{% trans "reference"|capfirst %}',align:'left',title:false,width:200,counter:3,searchoptions:{searchhidden: true}},
-         {name:'status',index:'status',editable:true,label:'{% trans "status"|capfirst %}',align:'center',title:false,formatter:'select', edittype:'select', editoptions:{value:'proposed:proposed;confirmed:confirmed;closed:closed'},width:100,counter:4,searchoptions:{searchhidden: true}},
+         {name:'reference',index:'reference',editable:true,label:'{% trans "reference"|capfirst %}',align:'left',title:false,width:200,counter:3,searchoptions:{searchhidden: true}{% if openbravo %}, editable: false{% endif %}},
+         {name:'status',index:'status',editable:true,label:'{% trans "status"|capfirst %}',align:'center',title:false,formatter:'select', edittype:'select', editoptions:{value:'proposed:proposed;{% if openbravo %}approved:approved;{% endif %}confirmed:confirmed;closed:closed'}, {% if openbravo %}editable: false, {% endif %}width:100,counter:4,searchoptions:{searchhidden: true}},
          {name:'item',index:'item',editable:true,label:'{% trans "item"|capfirst %}',align:'left',title:false,formatter:'item',width:200,counter:5,searchoptions:{searchhidden: true}},
          {name:'origin',index:'origin',editable:true,label:'{% trans "origin"|capfirst %}',align:'left',title:false,formatter:'location',width:200,counter:6,searchoptions:{searchhidden: true}},
          {name:'startdate',index:'startdate',editable:true,label:'{% trans "start date"|capfirst %}',align:'center',title:false,formatter:'date',formatoptions:{srcformat:'Y-m-d H:i:s',newformat:'Y-m-d H:i:s'},width:140,counter:7,searchoptions:{searchhidden: true}},
@@ -1252,11 +1261,14 @@ $(function() {
 {% endif %}
 {% if perms.input.change_purchaseorder or perms.input.change_distributionorder %}
 &nbsp;&nbsp;<select disabled='disabled' name="actions" id="actions" onchange="javascript: if ( $(this).val() == 'openbravo_incr_export') {openbravoIncrExport();} else {setStatus($(this).val());}" style="display: initial" class="ui-corner-all ui-selectmenu-disabled ui-state-disabled change_status_selectmenu_inactive" >
-  <option value='no_action'>{% trans "select actions"|capfirst %}</option>
+  <option value='no_action'>{% trans "select action"|capfirst %}</option>
+  {% if openbravo %}
+  <option value='openbravo_incr_export'>{% filter capfirst %}{% trans "incremental export to openbravo" %}{% endfilter %}</option>
+  {% else %}
   <option value='proposed'>{% filter capfirst %}{% blocktrans with status=_("proposed") %}change status to {{status}}{% endblocktrans %}{% endfilter %}</option>
   <option value='confirmed'>{% filter capfirst %}{% blocktrans with status=_("confirmed") %}change status to {{status}}{% endblocktrans %}{% endfilter %}</option>
   <option value='closed'>{% filter capfirst %}{% blocktrans with status=_("closed") %}change status to {{status}}{% endblocktrans %}{% endfilter %}</option>
-  <option value='openbravo_incr_export'>{% filter capfirst %}{% trans "incremental export to openbravo" %}{% endfilter %}</option>
+  {% endif %}
 </select>
 {% endif %}
 <div class="frepple-tabs" id="tabs">
@@ -1283,7 +1295,7 @@ $(function() {
 <option value="manual" selected="selected">{% filter capfirst %}{% trans "manual" context "forecast method" %}{% endfilter %}</option>
 </select>{% else %}<span id="forecastmethod"></span>{% endif %}</td></tr>
 <tr><td>{% trans "selected forecast method"|capfirst %}</td><td>&nbsp;&nbsp;<span id="forecast_out_method"></span></td></tr>
-<tr><td>{% trans "SMAPE forecast error"|capfirst %}</td><td>&nbsp;&nbsp;<span id="forecast_out_smape"></span>&nbsp;%</td></tr></table>
+<tr><td>{% trans "estimated forecast error"|capfirst %}</td><td>&nbsp;&nbsp;<span id="forecast_out_smape"></span>&nbsp;%</td></tr></table>
 </div>
 
 <div id="plandata" class="clear" style="display:none">

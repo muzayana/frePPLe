@@ -8,12 +8,10 @@
 # or in the form of compiled binaries.
 #
 from optparse import make_option
-import base64
 from datetime import datetime, timedelta, date
 from time import time
 from xml.etree.cElementTree import iterparse
 from xml.etree.ElementTree import ParseError
-import http.client
 import urllib
 from io import StringIO
 
@@ -23,6 +21,7 @@ from django.conf import settings
 
 from freppledb.common.models import Parameter
 from freppledb.execute.models import Task
+from freppledb.openbravo.utils import get_data as get_data_base
 
 
 class Command(BaseCommand):
@@ -72,22 +71,21 @@ class Command(BaseCommand):
     else:
       self.delta = 3650
 
-    # Pick up configuration parameters
+    # Pick up configuration s
     self.openbravo_user = Parameter.getValue("openbravo.user", self.database)
     # Passwords in djangosettings file are preferably used
-    if settings.OPENBRAVO_PASSWORDS.get(self.database) == '':
-        self.openbravo_password = Parameter.getValue("openbravo.password", self.database)
-    else:
-        self.openbravo_password = settings.OPENBRAVO_PASSWORDS.get(self.database)
+    self.openbravo_password = settings.OPENBRAVO_PASSWORDS.get(self.database)
+    if not self.openbravo_password:
+      self.openbravo_password = Parameter.getValue("openbravo.password", self.database)
     self.openbravo_host = Parameter.getValue("openbravo.host", self.database)
     self.openbravo_pagesize = int(Parameter.getValue("openbravo.pagesize", self.database, default='1000'))
     self.openbravo_dateformat = Parameter.getValue("openbravo.date_format", self.database, default='%Y-%m-%d')
     if not self.openbravo_user:
-      raise CommandError("Missing or invalid parameter openbravo_user")
+      raise CommandError("Missing or invalid  openbravo_user")
     if not self.openbravo_password:
-      raise CommandError("Missing or invalid parameter openbravo_password")
+      raise CommandError("Missing or invalid  openbravo_password")
     if not self.openbravo_host:
-      raise CommandError("Missing or invalid parameter openbravo_host")
+      raise CommandError("Missing or invalid  openbravo_host")
 
     # Make sure the debug flag is not set!
     # When it is set, the django database wrapper collects a list of all sql
@@ -134,7 +132,7 @@ class Command(BaseCommand):
 
       # Pick up the current date
       try:
-        cursor.execute("SELECT value FROM common_parameter where name='currentdate'")
+        cursor.execute("SELECT value FROM common_ where name='currentdate'")
         d = cursor.fetchone()
         self.current = datetime.strptime(d[0], "%Y-%m-%d %H:%M:%S")
       except:
@@ -166,6 +164,11 @@ class Command(BaseCommand):
       task.status = '70%'
       task.save(using=self.database)
       self.import_purchaseorders(cursor)
+      exportPurchasingPlan = Parameter.getValue("openbravo.exportPurchasingPlan", self.database, default="false")
+      if exportPurchasingPlan == "true":
+        task.status = '75%'
+        task.save(using=self.database)
+        self.import_purchasingplan(cursor)
       task.status = '80%'
       task.save(using=self.database)
       self.import_productbom(cursor)
@@ -202,29 +205,13 @@ class Command(BaseCommand):
         url2 = "%s?firstResult=%d&maxResult=%d" % (url, firstResult, self.openbravo_pagesize)
       if self.verbosity > 1:
         print('Request: ', url2)
-      webservice = http.client.HTTPConnection(self.openbravo_host)
-      webservice.putrequest("GET", url2)
-      webservice.putheader("Host", self.openbravo_host)
-      webservice.putheader("User-Agent", "frePPLe-Openbravo connector")
-      webservice.putheader("Content-type", "text/html; charset=\"UTF-8\"")
-      webservice.putheader("Content-length", "0")
-      webservice.putheader("Authorization", "Basic %s" % base64.encodestring(('%s:%s' % (self.openbravo_user, self.openbravo_password)).replace('\n', '').encode("utf-8")).decode("utf-8"))  # TODO cleanere way???
-      webservice.endheaders()
-      webservice.send('')
-      # Get the response
-      response = webservice.getresponse()
-      if response.status != http.client.OK:
-        raise Exception(response.reason)
+
+      data = get_data_base(url2, self.openbravo_host, self.openbravo_user, self.openbravo_password).replace("&#0;","").replace("&#22;","").replace("\xcc","")
       if self.verbosity == 1:
         print('.', end="")
-        conn = iterparse(StringIO(response.read().decode("utf-8").replace("&#0;","").replace("&#22;","").replace("\xcc","")), events=('start', 'end'))
       elif self.verbosity > 2:
-        res = response.read().decode("utf-8").replace("&#0;","").replace("&#22;","").replace("\xcc","")
-        print('Response status: ', response.status, response.reason)
-        print('Response content: ', res)
-        conn = iterparse(StringIO(res), events=('start', 'end'))
-      else:
-        conn = iterparse(StringIO(response.read().decode("utf-8").replace("&#0;","").replace("&#22;","").replace("\xcc","")), events=('start', 'end'))
+        print('Response content: ', data)
+      conn = iterparse(StringIO(data), events=('start', 'end'))
       try:
         count = callback(conn)
       except ParseError:
@@ -1336,6 +1323,125 @@ class Command(BaseCommand):
         print("Updated %d purchase order lines" % len(update))
         print("Deleted %d purchase order lines" % len(delete))
         print("Imported purchase orders in %.2f seconds" % (time() - starttime))
+
+
+  def import_purchasingplan(self, cursor):
+
+    def parse(conn):
+      global idcounter
+      records = 0
+      root = None
+      for event, elem in conn:
+        if not root:
+          root = elem
+          continue
+        if event != 'end' or elem.tag != 'MRPPurchasingRun':
+          continue
+        records += 1
+        product = self.items.get(elem.find("product").get('id'), None)
+
+        # warehouse = self.locations.get(elem.find("warehouse").get('id'), None)
+        organization = self.organizations.get(elem.find("organization").get("id"), None)
+        plannedDate = elem.find("plannedDate").text
+        if not warehouse or not product or not organization or not plannedDate:
+          # Product, location or organization are not known in frePPLe.
+          # Or there is no scheduled delivery date.
+          # We assume that in that case you don't need to the purchase order either.
+          root.clear()
+          continue
+        objectid = elem.get('id')
+        scheduledDeliveryDate = datetime.strptime(scheduledDeliveryDate, '%Y-%m-%dT%H:%M:%S.%fZ')
+        creationDate = datetime.strptime(elem.find("creationDate").text, '%Y-%m-%dT%H:%M:%S.%fZ')
+        orderedQuantity = float(elem.find("orderedQuantity").text or 0)
+        deliveredQuantity = float(elem.find("deliveredQuantity").text or 0)
+        operation = u'Purchase %s @ %s' % (product, warehouse)
+        deliveries.update([
+          (product, warehouse, operation, u'%s @ %s' % (product, warehouse))
+          ])
+        if objectid in frepple_keys:
+          if deliveredQuantity >= orderedQuantity:   # TODO Not the right criterion
+            delete.append( (objectid,) )
+          else:
+            update.append((
+              operation, orderedQuantity - deliveredQuantity,
+              creationDate, scheduledDeliveryDate, objectid
+              ))
+        else:
+          idcounter += 1
+          insert.append((
+            idcounter, operation, orderedQuantity - deliveredQuantity,
+            creationDate, scheduledDeliveryDate, objectid
+            ))
+          frepple_keys.add(objectid)
+        # Clean the XML hierarchy
+        root.clear()
+      return records
+
+    global idcounter
+    with transaction.atomic(using=self.database, savepoint=False):
+      starttime = time()
+      if self.verbosity > 0:
+        print("Importing purchasing plan...")
+
+      # Collect existing purchase orders and distribution orders
+      cursor.execute('''
+        select 'PO', reference, source, status from purchase_order
+        union all
+        select 'DO', reference, source, status from distribution_order
+        ''')
+      frepple_keys = set([ i for i in cursor.fetchall()])
+
+      # Process the input
+      insert_po = []
+      update_po = []
+      delete_po = []
+      insert_do = []
+      update_do = []
+      delete_do = []
+      query = urllib.parse.quote("name like 'FREPPLE%' and description like 'Incremental export triggered by %'" % self.delta)
+      data = self.get_data("/openbravo/ws/dal/MRPPurchasingRun?where=%s" % query, parse)
+
+      # Create or update purchase orders
+      cursor.executemany(
+        "insert into purchase_order \
+            (id,operation_id,quantity,startdate,enddate,status,source,lastmodified) \
+            values(%%s,%%s,%%s,%%s,%%s,'confirmed',%%s,'%s')" % self.date,
+        insert_po
+        )
+      cursor.executemany(
+        "update purchase_order \
+            set operation_id=%%s, quantity=%%s, startdate=%%s, enddate=%%s, status='confirmed', lastmodified='%s' \
+          where source=%%s" % self.date,
+        update_po
+        )
+      cursor.executemany(
+        "delete from purchase_order where source=%s",
+        delete_po
+        )
+
+      # Create or update distribution orders
+      cursor.executemany(
+        "insert into distribution_order \
+            (id,operation_id,quantity,startdate,enddate,status,source,lastmodified) \
+            values(%%s,%%s,%%s,%%s,%%s,'confirmed',%%s,'%s')" % self.date,
+        insert_do
+        )
+      cursor.executemany(
+        "update distribution_order \
+            set operation_id=%%s, quantity=%%s, startdate=%%s, enddate=%%s, status='confirmed', lastmodified='%s' \
+          where source=%%s" % self.date,
+        update_do
+        )
+      cursor.executemany(
+        "delete from distribution_order where source=%s",
+        delete_po
+        )
+
+      if self.verbosity > 0:
+        print("Inserted %d approved purchasing plan lines" % (len(insert_po) + len(insert_do)))
+        print("Updated %d approved purchasing plan lines" % (len(update_po) + len(update_do)))
+        print("Deleted %d approved purchasing plan lines" % (len(delete_po) + len(delete_do)))
+        print("Imported approved purchasing plan lines in %.2f seconds" % (time() - starttime))
 
 
   # Load work in progress operationplans
