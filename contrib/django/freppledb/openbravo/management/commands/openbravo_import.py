@@ -68,8 +68,10 @@ class Command(BaseCommand):
       raise CommandError("No database settings known for '%s'" % self.database )
     if 'delta' in options:
       self.delta = float(options['delta'] or '3650')
+      self.incremental = (self.delta < 3650)
     else:
       self.delta = 3650
+      self.incremental = False
 
     # Pick up configuration s
     self.openbravo_user = Parameter.getValue("openbravo.user", self.database)
@@ -137,6 +139,16 @@ class Command(BaseCommand):
         self.current = datetime.strptime(d[0], "%Y-%m-%d %H:%M:%S")
       except:
         self.current = datetime.now()
+
+      # Get the biggest operationplan identifier in the current plan
+      cursor.execute('''
+        select greatest(oper.max_id, pur.max_id, dist.max_id)
+        from
+          (select max(id) max_id from operationplan) oper,
+          (select max(id) max_id from purchase_order) pur,
+          (select max(id) max_id from distribution_order) dist
+        ''')
+      self.idcounter = cursor.fetchone()[0] or 1
 
       # Sequentially load all data
       self.import_organizations(cursor)
@@ -325,7 +337,10 @@ class Command(BaseCommand):
         # Retrieve businesspartners - customers
       insert = []
       update = []
-      query = urllib.parse.quote("customer=true")
+      if self.incremental:
+        query = urllib.parse.quote("customer=true and updated>'%s'" % self.delta)
+      else:
+        query = urllib.parse.quote("customer=true")
       self.get_data("/openbravo/ws/dal/BusinessPartner?where=%s&orderBy=name&includeChildren=false" % query, parse)
 
       # Create records
@@ -345,24 +360,26 @@ class Command(BaseCommand):
         )
 
       # Delete records
-      delete = [ (i,) for i, j in unused_keys.items() if j ]
-      cursor.executemany(
-        'update customer set owner_id=null where owner_id=%s',
-        delete
-        )
-      cursor.executemany(
-        'update demand set customer_id=null where customer_id=%s',
-        delete
-        )
-      cursor.executemany(
-        'delete from customer where name=%s',
-        delete
-        )
+      if not self.incremental:
+        delete = [ (i,) for i, j in unused_keys.items() if j ]
+        cursor.executemany(
+          'update customer set owner_id=null where owner_id=%s',
+          delete
+          )
+        cursor.executemany(
+          'update demand set customer_id=null where customer_id=%s',
+          delete
+          )
+        cursor.executemany(
+          'delete from customer where name=%s',
+          delete
+          )
 
       if self.verbosity > 0:
         print("Inserted %d new customers" % len(insert))
         print("Updated %d existing customers" % len(update))
-        print("Deleted %d customers" % len(delete))
+        if not self.incremental:
+          print("Deleted %d customers" % len(delete))
         print("Imported customers in %.2f seconds" % (time() - starttime))
 
 
@@ -426,7 +443,10 @@ class Command(BaseCommand):
       # Retrieve businesspartners - suppliers
       insert = []
       update = []
-      query = urllib.parse.quote("vendor=true")
+      if self.incremental:
+        query = urllib.parse.quote("vendor=true and updated>'%s'" % self.delta)
+      else:
+        query = urllib.parse.quote("vendor=true")
       self.get_data("/openbravo/ws/dal/BusinessPartner?where=%s&orderBy=name&includeChildren=false" % query, parse)
 
       # Create records
@@ -446,28 +466,30 @@ class Command(BaseCommand):
         )
 
       # Delete records
-      delete = [ (i,) for i, j in unused_keys.items() if j ]
-      cursor.executemany(
-        'update supplier set owner_id=null where owner_id=%s',
-        delete
-        )
-      cursor.executemany(
-        'update purchase_order set supplier_id=null where supplier_id=%s',
-        delete
-        )
-      cursor.executemany(
-        'delete from itemsupplier where supplier_id=%s',
-        delete
-        )
-      cursor.executemany(
-        'delete from supplier where name=%s',
-        delete
-        )
+      if not self.incremental:
+        delete = [ (i,) for i, j in unused_keys.items() if j ]
+        cursor.executemany(
+          'update supplier set owner_id=null where owner_id=%s',
+          delete
+          )
+        cursor.executemany(
+          'update purchase_order set supplier_id=null where supplier_id=%s',
+          delete
+          )
+        cursor.executemany(
+          'delete from itemsupplier where supplier_id=%s',
+          delete
+          )
+        cursor.executemany(
+          'delete from supplier where name=%s',
+          delete
+          )
 
       if self.verbosity > 0:
         print("Inserted %d new suppliers" % len(insert))
         print("Updated %d existing suppliers" % len(update))
-        print("Deleted %d suppliers" % len(delete))
+        if not self.incremental:
+          print("Deleted %d suppliers" % len(delete))
         print("Imported suppliers in %.2f seconds" % (time() - starttime))
 
 
@@ -537,7 +559,11 @@ class Command(BaseCommand):
       insert = []
       update = []
       delete = []
-      self.get_data("/openbravo/ws/dal/Product?orderBy=name&includeChildren=false", parse)
+      if self.incremental:
+        query = urllib.parse.quote("updated>'%s'" % self.delta)
+        self.get_data("/openbravo/ws/dal/Product??where=%s&orderBy=name&includeChildren=false" % query, parse)
+      else:
+        self.get_data("/openbravo/ws/dal/Product?orderBy=name&includeChildren=false", parse)
 
       # Create new items
       cursor.executemany(
@@ -556,20 +582,22 @@ class Command(BaseCommand):
         )
 
       # Delete inactive items
-      delete = [ (i,) for i, j in unused_keys.items() if j ]
-      cursor.executemany("delete from demand where item_id=%s", delete)
-      cursor.executemany(
-        "delete from flow \
-        where thebuffer_id in (select name from buffer where item_id=%s)",
-        delete
-        )
-      cursor.executemany("delete from buffer where item_id=%s", delete)
-      cursor.executemany("delete from item where name=%s", delete)
+      if not self.incremental:
+        delete = [ (i,) for i, j in unused_keys.items() if j ]
+        cursor.executemany("delete from demand where item_id=%s", delete)
+        cursor.executemany(
+          "delete from flow \
+          where thebuffer_id in (select name from buffer where item_id=%s)",
+          delete
+          )
+        cursor.executemany("delete from buffer where item_id=%s", delete)
+        cursor.executemany("delete from item where name=%s", delete)
 
       if self.verbosity > 0:
         print("Inserted %d new products" % len(insert))
         print("Updated %d existing products" % len(update))
-        print("Deleted %d products" % len(delete))
+        if not self.incremental:
+          print("Deleted %d products" % len(delete))
         print("Imported products in %.2f seconds" % (time() - starttime))
 
 
@@ -1110,7 +1138,6 @@ class Command(BaseCommand):
 
         key = (item_id, supplier_id, None)
         unused_keys.discard(key)
-        print (source, leadtime, sizeminimum, sizemultiple, cost, priority, effective_end, item_id, location_id, supplier_id)
         if key in frepple_keys:
           update.append( (source, leadtime, sizeminimum, sizemultiple, cost, priority, effective_end, item_id, location_id, supplier_id) )
         else:
@@ -1133,15 +1160,19 @@ class Command(BaseCommand):
 
       insert = []
       update = []
-      query = urllib.parse.quote("active=true and discontinued=false")
+      if self.incremental:
+        query = urllib.parse.quote("active=true and discontinued=false and updated>'%s'" % self.delta)
+      else:
+        query = urllib.parse.quote("active=true and discontinued=false")
       prevproduct = None
       self.get_data("/openbravo/ws/dal/ApprovedVendor?where=%s&orderBy=product&includeChildren=false" % query, parse)
 
-      cursor.executemany(
-          "delete from itemsupplier \
-          where item_id=%s and supplier_id=%s and location_id=%s",
-          [ i for i in unused_keys ]
-        )
+      if not self.incremental:
+        cursor.executemany(
+            "delete from itemsupplier \
+            where item_id=%s and supplier_id=%s and location_id=%s",
+            [ i for i in unused_keys ]
+          )
 
       # Create or update purchasing operations
       cursor.executemany(
@@ -1160,7 +1191,8 @@ class Command(BaseCommand):
       if self.verbosity > 0:
           print("Inserted %d new approved vendors" % len(insert))
           print("Updated %d existing approved vendors" % len(update))
-          print("Deleted %d approved vendors" % len(unused_keys))
+          if not self.incremental:
+            print("Deleted %d approved vendors" % len(unused_keys))
           print("Populated approved vendors in %.2f seconds" % (time() - starttime))
 
 
@@ -1194,7 +1226,6 @@ class Command(BaseCommand):
   def import_purchaseorders(self, cursor):
 
     def parse(conn):
-      global idcounter
       records = 0
       root = None
       for event, elem in conn:
@@ -1232,9 +1263,9 @@ class Command(BaseCommand):
               creationDate, scheduledDeliveryDate, objectid
               ))
         else:
-          idcounter += 1
+          self.idcounter += 1
           insert.append((
-            idcounter, operation, orderedQuantity - deliveredQuantity,
+            self.idcounter, operation, orderedQuantity - deliveredQuantity,
             creationDate, scheduledDeliveryDate, objectid
             ))
           frepple_keys.add(objectid)
@@ -1242,7 +1273,6 @@ class Command(BaseCommand):
         root.clear()
       return records
 
-    global idcounter
     with transaction.atomic(using=self.database, savepoint=False):
       starttime = time()
       if self.verbosity > 0:
@@ -1254,8 +1284,6 @@ class Command(BaseCommand):
          where source is not null \
            and operation_id like 'Purchase %'")
       frepple_keys = set([ i[0] for i in cursor.fetchall()])
-      cursor.execute("SELECT max(id) FROM operationplan")
-      idcounter = cursor.fetchone()[0] or 1
 
       # Get the list of all open purchase orders
       insert = []
@@ -1330,78 +1358,88 @@ class Command(BaseCommand):
   def import_purchasingplan(self, cursor):
 
     def parse(conn):
-      global idcounter
       records = 0
       root = None
       for event, elem in conn:
         if not root:
           root = elem
           continue
-        if event != 'end' or elem.tag != 'MRPPurchasingRun':
+        if event != 'end':
+          continue
+        elif elem.tag == 'MRPPurchasingRun':
+          # Clean the XML hierarchy
+          root.clear()
+          continue
+        elif elem.tag != 'MRPPurchasingRunLine':
           continue
         records += 1
         product = self.items.get(elem.find("product").get('id'), None)
-
         # warehouse = self.locations.get(elem.find("warehouse").get('id'), None)
+        warehouse = 'Main location'   # TODO: purchasing plan has no concept of the location
         organization = self.organizations.get(elem.find("organization").get("id"), None)
-        plannedDate = elem.find("plannedDate").text
+        plannedDate = datetime.strptime(elem.find("plannedDate"), '%Y-%m-%dT%H:%M:%S.%fZ')
+        businessPartner = elem.find("businessPartner").get("id")
+        name = elem.find("purchasingPlan").get('identifier')
         if not warehouse or not product or not organization or not plannedDate:
           # Product, location or organization are not known in frePPLe.
           # Or there is no scheduled delivery date.
           # We assume that in that case you don't need to the purchase order either.
-          root.clear()
           continue
         objectid = elem.get('id')
-        scheduledDeliveryDate = datetime.strptime(scheduledDeliveryDate, '%Y-%m-%dT%H:%M:%S.%fZ')
-        creationDate = datetime.strptime(elem.find("creationDate").text, '%Y-%m-%dT%H:%M:%S.%fZ')
-        orderedQuantity = float(elem.find("orderedQuantity").text or 0)
-        deliveredQuantity = float(elem.find("deliveredQuantity").text or 0)
-        operation = u'Purchase %s @ %s' % (product, warehouse)
-        deliveries.update([
-          (product, warehouse, operation, u'%s @ %s' % (product, warehouse))
-          ])
-        if objectid in frepple_keys:
-          if deliveredQuantity >= orderedQuantity:   # TODO Not the right criterion
-            delete.append( (objectid,) )
-          else:
-            update.append((
-              operation, orderedQuantity - deliveredQuantity,
-              creationDate, scheduledDeliveryDate, objectid
+        requiredQuantity = float(elem.find("requiredQuantity").text or 0)
+        transactionType = elem.find("transactionType").text
+        if transactionType == 'PO':
+          # Purchase order
+          unused_keys_po.discard(objectid)
+          if objectid in frepple_keys_po:
+            update_po.append((
+              name, product, warehouse, businessPartner, requiredQuantity,
+              plannedDate, objectid
               ))
-        else:
-          idcounter += 1
-          insert.append((
-            idcounter, operation, orderedQuantity - deliveredQuantity,
-            creationDate, scheduledDeliveryDate, objectid
-            ))
-          frepple_keys.add(objectid)
-        # Clean the XML hierarchy
-        root.clear()
+          else:
+            self.idcounter += 1
+            insert_do.append((
+              self.idcounter, name, product, warehouse, businessPartner,
+              requiredQuantity, plannedDate, objectid
+              ))
+            frepple_keys_po.add(objectid)
+        elif transactionType == 'MS':
+          # Distribution order
+          unused_keys_do.discard(objectid)
+          if objectid in frepple_keys_do:
+            update_do.append((
+              name, product, warehouse, businessPartner,
+              requiredQuantity, plannedDate, objectid
+              ))
+          else:
+            self.idcounter += 1
+            insert_do.append((
+              self.idcounter, name, product, warehouse, businessPartner,
+              requiredQuantity, plannedDate, objectid
+              ))
+            frepple_keys_do.add(objectid)
       return records
 
-    global idcounter
     with transaction.atomic(using=self.database, savepoint=False):
       starttime = time()
       if self.verbosity > 0:
         print("Importing purchasing plan...")
 
       # Collect existing purchase orders and distribution orders
-      cursor.execute('''
-        select 'PO', reference, source, status from purchase_order
-        union all
-        select 'DO', reference, source, status from distribution_order
-        ''')
-      frepple_keys = set([ i for i in cursor.fetchall()])
+      cursor.execute("select source from purchase_order where status='approved'")
+      frepple_keys_po = set([ i for i in cursor.fetchall()])
+      unused_keys_po = frepple_keys_po.copy()
+      cursor.execute("select source from distribution_order where status='approved'")
+      frepple_keys_do = set([ i for i in cursor.fetchall()])
+      unused_keys_do = frepple_keys_do.copy()
 
       # Process the input
       insert_po = []
       update_po = []
-      delete_po = []
       insert_do = []
       update_do = []
-      delete_do = []
       query = urllib.parse.quote("name like 'FREPPLE%' and description like 'Incremental export triggered by %'" % self.delta)
-      data = self.get_data("/openbravo/ws/dal/MRPPurchasingRun?where=%s" % query, parse)
+      self.get_data("/openbravo/ws/dal/MRPPurchasingRun?where=%s" % query, parse)
 
       # Create or update purchase orders
       cursor.executemany(
@@ -1418,7 +1456,7 @@ class Command(BaseCommand):
         )
       cursor.executemany(
         "delete from purchase_order where source=%s",
-        delete_po
+        unused_keys_po
         )
 
       # Create or update distribution orders
@@ -1436,13 +1474,13 @@ class Command(BaseCommand):
         )
       cursor.executemany(
         "delete from distribution_order where source=%s",
-        delete_po
+        unused_keys_do
         )
 
       if self.verbosity > 0:
         print("Inserted %d approved purchasing plan lines" % (len(insert_po) + len(insert_do)))
         print("Updated %d approved purchasing plan lines" % (len(update_po) + len(update_do)))
-        print("Deleted %d approved purchasing plan lines" % (len(delete_po) + len(delete_do)))
+        print("Deleted %d approved purchasing plan lines" % (len(unused_keys_po) + len(unused_keys_do)))
         print("Imported approved purchasing plan lines in %.2f seconds" % (time() - starttime))
 
 
@@ -1482,8 +1520,8 @@ class Command(BaseCommand):
         if objectid in frepple_keys:
           update.append( (processPlan, quantity, startingDate, endingDate, objectid) )
         else:
-          idcounter += 1
-          insert.append( (idcounter, processPlan, quantity, startingDate, endingDate, objectid) )
+          self.idcounter += 1
+          insert.append( (self.idcounter, processPlan, quantity, startingDate, endingDate, objectid) )
         unused_keys.discard(objectid)
         # Clean the XML hierarchy
         root.clear()
@@ -1501,8 +1539,6 @@ class Command(BaseCommand):
            and operation_id like 'Processplan %'")
       frepple_keys = set([ i[0] for i in cursor.fetchall()])
       unused_keys = frepple_keys.copy()
-      cursor.execute("SELECT max(id) FROM operationplan")
-      idcounter = cursor.fetchone()[0] or 1
 
       # Create index of all operations
       cursor.execute("SELECT name, source, location_id \
