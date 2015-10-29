@@ -1128,7 +1128,8 @@ function displayResult(data)
       cellEdit: true,
       {% endif %}
       cellsubmit: 'clientArray',
-      editurl: location.pathname,   //afterEditCell: afterEditCell,
+      editurl: location.pathname,
+      afterEditCell: grid.afterEditCell,
       beforeSaveCell: select,
       onSelectRow: markSelectedRow
         });

@@ -711,25 +711,24 @@ var grid = {
   //date.
   afterEditCell: function (rowid, cellname, value, iRow, iCol)
   {
-  var cell = document.getElementById(iRow+'_'+cellname);
-  var colmodel = jQuery("#grid").jqGrid ('getGridParam', 'colModel')[iCol];
+  var colmodel = $(this).jqGrid('getGridParam', 'colModel')[iCol];
   if (colmodel.formatter == 'date')
   {
     if (colmodel.formatoptions['srcformat'] == "Y-m-d")
-      $(cell).datepicker({
+      $("#" + iRow + '_' + cellname).datepicker({
         showOtherMonths: true, selectOtherMonths: true,
         dateFormat: "yy-mm-dd", changeMonth:true,
         changeYear:true, yearRange: "c-1:c+5"
         });
     else
-      $(cell).datepicker({
+      $("#" + iRow + '_' + cellname).datepicker({
         showOtherMonths: true, selectOtherMonths: true,
         dateFormat: "yy-mm-dd 00:00:00", changeMonth:true,
         changeYear:true, yearRange: "c-1:c+5"
         });
   }
   else
-    $(cell).select();
+	$("#" + iRow + '_' + cellname).select();
   },
 
   // Display dialog for incremental export from openbravo
