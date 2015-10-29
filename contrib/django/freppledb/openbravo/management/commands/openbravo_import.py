@@ -561,7 +561,7 @@ class Command(BaseCommand):
       delete = []
       if self.incremental:
         query = urllib.parse.quote("updated>'%s'" % self.delta)
-        self.get_data("/openbravo/ws/dal/Product??where=%s&orderBy=name&includeChildren=false" % query, parse)
+        self.get_data("/openbravo/ws/dal/Product?where=%s&orderBy=name&includeChildren=false" % query, parse)
       else:
         self.get_data("/openbravo/ws/dal/Product?orderBy=name&includeChildren=false", parse)
 
@@ -834,8 +834,10 @@ class Command(BaseCommand):
       insert = []
       update = []
       deliveries = set()
-      query = urllib.parse.quote("(updated>'%s' or salesOrder.updated>'%s') and salesOrder.salesTransaction=true and (salesOrder.documentStatus='CO' or salesOrder.documentStatus='CL')" % (self.delta, self.delta))
-      query = urllib.parse.quote("salesOrder.salesTransaction=true and (salesOrder.documentStatus='CO' or salesOrder.documentStatus='CL')")
+      if self.incremental:
+        query = urllib.parse.quote("(updated>'%s' or salesOrder.updated>'%s') and salesOrder.salesTransaction=true and (salesOrder.documentStatus='CO' or salesOrder.documentStatus='CL')" % (self.delta, self.delta))
+      else:
+        query = urllib.parse.quote("salesOrder.salesTransaction=true and (salesOrder.documentStatus='CO' or salesOrder.documentStatus='CL')")
       self.get_data("/openbravo/ws/dal/OrderLine?where=%s&orderBy=salesOrder.creationDate&includeChildren=false" % query, parse)
 
       # Create or update delivery operations
@@ -1378,7 +1380,8 @@ class Command(BaseCommand):
         warehouse = 'Main location'   # TODO: purchasing plan has no concept of the location
         organization = self.organizations.get(elem.find("organization").get("id"), None)
         plannedDate = datetime.strptime(elem.find("plannedDate"), '%Y-%m-%dT%H:%M:%S.%fZ')
-        businessPartner = elem.find("businessPartner").get("id")
+        plannedOrderDate = datetime.strptime(elem.find("plannedDate"), '%Y-%m-%dT%H:%M:%S.%fZ')
+        businessPartner = self.suppliers(elem.find("businessPartner").get("id"), None)
         name = elem.find("purchasingPlan").get('identifier')
         if not warehouse or not product or not organization or not plannedDate:
           # Product, location or organization are not known in frePPLe.
@@ -1388,19 +1391,19 @@ class Command(BaseCommand):
         objectid = elem.get('id')
         requiredQuantity = float(elem.find("requiredQuantity").text or 0)
         transactionType = elem.find("transactionType").text
-        if transactionType == 'PO':
+        if transactionType == 'PO' and businessPartner:
           # Purchase order
           unused_keys_po.discard(objectid)
           if objectid in frepple_keys_po:
             update_po.append((
               name, product, warehouse, businessPartner, requiredQuantity,
-              plannedDate, objectid
+              plannedDate, plannedOrderDate, objectid
               ))
           else:
             self.idcounter += 1
-            insert_do.append((
+            insert_po.append((
               self.idcounter, name, product, warehouse, businessPartner,
-              requiredQuantity, plannedDate, objectid
+              requiredQuantity, plannedDate, plannedOrderDate, objectid
               ))
             frepple_keys_po.add(objectid)
         elif transactionType == 'MS':
@@ -1408,14 +1411,14 @@ class Command(BaseCommand):
           unused_keys_do.discard(objectid)
           if objectid in frepple_keys_do:
             update_do.append((
-              name, product, warehouse, businessPartner,
-              requiredQuantity, plannedDate, objectid
+              name, product, warehouse, requiredQuantity,
+              plannedDate, objectid
               ))
           else:
             self.idcounter += 1
             insert_do.append((
-              self.idcounter, name, product, warehouse, businessPartner,
-              requiredQuantity, plannedDate, objectid
+              self.idcounter, name, product, warehouse, requiredQuantity,
+              plannedDate, objectid
               ))
             frepple_keys_do.add(objectid)
       return records
@@ -1444,13 +1447,14 @@ class Command(BaseCommand):
       # Create or update purchase orders
       cursor.executemany(
         "insert into purchase_order \
-            (id,operation_id,quantity,startdate,enddate,status,source,lastmodified) \
-            values(%%s,%%s,%%s,%%s,%%s,'confirmed',%%s,'%s')" % self.date,
+            (id,reference,item_id,location_id,supplier_id,quantity,enddate,startdate,status,lastmodified) \
+            values(%%s,%%s,%%s,%%s,%%s,%%s,%%s,%%s,'confirmed''%s')" % self.date,
         insert_po
         )
       cursor.executemany(
         "update purchase_order \
-            set operation_id=%%s, quantity=%%s, startdate=%%s, enddate=%%s, status='confirmed', lastmodified='%s' \
+            set reference=%%s, item_id=%%s, location_id=%%s, supplier_id=%%s, quantity=%%s, \
+            enddate=%%s, startdate=%%s, status='approved', lastmodified='%s' \
           where source=%%s" % self.date,
         update_po
         )
@@ -1462,13 +1466,14 @@ class Command(BaseCommand):
       # Create or update distribution orders
       cursor.executemany(
         "insert into distribution_order \
-            (id,operation_id,quantity,startdate,enddate,status,source,lastmodified) \
-            values(%%s,%%s,%%s,%%s,%%s,'confirmed',%%s,'%s')" % self.date,
+            (id,reference,item_id,destination_id,quantity,enddate,source,status,consume_material,lastmodified) \
+            values(%%s,%%s,%%s,%%s,%%s,%%s,%%s,'approved',false,'%s')" % self.date,
         insert_do
         )
       cursor.executemany(
         "update distribution_order \
-            set operation_id=%%s, quantity=%%s, startdate=%%s, enddate=%%s, status='confirmed', lastmodified='%s' \
+            set reference=%%s, item_id=%%s, destination_id=%%s, quantity=%%s, enddate=%s, status='approved', \
+            consume_material=false, lastmodified='%s'  \
           where source=%%s" % self.date,
         update_do
         )
@@ -1643,10 +1648,10 @@ class Command(BaseCommand):
         frepple_keys.add(i[0])
 
       # Loop over all productboms
-        query = urllib.parse.quote("product.billOfMaterials=true")
       operations = set()
       buffers = set()
       flows = {}
+      query = urllib.parse.quote("product.billOfMaterials=true")
       self.get_data("/openbravo/ws/dal/ProductBOM?where=%s&includeChildren=false" % query, parse)
 
       # Execute now on the database

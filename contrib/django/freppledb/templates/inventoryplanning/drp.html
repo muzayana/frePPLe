@@ -359,78 +359,6 @@ function save(refresh) {
 }
 
 
-function openbravoIncrExport()
-{
-	// Collect all selected rows in the status 'proposed'
-  var sel = jQuery("#transactiongrid").jqGrid('getGridParam','selarrrow');
-  if (sel === null || sel.length == 0)
-    return;
-  var data = [];
-  for (var i in sel)
-  {
-	  var r = jQuery("#transactiongrid").jqGrid('getRowData', sel[i]);
-	  if (r.status == 'proposed')
-	    data.push(r);
-  }
-  if (data == [])
-	  return;
-
-  // Send to the server for upload into openbravo
-  $('#popup')
-  .html(gettext("export selected records to openbravo"))
-  .dialog({
-    title: gettext("export"),
-    autoOpen: true, resizable: false, width: 390, height: 'auto', modal: true,
-    buttons: [
-      {
-        text: gettext("export"),
-        id: 'button_export',
-        click: function() {
-
-          $('#popup').html(gettext("connecting to openbravo..."));
-          // Send the update to the server
-          $.ajax({
-               url: "{{request.prefix}}/openbravo/upload/",
-               data: JSON.stringify(data),
-               type: "POST",
-               contentType: "application/json",
-               success: function () {
-                 $('#popup').html(gettext("Export successful"))
-                   .dialog({
-                     autoOpen: true,
-                     resizable: false,
-                     width: 'auto',
-                     height: 'auto',
-                     model: false
-                   });
-                 $('#button_close').find('.ui-button-text').text(gettext('close'));
-                 $('#button_export').removeClass("ui-state-default").addClass("ui-state-disabled").prop('disabled', 'disabled');
-                 // Mark selected rows as "approved" if the original status was "proposed".
-                 for (var i in sel)
-                 {
-                   var cur = jQuery("#transactiongrid").jqGrid('getCell', sel[i], 'status');
-                   if (cur == 'proposed')
-                     jQuery("#transactiongrid").jqGrid('setCell', sel[i], 'status', 'approved');
-                 }
-               },
-               error: function (result, stat, errorThrown) {
-            	   fmts = ngettext("Error during export")
-                 $('#popup').html(gettext("Error during export") + ':' + result.responseText);
-                 $('#button_export').find('.ui-button-text').text(gettext('retry'));
-               }
-           });
-        }
-      },
-      {
-        text: gettext("cancel"),
-        id: 'button_close',
-        click: function() { $(this).dialog("close"); }
-      }
-      ]
-  });
-  $("#actions").prop("selectedIndex",0);
-}
-
 function forecastfields() {
   var col =
 	{% if perms.forecast.change_forecastdemand %}
@@ -1261,10 +1189,10 @@ $(function() {
 &nbsp;&nbsp;<input type="submit" value="{% filter upper|force_escape %}{% trans 'Undo' context 'Translation included with Django' %}{% endfilter %}" id="undo" class="button ui-corner-all save_undo_button_inactive" role="button" onclick="undo()" title="{% trans 'undo changes'|capfirst|force_escape %}">
 {% endif %}
 {% if perms.input.change_purchaseorder or perms.input.change_distributionorder %}
-&nbsp;&nbsp;<select disabled='disabled' name="actions" id="actions" onchange="javascript: if ( $(this).val() == 'openbravo_incr_export') {openbravoIncrExport();} else {setStatus($(this).val());}" style="display: initial" class="ui-corner-all ui-selectmenu-disabled ui-state-disabled change_status_selectmenu_inactive" >
+&nbsp;&nbsp;<select disabled='disabled' name="actions" id="actions" onchange="javascript: if ( $(this).val() == 'openbravo_export') {openbravo.IncrementalExport(jQuery('#transactiongrid'),'all');} else {setStatus($(this).val());}" style="display: initial" class="ui-corner-all ui-selectmenu-disabled ui-state-disabled change_status_selectmenu_inactive" >
   <option value='no_action'>{% trans "select action"|capfirst %}</option>
   {% if openbravo %}
-  <option value='openbravo_incr_export'>{% filter capfirst %}{% trans "incremental export to openbravo" %}{% endfilter %}</option>
+  <option value='openbravo_export'>{% filter capfirst %}{% trans "incremental export to openbravo" %}{% endfilter %}</option>
   {% else %}
   <option value='proposed'>{% filter capfirst %}{% blocktrans with status=_("proposed") %}change status to {{status}}{% endblocktrans %}{% endfilter %}</option>
   <option value='confirmed'>{% filter capfirst %}{% blocktrans with status=_("confirmed") %}change status to {{status}}{% endblocktrans %}{% endfilter %}</option>

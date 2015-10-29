@@ -44,7 +44,7 @@ def Upload(request):
     try:
       if rec['type'] == 'PO':
         obj = PurchaseOrder.objects.using(request.database).get(id=rec['id'])
-        obj.supplier = Supplier.objects.using(request.database).get(name=rec['origin'])
+        obj.supplier = Supplier.objects.using(request.database).get(name=rec.get('origin') or rec.get('supplier'))
         if not obj.supplier.source:
           continue
       else:
