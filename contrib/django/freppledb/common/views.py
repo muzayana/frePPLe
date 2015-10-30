@@ -9,6 +9,8 @@
 #
 
 import json
+import types
+
 
 from django.shortcuts import render_to_response
 from django.contrib import messages
@@ -25,14 +27,17 @@ from django.utils.text import capfirst
 from django.contrib.auth.models import Group
 from django.utils import translation
 from django.conf import settings
-from django.http import Http404, HttpResponseRedirect, HttpResponse, HttpResponseServerError
+from django.http import Http404, HttpResponseRedirect, HttpResponse, HttpResponseServerError, HttpResponseNotFound
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.debug import sensitive_variables
+from django.views.generic import View
 
 from freppledb.common.models import User, Parameter, Comment, Bucket, BucketDetail
 from freppledb.common.report import GridReport, GridFieldLastModified, GridFieldText
 from freppledb.common.report import GridFieldBool, GridFieldDateTime, GridFieldInteger
 
+from freppledb.admin import data_site
+from freppledb.input import views
 
 import logging
 logger = logging.getLogger(__name__)
@@ -215,7 +220,6 @@ class UserList(GridReport):
   '''
   A list report to show users.
   '''
-  template = 'common/userlist.html'
   title = _("User List")
   basequeryset = User.objects.all()
   model = User
@@ -257,7 +261,6 @@ class ParameterList(GridReport):
   '''
   A list report to show all configurable parameters.
   '''
-  template = 'common/parameterlist.html'
   title = _("Parameter List")
   basequeryset = Parameter.objects.all()
   model = Parameter
@@ -335,7 +338,6 @@ class BucketList(GridReport):
   '''
   A list report to show dates.
   '''
-  template = 'common/bucketlist.html'
   title = _("Bucket List")
   basequeryset = Bucket.objects.all()
   model = Bucket
@@ -371,88 +373,28 @@ class BucketDetailList(GridReport):
 
 
 @staff_member_required
-def prevtab(request, *args, **kwargs):
-  # In actual implementation, we will need to look up the view function to call:
-  #  - from the url, we will get as arguments a) app name, b) model name and c) object id
-  #    see the url and view function for freppledb.common.views.Comments do this
-  #  - once we know the app and model, we can pick up the admin model for it
-  #    code should be something like:
-  #        from freppledb.admin import data_site
-  #        data_site._registry  -> this is a dictionary with all registered admin classes
-  #  - All of the admin classes in freppledb.input.admin will need a new line with its tabs
-  #    This will be a list of tuples (view function, optional required permission) such as:
-  #         class Item_admin(MultiDBModelAdmin):
-  #           model = Item
-  #           save_on_top = True
-  #           raw_id_fields = ('operation', 'owner',)
-  #           inlines = [ ItemSupplier_inline, ]
-  #           exclude = ('source',)
-  #           tabs = [
-  #             'edit': (view function name, 'change_item'), 
-  #             'supply path': (view function name, 'change_item'), 
-  #             'where used': (view function name, 'change_item'), 
-  #             ]
-  #         data_site.register(Item, Item_admin)    
-  if request.session['lasttab'] == 'C':
-    return tabC(request, *args, **kwargs)
-  elif request.session['lasttab'] == 'B':
-    return tabB(request, *args, **kwargs)
+def detail(request, app, model, object_id):
+
+  print(model.capitalize(), app, request)
+  ct = ContentType.objects.get(app_label=app, model=model)
+  admn = data_site._registry[ct.model_class()]
+  if not hasattr(admn, 'tabs'):
+    return HttpResponseNotFound('<h1>Page not found</h1>')
+  lasttab = request.session.get('lasttab')
+  for tab in admn.tabs:
+    if lasttab == tab['name'] or not lasttab:
+      request.session['lasttab'] = lasttab
+      print(tab['view'], isinstance(tab['view'], View))
+      if isinstance(tab['view'], types.FunctionType):
+        return tab['view'](request, object_id)
+      else:
+        return tab['view'].as_view()(request, object_id)
+  request.session['lasttab'] = lasttab
+  if isinstance(admn.tabs[0], types.MethodType):
+    return admn.tabs[0]['view'](request, object_id)   
   else:
-    return tabA(request, *args, **kwargs)
+    return admn.tabs[0]['view'].as_view()(request, object_id) 
 
 
-@staff_member_required
-def tabA(request, *args, **kwargs):
-  request.session['lasttab'] = 'A'
-  return HttpResponse('''
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset=utf-8 />
-      <title>page A</title>
-    </head>
-    <body>
-       This is page A.<br>
-       <a href="/tabB/">link to page B</a>
-       <a href="/tabC/">link to page C</a>
-    </body>
-    </html>'''
-    )
-
-
-@staff_member_required
-def tabB(request, *args, **kwargs):
-  request.session['lasttab'] = 'B'
-  return HttpResponse('''
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset=utf-8 />
-      <title>page B</title>
-    </head>
-    <body>
-       This is page B.<br>
-       <a href="/tabA/">link to page A</a>
-       <a href="/tabC/">link to page C</a>
-    </body>
-    </html>'''
-    )
-
-
-@staff_member_required
-def tabC(request, *args, **kwargs):
-  request.session['lasttab'] = 'C'
-  return HttpResponse('''
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset=utf-8 />
-      <title>page C</title>
-    </head>
-    <body>
-       This is page C.<br>
-       <a href="/tabA/">link to page A</a>
-       <a href="/tabB/">link to page B</a>
-    </body>
-    </html>'''
-    )
+  
+    

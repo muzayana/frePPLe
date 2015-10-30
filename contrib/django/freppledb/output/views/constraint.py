@@ -88,6 +88,7 @@ class ReportByDemand(BaseReport):
   @ classmethod
   def basequeryset(reportclass, request, args, kwargs):
     if args and args[0]:
+      request.session['lasttab'] = 'constraint'
       return Constraint.objects.all().filter(demand__exact=args[0])
     else:
       return Constraint.objects.all()
@@ -100,6 +101,7 @@ class ReportByBuffer(BaseReport):
   @ classmethod
   def basequeryset(reportclass, request, args, kwargs):
     if args and args[0]:
+      request.session['lasttab'] = 'constraint'
       return Constraint.objects.all().filter(owner__exact=args[0], entity__exact='material')
     else:
       return Constraint.objects.all()
@@ -112,6 +114,7 @@ class ReportByOperation(BaseReport):
   @ classmethod
   def basequeryset(reportclass, request, args, kwargs):
     if args and args[0]:
+      request.session['lasttab'] = 'constraint'
       return Constraint.objects.all().filter(owner__exact=args[0], entity__exact='operation')
     else:
       return Constraint.objects.all()
@@ -124,6 +127,7 @@ class ReportByResource(BaseReport):
   @ classmethod
   def basequeryset(reportclass, request, args, kwargs):
     if args and args[0]:
+      request.session['lasttab'] = 'constraint'
       return Constraint.objects.all().filter(owner__exact=args[0], entity__exact='capacity')
     else:
       return Constraint.objects.all()

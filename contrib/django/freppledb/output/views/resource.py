@@ -48,6 +48,7 @@ class OverviewReport(GridPivot):
 
   @classmethod
   def extra_context(reportclass, request, *args, **kwargs):
+    request.session['lasttab'] = 'plan'
     if args and args[0]:
       return {
         'units': reportclass.getUnits(request),
@@ -184,6 +185,8 @@ class DetailReport(GridReport):
 
   @classmethod
   def extra_context(reportclass, request, *args, **kwargs):
+    if args and args[0]:
+      request.session['lasttab'] = 'plandetail'
     return {'active_tab': 'plandetail'}
 
   rows = (
@@ -225,6 +228,8 @@ class GanttReport(GridReport):
 
   @classmethod
   def extra_context(reportclass, request, *args, **kwargs):
+    if args and args[0]:
+      request.session['lasttab'] = 'gantt'
     return {'active_tab': 'gantt'}
 
   @ classmethod
