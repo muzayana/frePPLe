@@ -31,6 +31,7 @@ from django.views.decorators.csrf import csrf_protect
 from django.utils.encoding import smart_text
 
 from freppledb.common.models import Comment
+from freppledb.common.views import Comments
 
 csrf_protect_m = method_decorator(csrf_protect)
 
@@ -153,6 +154,7 @@ class MultiDBModelAdmin(admin.ModelAdmin):
   def history_view(self, request, object_id, extra_context=None):
     "The 'history' admin view for this model."
     # First check if the object exists and the user can see its history.
+    request.session['lasttab'] = 'history'
     model = self.model
     obj = self.get_object(request, unquote(object_id))
     if obj is None:
@@ -307,9 +309,15 @@ class MultiDBModelAdmin(admin.ModelAdmin):
   @csrf_protect_m
   @transaction.atomic
   def change_view(self, request, object_id, form_url='', extra_context=None):
+    request.session['lasttab'] = 'edit'
     new_extra_context = extra_context or {}
     new_extra_context['title'] = capfirst(force_text(self.model._meta.verbose_name) + ' ' + unquote(object_id))
     return super(MultiDBModelAdmin, self).change_view(request, object_id, form_url, new_extra_context)
+
+
+  def comment_view(self, request, object_id, extra_context=None):
+    "The 'comment' view for this model."
+    return Comments(request, self.model._meta.app_label, self.model._meta.model_name, object_id)
 
 
   def response_delete(self, request, obj_display, obj_id):

@@ -275,7 +275,8 @@ class ParameterList(GridReport):
 
 @staff_member_required
 @csrf_protect
-def Comments(request, app, model, object_id):
+def Comments(request, app, model, object_id):  # TODO move this view completely into MultiDBModelAdmin
+  request.session['lasttab'] = 'comments'
   try:
     modeltype = ContentType.objects.using(request.database).get(app_label=app, model=model)
     modeltype._state.db = request.database
