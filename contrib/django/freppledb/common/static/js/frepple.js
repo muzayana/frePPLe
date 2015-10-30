@@ -1134,7 +1134,7 @@ var grid = {
 //----------------------------------------------------------------------------
 
 var openbravo = {
-  IncrementalExport: function(grid) {
+  IncrementalExport: function(grid, transactiontype) {
 	// Collect all selected rows in the status 'proposed'
 	  var sel = grid.jqGrid('getGridParam','selarrrow');
 	  if (sel === null || sel.length == 0)
@@ -1143,6 +1143,8 @@ var openbravo = {
 	  for (var i in sel)
 	  {
 		  var r = grid.jqGrid('getRowData', sel[i]);
+		  if (r.type === undefined)
+			  r.type = transactiontype;
 		  if (r.status == 'proposed')
 		    data.push(r);
 	  }
@@ -1163,8 +1165,10 @@ var openbravo = {
 
 	          $('#popup').html(gettext("connecting to openbravo..."));
 	          // Send the update to the server
+	          var database = $('#database').val();
+	          database = (database===undefined || database==='default') ? '' : '/' + database;
 	          $.ajax({
-	               url: "{{request.prefix}}/openbravo/upload/",
+	               url: database + "/openbravo/upload/",
 	               data: JSON.stringify(data),
 	               type: "POST",
 	               contentType: "application/json",

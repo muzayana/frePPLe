@@ -111,6 +111,10 @@ class PathReport(GridReport):
 
   @classmethod
   def extra_context(reportclass, request, *args, **kwargs):
+    if reportclass.downstream:
+      request.session['lasttab'] = 'whereused'
+    else:
+      request.session['lasttab'] = 'supplypath'
     return {
       'title': capfirst(
         force_text(reportclass.objecttype._meta.verbose_name) + " " + args[0] +
@@ -1018,7 +1022,7 @@ class DistributionOrderList(GridReport):
 
   if 'freppledb.openbravo' in settings.INSTALLED_APPS:
     actions = [
-      {"name": 'openbravo_incr_export', "label": _("incremental export to openbravo"), "function": "grid.openbravoIncrExport()"},
+      {"name": 'openbravo_incr_export', "label": _("incremental export to openbravo"), "function": "openbravo.IncrementalExport(jQuery('#grid'),'DO')"},
     ]
   else:
     actions = [
@@ -1059,7 +1063,7 @@ class PurchaseOrderList(GridReport):
 
   if 'freppledb.openbravo' in settings.INSTALLED_APPS:
     actions = [
-      {"name": 'openbravo_incr_export', "label": _("incremental export to openbravo"), "function": "grid.openbravoIncrExport()"},
+      {"name": 'openbravo_incr_export', "label": _("incremental export to openbravo"), "function": "openbravo.IncrementalExport(jQuery('#grid'),'PO')"},
     ]
   else:
     actions = [

@@ -22,17 +22,6 @@ var units = '{% if not "units" in preferences or preferences.units == 'units' %}
 var timebuckets = [ {% for f in request.report_bucketlist %}{% if not forloop.first %},{% endif %}{'name':'{{f.name}}','startdate':'{{f.startdate|date:"Y-m-d"}}','enddate':'{{f.enddate|date:"Y-m-d"}}'}{% endfor %} ];
 
 
-function switchMode()
-{
-  var mode = $("#grouping").val();
-  if (mode != 'itemlocation')
-  {
-    alert("Not implemented yet"); // TODO
-    $("#grouping").val('itemlocation');
-  }
-}
-
-
 function selectRow(id)
 {
   if (!!result && id == result.name)
@@ -97,7 +86,8 @@ function extraPreference()
     "showtab": showtab,
     "type": result ? result.type : null,
     "name": result ? result.name : null,
-    "units": units
+    "units": units,
+    "grouping": $("#grouping").val()
   };
 }
 
@@ -174,7 +164,14 @@ function markSelectedRow(id)
 }
 
 
-function updateScreen(newval)
+function changeGrouping()
+{
+  grid.saveColumnConfiguration();
+  setTimeout(function() { window.location.href = window.location.href; }, 1000);
+}
+
+
+function changeUnits(newval)
 {
   if (units == newval)
     return; // Nothing changed
@@ -1152,8 +1149,8 @@ $(function() {
   selectTab("{% if preferences.showtab %}{{ preferences.showtab }}{% else %}plan{% endif %}");
 
   $("#units").buttonset();
-  $("#unitsmode").click(function() {updateScreen("value");});
-  $("#valuemode").click(function() {updateScreen("units");});
+  $("#unitsmode").click(function() {changeUnits("value");});
+  $("#valuemode").click(function() {changeUnits("units");});
 
   // Resize the grids when the window size changes
   $(window).bind('resize', function() {
@@ -1167,10 +1164,10 @@ $(function() {
 </script>
 {% endblock %}
 
-{% block save_undo_buttons %}<div style="float:left"><select id="grouping" onchange="switchMode()">
-  <option value="itemlocation">{% filter capfirst %}{% trans "no grouping"|capfirst %}{% endfilter %}</option>
-  <option value="item">{% filter capfirst %}{% trans "group by item"|capfirst %}{% endfilter %}</option>
-  <option value="location">{% filter capfirst %}{% trans "group by location"|capfirst %}{% endfilter %}</option>
+{% block save_undo_buttons %}<div style="float:left"><select id="grouping" onchange="changeGrouping()">
+  <option value="itemlocation"{% if not "grouping" in preferences or preferences.grouping == 'itemlocation' %} selected{% endif %}>{% filter capfirst %}{% trans "no grouping"|capfirst %}{% endfilter %}</option>
+  <option value="item"{% if preferences.grouping == 'item' %} selected{% endif %}>{% filter capfirst %}{% trans "group by item"|capfirst %}{% endfilter %}</option>
+  <option value="location"{% if preferences.grouping == 'location' %} selected{% endif %}>{% filter capfirst %}{% trans "group by location"|capfirst %}{% endfilter %}</option>
 </select></div>{% endblock %}
 
 {% block actions %}<form style="display: inline"><span id="units">
