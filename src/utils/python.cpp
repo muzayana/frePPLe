@@ -134,10 +134,13 @@ PyObject* PythonInterpreter::createModule()
 
 DECLARE_EXPORT void PythonInterpreter::initialize()
 {
-  // Initialize the Python interpreter in case we are embedding it in frePPLe.
-  if(!Py_IsInitialized())
+  int init = Py_IsInitialized();
+  if (init)
+    // Running as a module in existing interpreter
+    PythonInterpreter::createModule();
+  else
   {
-    // This method needs to be called before the initialization
+    // Embedding a python interpreter in frePPLe.
     PyImport_AppendInittab("frepple", &PythonInterpreter::createModule);
     // The arg 0 indicates that the interpreter doesn't
     // implement its own signal handler
@@ -150,16 +153,19 @@ DECLARE_EXPORT void PythonInterpreter::initialize()
   // Capture global lock
   PyGILState_STATE state = PyGILState_Ensure();
 
-  // Create the logging function.
-  // In Python3 this also creates the frepple module, by calling the createModule callback.
-  PyRun_SimpleString(
-    "import frepple, sys\n"
-    "class redirect:\n"
-    "\tdef write(self,str):\n"
-    "\t\tfrepple.log(str)\n"
-    "sys.stdout = redirect()\n"
-    "sys.stderr = redirect()"
-  );
+  if (!init)
+  {
+    // Create the logging function.
+    // In Python3 this also creates the frepple module, by calling the createModule callback.
+    PyRun_SimpleString(
+      "import frepple, sys\n"
+      "class redirect:\n"
+      "\tdef write(self,str):\n"
+      "\t\tfrepple.log(str)\n"
+      "sys.stdout = redirect()\n"
+      "sys.stderr = redirect()"
+    );
+  }
 
   if (!module)
   {
@@ -190,7 +196,8 @@ DECLARE_EXPORT void PythonInterpreter::initialize()
       "Prints a string to the frePPLe log file.", false);
 
   // Release the lock
-  PyGILState_Release(state);
+  if (init)
+    PyGILState_Release(state);
 
   // A final check...
   if (nok) throw RuntimeException("Can't initialize Python interpreter");
