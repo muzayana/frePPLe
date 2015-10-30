@@ -122,6 +122,13 @@ class DRP(GridReport):
     )
 
 
+  @classmethod
+  def extra_context(reportclass, request, *args, **kwargs):
+    return {
+      'openbravo': 'freppledb.openbravo' in settings.INSTALLED_APPS
+      }
+
+
   @staticmethod
   def query(request, basequery):
 

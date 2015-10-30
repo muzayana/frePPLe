@@ -316,7 +316,7 @@ AC_CONFIG_FILES([ test/Makefile test/buffer_batch/Makefile test/cluster/Makefile
 
 # Define extra output make files for the Enterprise Edition
 AC_CONFIG_FILES([ modules/forecast/Makefile modules/webserver/Makefile modules/inventoryplanning/Makefile ])
-AC_CONFIG_FILES([ test/forecast_1/Makefile test/forecast_2/Makefile test/forecast_3/Makefile test/forecast_4/Makefile test/forecast_5/Makefile test/forecast_6/Makefile test/json/Makefile ])
+AC_CONFIG_FILES([ test/forecast_1/Makefile test/forecast_2/Makefile test/forecast_3/Makefile test/forecast_4/Makefile test/forecast_5/Makefile test/forecast_6/Makefile test/inventoryplanning_1/Makefile test/json/Makefile ])
 
 # Generate all make files
 AC_OUTPUT
