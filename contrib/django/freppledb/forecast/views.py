@@ -37,7 +37,7 @@ class ForecastList(GridReport):
   '''
   A list report to show forecasts.
   '''
-  template = 'forecast/forecastlist.html'
+  template = 'admin/base_site_grid.html'
   title = _("forecast")
   basequeryset = Forecast.objects.all()
   model = Forecast
@@ -67,7 +67,7 @@ class ForecastDemandList(GridReport):
   '''
   A list report to show forecastdemands.
   '''
-  template = 'forecast/forecastdemandlist.html'
+  template = 'admin/base_site_grid.html'
   title = _("forecasted demand")
   basequeryset = ForecastDemand.objects.all()
   model = ForecastDemand

@@ -1,9 +1,0 @@
-{% load i18n %}
-<div id="forecastcontext" class="ContextMenu"><ul class="ui-menu ui-widget ui-widget-content ui-corner-all ui-state-default">
-{% if perms.forecast.change_forecast %}<li class="ui-menu-item"><a id="{{request.prefix}}/data/forecast/forecast/{value}/">{% trans 'edit'|capfirst %}</a><li>
-{% endif %}<li class="ui-menu-item"><a id="{{request.prefix}}/supplypath/forecast/{value}/">{% trans 'supply path'|capfirst %}</a></li>
-<li class="ui-menu-item"><a id="{{request.prefix}}/forecast/{value}/">{% trans 'plan'|capfirst %}</a></li>
-<li class="ui-menu-item"><a id="{{request.prefix}}/constraint/?demand__startswith={value}-">{% trans 'why short or late?'|capfirst %}</a></li>
-<li class="ui-menu-item"><a id="{{request.prefix}}/comments/forecast/forecast/{value}/">{% trans 'comments'|capfirst %}</a></li>
-<li class="ui-menu-item"><a id="{{request.prefix}}/data/forecast/forecast/{value}/history/">{% trans 'history'|capfirst %}</a></li>
-</ul></div>

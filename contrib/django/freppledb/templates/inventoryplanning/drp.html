@@ -1,12 +1,6 @@
 {% extends "admin/base_site_grid.html" %}
 {% load i18n %}
 
-{% block contextmenus %}
-{% include "buffercontext.html" %}
-{% include "itemcontext.html" %}
-{% include "locationcontext.html" %}
-{% endblock %}
-
 {% block extra_grid %}onSelectRow: selectRow,{% endblock %}
 
 {% block extrahead %}{{block.super}}

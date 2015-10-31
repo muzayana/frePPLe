@@ -1,11 +1,6 @@
 {% extends "admin/base_site_grid.html" %}
 {% load i18n %}
-{% block contextmenus %}
-{% include "demandcontext.html" %}
-{% include "itemcontext.html" %}
-{% include "customercontext.html" %}
-{% include "operationcontext.html" %}
-{% endblock %}
+
 {% block extrahead %}{{block.super}}
 <script type="text/javascript" src="/static/admin/js/admin/RelatedObjectLookups.js"></script>
 <style>

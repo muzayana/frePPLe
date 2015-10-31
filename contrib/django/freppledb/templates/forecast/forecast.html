@@ -36,10 +36,6 @@
 </span></form>&nbsp;&nbsp;{% endblock %}
 
 {% block contextmenus %}
-{% include "itemcontext.html" %}
-{% include "locationcontext.html" %}
-{% include "forecastcontext.html" %}
-{% include "customercontext.html" %}
 <div id="detail0context" class="ContextMenu"><ul class="ui-menu ui-widget ui-widget-content ui-corner-all ui-state-default">
 <li class="ui-menu-item"><a id="{{request.prefix}}/forecast/demand/?forecast={value}&amp;o=5a&amp;due__gte={startdate}&amp;due__lt={enddate}">{% trans 'detail'|capfirst %}</a></li>
 </ul></div>
