@@ -18,7 +18,7 @@ from django.utils.translation import ugettext_lazy as _
 
 from freppledb.common.models import User, Parameter, Comment, Bucket, BucketDetail
 from freppledb.common.adminforms import MultiDBModelAdmin, MultiDBTabularInline
-from freppledb.admin import admin_site
+from freppledb.admin import data_site
 
 
 class MyUserAdmin(UserAdmin, MultiDBModelAdmin):
@@ -47,7 +47,7 @@ class MyUserAdmin(UserAdmin, MultiDBModelAdmin):
     # Users can't be deleted. Just mark them as inactive instead
     return False
 
-admin_site.register(User, MyUserAdmin)
+data_site.register(User, MyUserAdmin)
 
 
 class MyGroupAdmin(MultiDBModelAdmin):
@@ -57,7 +57,7 @@ MyGroupAdmin.tabs = [
     {"name": 'comments', "label": _("comments"), "view": MyGroupAdmin.comment_view, "permission": ''},
     {"name": 'history', "label": _("history"), "view": MyGroupAdmin.history_view, "permission": ''},
   ]
-admin_site.register(Group, MyGroupAdmin)
+data_site.register(Group, MyGroupAdmin)
 
 
 class ParameterForm(forms.ModelForm):
@@ -89,13 +89,13 @@ Parameter_admin.tabs = [
     {"name": 'comments', "label": _("comments"), "view": Parameter_admin.comment_view, "permission": ''},
     {"name": 'history', "label": _("history"), "view": Parameter_admin.history_view, "permission": ''},
   ]
-admin_site.register(Parameter, Parameter_admin)
+data_site.register(Parameter, Parameter_admin)
 
 
 class Comment_admin(MultiDBModelAdmin):
   model = Comment
   save_on_top = True
-admin_site.register(Comment, Comment_admin)
+data_site.register(Comment, Comment_admin)
 
 
 class BucketDetail_inline(MultiDBTabularInline):
@@ -114,7 +114,7 @@ Parameter_admin.tabs = [
     {"name": 'comments', "label": _("comments"), "view": BucketDetail_admin.comment_view, "permission": ''},
     {"name": 'history', "label": _("history"), "view": BucketDetail_admin.history_view, "permission": ''},
   ]
-admin_site.register(BucketDetail, BucketDetail_admin)
+data_site.register(BucketDetail, BucketDetail_admin)
 
 
 class Bucket_admin(MultiDBModelAdmin):
@@ -127,4 +127,4 @@ Bucket_admin.tabs = [
     {"name": 'comments', "label": _("comments"), "view": Bucket_admin.comment_view, "permission": ''},
     {"name": 'history', "label": _("history"), "view": Bucket_admin.history_view, "permission": ''},
   ]
-admin_site.register(Bucket, Bucket_admin)
+data_site.register(Bucket, Bucket_admin)

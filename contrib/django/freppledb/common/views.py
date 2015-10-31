@@ -220,10 +220,9 @@ class UserList(GridReport):
   '''
   A list report to show users.
   '''
-  title = _("User List")
+  title = _("users")
   basequeryset = User.objects.all()
   model = User
-  adminsite = 'admin'
   frozenColumns = 2
   multiselect = False
 
@@ -245,10 +244,9 @@ class GroupList(GridReport):
   A list report to show groups.
   '''
   template = 'auth/grouplist.html'
-  title = _("Group List")
+  title = _("groups")
   basequeryset = Group.objects.all()
   model = Group
-  adminsite = 'admin'
   frozenColumns = 0
   multiselect = False
   rows = (
@@ -261,7 +259,7 @@ class ParameterList(GridReport):
   '''
   A list report to show all configurable parameters.
   '''
-  title = _("Parameter List")
+  title = _("parameters")
   basequeryset = Parameter.objects.all()
   model = Parameter
   adminsite = 'admin'
@@ -316,10 +314,9 @@ class CommentList(GridReport):
   A list report to display all comments.
   '''
   template = 'common/commentlist.html'
-  title = _('Comments')
+  title = _('comments')
   basequeryset = Comment.objects.all()
   model = Comment
-  adminsite = 'admin'
   editable = False
   multiselect = False
   frozenColumns = 0
@@ -338,10 +335,9 @@ class BucketList(GridReport):
   '''
   A list report to show dates.
   '''
-  title = _("Bucket List")
+  title = _("buckets")
   basequeryset = Bucket.objects.all()
   model = Bucket
-  adminsite = 'admin'
   frozenColumns = 1
   rows = (
     GridFieldText('name', title=_('name'), key=True, formatter="bucket"),
@@ -357,10 +353,9 @@ class BucketDetailList(GridReport):
   A list report to show dates.
   '''
   template = 'common/bucketlist.html'
-  title = _("Bucket Detail List")
+  title = _("bucket dates")
   basequeryset = BucketDetail.objects.all()
   model = BucketDetail
-  adminsite = 'admin'
   frozenColumns = 2
   rows = (
     GridFieldText('bucket', title=_('bucket'), field_name='bucket__name', formatter="bucket"),
@@ -394,7 +389,4 @@ def detail(request, app, model, object_id):
     return admn.tabs[0]['view'](request, object_id)   
   else:
     return admn.tabs[0]['view'].as_view()(request, object_id) 
-
-
-  
     
