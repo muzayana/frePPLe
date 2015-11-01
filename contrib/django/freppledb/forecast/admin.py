@@ -10,9 +10,10 @@
 
 from django.utils.translation import ugettext_lazy as _
 
-from freppledb.forecast.models import Forecast, ForecastDemand
 from freppledb.admin import data_site
 from freppledb.common.adminforms import MultiDBModelAdmin, MultiDBTabularInline
+from freppledb.forecast.models import Forecast, ForecastDemand
+import freppledb.forecast.views
 
 
 class ForecastDemand_admin(MultiDBModelAdmin):
@@ -36,5 +37,13 @@ class Forecast_admin(MultiDBModelAdmin):
     (None, {'fields': ('name', 'item', 'location', 'customer', 'method', 'description', 'category', 'subcategory', 'priority')}),
     (_('Planning parameters'), {'fields': ('discrete', 'planned', 'operation', 'minshipment', 'maxlateness'), 'classes': ('collapse')}),
     )
+  tabs = [
+    {"name": 'edit', "label": _("edit"), "view": MultiDBModelAdmin.change_view, "permissions": "input.change_forecast"},
+    {"name": 'supplypath', "label": _("supply path"), "view": freppledb.forecast.views.UpstreamForecastPath},
+    {"name": 'plan', "label": _("plan"), "view": freppledb.forecast.views.OverviewReport},
+    {"name": 'constraint', "label": _("why short or late?"), "view": freppledb.forecast.views.ConstraintReport},
+    {"name": 'comments', "label": _("comments"), "view": MultiDBModelAdmin.comment_view},
+    {"name": 'history', "label": _("history"), "view": MultiDBModelAdmin.history_view},
+    ]
   save_on_top = True
 data_site.register(Forecast, Forecast_admin)

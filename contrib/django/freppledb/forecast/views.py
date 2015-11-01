@@ -31,6 +31,8 @@ from freppledb.common.report import EncodedCSVReader, GridReport, GridFieldBool,
 from freppledb.common.report import GridFieldChoice, GridFieldNumber, GridFieldDateTime, GridFieldDuration
 from freppledb.input.views import PathReport
 from freppledb.input.models import Demand
+from freppledb.output.models import Constraint
+from freppledb.output.views.constraint import BaseReport
 
 
 class ForecastList(GridReport):
@@ -634,3 +636,16 @@ class OrderReport(GridReport):
     GridFieldText('source', title=_('source')),
     GridFieldLastModified('lastmodified'),
     )
+
+
+class ConstraintReport(BaseReport):
+
+  template = 'forecast/constraint_forecast.html'
+
+  @ classmethod
+  def basequeryset(reportclass, request, args, kwargs):
+    if args and args[0]:
+      request.session['lasttab'] = 'constraint'
+      return Constraint.objects.all().filter(demand__startswith=args[0])
+    else:
+      return Constraint.objects.all()

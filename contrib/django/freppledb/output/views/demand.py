@@ -192,3 +192,4 @@ class DetailReport(GridReport):
   def extra_context(reportclass, request, *args, **kwargs):
     if args and args[0]:
       request.session['lasttab'] = 'plandetail'
+    return {'active_tab': 'plandetail'}

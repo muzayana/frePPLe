@@ -22,5 +22,6 @@ urlpatterns = patterns(
   (r'^forecast/demand/$', freppledb.forecast.views.OrderReport.as_view()),
   (r'^forecast/(.+)/$', freppledb.forecast.views.OverviewReport.as_view()),
   (r'^forecast/$', freppledb.forecast.views.OverviewReport.as_view()),
+  (r'^constraintforecast/(.+)/$', freppledb.forecast.views.ConstraintReport.as_view()),
   (r'^supplypath/forecast/(.+)/$', freppledb.forecast.views.UpstreamForecastPath.as_view()),
   )
