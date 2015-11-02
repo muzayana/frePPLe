@@ -68,29 +68,29 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>utils\$(Configuration)\output\</OutDir>
-    <IntDir>utils\$(Configuration)\</IntDir>
+    <OutDir>utils\$(Configuration)\$(Platform)\output\</OutDir>
+    <IntDir>utils\$(Configuration)\$(Platform)\</IntDir>
     <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
     <PreLinkEventUseInBuild>false</PreLinkEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>utils\$(Configuration)\output\</OutDir>
-    <IntDir>utils\$(Configuration)\</IntDir>
+    <OutDir>utils\$(Configuration)\$(Platform)\output\</OutDir>
+    <IntDir>utils\$(Configuration)\$(Platform)\</IntDir>
     <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
     <PreLinkEventUseInBuild>false</PreLinkEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>utils\$(Configuration)\output\</OutDir>
-    <IntDir>utils\$(Configuration)\</IntDir>
+    <OutDir>utils\$(Configuration)\$(Platform)\output\</OutDir>
+    <IntDir>utils\$(Configuration)\$(Platform)\</IntDir>
     <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
     <PreLinkEventUseInBuild>false</PreLinkEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>utils\$(Configuration)\output\</OutDir>
-    <IntDir>utils\$(Configuration)\</IntDir>
+    <OutDir>utils\$(Configuration)\$(Platform)\output\</OutDir>
+    <IntDir>utils\$(Configuration)\$(Platform)\</IntDir>
     <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
     <PreLinkEventUseInBuild>false</PreLinkEventUseInBuild>
   </PropertyGroup>
@@ -211,7 +211,8 @@
     <ClCompile Include="..\..\src\utils\name.cpp" />
     <ClCompile Include="..\..\src\utils\python.cpp" />
     <ClCompile Include="..\..\src\utils\xml.cpp" />
-    <ClCompile Include="..\..\src\utils\service.cpp" />  </ItemGroup>
+    <ClCompile Include="..\..\src\utils\service.cpp" />
+  </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\frepple\utils.h" />
     <ClInclude Include="..\..\include\frepple\xml.h" />

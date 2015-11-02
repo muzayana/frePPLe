@@ -69,32 +69,32 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>dll\$(Configuration)\output\</OutDir>
-    <IntDir>dll\$(Configuration)\</IntDir>
+    <OutDir>dll\$(Configuration)\$(Platform)\output\</OutDir>
+    <IntDir>dll\$(Configuration)\$(Platform)\</IntDir>
     <TargetName>frepple</TargetName>
     <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
     <PreLinkEventUseInBuild>false</PreLinkEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>dll\$(Configuration)\output\</OutDir>
-    <IntDir>dll\$(Configuration)\</IntDir>
+    <OutDir>dll\$(Configuration)\$(Platform)\output\</OutDir>
+    <IntDir>dll\$(Configuration)\$(Platform)\</IntDir>
     <TargetName>frepple</TargetName>
     <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
     <PreLinkEventUseInBuild>false</PreLinkEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>dll\$(Configuration)\output\</OutDir>
-    <IntDir>dll\$(Configuration)\</IntDir>
+    <OutDir>dll\$(Configuration)\$(Platform)\output\</OutDir>
+    <IntDir>dll\$(Configuration)\$(Platform)\</IntDir>
     <TargetName>frepple</TargetName>
     <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
     <PreLinkEventUseInBuild>false</PreLinkEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>dll\$(Configuration)\output\</OutDir>
-    <IntDir>dll\$(Configuration)\</IntDir>
+    <OutDir>dll\$(Configuration)\$(Platform)\output\</OutDir>
+    <IntDir>dll\$(Configuration)\$(Platform)\</IntDir>
     <TargetName>frepple</TargetName>
     <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
     <PreLinkEventUseInBuild>false</PreLinkEventUseInBuild>

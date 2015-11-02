@@ -19,34 +19,34 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{D4D9FB66-1740-418C-9562-C80BB3616201}</ProjectGuid>
+    <ProjectGuid>{870A391D-2662-4075-859F-06F5DBAD3C65}</ProjectGuid>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <Keyword>ManagedCProj</Keyword>
-    <RootNamespace>model</RootNamespace>
+    <RootNamespace>pythonextionsion</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CLRSupport>false</CLRSupport>
     <CharacterSet>
     </CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CLRSupport>false</CLRSupport>
     <CharacterSet />
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <CLRSupport>false</CLRSupport>
     <CharacterSet>
     </CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <CLRSupport>false</CLRSupport>
     <CharacterSet />
@@ -68,38 +68,46 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LinkIncremental>true</LinkIncremental>
-    <OutDir>model\$(Configuration)\$(Platform)\output\</OutDir>
-    <IntDir>model\$(Configuration)\$(Platform)\</IntDir>
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>pythonextension\$(Configuration)\$(Platform)\output\</OutDir>
+    <IntDir>pythonextension\$(Configuration)\$(Platform)\</IntDir>
+    <TargetName>frepple_d</TargetName>
     <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
     <PreLinkEventUseInBuild>false</PreLinkEventUseInBuild>
+    <TargetExt>.pyd</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LinkIncremental>true</LinkIncremental>
-    <OutDir>model\$(Configuration)\$(Platform)\output\</OutDir>
-    <IntDir>model\$(Configuration)\$(Platform)\</IntDir>
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>pythonextension\$(Configuration)\$(Platform)\output\</OutDir>
+    <IntDir>pythonextension\$(Configuration)\$(Platform)\</IntDir>
+    <TargetName>frepple_d</TargetName>
     <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
     <PreLinkEventUseInBuild>false</PreLinkEventUseInBuild>
+    <TargetExt>.pyd</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>model\$(Configuration)\$(Platform)\output\</OutDir>
-    <IntDir>model\$(Configuration)\$(Platform)\</IntDir>
+    <OutDir>pythonextension\$(Configuration)\$(Platform)\output\</OutDir>
+    <IntDir>pythonextension\$(Configuration)\$(Platform)\</IntDir>
+    <TargetName>frepple</TargetName>
     <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
     <PreLinkEventUseInBuild>false</PreLinkEventUseInBuild>
+    <TargetExt>.pyd</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>model\$(Configuration)\$(Platform)\output\</OutDir>
-    <IntDir>model\$(Configuration)\$(Platform)\</IntDir>
+    <OutDir>pythonextension\$(Configuration)\$(Platform)\output\</OutDir>
+    <IntDir>pythonextension\$(Configuration)\$(Platform)\</IntDir>
+    <TargetName>frepple</TargetName>
     <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
     <PreLinkEventUseInBuild>false</PreLinkEventUseInBuild>
+    <TargetExt>.pyd</TargetExt>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <AdditionalIncludeDirectories>..\..\include</AdditionalIncludeDirectories>
       <CompileAsManaged>false</CompileAsManaged>
@@ -112,18 +120,26 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>
-      </AdditionalDependencies>
+      <OptimizeReferences>
+      </OptimizeReferences>
+      <AdditionalDependencies>xerces-c_static_3D.lib;ssleay32MT.lib;libeay32MT.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <EnableCOMDATFolding>false</EnableCOMDATFolding>
     </Link>
     <ProjectReference>
-      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
+    <PostBuildEvent>
+      <Command>copy "$(TargetPath)" ..\..\bin &amp;&amp; copy "$(TargetPath)" ..\..\bin\frepple_d.pyd</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Copy frepple_d.pyd to the bin folder</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <AdditionalIncludeDirectories>..\..\include</AdditionalIncludeDirectories>
       <CompileAsManaged>false</CompileAsManaged>
@@ -134,12 +150,20 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>
-      </AdditionalDependencies>
+      <OptimizeReferences>
+      </OptimizeReferences>
+      <AdditionalDependencies>xerces-c_static_3D.lib;ssleay32MT.lib;libeay32MT.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <EnableCOMDATFolding>false</EnableCOMDATFolding>
     </Link>
     <ProjectReference>
-      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
+    <PostBuildEvent>
+      <Command>copy "$(TargetPath)" ..\..\bin &amp;&amp; copy "$(TargetPath)" ..\..\bin\frepple_d.pyd</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Copy frepple_d.pyd to the bin folder</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -157,13 +181,19 @@
       <MinimalRebuild>false</MinimalRebuild>
     </ClCompile>
     <Link>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>
-      </AdditionalDependencies>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>xerces-c_static_3.lib;ssleay32MT.lib;libeay32MT.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ProjectReference>
-      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>true</UseLibraryDependencyInputs>
     </ProjectReference>
+    <PostBuildEvent>
+      <Command>copy "$(TargetPath)" ..\..\bin &amp;&amp; copy "$(TargetPath)" ..\..\bin\frepple.pyd</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Copy frepple.pyd to the bin folder</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -179,13 +209,21 @@
       <StringPooling>Yes</StringPooling>
     </ClCompile>
     <Link>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <OptimizeReferences>
+      </OptimizeReferences>
       <AdditionalDependencies>
       </AdditionalDependencies>
     </Link>
     <ProjectReference>
-      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
+    <PostBuildEvent>
+      <Command>copy "$(TargetPath)" ..\..\bin &amp;&amp; copy "$(TargetPath)" ..\..\bin\frepple.pyd</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Copy frepple.pyd to the bin folder</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -193,53 +231,23 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\include\frepple\model.h" />
+    <ClInclude Include="..\..\include\freppleinterface.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\model\actions.cpp" />
-    <ClCompile Include="..\..\src\model\buffer.cpp" />
-    <ClCompile Include="..\..\src\model\calendar.cpp" />
-    <ClCompile Include="..\..\src\model\customer.cpp" />
-    <ClCompile Include="..\..\src\model\demand.cpp" />
-    <ClCompile Include="..\..\src\model\flow.cpp" />
-    <ClCompile Include="..\..\src\model\flowplan.cpp" />
-    <ClCompile Include="..\..\src\model\item.cpp" />
-    <ClCompile Include="..\..\src\model\itemdistribution.cpp" />
-    <ClCompile Include="..\..\src\model\leveled.cpp" />
-    <ClCompile Include="..\..\src\model\library.cpp" />
-    <ClCompile Include="..\..\src\model\load.cpp" />
-    <ClCompile Include="..\..\src\model\loadplan.cpp" />
-    <ClCompile Include="..\..\src\model\location.cpp" />
-    <ClCompile Include="..\..\src\model\operation.cpp" />
-    <ClCompile Include="..\..\src\model\operationplan.cpp" />
-    <ClCompile Include="..\..\src\model\pegging.cpp" />
-    <ClCompile Include="..\..\src\model\plan.cpp" />
-    <ClCompile Include="..\..\src\model\problem.cpp" />
-    <ClCompile Include="..\..\src\model\problems_buffer.cpp" />
-    <ClCompile Include="..\..\src\model\problems_demand.cpp" />
-    <ClCompile Include="..\..\src\model\problems_operationplan.cpp" />
-    <ClCompile Include="..\..\src\model\problems_resource.cpp" />
-    <ClCompile Include="..\..\src\model\resource.cpp" />
-    <ClCompile Include="..\..\src\model\resourceskill.cpp" />
-    <ClCompile Include="..\..\src\model\setupmatrix.cpp" />
-    <ClCompile Include="..\..\src\model\skill.cpp" />
-    <ClCompile Include="..\..\src\model\solver.cpp" />
-    <ClCompile Include="..\..\src\model\suboperation.cpp" />
-    <ClCompile Include="..\..\src\model\supplier.cpp" />
-    <ClCompile Include="..\..\src\model\itemsupplier.cpp" />
+    <ResourceCompile Include="..\..\src\dll.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="utils.vcxproj">
-      <Project>{6f0fa2f1-4b47-46a3-9d41-85cff808f5f4}</Project>
-      <Private>false</Private>
+    <ClCompile Include="..\..\src\pythonextension.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="dll.vcxproj">
+      <Project>{36145d08-f369-4f6e-8bb6-13b1416cea66}</Project>
+      <Private>true</Private>
       <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
-      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\koko\koko.vcxproj.user" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

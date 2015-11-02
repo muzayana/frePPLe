@@ -33,6 +33,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "module_inventoryplanning", 
 		{36145D08-F369-4F6E-8BB6-13B1416CEA66} = {36145D08-F369-4F6E-8BB6-13B1416CEA66}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pythonextension", "pythonextension.vcxproj", "{870A391D-2662-4075-859F-06F5DBAD3C65}"
+	ProjectSection(ProjectDependencies) = postProject
+		{36145D08-F369-4F6E-8BB6-13B1416CEA66} = {36145D08-F369-4F6E-8BB6-13B1416CEA66}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -121,6 +126,14 @@ Global
 		{40DA0BFC-4317-47D3-96A4-D5D5D03D1D7E}.Release|Win32.Build.0 = Release|Win32
 		{40DA0BFC-4317-47D3-96A4-D5D5D03D1D7E}.Release|x64.ActiveCfg = Release|x64
 		{40DA0BFC-4317-47D3-96A4-D5D5D03D1D7E}.Release|x64.Build.0 = Release|x64
+		{870A391D-2662-4075-859F-06F5DBAD3C65}.Debug|Win32.ActiveCfg = Debug|Win32
+		{870A391D-2662-4075-859F-06F5DBAD3C65}.Debug|Win32.Build.0 = Debug|Win32
+		{870A391D-2662-4075-859F-06F5DBAD3C65}.Debug|x64.ActiveCfg = Debug|x64
+		{870A391D-2662-4075-859F-06F5DBAD3C65}.Debug|x64.Build.0 = Debug|x64
+		{870A391D-2662-4075-859F-06F5DBAD3C65}.Release|Win32.ActiveCfg = Release|Win32
+		{870A391D-2662-4075-859F-06F5DBAD3C65}.Release|Win32.Build.0 = Release|Win32
+		{870A391D-2662-4075-859F-06F5DBAD3C65}.Release|x64.ActiveCfg = Release|x64
+		{870A391D-2662-4075-859F-06F5DBAD3C65}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -69,29 +69,29 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>createkey\$(Configuration)\output\</OutDir>
-    <IntDir>createkey\$(Configuration)\</IntDir>
+    <OutDir>createkey\$(Configuration)\$(Platform)\output\</OutDir>
+    <IntDir>createkey\$(Configuration)\$(Platform)\</IntDir>
     <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
     <PreLinkEventUseInBuild>false</PreLinkEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>createkey\$(Configuration)\output\</OutDir>
-    <IntDir>createkey\$(Configuration)\</IntDir>
+    <OutDir>createkey\$(Configuration)\$(Platform)\output\</OutDir>
+    <IntDir>createkey\$(Configuration)\$(Platform)\</IntDir>
     <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
     <PreLinkEventUseInBuild>false</PreLinkEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>createkey\$(Configuration)\output\</OutDir>
-    <IntDir>createkey\$(Configuration)\</IntDir>
+    <OutDir>createkey\$(Configuration)\$(Platform)\output\</OutDir>
+    <IntDir>createkey\$(Configuration)\$(Platform)\</IntDir>
     <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
     <PreLinkEventUseInBuild>false</PreLinkEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>createkey\$(Configuration)\output\</OutDir>
-    <IntDir>createkey\$(Configuration)\</IntDir>
+    <OutDir>createkey\$(Configuration)\$(Platform)\output\</OutDir>
+    <IntDir>createkey\$(Configuration)\$(Platform)\</IntDir>
     <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
     <PreLinkEventUseInBuild>false</PreLinkEventUseInBuild>
   </PropertyGroup>

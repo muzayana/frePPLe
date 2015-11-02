@@ -69,8 +69,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>module_forecast\$(Configuration)\output\</OutDir>
-    <IntDir>module_forecast\$(Configuration)\</IntDir>
+    <OutDir>module_forecast\$(Configuration)\$(Platform)\output\</OutDir>
+    <IntDir>module_forecast\$(Configuration)\$(Platform)\</IntDir>
     <TargetName>mod_forecast</TargetName>
     <TargetExt>.so</TargetExt>
     <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
@@ -78,8 +78,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>module_forecast\$(Configuration)\output\</OutDir>
-    <IntDir>module_forecast\$(Configuration)\</IntDir>
+    <OutDir>module_forecast\$(Configuration)\$(Platform)\output\</OutDir>
+    <IntDir>module_forecast\$(Configuration)\$(Platform)\</IntDir>
     <TargetName>mod_forecast</TargetName>
     <TargetExt>.so</TargetExt>
     <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
@@ -87,8 +87,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>module_forecast\$(Configuration)\output\</OutDir>
-    <IntDir>module_forecast\$(Configuration)\</IntDir>
+    <OutDir>module_forecast\$(Configuration)\$(Platform)\output\</OutDir>
+    <IntDir>module_forecast\$(Configuration)\$(Platform)\</IntDir>
     <TargetName>mod_forecast</TargetName>
     <TargetExt>.so</TargetExt>
     <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
@@ -96,8 +96,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>module_forecast\$(Configuration)\output\</OutDir>
-    <IntDir>module_forecast\$(Configuration)\</IntDir>
+    <OutDir>module_forecast\$(Configuration)\$(Platform)\output\</OutDir>
+    <IntDir>module_forecast\$(Configuration)\$(Platform)\</IntDir>
     <TargetName>mod_forecast</TargetName>
     <TargetExt>.so</TargetExt>
     <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
@@ -204,6 +204,9 @@
     <PostBuildEvent>
       <Message>Copy mod_forecast to the bin folder</Message>
     </PostBuildEvent>
+    <Manifest>
+      <SuppressDependencyElement>true</SuppressDependencyElement>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
     <Reference Include="System" />

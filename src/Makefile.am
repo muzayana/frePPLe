@@ -3,6 +3,7 @@
 #
 
 bin_PROGRAMS = frepple
+lib_LTLIBRARIES = libfrepple.la libfrepplepyd.la
 
 # License creation utilities...
 if LICENSE
@@ -26,7 +27,6 @@ all-local: frepple$(EXEEXT)
 	if test -f .libs/createkey$(EXEEXT); then cp .libs/createkey$(EXEEXT) ../bin; fi
 
 # Shared library
-lib_LTLIBRARIES = libfrepple.la
 libfrepple_la_SOURCES = dllmain.cpp tags.cpp
 libfrepple_la_LDFLAGS = -version-info @LIBRARY_VERSION@ -no-undefined
 if CYGWIN
@@ -34,6 +34,15 @@ if CYGWIN
 libfrepple_la_LDFLAGS += -Wl,--export-all-symbols
 endif
 libfrepple_la_LIBADD = ./solver/libsolver.la ./model/libmodel.la ./utils/libutils.la
+
+# Python extension
+libfrepplepyd_la_SOURCES = pythonextension.cpp
+libfrepplepyd_la_LDFLAGS = -version-info @LIBRARY_VERSION@ -no-undefined -dynamic -export-dynamic
+if CYGWIN
+# Cygwin doesn't like undefined symbols in a windows dll
+libfrepplepyd_la_LDFLAGS += -Wl,--export-all-symbols
+endif
+libfrepplepyd_la_LIBADD = libfrepple.la
 
 # Dynamically linked executable
 frepple_SOURCES = main.cpp

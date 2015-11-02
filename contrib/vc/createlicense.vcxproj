@@ -69,29 +69,29 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>createlicense\$(Configuration)\output\</OutDir>
-    <IntDir>createlicense\$(Configuration)\</IntDir>
+    <OutDir>createlicense\$(Configuration)\$(Platform)\output\</OutDir>
+    <IntDir>createlicense\$(Configuration)\$(Platform)\</IntDir>
     <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
     <PreLinkEventUseInBuild>false</PreLinkEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>createlicense\$(Configuration)\output\</OutDir>
-    <IntDir>createlicense\$(Configuration)\</IntDir>
+    <OutDir>createlicense\$(Configuration)\$(Platform)\output\</OutDir>
+    <IntDir>createlicense\$(Configuration)\$(Platform)\</IntDir>
     <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
     <PreLinkEventUseInBuild>false</PreLinkEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>createlicense\$(Configuration)\output\</OutDir>
-    <IntDir>createlicense\$(Configuration)\</IntDir>
+    <OutDir>createlicense\$(Configuration)\$(Platform)\output\</OutDir>
+    <IntDir>createlicense\$(Configuration)\$(Platform)\</IntDir>
     <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
     <PreLinkEventUseInBuild>false</PreLinkEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>createlicense\$(Configuration)\output\</OutDir>
-    <IntDir>createlicense\$(Configuration)\</IntDir>
+    <OutDir>createlicense\$(Configuration)\$(Platform)\output\</OutDir>
+    <IntDir>createlicense\$(Configuration)\$(Platform)\</IntDir>
     <PreBuildEventUseInBuild>false</PreBuildEventUseInBuild>
     <PreLinkEventUseInBuild>false</PreLinkEventUseInBuild>
   </PropertyGroup>
