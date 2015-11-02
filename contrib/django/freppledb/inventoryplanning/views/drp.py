@@ -51,7 +51,7 @@ class InventoryPlanningList(GridReport):
   This view is simplified and doesn't show all fields we have available in the database
   and which are supported by the solver algorithm.
   '''
-  template = 'inventoryplanning/inventoryplanninglist.html'
+  template = 'admin/base_site_grid.html'
   title = _("inventory planning parameters")
   basequeryset = InventoryPlanning.objects.all()
   model = InventoryPlanning
@@ -93,7 +93,6 @@ class DRP(GridReport):
   template = 'inventoryplanning/drp.html'
   title = _("Distribution planning")
   permissions = (('view_distribution_report', 'Can view distribution report'),)
-  basequeryset = InventoryPlanningOutput.objects.all()
   model = InventoryPlanningOutput
   height = 150
   frozenColumns = 3
@@ -128,6 +127,10 @@ class DRP(GridReport):
       'openbravo': 'freppledb.openbravo' in settings.INSTALLED_APPS
       }
 
+  @ classmethod
+  def basequeryset(reportclass, request, args, kwargs):
+    print(dir(request))
+    return InventoryPlanningOutput.objects.all()
 
   @staticmethod
   def query(request, basequery):
@@ -928,9 +931,6 @@ class DRPitem(DRPitemlocation):
     # Retrieve inventory plan
     yield '"plan":' + json.dumps({"test": "val", "koko": 1}) # TODO
     yield "}"
-    # Retrieve transactions
-    # Retrieve comments
-    # Retrieve history: lazy?
 
 
 class DRPlocation(DRPitemlocation):
@@ -946,7 +946,3 @@ class DRPlocation(DRPitemlocation):
     # Retrieve inventory plan
     yield '"plan":' + json.dumps({"test": "val", "koko": 1})
     yield "}"
-    # Retrieve transactions
-    # Retrieve comments
-    # Retrieve history: lazy?
-
