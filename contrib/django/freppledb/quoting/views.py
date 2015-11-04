@@ -65,17 +65,17 @@ class QuoteReport(GridReport):
   height = 150
 
   rows = (
-    GridFieldText('name', title=_('name'), key=True, formatter='demand'),
-    GridFieldText('item', title=_('item'), field_name='item__name', formatter='item'),
-    GridFieldText('customer', title=_('customer'), field_name='customer__name', formatter='customer'),
+    GridFieldText('name', title=_('name'), key=True, formatter='detail', extra="role:'input/demand'"),
+    GridFieldText('item', title=_('item'), field_name='item__name', formatter='detail', extra="role:'input/item'"),
+    GridFieldText('customer', title=_('customer'), field_name='customer__name', formatter='detail', extra="role:'input/customer'"),
     GridFieldText('description', title=_('description')),
     GridFieldText('category', title=_('category')),
     GridFieldText('subcategory', title=_('subcategory')),
     GridFieldDateTime('due', title=_('due')),
     GridFieldNumber('quantity', title=_('quantity')),
-    GridFieldText('operation', title=_('delivery operation'), formatter='operation'),
+    GridFieldText('operation', title=_('delivery operation'), formatter='detail', extra="role:'input/operation'"),
     GridFieldInteger('priority', title=_('priority')),
-    GridFieldText('owner', title=_('owner'), formatter='demand'),
+    GridFieldText('owner', title=_('owner'), formatter='detail', extra="role:'input/demand'"),
     GridFieldNumber('maxlateness', title=_('maximum lateness')),
     GridFieldNumber('minshipment', title=_('minimum shipment')),
     GridFieldLastModified('lastmodified'),

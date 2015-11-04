@@ -32,8 +32,8 @@ class OverviewReport(GridPivot):
   permissions = (("view_resource_report", "Can view resource report"),)
   editable = False
   rows = (
-    GridFieldText('resource', title=_('resource'), key=True, field_name='name', formatter='resource', editable=False),
-    GridFieldText('location', title=_('location'), field_name='location__name', formatter='location', editable=False),
+    GridFieldText('resource', title=_('resource'), key=True, editable=False, field_name='name', formatter='detail', extra="role:'input/resource'"),
+    GridFieldText('location', title=_('location'), editable=False, field_name='location__name', formatter='detail', extra="role:'input/location'"),
     GridFieldText('avgutil', title=_('utilization %'), field_name='util', formatter='percentage', editable=False, width=100, align='center', search=False),
     )
   crosses = (
@@ -190,8 +190,8 @@ class DetailReport(GridReport):
     return {'active_tab': 'plandetail'}
 
   rows = (
-    GridFieldText('theresource', title=_('resource'), key=True, formatter='resource', editable=False),
-    GridFieldText('operationplan__operation', title=_('operation'), formatter='operation', editable=False),
+    GridFieldText('theresource', title=_('resource'), key=True, editable=False, formatter='detail', extra="role:'input/resource'"),
+    GridFieldText('operationplan__operation', title=_('operation'), editable=False, formatter='detail', extra="role:'input/operation'"),
     GridFieldDateTime('startdate', title=_('start date'), editable=False),
     GridFieldDateTime('enddate', title=_('end date'), editable=False),
     GridFieldNumber('operationplan__quantity', title=_('operationplan quantity'), editable=False),
@@ -220,8 +220,8 @@ class GanttReport(GridReport):
   default_sort = (1, 'asc')
   hasTimeBuckets = True
   rows = (
-    GridFieldText('name', title=_('resource'), key=True, field_name='name', formatter='resource', editable=False),
-    GridFieldText('location', title=_('location'), field_name='location', formatter='location', editable=False),
+    GridFieldText('name', title=_('resource'), key=True, field_name='name', editable=False, formatter='detail', extra="role:'input/resource'"),
+    GridFieldText('location', title=_('location'), field_name='location', editable=False, formatter='detail', extra="role:'input/location'"),
     GridFieldText('util', title=_('utilization %'), field_name='util', formatter='percentage', editable=False, width=100, align='center', search=False),
     GridFieldText('operationplans', width=1000, extra='formatter:ganttcell', editable=False, sortable=False),
     )

@@ -58,7 +58,7 @@ class InventoryPlanningList(GridReport):
   frozenColumns = 1
 
   rows = (
-    GridFieldText('buffer', title=_('buffer'), field_name="buffer__name", key=True, formatter='buffer'),
+    GridFieldText('buffer', title=_('buffer'), field_name="buffer__name", key=True, formatter='detail', extra="role:'input/buffer'"),
     GridFieldChoice('roq_type', title=_('ROQ type'),
       choices=InventoryPlanning.calculationtype, extra="formatoptions:{defaultValue:''}"),
     GridFieldNumber('roq_min_qty', title=_('ROQ minimum quantity'), extra="formatoptions:{defaultValue:''}"),
@@ -103,9 +103,9 @@ class DRP(GridReport):
   maxBucketLevel = 3
 
   rows = (
-    GridFieldText('buffer', title=_('buffer'), field_name="buffer", key=True, formatter='buffer', hidden=True),
-    GridFieldText('item', title=_('item'), field_name="buffer__item__name", formatter='item'),
-    GridFieldText('location', title=_('location'), field_name="buffer__location__name", formatter='location'),
+    GridFieldText('buffer', title=_('buffer'), hidden=True, field_name="buffer", key=True, formatter='detail', extra="role:'input/buffer'"),
+    GridFieldText('item', title=_('item'), field_name="buffer__item__name", formatter='detail', extra="role:'input/item'"),
+    GridFieldText('location', title=_('location'), field_name="buffer__location__name", formatter='detail', extra="role:'input/location'"),
     GridFieldInteger('leadtime', title=_('lead time'), extra="formatoptions:{defaultValue:''}"),
     GridFieldInteger('localforecast', title=_('local forecast'), extra="formatoptions:{defaultValue:''}"),
     GridFieldInteger('dependentdemand', title=_('dependent demand'), extra="formatoptions:{defaultValue:''}"),

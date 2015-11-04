@@ -46,15 +46,15 @@ class ForecastList(GridReport):
   frozenColumns = 1
 
   rows = (
-    GridFieldText('name', title=_('name'), key=True, formatter='forecast'),
-    GridFieldText('item', title=_('item'), field_name='item__name', formatter='item'),
-    GridFieldText('location', title=_('location'), field_name='location__name', formatter='location'),
-    GridFieldText('customer', title=_('customer'), field_name='customer__name', formatter='customer'),
+    GridFieldText('name', title=_('name'), key=True, formatter='detail', extra="role:'forecast/forecast'"),
+    GridFieldText('item', title=_('item'), field_name='item__name', formatter='detail', extra="role:'input/item'"),
+    GridFieldText('location', title=_('location'), field_name='location__name', formatter='detail', extra="role:'input/location'"),
+    GridFieldText('customer', title=_('customer'), field_name='customer__name', formatter='detail', extra="role:'input/customer'"),
     GridFieldText('description', title=_('description')),
     GridFieldText('category', title=_('category')),
     GridFieldText('subcategory', title=_('subcategory')),
     GridFieldChoice('method', title=_('method'), choices=Forecast.methods),
-    GridFieldText('operation', title=_('operation'), field_name='operation__name', formatter='operation'),
+    GridFieldText('operation', title=_('operation'), field_name='operation__name', formatter='detail', extra="role:'input/operation'"),
     GridFieldInteger('priority', title=_('priority')),
     GridFieldNumber('maxlateness', title=_('maximum lateness')),
     GridFieldNumber('minshipment', title=_('minimum shipment')),
@@ -77,7 +77,7 @@ class ForecastDemandList(GridReport):
 
   rows = (
     GridFieldInteger('id', title=_('identifier'), key=True),
-    GridFieldText('forecast', title=_('forecast'), formatter='forecast'),
+    GridFieldText('forecast', title=_('forecast'), formatter='detail', extra="role:'forecast/forecast'"),
     GridFieldDate('startdate', title=_('start date')),
     GridFieldDate('enddate', title=_('end date')),
     GridFieldNumber('quantity', title=_('quantity')),
@@ -101,10 +101,10 @@ class OverviewReport(GridPivot):
   # the time buckets to be used for all forecasting.
   maxBucketLevel = 3
   rows = (
-    GridFieldText('forecast', title=_('forecast'), key=True, field_name='name', formatter='forecast', editable=False),
-    GridFieldText('item', title=_('item'), field_name='item__name', formatter='item', editable=False),
-    GridFieldText('customer', title=_('customer'), field_name='customer__name', formatter='customer', editable=False),
-    GridFieldText('location', title=_('location'), field_name='location__name', formatter='location', editable=False),
+    GridFieldText('forecast', title=_('forecast'), key=True, editable=False, field_name='name', formatter='detail', extra="role:'forecast/forecast'"),
+    GridFieldText('item', title=_('item'), field_name='item__name', editable=False, formatter='detail', extra="role:'input/item'"),
+    GridFieldText('customer', title=_('customer'), editable=False, field_name='customer__name', formatter='detail', extra="role:'input/customer'"),
+    GridFieldText('location', title=_('location'), editable=False, field_name='location__name', formatter='detail', extra="role:'input/location'"),
     GridFieldText('out_method', title=_('selected forecast method'), field_name='out_method', editable=False, hidden=True),
     GridFieldNumber('out_smape', title=_('estimated forecast error'), field_name='out_smape', editable=False, hidden=True)
     )
@@ -619,17 +619,17 @@ class OrderReport(GridReport):
       )
 
   rows = (
-    GridFieldText('name', title=_('name'), key=True, formatter='demand'),
-    GridFieldText('item', title=_('item'), field_name='item__name', formatter='item'),
-    GridFieldText('customer', title=_('customer'), field_name='customer__name', formatter='customer'),
+    GridFieldText('name', title=_('name'), key=True, formatter='detail', extra="role:'input/demand'"),
+    GridFieldText('item', title=_('item'), field_name='item__name', formatter='detail', extra="role:'input/item'"),
+    GridFieldText('customer', title=_('customer'), field_name='customer__name', formatter='detail', extra="role:'input/customer'"),
     GridFieldText('description', title=_('description')),
     GridFieldText('category', title=_('category')),
     GridFieldText('subcategory', title=_('subcategory')),
     GridFieldDateTime('due', title=_('due')),
     GridFieldNumber('quantity', title=_('quantity')),
-    GridFieldText('operation', title=_('delivery operation'), formatter='operation'),
+    GridFieldText('operation', title=_('delivery operation'), formatter='detail', extra="role:'input/operation'"),
     GridFieldInteger('priority', title=_('priority')),
-    GridFieldText('owner', title=_('owner'), formatter='demand'),
+    GridFieldText('owner', title=_('owner'), formatter='detail', extra="role:'input/demand'"),
     GridFieldChoice('status', title=_('status'), choices=Demand.demandstatus),
     GridFieldDuration('maxlateness', title=_('maximum lateness')),
     GridFieldNumber('minshipment', title=_('minimum shipment')),
