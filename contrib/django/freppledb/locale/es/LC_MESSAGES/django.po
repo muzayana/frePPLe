@@ -20,7 +20,7 @@ msgstr ""
 "Project-Id-Version: 2.4\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2015-10-31 16:43+0100\n"
-"PO-Revision-Date: 2015-11-01 20:03+0100\n"
+"PO-Revision-Date: 2015-11-04 10:04+0100\n"
 "Last-Translator: Chris Zajaczkowski <info@businesstec.net>\n"
 "Language-Team: Spanish; Castilian <info@businesstec.net>\n"
 "Language: es_CR\n"
@@ -28,7 +28,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Poedit-Basepath: ../../..\n"
-"X-Generator: Poedit 1.8.5\n"
+"X-Generator: Poedit 1.8.6\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Poedit-SearchPath-0: .\n"
 
@@ -3688,7 +3688,7 @@ msgstr "inventario al final"
 
 #: templates/inventoryplanning/drp.html:1162
 msgid "no grouping"
-msgstr "ninguna ajuste de órdenes hace 3 años"
+msgstr "sin agrupación"
 
 #: templates/inventoryplanning/drp.html:1163
 msgid "group by item"
