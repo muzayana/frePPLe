@@ -316,7 +316,7 @@ $(function() {
 <br/>
 <div class="quotebutton"><button style="width:100%" id="form_inquiry">{% trans 'inquiry'|capfirst %}</button></div>
 <div class="quotebutton"><button style="width:100%" id="form_quote">{% trans 'quote'|capfirst %}</button></div>
-<div class="quotebutton"><button style="width:100%" id="form_cancel">{% filter force_escape %}{% trans 'Cancel' context "Included in Django" %}{% endfilter %}</button></div>
+<div class="quotebutton"><button style="width:100%" id="form_cancel">{% filter capfirst|force_escape %}{% trans 'Cancel' context "Included in Django" %}{% endfilter %}</button></div>
 <div class="quotebutton"><button style="width:100%" id="form_confirm">{% trans 'confirm'|capfirst %}</button></div>
 </form>
 </div>
