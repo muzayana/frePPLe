@@ -11,6 +11,7 @@
 from django.conf.urls import patterns
 
 import freppledb.forecast.views
+import freppledb.forecast.serializers
 
 # Automatically add these URLs when the application is installed
 autodiscover = True
@@ -24,4 +25,10 @@ urlpatterns = patterns(
   (r'^forecast/$', freppledb.forecast.views.OverviewReport.as_view()),
   (r'^constraintforecast/(.+)/$', freppledb.forecast.views.ConstraintReport.as_view()),
   (r'^supplypath/forecast/(.+)/$', freppledb.forecast.views.UpstreamForecastPath.as_view()),
+
+  #REST framework
+  (r'^api/forecast/forecastdemand/$', freppledb.forecast.serializers.ForecastDemandREST.as_view()),
+  (r'^api/forecast/forecast/$', freppledb.forecast.serializers.ForecastREST.as_view()),
+  (r'^api/forecast/forecastplan/$', freppledb.forecast.serializers.ForecastPlanREST.as_view()),
+
   )
