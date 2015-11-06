@@ -31,4 +31,8 @@ urlpatterns = patterns(
   (r'^api/forecast/forecast/$', freppledb.forecast.serializers.ForecastREST.as_view()),
   (r'^api/forecast/forecastplan/$', freppledb.forecast.serializers.ForecastPlanREST.as_view()),
 
+  (r'^api/forecast/forecastdemand/(?P<pk>(.+))/$', freppledb.forecast.serializers.ForecastDemanddetailREST.as_view()),
+  (r'^api/forecast/forecast/(?P<pk>(.+))/$', freppledb.forecast.serializers.ForecastdetailREST.as_view()),
+  (r'^api/forecast/forecastplan/(?P<pk>(.+))/$', freppledb.forecast.serializers.ForecastPlandetailREST.as_view()),
+
   )

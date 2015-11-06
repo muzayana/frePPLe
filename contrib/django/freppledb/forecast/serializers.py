@@ -13,8 +13,10 @@ class ForecastSerializer(serializers.ModelSerializer):
       fields = ('name', 'description', 'category', 'subcategory', 'customer',
                 'item', 'location', 'method', 'operation', 'priority', 'minshipment',
                 'maxlateness', 'discrete', 'planned', 'out_smape', 'out_method', 'source', 'lastmodified')
-
 class ForecastREST(generics.ListCreateAPIView):
+    queryset = freppledb.forecast.models.Forecast.objects.all()#.using(request.database)
+    serializer_class = ForecastSerializer
+class ForecastdetailREST(generics.RetrieveUpdateDestroyAPIView):
     queryset = freppledb.forecast.models.Forecast.objects.all()#.using(request.database)
     serializer_class = ForecastSerializer
 
@@ -24,8 +26,10 @@ class ForecastDemandSerializer(serializers.ModelSerializer):
     class Meta:
       model = freppledb.forecast.models.ForecastDemand
       fields = ('id', 'forecast', 'startdate', 'enddate', 'quantity', 'source', 'lastmodified')
-
 class ForecastDemandREST(generics.ListCreateAPIView):
+    queryset = freppledb.forecast.models.ForecastDemand.objects.all()#.using(request.database)
+    serializer_class = ForecastDemandSerializer
+class ForecastDemanddetailREST(generics.RetrieveUpdateDestroyAPIView):
     queryset = freppledb.forecast.models.ForecastDemand.objects.all()#.using(request.database)
     serializer_class = ForecastDemandSerializer
 
@@ -40,8 +44,10 @@ class ForecastPlanSerializer(serializers.ModelSerializer):
                 'ordersplannedvalue', 'forecastbaselinevalue', 'forecastadjustmentvalue',
                 'ordersopenvalue', 'ordersplannedvalue', 'forecastbaselinevalue', 'forecastadjustmentvalue',
                 'forecasttotalvalue', 'forecastnetvalue', 'forecastconsumedvalue', 'forecastplannedvalue')
-
 class ForecastPlanREST(generics.ListCreateAPIView):
+    queryset = freppledb.forecast.models.ForecastPlan.objects.all()#.using(request.database)
+    serializer_class = ForecastPlanSerializer
+class ForecastPlandetailREST(generics.RetrieveUpdateDestroyAPIView):
     queryset = freppledb.forecast.models.ForecastPlan.objects.all()#.using(request.database)
     serializer_class = ForecastPlanSerializer
 
