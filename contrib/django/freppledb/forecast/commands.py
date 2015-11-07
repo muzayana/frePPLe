@@ -68,6 +68,8 @@ def aggregateDemand(cursor):
   print('Aggregate - reset records in %.2f seconds' % (time() - starttime))
 
   # Create a temp table with the aggregated demand
+  # TODO only the demand history within the window specificied in the parameter forecast.Horizon_history should be aggregated
+  #      currently all periods in calendarbucket are used...
   starttime = time()
   cursor.execute('''
      create temp table demand_history

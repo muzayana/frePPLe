@@ -224,7 +224,7 @@ class Forecast(AuditModel):
           i.save()
 
 
-  def updatePlan(self, startdate, enddate, fcstadj, ordersadj, units, database=DEFAULT_DB_ALIAS):
+  def updatePlan(self, startdate, enddate, fcstadj, ordersadj, units, database=DEFAULT_DB_ALIAS, forecastplan=None, save=True):
     '''
     Update adjustments in the forecastplan table.
     # TODO include rounding
@@ -272,17 +272,20 @@ class Forecast(AuditModel):
       if ordersadj:
         ordersadj = ordersadj.to_integral()
 
-    # Find all lowest level forecast records involved
-    leafQuery = ForecastPlan.objects.select_for_update().using(database).filter(
-      forecast__item__lft__gte = self.item.lft,
-      forecast__item__lft__lt = self.item.rght,
-      forecast__customer__lft__gte = self.customer.lft,
-      forecast__customer__lft__lt = self.customer.rght,
-      startdate__gte = startdate,
-      startdate__lt = enddate,
-      forecast__planned = True  # TODO need a more generic way to find the leaf forecasts. Only works for bottom up fcst
-      )
-    leafPlan = [ i for i in leafQuery ]
+    if forecastplan:
+      # Filter the lowest level forecast records involved passed as argument
+      leafPlan = [ i for i in forecastplan if i.startdate.date() >= startdate and i.startdate.date() < enddate ]
+    else:
+      leafQuery = ForecastPlan.objects.select_for_update().using(database).filter(
+        forecast__item__lft__gte = self.item.lft,
+        forecast__item__lft__lt = self.item.rght,
+        forecast__customer__lft__gte = self.customer.lft,
+        forecast__customer__lft__lt = self.customer.rght,
+        startdate__gte = startdate,
+        startdate__lt = enddate,
+        forecast__planned = True  # TODO need a more generic way to find the leaf forecasts. Only works for bottom up fcst
+        )
+      leafPlan = [ i for i in leafQuery ]
     if not leafPlan:
       raise Exception("No forecastplan entries found")
 
@@ -328,13 +331,22 @@ class Forecast(AuditModel):
         else:
           curOrdersAdjValue += i.ordersadjustmentvalue
       # Identify parent records
-      parentQuery = ForecastPlan.objects.select_for_update().using(database).filter(
-        forecast__item__lft__lte = i.forecast.item.lft,
-        forecast__item__rght__gt = i.forecast.item.lft,
-        forecast__customer__lft__lte = i.forecast.customer.lft,
-        forecast__customer__rght__gt = i.forecast.customer.lft,
-        startdate = i.startdate
-        )
+      if save:
+        parentQuery = ForecastPlan.objects.select_for_update().using(database).filter(
+          forecast__item__lft__lte = i.forecast.item.lft,
+          forecast__item__rght__gt = i.forecast.item.lft,
+          forecast__customer__lft__lte = i.forecast.customer.lft,
+          forecast__customer__rght__gt = i.forecast.customer.lft,
+          startdate = i.startdate
+          )
+      else:
+        parentQuery = ForecastPlan.objects.using(database).filter(
+          forecast__item__lft__lte = i.forecast.item.lft,
+          forecast__item__rght__gt = i.forecast.item.lft,
+          forecast__customer__lft__lte = i.forecast.customer.lft,
+          forecast__customer__rght__gt = i.forecast.customer.lft,
+          startdate = i.startdate
+          )
       i.parentkeys = {}
       for j in parentQuery:
         if j.forecast.name != i.forecast.name:
@@ -810,16 +822,17 @@ class Forecast(AuditModel):
               parents[j].ordersadjustmentvalue -= delta
 
     # Save the results in the database
-    for i in leafPlan:
-      i.save(update_fields=[
-        'forecastadjustment', 'ordersadjustment', 'forecasttotal',
-        'forecastadjustmentvalue', 'ordersadjustmentvalue', 'forecasttotalvalue'
-        ])
-    for i in parents.values():
-      i.save(update_fields=[
-        'forecastadjustment', 'ordersadjustment', 'forecasttotal',
-        'forecastadjustmentvalue', 'ordersadjustmentvalue', 'forecasttotalvalue'
-        ])
+    if save:
+      for i in leafPlan:
+        i.save(update_fields=[
+          'forecastadjustment', 'ordersadjustment', 'forecasttotal',
+          'forecastadjustmentvalue', 'ordersadjustmentvalue', 'forecasttotalvalue'
+          ])
+      for i in parents.values():
+        i.save(update_fields=[
+          'forecastadjustment', 'ordersadjustment', 'forecasttotal',
+          'forecastadjustmentvalue', 'ordersadjustmentvalue', 'forecasttotalvalue'
+          ])
 
 
 class ForecastDemand(AuditModel):
