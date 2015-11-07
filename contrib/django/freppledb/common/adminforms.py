@@ -20,6 +20,8 @@ from django.contrib.admin.templatetags.admin_urls import add_preserved_filters
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from django.http import HttpResponseRedirect, Http404
+from django.shortcuts import render_to_response
+from django.template import RequestContext
 from django.template.response import SimpleTemplateResponse, TemplateResponse
 from django.utils.encoding import force_text
 from django.utils.safestring import mark_safe
@@ -32,6 +34,7 @@ from django.utils.encoding import smart_text
 
 from freppledb.common.models import Comment
 from freppledb.common.views import Comments
+
 
 csrf_protect_m = method_decorator(csrf_protect)
 
@@ -315,9 +318,45 @@ class MultiDBModelAdmin(admin.ModelAdmin):
     return super(MultiDBModelAdmin, self).change_view(request, object_id, form_url, new_extra_context)
 
 
+  @csrf_protect_m
+  @transaction.atomic
   def comment_view(self, request, object_id, extra_context=None):
     "The 'comment' view for this model."
-    return Comments(request, self.model._meta.app_label, self.model._meta.model_name, object_id)
+    request.session['lasttab'] = 'comments'
+    try:
+      modeltype = ContentType.objects.using(request.database).get(
+        app_label=self.model._meta.app_label,
+        model=self.model._meta.model_name
+        )
+      modeltype._state.db = request.database
+      object_id = unquote(object_id)
+      modelinstance = modeltype.get_object_for_this_type(pk=object_id)
+      comments = Comment.objects.using(request.database) \
+        .filter(content_type__pk=modeltype.id, object_pk=object_id) \
+        .order_by('-id')
+    except:
+      raise Http404('Object not found')
+    if request.method == 'POST':
+      if request.user.has_perm("common.add_comment"):
+        comment = request.POST['comment']
+        if comment:
+          Comment(
+               content_object=modelinstance,
+               user=request.user,
+               comment=comment
+               ).save(using=request.database)
+      return HttpResponseRedirect('%s/comments/%s/%s/%s/' % (
+        request.prefix, self.model._meta.app_label, self.model._meta.model_name, object_id
+        ))
+    else:
+      return render_to_response('common/comments.html', {
+        'title': capfirst(force_text(modelinstance._meta.verbose_name) + " " + object_id),
+        'model': self.model._meta.model_name,
+        'object_id': quote(object_id),
+        'active_tab': 'comments',
+        'comments': comments
+        },
+        context_instance=RequestContext(request))
 
 
   def response_delete(self, request, obj_display, obj_id):
