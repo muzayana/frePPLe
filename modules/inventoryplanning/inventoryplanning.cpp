@@ -134,14 +134,14 @@ void InventoryPlanningSolver::solve(void* v)
   // Step 2: Create a delivery operationplan for all demands
   for (Demand::iterator d = Demand::begin(); d != Demand::end(); ++d)
   {
-    // Select delivery operation
-    Operation* deliveryoper = d->getDeliveryOperation();
-    if (!deliveryoper)
-      continue;
-
     // Determine the quantity to be planned and the date for the planning loop
     double plan_qty = d->getQuantity() - d->getPlannedQuantity();
     if (plan_qty < ROUNDING_ERROR || d->getDue() == Date::infiniteFuture)
+      continue;
+
+    // Select delivery operation
+    Operation* deliveryoper = d->getDeliveryOperation();
+    if (!deliveryoper)
       continue;
 
     // Respect minimum shipment quantities
