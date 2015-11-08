@@ -165,16 +165,15 @@ double NormalDistribution::calculateFillRate(double mean, double variance, int r
     // For high ROQ values, we sample 100 values between ROP+1 and ROP+ROQ
     unsigned short samples = 0;
     double counter = 0.0;
-    double prevcounter = -1.0;
+    double threshold = 0.0;
     double step = 100.0 / roq;
 	  for (int i = 1 ; i <= roq ; ++i)
     {
 		  counter += step;
-      double tmp = floor(counter);
-      if (tmp <= prevcounter)
+      if (counter <= threshold)
         continue;
       ++samples;
-      prevcounter = tmp;
+      threshold = ceil(counter);
       sumFillRate += getNormalDistributionFunction(mean, stddev, rop+i);
     }
 	  return sumFillRate / samples;
