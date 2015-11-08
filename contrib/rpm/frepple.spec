@@ -117,10 +117,11 @@ rm -rf /var/log/frepple
 %attr(0550,-,frepple) %{_libdir}/libfrepple.so.0.0.0
 %dir %{_libdir}/frepple
 %attr(0550,-,frepple) %{_libdir}/frepple/mod_forecast.so
+%attr(0550,-,frepple) %{_libdir}/frepple/mod_inventoryplanning.so
 %attr(0550,-,frepple) %{_libdir}/frepple/mod_webserver.so
 %{_datadir}/frepple
 %attr(0770,-,frepple) %dir %{_localstatedir}/log/frepple
-%{python_sitelib}/freppledb*
+%{python_sitelib}/frepple*
 %{_mandir}/man1/frepple.1.*
 %{_mandir}/man1/frepplectl.1.*
 %doc COPYING

@@ -1,7 +1,7 @@
 usr/bin/*
 usr/lib/*.so*
 usr/lib/frepple/*.so*
-usr/lib/python*/dist-packages/freppledb/*
+usr/lib/python*/dist-packages/frepple*
 etc/apache2/sites-available/frepple.conf
 etc/frepple
 usr/share/frepple
