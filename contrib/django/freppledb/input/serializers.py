@@ -21,7 +21,7 @@ from rest_framework.generics import GenericAPIView
 class api:
   model = None
   serializer = None
-   
+
   @classmethod
   @csrf_exempt
   def rest_api(cls, request):
@@ -33,12 +33,12 @@ class api:
       serializer = cls.serializer(basequeryset, many=True)
       print(serializer, request.database)
       return Response(serializer.data)
-   
+
     elif request.method == 'POST':
       return Response(serializer.errors)
 
 #===============================================================================
-#         
+#
 # @api_view(['GET', 'POST'])
 # class ParameterList_REST(viewsets.ModelViewSet):
 #   '''
@@ -47,26 +47,26 @@ class api:
 #   basequeryset = Parameter.objects.all().using(request.database)
 #   serializer_class = serializers.frepple_serializer
 #   permission_classes = (permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly,)
-#   
+#
 #   @detail_route(renderer_classes=[renderers.StaticHTMLRenderer])
 #   def highlight(self, request, *args, **kwargs):
 #       snippet = self.get_object()
 #       return Response(snippet.highlighted)
-# 
+#
 #   def perform_create(self, serializer):
 #       serializer.save(owner=self.request.user)
 #===============================================================================
 #===============================================================================
 # from rest_framework import serializers
 # import freppledb.common.models
-# 
-# 
+#
+#
 # class ParameterSerializer(serializers.ModelSerializer): # serializers.ModelSerializer):
 #   class Meta:
 #       model = freppledb.common.models.Parameter
 #       fields = ('name', 'value', 'description')
-#         
-#   
+#
+#
 #===============================================================================
 #===============================================================================
 # class frepple_serializer(serializers.ModelSerializer):
@@ -88,23 +88,29 @@ class api:
 #         serializer = cls(basequeryset, many=True)
 #         print(serializer, request.database)
 #       return Response(serializer.data)
-#    
+#
 #     elif request.method == 'POST':
 #       return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 #===============================================================================
 
+class frePPleCreateAPIView(generics.ListCreateAPIView):
+    def get_queryset(self):
+      return super(generics.ListCreateAPIView, self).get_queryset().using(self.request.database)
 
+class frePPleRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+    def get_queryset(self):
+      return super(generics.RetrieveUpdateDestroyAPIView, self).get_queryset().using(self.request.database)
 
 class CalendarSerializer(serializers.ModelSerializer):
     class Meta:
       model = freppledb.input.models.Calendar
       fields = ('name', 'description', 'category', 'subcategory', 'defaultvalue', 'source', 'lastmodified')
-class CalendarREST(generics.ListCreateAPIView):
-    queryset = freppledb.input.models.Calendar.objects.all()#.using(request.database)
+class CalendarREST(frePPleCreateAPIView):
+    queryset = freppledb.input.models.Calendar.objects.all()
     serializer_class = CalendarSerializer
-class CalendardetailREST(generics.ListCreateAPIView):
-    queryset = freppledb.input.models.Calendar.objects.all()#.using(request.database)
-    serializer_class = CalendarSerializer      
+class CalendardetailREST(frePPleRetrieveUpdateDestroyAPIView):
+    queryset = freppledb.input.models.Calendar.objects.all()
+    serializer_class = CalendarSerializer
 
 
 class CalendarBucketSerializer(serializers.ModelSerializer):
@@ -115,7 +121,7 @@ class CalendarBucketSerializer(serializers.ModelSerializer):
 class CalendarBucketREST(generics.ListCreateAPIView):
     queryset = freppledb.input.models.CalendarBucket.objects.all()#.using(request.database)
     serializer_class = CalendarBucketSerializer
-class CalendarBucketdetailREST(generics.ListCreateAPIView):
+class CalendarBucketdetailREST(generics.RetrieveUpdateDestroyAPIView):
     queryset = freppledb.input.models.CalendarBucket.objects.all()#.using(request.database)
     serializer_class = CalendarBucketSerializer
 
@@ -130,7 +136,7 @@ class LocationREST(generics.ListCreateAPIView):
 class LocationdetailREST(generics.RetrieveUpdateDestroyAPIView):
     queryset = freppledb.input.models.Location.objects.all()#.using(request.database)
     serializer_class = LocationSerializer
-      
+
 class CustomerSerializer(serializers.ModelSerializer):
     class Meta:
       model = freppledb.input.models.Customer
@@ -141,7 +147,7 @@ class CustomerREST(generics.ListCreateAPIView):
 class CustomerdetailREST(generics.RetrieveUpdateDestroyAPIView):
     queryset = freppledb.input.models.Customer.objects.all()#.using(request.database)
     serializer_class = CustomerSerializer
-      
+
 class ItemSerializer(serializers.ModelSerializer):
     class Meta:
       model = freppledb.input.models.Item
@@ -163,8 +169,8 @@ class SupplierREST(generics.ListCreateAPIView):
 class SupplierdetailREST(generics.RetrieveUpdateDestroyAPIView):
     queryset = freppledb.input.models.Supplier.objects.all()#.using(request.database)
     serializer_class = SupplierSerializer
-          
-            
+
+
 class ItemSupplierSerializer(serializers.ModelSerializer):
     class Meta:
       model = freppledb.input.models.ItemSupplier
@@ -182,7 +188,7 @@ class ItemDistributionSerializer(serializers.ModelSerializer):
     class Meta:
       model = freppledb.input.models.ItemDistribution
       fields = ('id', 'item', 'location', 'origin', 'leadtime', 'sizeminimum', 'sizemultiple',
-                 'cost', 'priority', 'effective_start', 'effective_end', 'source', 'lastmodified')            
+                 'cost', 'priority', 'effective_start', 'effective_end', 'source', 'lastmodified')
 class ItemDistributionREST(generics.ListCreateAPIView):
     queryset = freppledb.input.models.ItemDistribution.objects.all()#.using(request.database)
     serializer_class = ItemDistributionSerializer
@@ -194,8 +200,8 @@ class ItemDistributiondetailREST(generics.RetrieveUpdateDestroyAPIView):
 class OperationSerializer(serializers.ModelSerializer):
     class Meta:
       model = freppledb.input.models.Operation
-      fields = ('name', 'type', 'description', 'category', 'subcategory', 'location', 'fence', 
-                'posttime', 'sizeminimum', 'sizemultiple', 'sizemaximum', 
+      fields = ('name', 'type', 'description', 'category', 'subcategory', 'location', 'fence',
+                'posttime', 'sizeminimum', 'sizemultiple', 'sizemaximum',
                  'cost', 'duration', 'duration_per', 'search', 'source', 'lastmodified')
 class OperationREST(generics.ListCreateAPIView):
     queryset = freppledb.input.models.Operation.objects.all()#.using(request.database)
@@ -208,7 +214,7 @@ class OperationdetailREST(generics.RetrieveUpdateDestroyAPIView):
 class SubOperationSerializer(serializers.ModelSerializer):
     class Meta:
       model = freppledb.input.models.SubOperation
-      fields = ('id','operation', 'priority', 'suboperation', 'effective_start', 'effective_end', 'source', 'lastmodified') 
+      fields = ('id','operation', 'priority', 'suboperation', 'effective_start', 'effective_end', 'source', 'lastmodified')
 class SubOperationREST(generics.ListCreateAPIView):
     queryset = freppledb.input.models.SubOperation.objects.all()#.using(request.database)
     serializer_class = SubOperationSerializer
@@ -220,7 +226,7 @@ class SubOperationdetailREST(generics.RetrieveUpdateDestroyAPIView):
 class BufferSerializer(serializers.ModelSerializer):
     class Meta:
       model = freppledb.input.models.Buffer
-      fields = ('name', 'description', 'category', 'subcategory', 'type', 'location', 'item', 
+      fields = ('name', 'description', 'category', 'subcategory', 'type', 'location', 'item',
                 'onhand', 'minimum', 'minimum_calendar', 'producing', 'leadtime', 'fence',
                 'min_inventory', 'max_inventory', 'min_interval', 'max_interval',
                 'size_minimum', 'size_multiple', 'size_maximum', 'source', 'lastmodified')
@@ -285,7 +291,7 @@ class SkilldetailREST(generics.RetrieveUpdateDestroyAPIView):
 class ResourceSkillSerializer(serializers.ModelSerializer):
     class Meta:
       model = freppledb.input.models.ResourceSkill
-      fields = ('id', 'skill', 'effective_start', 'effective_end', 'priority', 'source', 'lastmodified')     
+      fields = ('id', 'skill', 'effective_start', 'effective_end', 'priority', 'source', 'lastmodified')
 class ResourceSkillREST(generics.ListCreateAPIView):
     queryset = freppledb.input.models.ResourceSkill.objects.all()#.using(request.database)
     serializer_class = ResourceSkillSerializer
@@ -323,7 +329,7 @@ class LoaddetailREST(generics.RetrieveUpdateDestroyAPIView):
 class OperationPlanSerializer(serializers.ModelSerializer):
     class Meta:
       model = freppledb.input.models.OperationPlan
-      fields = ('id', 'status', 'reference', 'operation', 'quantity', 'startdate', 'enddate', 
+      fields = ('id', 'status', 'reference', 'operation', 'quantity', 'startdate', 'enddate',
                 'criticality', 'owner', 'source', 'lastmodified')
 class OperationPlanREST(generics.ListCreateAPIView):
     queryset = freppledb.input.models.OperationPlan.objects.all()#.using(request.database)
@@ -337,7 +343,7 @@ class DistributionOrderSerializer(serializers.ModelSerializer):
     class Meta:
       model = freppledb.input.models.DistributionOrder
       fields = ('id', 'reference', 'status', 'item', 'origin', 'destination', 'quantity',
-                'startdate', 'enddate', 'consume_material', 'criticality', 'source', 'lastmodified')    
+                'startdate', 'enddate', 'consume_material', 'criticality', 'source', 'lastmodified')
 class DistributionOrderREST(generics.ListCreateAPIView):
     queryset = freppledb.input.models.DistributionOrder.objects.all()#.using(request.database)
     serializer_class = DistributionOrderSerializer
@@ -362,11 +368,11 @@ class PurchaseOrderdetailREST(generics.RetrieveUpdateDestroyAPIView):
 class DemandSerializer(serializers.ModelSerializer):
     class Meta:
       model = freppledb.input.models.Demand
-      fields = ('name', 'description', 'category', 'subcategory', 'item', 'location', 'due', 
+      fields = ('name', 'description', 'category', 'subcategory', 'item', 'location', 'due',
                 'status', 'operation', 'quantity', 'priority', 'minshipment', 'maxlateness')
 class DemandREST(generics.ListCreateAPIView):
     queryset = freppledb.input.models.Demand.objects.all()#.using(request.database)
-    serializer_class = DemandSerializer        
+    serializer_class = DemandSerializer
 class DemanddetailREST(generics.RetrieveUpdateDestroyAPIView):
     queryset = freppledb.input.models.Demand.objects.all()#.using(request.database)
     serializer_class = DemandSerializer
