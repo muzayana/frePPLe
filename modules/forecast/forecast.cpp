@@ -467,13 +467,13 @@ extern "C" PyObject* ForecastSolver::timeseries(PyObject *self, PyObject *args)
   PyObject *bucketiterator = NULL;
   if (!historyiterator)
   {
-    PyErr_Format(PyExc_AttributeError,"Invalid type for time series");
+    PyErr_Format(PyExc_AttributeError, "Invalid type for time series");
     return NULL;
   }
   if (buckets) bucketiterator = PyObject_GetIter(buckets);
   if (!bucketiterator)
   {
-    PyErr_Format(PyExc_AttributeError,"Invalid type for time series");
+    PyErr_Format(PyExc_AttributeError, "Invalid type for time series");
     return NULL;
   }
 
@@ -499,6 +499,11 @@ extern "C" PyObject* ForecastSolver::timeseries(PyObject *self, PyObject *args)
     if (bucketcount>=300) break;
   }
   Py_DECREF(bucketiterator);
+  if (bucketcount < 2)
+  {
+    PyErr_Format(PyExc_AttributeError, "No future time buckets given");
+    return NULL;
+  }
 
   Py_BEGIN_ALLOW_THREADS  // Free the Python interpreter for other threads
   try

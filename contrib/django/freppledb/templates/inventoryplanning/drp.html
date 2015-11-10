@@ -40,7 +40,7 @@ function selectRow(id)
               selectRow(id);
             },
             "{% trans "no"|capfirst|escapejs %}" : function() {
-              $('#save').removeClass("save_undo_button_active");
+              $('#undo, #recalculate, #save').addClass("save_undo_button_inactive").removeClass("save_undo_button_active");
               selectRow(id);
               $(this).dialog("close");
             }
@@ -52,7 +52,10 @@ function selectRow(id)
   $.ajax({
     url: '{{request.prefix}}/inventoryplanning/drpitemlocation/' + admin_escape(id) + '/',
     type: 'GET',
-    success: displayResult,
+    success: function (r) {
+      result = r;
+      displayResult(true);
+    },
     error: function (result, stat, errorThrown) {
       $('#popup').html(result.responseText + "  " + stat + errorThrown).dialog({
         title: gettext("Error retrieving data"),
@@ -71,6 +74,60 @@ function selectRow(id)
   .removeClass("change_status_selectmenu_active ui-state-enabled ui-selectmenu-enabled")
   .prop('disabled', 'disabled');
 }
+
+
+function clickNoStock()
+{
+	// Verify if different from current value
+	if (result && (
+		(result.parameters.nostock == 'True' && $("#nostock").prop('checked'))
+		|| (result.parameters.nostock != 'True' && !$("#nostock").prop('checked'))
+		))
+  {
+		// Same value as received from server
+		$(this).removeClass('dirty-cell');
+	  $('label[for=nostock]').removeClass('red');
+  }
+	else
+	{
+		activateSaveUndo();
+	  $(this).addClass('dirty-cell');
+	  $('label[for=nostock]').addClass('red');
+	}
+}
+
+
+function clickROQtype()
+{
+	var sel = $('input[name="roq_type"]:checked');
+	$('label[for=roq_type_calculated], label[for=roq_type_quantity], label[for=roq_type_periodofcover]').removeClass('red');
+	if (result && sel.val() == result.parameters.roq_type)
+		// Same value as received from server
+		$('label[for=' + sel.attr('id') + ']').removeClass('red');
+	else
+	{
+	  // Different value
+		$('label[for=' + sel.attr('id') + ']').addClass('red');
+	  activateSaveUndo();
+	}
+}
+
+
+function clickSStype()
+{
+  var sel = $('input[name="ss_type"]:checked');
+  $('label[for=ss_type_calculated], label[for=ss_type_quantity], label[for=ss_type_periodofcover]').removeClass('red');
+  if (result && sel.val() == result.parameters.ss_type)
+    // Same value as received from server
+    $('label[for=' + sel.attr('id') + ']').removeClass('red');
+  else
+  {
+	  // Different value
+    $('label[for=' + sel.attr('id') + ']').addClass('red');
+    activateSaveUndo();
+  }
+}
+
 
 function extraPreference()
 {
@@ -97,10 +154,7 @@ function select()
 
 function activateSaveUndo()
 {
-  //$('#filter').addClass("ui-state-disabled");
-  //$.jgrid.hideModal("#searchmodfbox_grid");
-  $('#save').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
-  $('#undo').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
+  $('#save, #recalculate, #undo').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
   $(window).off('beforeunload', warnUnsavedChanges);
   $(window).on('beforeunload', warnUnsavedChanges);
 }
@@ -116,24 +170,20 @@ function onChange(event) {
 
 function undo() {
   // Reset the buttons
-  $('#undo').addClass("save_undo_button_inactive").removeClass("save_undo_button_active");
-  $('#save').addClass("save_undo_button_inactive").removeClass("save_undo_button_active");
+  $('#undo, #save, #recalculate').addClass("save_undo_button_inactive").removeClass("save_undo_button_active");
   $("#actions").addClass("ui-selectmenu-disabled ui-state-disabled change_status_selectmenu_inactive")
     .removeClass("change_status_selectmenu_active ui-state-enabled ui-selectmenu-enabled")
     .prop('disabled', 'disabled');
-
-//  $("#newcomment").val(""); //clear comments textarea
-
   $(window).off('beforeunload', warnUnsavedChanges);
-  selectRow(result.name); //Fetch data
-  displayResult(result); //redraw all tabs
+  var entity = result.name;
+  result = null;
+  selectRow(entity); //Fetch data & redraw
 }
 
 function select() {
   $('#filter').addClass("ui-state-disabled");
   $.jgrid.hideModal("#searchmodfbox_grid");
-  $('#save').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
-  $('#undo').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
+  $('#save, #undo, #recalculate').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
   $(window).off('beforeunload', warnUnsavedChanges);
   $(window).on('beforeunload', warnUnsavedChanges);
 }
@@ -184,25 +234,45 @@ function setStatus(newstatus)
   };
 
   $("#actions").prop("selectedIndex",0);
-  $('#save').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
-  $('#undo').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
+  $('#save, #undo').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
   $(window).on('beforeunload', warnUnsavedChanges);
 }
 
 {% if perms.forecast.change_forecast %}
 function setForecastMethod(newmethod)
 {
-  $('#save').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
-  $('#undo').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
+  $('#save, #undo, #recalculate').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
   $('#forecastmethod').addClass('dirty-cell red');
   $(window).on('beforeunload', warnUnsavedChanges);
 }
 {% endif %}
 
-function save(refresh) {
-  if (result == null)
-    return;
 
+function reapplyChanges(data)
+{
+	// Apply the changes to the grids.
+	// Fields outside the grids aren't updated, so we don't need to reapply any changes on them.
+
+	{% if perms.forecast.change_forecastdemand %}// Get forecast data changes
+	if ("forecast" in data) {
+		for (var fcstchange in data["forecast"])
+		{
+			var cell = $('td[aria-describedby="forecastgrid_' + data["forecast"][fcstchange].bucket + '"');
+      if ("adjHistory1" in data["forecast"][fcstchange])
+          cell.find("input.adjhistory-1").addClass("dirty-cell");
+      if ("adjHistory2" in data["forecast"][fcstchange])
+          cell.find("input.adjhistory-2").addClass("dirty-cell");
+      if ("adjHistory3" in data["forecast"][fcstchange])
+          cell.find("input.adjhistory-3").addClass("dirty-cell");
+      if ("adjForecast" in data["forecast"][fcstchange])
+          cell.find("input.adjforecast").addClass("dirty-cell");
+		}
+	}
+  {% endif %}
+}
+
+
+function collectChanges() {
   // Build the results to send back to the server
   var data = {};
 
@@ -230,23 +300,19 @@ function save(refresh) {
      var colmodel = jQuery("#forecastgrid").jqGrid ('getGridParam', 'colModel')[curCol];
      if ($(this).hasClass('adjhistory-3'))
        fcstchanges.push({
-          'startdate': colmodel['startdate'], 'enddate': colmodel['enddate'], 'adjHistory3': $(this).val()
+          'startdate': colmodel['startdate'], 'enddate': colmodel['enddate'], 'adjHistory3': $(this).val(), 'bucket': colmodel['name']
           });
      else if ($(this).hasClass('adjhistory-2'))
        fcstchanges.push({
-         'startdate': colmodel['startdate'], 'enddate': colmodel['enddate'], 'adjHistory2': $(this).val()
+         'startdate': colmodel['startdate'], 'enddate': colmodel['enddate'], 'adjHistory2': $(this).val(), 'bucket': colmodel['name']
          });
      else if ($(this).hasClass('adjhistory-1'))
        fcstchanges.push({
-         'startdate': colmodel['startdate'], 'enddate': colmodel['enddate'], 'adjHistory1': $(this).val()
-         });
-     else if ($(this).hasClass('adjhistory'))
-       fcstchanges.push({
-         'startdate': colmodel['startdate'], 'enddate': colmodel['enddate'], 'adjHistory': $(this).val()
+         'startdate': colmodel['startdate'], 'enddate': colmodel['enddate'], 'adjHistory1': $(this).val(), 'bucket': colmodel['name']
          });
      else if ($(this).hasClass('adjforecast'))
        fcstchanges.push({
-         'startdate': colmodel['startdate'], 'enddate': colmodel['enddate'], 'adjForecast': $(this).val()
+         'startdate': colmodel['startdate'], 'enddate': colmodel['enddate'], 'adjForecast': $(this).val(), 'bucket': colmodel['name']
          });
   });
   if (!$.isEmptyObject(fcstchanges))
@@ -295,45 +361,93 @@ function save(refresh) {
   // Get inventory planning and forecast parameter changes
   var prmtr = {};
   {% if perms.inventoryplanning.change_inventoryplanning %}
-  prmtr["roq_type"] = $('input[name="roq_type"]:checked').val();
-  prmtr["roq_min_qty"] = $("#roq_min_qty").val();
-  prmtr["roq_min_poc"] = $("#roq_min_poc").val();
-  prmtr["service_level"] = $("#service_level").val();
-  prmtr["demand_distribution"] = $("#demand_distribution").val();
-  prmtr["demand_deviation"] = $("#demand_deviation").val();
-  prmtr["leadtime_deviation"] = $("#leadtime_deviation").val();
-  prmtr["ss_type"] = $('input[name="ss_type"]:checked').val();
-  prmtr["ss_min_qty"] = $("#ss_min_qty").val();
-  prmtr["ss_min_poc"] = $("#ss_min_poc").val();
-  prmtr["nostock"] = $("#nostock").prop('checked');
+  var tmp = $('input[name="roq_type"]:checked');
+  if ($("label[for=" + tmp.attr('id') + "]").hasClass('red'))
+	  result.parameters['roq_type'] = prmtr["roq_type"] = $('input[name="roq_type"]:checked').val();
+	if ($("#roq_min_qty").hasClass('dirty-cell'))
+		result.parameters['roq_min_qty'] = prmtr["roq_min_qty"] = $("#roq_min_qty").val();
+	if ($("#roq_min_poc").hasClass('dirty-cell'))
+		result.parameters['roq_min_poc'] = prmtr["roq_min_poc"] = $("#roq_min_poc").val();
+	if ($("#service_level").hasClass('dirty-cell'))
+		result.parameters['service_level'] = prmtr["service_level"] = $("#service_level").val();
+	if ($("#demand_distribution").hasClass('red'))
+		result.parameters['demand_distribution'] = prmtr["demand_distribution"] = $("#demand_distribution").val();
+	if ($("#demand_deviation").hasClass('dirty-cell'))
+		result.parameters['demand_deviation'] = prmtr["demand_deviation"] = $("#demand_deviation").val();
+	if ($("#leadtime_deviation").hasClass('dirty-cell'))
+		result.parameters['leadtime_deviation'] = prmtr["leadtime_deviation"] = $("#leadtime_deviation").val();
+  var tmp = $('input[name="ss_type"]:checked');
+	if ($("label[for=" + tmp.attr('id') + "]").hasClass('red'))
+		result.parameters['ss_type'] = prmtr["ss_type"] = $('input[name="ss_type"]:checked').val();
+  if ($("#ss_min_qty").hasClass('dirty-cell'))
+	  result.parameters['ss_min_qty'] = prmtr["ss_min_qty"] = $("#ss_min_qty").val();
+  if ($("#ss_min_poc").hasClass('dirty-cell'))
+	  result.parameters['ss_min_poc'] = prmtr["ss_min_poc"] = $("#ss_min_poc").val();
+  if ($("label[for=nostock]").hasClass('red'))
+	  result.parameters['nostock'] = prmtr["nostock"] = $("#nostock").prop('checked');
   {% endif %}
   {% if perms.forecast.change_forecast %}
-  prmtr["forecastmethod"] = $("#forecastmethod").val();
+  if ($("#forecastmethod").hasClass('red'))
+	  result.parameters['forecastmethod'] = prmtr["forecastmethod"] = $("#forecastmethod").val();
   {% endif %}
   if (!$.isEmptyObject(prmtr))
     data["parameters"] = prmtr;
   {% endif %}
+  return data;
+}
+
+
+function save(simulate)
+{
+  if (result == null)
+    return;
+	var data = collectChanges();
 
   // Send the results back to the server
   if (!$.isEmptyObject(data)) {
+	  data['simulate'] = simulate
 	  data['editvalue'] = result.displayvalue;
 	  $.ajax({
 	    url: '{{request.prefix}}/inventoryplanning/drpitemlocation/' + admin_escape(result.name) + '/',
 	    type: 'POST',
 	    data: JSON.stringify(data),
 	    contentType: 'application/json',
-	    success: function() {
-	      // Reset the buttons
-	      $('#undo').addClass("save_undo_button_inactive").removeClass("save_undo_button_active");
-	      $('#save').addClass("save_undo_button_inactive").removeClass("save_undo_button_active");
-	      $(window).off('beforeunload', warnUnsavedChanges);
-	      // Refresh the detail pane from the server after successful save.
-	      // TODO This could be optimized: the server could return the updated
-	      // data immediately, rather than the client asking here for the new data.
-	      var entity = result.name;
-	      result = null;
-	      selectRow(entity);
-	      },
+	    success: function(newdata) {
+	      if (simulate)
+        {
+          // We received simulation results from the server.
+          // Merge the simulation results in the existing results (because the simulation returns
+          // a subset of the results only).
+          console.log("old");
+          console.log(result);
+          for (var i in newdata)
+          {
+            if (i == 'parameters')
+              for (var j in newdata[i])
+                result[i][j] = newdata[i][j];
+            else
+              result[i] = newdata[i];
+          }
+          console.log("new");
+          console.log(result);
+          // Populate the new results in the grid
+          displayResult(false);
+          // Apply the grid changes again, to make them show up in red
+          reapplyChanges(data);
+        }
+        else
+        {
+		      // Reset the buttons
+		      $('#undo, #recalculate, #save').addClass("save_undo_button_inactive").removeClass("save_undo_button_active");
+		      $(window).off('beforeunload', warnUnsavedChanges);
+	        // Refresh the detail pane from the server after successful save.
+	        // TODO This could be optimized: the server could return the updated
+	        // data immediately, rather than the client asking here for the new data.
+	        var entity = result.name;
+	        result = null;
+	        selectRow(entity);
+	      }
+      },
 	    error: function (result, stat, errorThrown) {
 	      // Error message
 	      $('#popup').html(result.responseText)
@@ -518,6 +632,8 @@ function plancell(cellvalue, options, rowObject)
 
 function displayPlanGraph()
 {
+	if (! "plan" in result)
+		return;
   var margin = {top: 0, right: 130, bottom: 30, left: 50};
   var width = $("#content-main").width() - margin.left - margin.right;
   var height = $("#plangraph").height() - margin.top - margin.bottom;
@@ -898,15 +1014,13 @@ function displayForecastGraph()
 }
 
 
-function displayResult(data)
+function displayResult(reset)
 {
-  result = data;
-
   // Enable input elements
   $("#save, #undo, #commentitem, #commentitemlocation, #commentlocation").prop('disabled', false);
 
   // Debugging
-  // console.log(result);
+  console.log(result);
 
   // Update title
   if (result.type == "itemlocation")
@@ -918,27 +1032,57 @@ function displayResult(data)
 
   // Update the forecasting parameters
   {% if perms.forecast.change_forecast %}
-  $("#forecastmethod").val(data.parameters.forecastmethod).removeClass('red');
-  {% else %}
-  $("#forecastmethod").html(data.parameters.forecastmethod);
+  if (reset)
+	  $("#forecastmethod").removeClass('red');
   {% endif %}
-  $("#forecast_out_smape").html(data.parameters.forecast_out_smape);
-  $("#forecast_out_method").html(data.parameters.forecast_out_method);
+  if ("forecastmethod" in result.parameters)
+	  $("#forecastmethod").val(result.parameters.forecastmethod);
+  if ("forecast_out_smape" in result.parameters)
+    $("#forecast_out_smape").html(result.parameters.forecast_out_smape);
+  if ("forecast_out_method" in result.parameters)
+    $("#forecast_out_method").html(result.parameters.forecast_out_method);
 
   // Update the inventory planning parameters
-  $("#roq_type_" + data.parameters.roq_type).prop("checked", true);
-  $("#ss_type_" + data.parameters.ss_type).prop("checked", true);
-  $("#nostock").prop('checked', data.parameters.nostock == "True");
-  $("#eoq").html(data.parameters.roq_calculated);
-  $("#roq_min_qty").val(data.parameters.roq_min_qty).removeClass('dirty-cell');
-  $("#roq_min_poc").val(data.parameters.roq_min_poc).removeClass('dirty-cell');
-  $("#calculated_ss").html(data.parameters.ss_calculated);
-  $("#service_level").val(data.parameters.service_level).removeClass('dirty-cell');
-  $("#demand_distribution").val(data.parameters.demand_distribution).removeClass('red');
-  $("#demand_deviation").val(data.parameters.demand_deviation).removeClass('dirty-cell');
-  $("#leadtime_deviation").val(data.parameters.leadtime_deviation).removeClass('dirty-cell');
-  $("#ss_min_qty").val(data.parameters.ss_min_qty).removeClass('dirty-cell');
-  $("#ss_min_poc").val(data.parameters.ss_min_poc).removeClass('dirty-cell');
+  if ("roq_type" in result.parameters)
+	  $("#roq_type_" + result.parameters.roq_type).prop("checked", true);
+  if ("ss_type" in result.parameters)
+	  $("#ss_type_" + result.parameters.ss_type).prop("checked", true);
+  if ("roq_calculated" in result.parameters)
+	  $("#roq_calculated").html(result.parameters.roq_calculated);
+  if ("ss_calculated" in result.parameters)
+	  $("#ss_calculated").html(result.parameters.ss_calculated);
+  if ("nostock" in result.parameters)
+	  $("#nostock").prop('checked', result.parameters.nostock == "True");
+  if ("roq_min_qty" in result.parameters)
+    $("#roq_min_qty").val(result.parameters.roq_min_qty);
+  if ("roq_min_poc" in result.parameters)
+	  $("#roq_min_poc").val(result.parameters.roq_min_poc);
+  if ("service_level" in result.parameters)
+	  $("#service_level").val(result.parameters.service_level);
+  if ("demand_distribution" in result.parameters)
+	  $("#demand_distribution").val(result.parameters.demand_distribution);
+  if ("demand_deviation" in result.parameters)
+	  $("#demand_deviation").val(result.parameters.demand_deviation);
+  if ("leadtime_deviation" in result.parameters)
+	  $("#leadtime_deviation").val(result.parameters.leadtime_deviation);
+  if ("ss_min_qty" in result.parameters)
+	  $("#ss_min_qty").val(result.parameters.ss_min_qty);
+  if ("ss_min_poc" in result.parameters)
+	  $("#ss_min_poc").val(result.parameters.ss_min_poc);
+  if (reset)
+  {
+    $("label[for=nostock]").removeClass("red");
+    $("label[for=roq_type_periodofcover], label[for=roq_type_calculated], label[for=roq_type_quantity]").removeClass("red");
+    $("label[for=ss_type_periodofcover], label[for=ss_type_calculated], label[for=ss_type_quantity]").removeClass("red");
+    $("#roq_min_qty").removeClass('dirty-cell');
+    $("#roq_min_poc").removeClass('dirty-cell');
+    $("#service_level").removeClass('dirty-cell');
+    $("#demand_distribution").removeClass('red');
+    $("#demand_deviation").removeClass('dirty-cell');
+    $("#leadtime_deviation").removeClass('dirty-cell');
+    $("#ss_min_qty").removeClass('dirty-cell');
+    $("#ss_min_poc").removeClass('dirty-cell');
+  }
 
   // Show forecast tab
   displayForecastGraph(); // this function also sets the variable firstforecastbucket
@@ -1000,7 +1144,7 @@ function displayResult(data)
     jQuery("#plangrid").jqGrid('setFrozenColumns');
     $("#plangrid").unbind("contextmenu");
   }
-  else
+  else if ("plan" in result)
   {
     // Refresh data in the plan grid
     $('#plangrid')
@@ -1055,7 +1199,7 @@ function displayResult(data)
     $("#transactiongrid").jqGrid('setFrozenColumns');
     $('#cb_transactiongrid.cbox').click(grid.markAllRows);
   }
-  else
+  else if ("transactions" in result)
   {
     // Refresh data in the transaction grid
     $('#transactiongrid')
@@ -1065,28 +1209,36 @@ function displayResult(data)
   }
 
   // Show comments
-  $("#commentlocation, #commentitem, #commentitemlocation").removeClass("comment_button_active ui-state-disabled");
-  $("#newcomment:visible").css("display", "none");
-  var comments = $("#pastcomments");
-  comments.empty();
-  for (var c in result.comments)
-  {
-    $("<hr/>").appendTo(comments);
-    $("<h3/>").text(result.comments[c].user + " " + result.comments[c].type).appendTo(comments);
-    $("<span class='float_right'></span>").text(result.comments[c].lastmodified).appendTo(comments);
-    $("<pre/>").text(result.comments[c].comment).appendTo(comments);
-  }
+  // Note that a recalculate doesn't send back the comments, and we don't change the existing content
+  if ("comments" in result)
+	{
+	  $("#commentlocation, #commentitem, #commentitemlocation").removeClass("comment_button_active ui-state-disabled");
+	  $("#newcomment:visible").css("display", "none");
+	  var comments = $("#pastcomments");
+	  comments.empty();
+	  for (var c in result.comments)
+	  {
+	    $("<hr/>").appendTo(comments);
+	    $("<h3/>").text(result.comments[c].user + " " + result.comments[c].type).appendTo(comments);
+	    $("<span class='float_right'></span>").text(result.comments[c].lastmodified).appendTo(comments);
+	    $("<pre/>").text(result.comments[c].comment).appendTo(comments);
+	  }
+	}
 
   // Show history tab
-  var history = $("#history");
-  history.empty();
-  for (var c in result.history)
+  // Note that a recalculate doesn't send back the hsitory, and we don't change the existing content
+  if ("history" in result)
 	{
-    var i = $("<div/>");
-    $("<span style='font-weight: bold'/>").text(result.history[c].content_type + ' ' + result.history[c].object_id + ': ').appendTo(i);
-    $("<span class='float_right'/>").text(result.history[c].user + " " + result.history[c].action_time).appendTo(i);
-    $("<span/>").text(result.history[c].change_message).appendTo(i);
-    i.appendTo(history);
+	  var history = $("#history");
+	  history.empty();
+	  for (var c in result.history)
+		{
+	    var i = $("<div/>");
+	    $("<span style='font-weight: bold'/>").text(result.history[c].content_type + ' ' + result.history[c].object_id + ': ').appendTo(i);
+	    $("<span class='float_right'/>").text(result.history[c].user + " " + result.history[c].action_time).appendTo(i);
+	    $("<span/>").text(result.history[c].change_message).appendTo(i);
+	    i.appendTo(history);
+		}
 	}
 }
 
@@ -1176,8 +1328,9 @@ $(function() {
 <br/>
 <div id="detail"><h1 id="detailtitle">{% trans "detail"|capfirst %}</h1>
 {% if perms.input.change_purchaseorder or perms.input.change_distributionorder or perms.forecast.change_forecastdemand or perms.input.change_calendarbucket or perms.forecast.change_forecast or perms.inventoryplanning.change_inventoryplanning %}
-&nbsp;&nbsp;<input type="submit" value="{% filter upper|force_escape %}{% trans 'Save' context 'Translation included with Django' %}{% endfilter %}" id="save" class="button ui-corner-all save_undo_button_inactive" role="button" onclick="save(true)" title="{% trans 'save changes'|capfirst|force_escape %}">
+&nbsp;&nbsp;<input type="submit" value="{% filter upper|force_escape %}{% trans 'Save' context 'Translation included with Django' %}{% endfilter %}" id="save" class="button ui-corner-all save_undo_button_inactive" role="button" onclick="save(false)" title="{% trans 'save changes'|capfirst|force_escape %}">
 &nbsp;&nbsp;<input type="submit" value="{% filter upper|force_escape %}{% trans 'Undo' context 'Translation included with Django' %}{% endfilter %}" id="undo" class="button ui-corner-all save_undo_button_inactive" role="button" onclick="undo()" title="{% trans 'undo changes'|capfirst|force_escape %}">
+&nbsp;&nbsp;<input type="submit" value="{% filter upper|force_escape %}{% trans 'Recalculate' %}{% endfilter %}" id="recalculate" class="button ui-corner-all save_undo_button_inactive" role="button" onclick="save(true)" title="{% trans 'simulate changes without saving'|capfirst|force_escape %}">
 {% endif %}
 {% if perms.input.change_purchaseorder or perms.input.change_distributionorder %}
 &nbsp;&nbsp;<select disabled='disabled' name="actions" id="actions" onchange="javascript: if ( $(this).val() == 'openbravo_export') {openbravo.IncrementalExport(jQuery('#transactiongrid'),'all');} else {setStatus($(this).val());}" style="display: initial" class="ui-corner-all ui-selectmenu-disabled ui-state-disabled change_status_selectmenu_inactive" >
@@ -1225,11 +1378,11 @@ $(function() {
 <table><tr><td class="bold">{% trans "reorder quantity"|capfirst %}</td>
 <td class="bold">{% trans "safety stock"|capfirst %}</td></tr>
 <tr><td valign="top">
-<input type="radio" id="roq_type_calculated" name="roq_type" value="calculated" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="activateSaveUndo()"{% else %}disabled="disabled"{% endif %}><label for="roq_type_calculated">&nbsp;{% trans "economic order quantity"|capfirst %}: <span id="eoq">&nbsp;&nbsp;&nbsp;&nbsp;</span> {% trans "units"|capfirst %}&nbsp;&nbsp;&nbsp;&nbsp;</label><br/>
-<input type="radio" id="roq_type_quantity" name="roq_type" value="quantity" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="activateSaveUndo()"{% else %}disabled="disabled"{% endif %}><label for="roq_type_quantity">&nbsp;{% trans "quantity"|capfirst %}&nbsp;<input style="width:80px" type="number" id="roq_min_qty"{% if perms.change_inventoryplanning %} oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" {% else %} readonly="true" {% endif %}min="1"> {% trans "units"|capfirst %}</label><br/>
-<input type="radio" id="roq_type_periodofcover" name="roq_type" value="periodofcover" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="activateSaveUndo()"{% else %}disabled="disabled"{% endif %}><label for="roq_type_periodofcover">&nbsp;{% trans "period of cover"|capfirst %}&nbsp;<input style="width:50px" type="number" id="roq_min_poc"{% if perms.inventoryplanning.change_inventoryplanning %} oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" {% else %} readonly="true" {% endif %}min="1" step="7"> {% trans "days" %}</label><br/>
+<input type="radio" id="roq_type_calculated" name="roq_type" value="calculated" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="clickROQtype()"{% else %}disabled="disabled"{% endif %}><label for="roq_type_calculated">&nbsp;{% trans "economic order quantity"|capfirst %}: <span id="roq_calculated">&nbsp;&nbsp;&nbsp;&nbsp;</span> {% trans "units"|capfirst %}&nbsp;&nbsp;&nbsp;&nbsp;</label><br/>
+<input type="radio" id="roq_type_quantity" name="roq_type" value="quantity" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="clickROQtype()"{% else %}disabled="disabled"{% endif %}><label for="roq_type_quantity">&nbsp;{% trans "quantity"|capfirst %}&nbsp;<input style="width:80px" type="number" id="roq_min_qty"{% if perms.change_inventoryplanning %} oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" {% else %} readonly="true" {% endif %}min="1"> {% trans "units"|capfirst %}</label><br/>
+<input type="radio" id="roq_type_periodofcover" name="roq_type" value="periodofcover" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="clickROQtype()"{% else %}disabled="disabled"{% endif %}><label for="roq_type_periodofcover">&nbsp;{% trans "period of cover"|capfirst %}&nbsp;<input style="width:50px" type="number" id="roq_min_poc"{% if perms.inventoryplanning.change_inventoryplanning %} oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" {% else %} readonly="true" {% endif %}min="1" step="1"> {% trans "days" %}</label><br/>
 </td><td valign="top">
-<input type="radio" id="ss_type_calculated" name="ss_type" value="calculated" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="activateSaveUndo()"{% else %}disabled="disabled"{% endif %}><label for="ss_type_calculated">&nbsp;{% trans "service level"|capfirst %}: <span id="calculated_ss">&nbsp;&nbsp;&nbsp;&nbsp;</span> {% trans "units" %}<br/>
+<input type="radio" id="ss_type_calculated" name="ss_type" value="calculated" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="clickSStype()"{% else %}disabled="disabled"{% endif %}><label for="ss_type_calculated">&nbsp;{% trans "service level"|capfirst %}: <span id="ss_calculated">&nbsp;&nbsp;&nbsp;&nbsp;</span> {% trans "units" %}<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{% trans "minimum"|capfirst %} <input type="number" id="service_level"{% if perms.inventoryplanning.change_inventoryplanning %} oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" {% else %} readonly="true" {% endif %}min="0" max="100" size="7"> %<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{% trans "statistical distribution"|capfirst %}
 <select name="actions" id="demand_distribution"{% if perms.inventoryplanning.change_inventoryplanning %} onchange="activateSaveUndo(); $(this).addClass('dirty-cell red')" {% else %} disabled="disabled" {% endif %}style="display: initial" class="ui-corner-all ui-selectmenu-default ui-state-enabled">
@@ -1238,13 +1391,13 @@ $(function() {
   <option value="poisson">{% filter capfirst %}{% trans "poisson" context "statistical distribution" %}{% endfilter %}</option>
   <option value="negbinomial">{% filter capfirst %}{% trans "negative binomial" context "statistical distribution" %}{% endfilter %}</option>
 </select><br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{% trans "demand standard deviation"|capfirst %} <input style="width:80px" type="number" id="demand_deviation"{% if perms.inventoryplanning.change_inventoryplanning %} oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" {% else %} readonly="true" {% endif %}size="7"> {% trans "units" %}<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{% trans "demand standard deviation"|capfirst %} <input style="width:80px" type="number" id="demand_deviation"{% if perms.inventoryplanning.change_inventoryplanning %} oninput="activateSaveUndo(); $(this).addClass('dirty-cell');" {% else %} readonly="true" {% endif %}size="7"> {% trans "units" %}<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{% trans "lead time standard deviation"|capfirst %} <input style="width:80px" type="number" id="leadtime_deviation"{% if perms.inventoryplanning.change_inventoryplanning %} oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" {% else %} readonly="true" {% endif %}size="7"> {% trans "days" %}</label><br/>
-<input type="radio" id="ss_type_quantity" name="ss_type" value="quantity" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="activateSaveUndo()"{% else %}disabled="disabled"{% endif %}><label for="ss_type_quantity">&nbsp;{% trans "quantity"|capfirst %}<input style="width:80px" type="number" id="ss_min_qty"{% if perms.change_inventoryplanning %}  oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" {% else %} readonly="true" {% endif %}min="1"> {% trans "units"|capfirst %}</label><br/>
-<input type="radio" id="ss_type_periodofcover" name="ss_type" value="periodofcover" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="activateSaveUndo()"{% else %}disabled="disabled"{% endif %}><label for="ss_type_periodofcover">&nbsp;{% trans "period of cover"|capfirst %}<input style="width:50px" type="number" id="ss_min_poc" min="1" step="7"{% if perms.inventoryplanning.change_inventoryplanning %}  oninput="activateSaveUndo(); $(this).addClass('dirty-cell')"{% else %} readonly="true"{% endif %}> {% trans "days" %}</label><br/>
+<input type="radio" id="ss_type_quantity" name="ss_type" value="quantity" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="clickSStype()"{% else %}disabled="disabled"{% endif %}><label for="ss_type_quantity">&nbsp;{% trans "quantity"|capfirst %}<input style="width:80px" type="number" id="ss_min_qty"{% if perms.change_inventoryplanning %}  oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" {% else %} readonly="true" {% endif %}min="1"> {% trans "units"|capfirst %}</label><br/>
+<input type="radio" id="ss_type_periodofcover" name="ss_type" value="periodofcover" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="clickSStype()"{% else %}disabled="disabled"{% endif %}><label for="ss_type_periodofcover">&nbsp;{% trans "period of cover"|capfirst %}<input style="width:50px" type="number" id="ss_min_poc" min="1" step="7"{% if perms.inventoryplanning.change_inventoryplanning %}  oninput="activateSaveUndo(); $(this).addClass('dirty-cell')"{% else %} readonly="true"{% endif %}> {% trans "days" %}</label><br/>
 </td></tr>
 </table>
-<input type="checkbox" id="nostock" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="activateSaveUndo(); $(this).addClass('dirty-cell')"{% else %}disabled="disabled"{% endif %}>&nbsp;&nbsp;<label for="nostock">{% trans "don't stock"|capfirst %}</label>
+<input type="checkbox" id="nostock" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="clickNoStock()"{% else %}disabled="disabled"{% endif %}>&nbsp;&nbsp;<label for="nostock">{% trans "don't stock"|capfirst %}</label>
 </div>
 
 <div id="transactionsdata" class="clear" style="display:none">
@@ -1257,7 +1410,7 @@ $(function() {
 &nbsp;&nbsp;
 <input type="submit"  role="button" id="commentlocation" value="{% trans 'new location comment'|capfirst %}" onclick="return setCommentType('location')" aria-disabled="false" style="font-size:12px" disabled="disabled" class="ui-button ui-widget ui-state-default ui-state-disabled ui-corner-all" />
 &nbsp;&nbsp;
-<textarea style="display:none; width:100%" id="newcomment" name="comment" rows="5" oninput="activateSaveUndo()"></textarea><br/>{% endif %}
+<textarea style="display:none; width:100%" id="newcomment" name="comment" rows="5" oninput="activateSaveUndo(); $('#recalculate').removeClass('save_undo_button_active').addClass('save_undo_button_inactive')"></textarea><br/>{% endif %}
 <span id="pastcomments">{% trans "no comments yet"|capfirst %}</span>
 </div>
 

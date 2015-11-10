@@ -217,6 +217,10 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
   string distname = b->getStringProperty("distribution", "Automatic");
   distribution dist = matchDistributionName(distname);
   double service_level = b->getDoubleProperty("service_level", 0.0);
+  if (service_level < 0)
+    service_level = 0;
+  if (service_level >= 100)
+    service_level = 99.99;
   double ss_min_qty = b->getDoubleProperty("ss_min_qty", 0);
   double ss_max_qty = b->getDoubleProperty("ss_max_qty", DBL_MAX);
   double ss_multiple = b->getDoubleProperty("ss_multiple", 1);

@@ -8,8 +8,9 @@
 # or in the form of compiled binaries.
 #
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
+import inspect
 import json
 
 from django.conf import settings
@@ -17,7 +18,7 @@ from django.contrib.admin.utils import unquote
 from django.contrib.admin.models import LogEntry, CHANGE
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Q
+from django.db.models import Q, Min, Max
 from django.db import connections, transaction
 from django.db.models.fields.related import RelatedField
 from django.forms.models import modelform_factory
@@ -32,15 +33,109 @@ from django.views.generic import View
 from freppledb.common.report import GridFieldText, GridReport
 from freppledb.common.report import GridFieldLastModified, GridFieldChoice
 from freppledb.common.report import GridFieldNumber, GridFieldBool, GridFieldInteger
-from freppledb.common.models import Comment, Parameter
-from freppledb.forecast.models import Forecast
+from freppledb.common.models import Comment, Parameter, BucketDetail
+from freppledb.forecast.models import Forecast, ForecastPlan
 from freppledb.input.models import Buffer, Location, Calendar, CalendarBucket
-from freppledb.input.models import Item, DistributionOrder, PurchaseOrder
+from freppledb.input.models import Item, DistributionOrder, PurchaseOrder, ItemSupplier, ItemDistribution
 from freppledb.inventoryplanning.models import InventoryPlanning, InventoryPlanningOutput
-from freppledb.inventoryplanning.replan import replanItemLocation
 
 import logging
 logger = logging.getLogger(__name__)
+
+
+class Replanner:
+
+  loglevel = 9
+
+  def __init__(self, db):
+    # Load the frepple extension module in our web server process
+    import frepple
+
+    if 'demand_forecast' not in [ a[0] for a in inspect.getmembers(frepple) ]:
+      #frepple.loadmodule('c:\\develop\\frepple.enterprise\\bin\\mod_forecast.so')
+      #frepple.loadmodule('c:\\develop\\frepple.enterprise\\bin\\mod_inventoryplanning.so')
+      frepple.loadmodule('mod_forecast.so')
+      frepple.loadmodule('mod_inventoryplanning.so')
+
+    # The current date
+    try:
+      self.current_date = datetime.strptime(
+        Parameter.objects.using(db).get(name="currentdate").value,
+        "%Y-%m-%d %H:%M:%S"
+        )
+    except:
+      self.current_date = datetime.now()
+
+    # Forecast calendar and its buckets
+    tmp = Parameter.getValue('forecast.calendar', db, None)
+    self.frepple_calendar = frepple.calendar(
+      name="%s %s " % (db, tmp),
+      default=0
+      )
+    self.horizon_history = self.current_date - timedelta(days=int(Parameter.getValue('forecast.Horizon_history', db, 10000)))
+    self.horizon_future = self.current_date + timedelta(days=int(Parameter.getValue('forecast.Horizon_future', db, 365)))
+    self.fcst_buckets = []
+    t = ForecastPlan.objects.all().using(db).aggregate(Min('startdate'), Max('startdate'))
+    self.forecastplan_min = t['startdate__min']
+    self.forecastplan_max = t['startdate__max']
+    for bckt in CalendarBucket.objects.all().using(db).filter(
+         calendar__name=tmp, startdate__gte=self.forecastplan_min, startdate__lte=self.forecastplan_max
+         ).order_by('startdate'):
+      frepple_bckt = self.frepple_calendar.addBucket(bckt.id)
+      frepple_bckt.start = bckt.startdate
+      frepple_bckt.end = bckt.enddate
+      frepple_bckt.value = bckt.value
+      if bckt.startdate >= self.current_date and bckt.startdate < self.horizon_future:
+        self.fcst_buckets.append(bckt.startdate)
+
+    # Forecast solver
+    cursor = connections[db].cursor()
+    kw = {'loglevel': self.loglevel}
+    cursor.execute('''select name, value
+       from common_parameter
+       where name like 'forecast.%%'
+       ''')
+    for key, value in cursor.fetchall():
+      if key in ('forecast.Horizon_future', 'forecast.Horizon_history', 'forecast.loglevel'):
+        continue
+      elif key in ('forecast.DueWithinBucket',):
+        kw[key[9:]] = value
+      elif key in ('forecast.calendar',):
+        kw[key[9:]] = self.frepple_calendar
+      elif key in ('forecast.Iterations', 'forecast.loglevel', 'forecast.Skip'
+                   'forecast.MovingAverage_order', 'forecast.Net_CustomerThenItemHierarchy',
+                   'forecast.Net_MatchUsingDeliveryOperation', 'forecast.Net_NetEarly',
+                   'forecast.Net_NetLate', ):
+        kw[key[9:]] = int(value)
+      else:
+        kw[key[9:]] = float(value)
+    self.forecast_solver =  frepple.solver_forecast(**kw)
+
+    # Inventory planning solver
+    self.ip_solver = frepple.solver_inventoryplanning(
+      calendar=self.frepple_calendar,
+      horizon_start=int(Parameter.getValue('inventoryplanning.horizon_start', db, 0)),
+      horizon_end=int(Parameter.getValue('inventoryplanning.horizon_end', db, 365)),
+      holding_cost=float(Parameter.getValue('inventoryplanning.holding_cost', db, 0.05)),
+      fixed_order_cost=float(Parameter.getValue('inventoryplanning.fixed_order_cost', db, 20)),
+      loglevel=self.loglevel
+      )
+
+    # Propagation solver
+    self.mrp_solver = frepple.solver_mrp(
+      constraints=15,
+      plantype=2,
+      loglevel=self.loglevel,
+      lazydelay=int(Parameter.getValue('lazydelay', db, '86400')),
+      allowsplits=(Parameter.getValue('allowsplits', db, 'true') == "true"),
+      rotateresources=(Parameter.getValue('plan.rotateResources', db, 'true') == "true"),
+      plansafetystockfirst=(Parameter.getValue('plan.planSafetyStockFirst', db, 'false') == "false"),
+      iterationmax=int(Parameter.getValue('plan.iterationmax', db, '0'))
+      )
+
+
+# Dictionary with replanning models
+replanners = {}
 
 
 class InventoryPlanningList(GridReport):
@@ -603,7 +698,7 @@ class DRPitemlocation(View):
       raise Http404('Only ajax requests allowed')
     errors = []
 
-    try:
+    if True: #try:
       # Unescape special characters in the argument, which is encoded django-admin style.
       itemlocation = unquote(arg)
 
@@ -614,19 +709,24 @@ class DRPitemlocation(View):
       data = json.JSONDecoder().decode(request.read().decode(request.encoding or settings.DEFAULT_CHARSET))
       simulate = data.get('simulate', False)
       editvalue = data.get("editvalue", True)
-      
-      # Edits by value or by units?      
+
+      # Edits by value or by units?
       if editvalue:
         factor = ip.buffer.item.price
         if not factor:
           factor = 1.0
       else:
         factor = 1.0
-      
-      # STEP 1: save all changes to the database
+
+      # Recompute the plan
+      newplan = self.replan(ip, editvalue, data, request, simulate)
+      if simulate:
+        return JsonResponse(newplan)
+
+      # Save all changes to the database
       if not simulate:
         with transaction.atomic(using=request.database):
-  
+
           # Save the plan overrides
           if 'plan' in data:
             ip_calendar = None
@@ -718,7 +818,7 @@ class DRPitemlocation(View):
                       cal_bucket.value = val
                       cal_bucket.priority = 0
                       cal_bucket.save(using=request.database)
-  
+
           # Save the forecast overrides
           if 'forecast' in data:
             if not request.user.has_perm('forecast.change_forecastdemand'):
@@ -768,7 +868,7 @@ class DRPitemlocation(View):
                     True,  # Units
                     request.database
                     )
-  
+
           # Save the inventory parameters
           # TODO better error handling using a modelform
           if 'parameters' in data:
@@ -813,7 +913,7 @@ class DRPitemlocation(View):
               if val is not None:
                 ip.demand_distribution = val
               ip.save(using=request.database)
-  
+
           # Save transactions
           po_form = None
           do_form = None
@@ -884,7 +984,7 @@ class DRPitemlocation(View):
                   action_flag=CHANGE,
                   change_message=_('Changed %s.') % get_text_list(form.changed_data, _('and'))
                   ).save(using=request.database)
-  
+
           # Save the comment
           if 'commenttype' in data and 'comment' in data:
             if not request.user.has_perm('common.add_comment'):
@@ -910,19 +1010,465 @@ class DRPitemlocation(View):
             else:
               errors.append("Invalid comment data")
 
-      # STEP 2: recompute the plan
-      if simulate:
-        newplan = replanItemLocation(ip, editvalue, data, request)
-        return JsonResponse(newplan)
-        
-    except Exception as e:
-      errors.append(str(e))
+    #except Exception as e:
+    #  errors.append(str(e))
 
     if errors:
       logger.error("Error saving DRP updates: %s" % "".join(errors))
       return HttpResponseServerError('Error saving DRP updates: %s' % "<br/>".join(errors))
     else:
       return HttpResponse(content="OK")
+
+
+  def replan(self, ip, editvalue, changes, request, simulate):
+    '''
+    Recompute the inventory profile for a certain locationpart on the fly
+    using a new set of parameters.
+    '''
+    # Load the frepple extension module in our web server process
+    import frepple
+
+    itemlocation = ip.buffer.name
+    result = {
+      "type": "itemlocation",
+      "name": itemlocation,
+      "displayvalue": editvalue,
+      "parameters": {}
+      }
+
+    if editvalue:
+      factor = ip.buffer.item.price
+      if not factor:
+        factor = 1.0
+    else:
+      factor = 1.0
+
+    # Initialize the frepple module, and all objects we need to keep across simulations
+    replanner = replanners.get(request.database)
+    if not replanner:
+      replanners[request.database] = replanner = Replanner(request.database)
+
+    # Build a small model in memory to replan
+    frepple.settings.current = replanner.current_date
+    tmp = '%s simulating %s at %s' % (request.database, itemlocation, datetime.now())
+    db_buf = Buffer.objects.all().using(request.database).get(name=itemlocation)
+    frepple_location = frepple.location(name=ip.buffer.location.name)
+    frepple_item = frepple.item(
+      name=tmp,
+      price=ip.buffer.item.price
+      )
+    frepple_buf = frepple.buffer(
+      name=tmp,
+      onhand=db_buf.onhand,
+      item=frepple_item,
+      location=frepple_location
+      )
+    for i in ItemSupplier.objects.all().using(request.database).filter(item=ip.buffer.item.name, location=ip.buffer.location.name):
+      frepple_itemsupplier = frepple.itemsupplier(
+        supplier=frepple.supplier(name=i.supplier.name),
+        location=frepple_location,
+        item=frepple_item,
+        leadtime=i.leadtime,
+        )
+      if i.sizeminimum:
+        frepple_itemsupplier.size_minimum = i.sizeminimum
+      if i.sizemultiple:
+        frepple_itemsupplier.size_multiple = i.sizemultiple
+      if i.priority:
+        frepple_itemsupplier.priority = i.priority
+      if i.effective_start:
+        frepple_itemsupplier.effective_start = i.effective_start
+      if i.effective_end:
+        frepple_itemsupplier.effective_end = i.effective_end
+    for i in ItemDistribution.objects.all().using(request.database).filter(item=ip.buffer.item.name, location=ip.buffer.location.name):
+      frepple_itemdistribution = frepple.itemdistribution(
+        origin=frepple.location(name=i.origin.name),
+        location=frepple.location(name=i.location.name),
+        item=frepple_item,
+        leadtime=i.leadtime,
+        )
+      if i.sizeminimum:
+        frepple_itemdistribution.size_minimum = i.sizeminimum
+      if i.sizemultiple:
+        frepple_itemdistribution.size_multiple = i.sizemultiple
+      if i.priority:
+        frepple_itemdistribution.priority = i.priority
+      if i.effective_start:
+        frepple_itemdistribution.effective_start = i.effective_start
+      if i.effective_end:
+        frepple_itemdistribution.effective_end = i.effective_end
+    for j in frepple.items():
+      print("-x-", j.name)
+    print ("----", frepple_buf.producing.name)
+    frepple_depdemand_oper = frepple.operation_fixed_time(
+      name="%s dependent demand" % tmp
+      )
+    frepple_locdemand_oper = frepple.operation_fixed_time(
+      name="%s local demand" % tmp
+      )
+    frepple.flow(operation=frepple_depdemand_oper, buffer=frepple_buf, quantity=-1, type="flow_start")
+    frepple.flow(operation=frepple_locdemand_oper, buffer=frepple_buf, quantity=-1, type="flow_start")
+
+    # Create forecast model
+    db_forecast = Forecast.objects.all().using(request.database).get(name=itemlocation)
+    frepple_forecast = frepple.demand_forecast(
+      name=tmp,
+      item=frepple_item,
+      location=frepple_location
+      )
+    if 'parameters' in changes:
+      changed_method = changes['parameters'].get('forecastmethod', None)
+      if changed_method:
+        db_forecast.method = changed_method
+    if db_forecast.method == 'constant':
+      frepple_forecast.methods = 1
+    elif db_forecast.method == 'trend':
+      frepple_forecast.methods = 2
+    elif db_forecast.method == 'seasonal':
+      frepple_forecast.methods = 4
+    elif db_forecast.method == 'intermittent':
+      frepple_forecast.methods = 8
+    elif db_forecast.method == 'moving average':
+      frepple_forecast.methods = 16
+    elif db_forecast.method == 'manual':
+      frepple_forecast.methods = 0
+    frepple_forecast.operation = frepple_locdemand_oper
+
+    # Read sales history and forecast overrides from the database
+    query = ForecastPlan.objects.all().using(request.database).filter(
+      forecast__name=itemlocation, startdate__gte=replanner.horizon_history, startdate__lt=replanner.horizon_future
+      ).order_by('startdate')
+    db_forecastplan = [ i for i in query ]
+
+    # Apply history adjustments sent from the server
+    if 'forecast' in changes:
+      for row in changes['forecast']:
+        strt = datetime.strptime(row['startdate'], '%Y-%m-%d').date()
+        nd = datetime.strptime(row['enddate'], '%Y-%m-%d').date()
+        if 'adjHistory3' in row:
+          db_forecast.updatePlan(
+            strt.replace(year=strt.year - 3),
+            nd.replace(year=nd.year - 3),
+            None,
+            Decimal(row['adjHistory3']) / Decimal(factor) if (row.get('adjHistory3','') != '') else None,
+            True,  # Units
+            request.database,
+            db_forecastplan,  # Pass forecastplan nodes to update
+            False             # Do not save the results
+            )
+        elif 'adjHistory2' in row:
+          db_forecast.updatePlan(
+            strt.replace(year=strt.year - 2),
+            nd.replace(year=nd.year - 2),
+            None,
+            Decimal(row['adjHistory2']) / Decimal(factor) if (row.get('adjHistory2','') != '') else None,
+            True,  # Units
+            request.database,
+            db_forecastplan,  # Pass forecastplan nodes to update
+            False             # Do not save the results
+            )
+        elif 'adjHistory1' in row:
+          db_forecast.updatePlan(
+            strt.replace(year=strt.year - 1),
+            nd.replace(year=nd.year - 1),
+            None,
+            Decimal(row['adjHistory1']) / Decimal(factor) if (row.get('adjHistory1','') != '') else None,
+            True,  # Units
+            request.database,
+            db_forecastplan,  # Pass forecastplan nodes to update
+            False             # Do not save the results
+            )
+        elif 'adjForecast' in row:
+          db_forecast.updatePlan(
+            strt,
+            nd,
+            Decimal(row['adjForecast']) / Decimal(factor) if (row.get('adjForecast','') != '') else None,
+            None,
+            True,  # Units
+            request.database,
+            db_forecastplan,  # Pass forecastplan nodes to update
+            False             # Do not save the results
+            )
+
+    # Generate the baseline forecast
+    replanner.forecast_solver.timeseries(
+      frepple_forecast,
+      [
+        (float(i.orderstotal) if i.orderstotal else 0) + (float(i.ordersadjustment) if i.ordersadjustment else 0)
+        for i in db_forecastplan
+        if i.startdate < frepple.settings.current
+      ],
+      replanner.fcst_buckets
+      )
+
+    # Copy results from frePPLe forecast model into db model
+    for i in frepple_forecast.members:
+      for j in db_forecastplan:
+        if i.due >= j.startdate and i.due <= j.enddate:
+          j.forecastbaseline = i.total
+          break
+
+    # Get the forecast metrics
+    result['parameters']["forecast_out_smape"] = round(frepple_forecast.smape_error * 10000) / 100
+    result['parameters']["forecast_out_method"] = frepple_forecast.method or 'manual'
+    # TODO handle override of standard deviation
+    #if "demand_deviation" not in result['parameters']:
+    #  result['parameters']["demand_deviation"] = frepple_forecast.deviation
+
+    # Apply the forecast overrides from the database or sent from the server
+    for i in db_forecastplan:
+      if i.forecastadjustment and i.startdate >= frepple.settings.current:
+        frepple_forecast.setQuantity(i.forecastadjustment, i.startdate, i.startdate, False)
+
+    # TODO Run forecast netting?
+
+    # Read inventory planning parameters
+    db_ip = InventoryPlanning.objects.all().using(request.database).get(pk=itemlocation)
+    frepple_buf.ip_flag = True
+    if db_ip.roq_min_qty:
+      frepple_buf.roq_min_qty = db_ip.roq_min_qty
+    if db_ip.roq_max_qty:
+      frepple_buf.roq_max_qty = db_ip.roq_max_qty
+    if db_ip.roq_multiple_qty:
+      frepple_buf.roq_multiple_qty = db_ip.roq_multiple_qty
+    if db_ip.roq_min_poc:
+      frepple_buf.roq_min_poc = db_ip.roq_min_poc
+    if db_ip.roq_max_poc:
+      frepple_buf.roq_max_poc = db_ip.roq_max_poc
+    if db_ip.leadtime_deviation:
+      frepple_buf.leadtime_deviation = db_ip.leadtime_deviation
+    if db_ip.demand_deviation:
+      frepple_buf.demand_deviation = db_ip.demand_deviation
+    if db_ip.demand_distribution:
+      frepple_buf.demand_distribution = db_ip.demand_distribution
+    if db_ip.service_level:
+      frepple_buf.service_level = db_ip.service_level
+    if db_ip.ss_min_qty:
+      frepple_buf.ss_min_qty = db_ip.ss_min_qty
+    if db_ip.ss_max_qty:
+      frepple_buf.ss_max_qty = db_ip.ss_max_qty
+    if db_ip.ss_multiple_qty:
+      frepple_buf.ss_multiple_qty = db_ip.ss_multiple_qty
+    if db_ip.ss_min_poc:
+      frepple_buf.ss_min_poc = db_ip.ss_min_poc
+    if db_ip.ss_max_poc:
+      frepple_buf.ss_max_poc = db_ip.ss_max_poc
+    if db_ip.nostock:
+      frepple_buf.nostock = db_ip.nostock
+    if db_ip.roq_type:
+      frepple_buf.roq_type = db_ip.roq_type
+    else:
+      # The engine uses "combined" as default. We apply a different default here!
+      frepple_buf.roq_type = "calculated"
+    if db_ip.ss_type:
+      frepple_buf.ss_type = db_ip.ss_type
+    else:
+      # The engine uses "combined" as default. We apply a different default here!
+      frepple_buf.ss_type = "calculated"
+
+    # Apply inventory planning changes sent from the client
+    if 'parameters' in changes:
+      val = changes['parameters'].get('roq_min_qty', None)
+      if val:
+        frepple_buf.roq_min_qty = val
+      val = changes['parameters'].get('roq_max_qty', None)
+      if val:
+        frepple_buf.roq_max_qty = val
+      val = changes['parameters'].get('roq_multiple_qty', None)
+      if val:
+        frepple_buf.roq_multiple_qty = val
+      val = changes['parameters'].get('roq_min_poc', None)
+      if val:
+        frepple_buf.roq_min_poc = val
+      val = changes['parameters'].get('roq_max_poc', None)
+      if val:
+        frepple_buf.roq_max_poc = val
+      val = changes['parameters'].get('leadtime_deviation', None)
+      if val:
+        frepple_buf.leadtime_deviation = val
+      val = changes['parameters'].get('demand_deviation', None)
+      if val:
+        frepple_buf.demand_deviation = val
+      val = changes['parameters'].get('demand_distribution', None)
+      if val:
+        frepple_buf.demand_distribution = val
+      val = changes['parameters'].get('service_level', None)
+      if val:
+        frepple_buf.service_level = val
+      val = changes['parameters'].get('ss_min_qty', None)
+      if val:
+        frepple_buf.ss_min_qty = val
+      val = changes['parameters'].get('ss_max_qty', None)
+      if val:
+        frepple_buf.ss_max_qty = val
+      val = changes['parameters'].get('ss_multiple_qty', None)
+      if val:
+        frepple_buf.ss_multiple_qty = val
+      val = changes['parameters'].get('ss_min_poc', None)
+      if val:
+        frepple_buf.ss_min_poc = val
+      val = changes['parameters'].get('ss_max_poc', None)
+      if val:
+        frepple_buf.ss_max_poc = val
+      val = changes['parameters'].get('nostock', None)
+      if val:
+        frepple_buf.nostock = val
+      val = changes['parameters'].get('roq_type', None)
+      if val:
+        frepple_buf.roq_type = val
+      val = changes['parameters'].get('ss_type', None)
+      if val:
+        frepple_buf.ss_type = val
+
+    # Calculate safety stock and reorder quantity
+    # TODO this solves for ALL buffers
+    replanner.ip_solver.solve()
+
+    # Collect inventory planning results
+    result['parameters']["roq_calculated"] = round(frepple_buf.ip_calculated_roq)
+    result['parameters']["ss_calculated"] = round(frepple_buf.ip_calculated_ss)
+    roq_cal = frepple.calendar(name="ROQ for %s" % tmp)
+    ss_cal = frepple.calendar(name="SS for %s" % tmp)
+    roq_cal_buckets = [ i for i in roq_cal.buckets ]
+    ss_cal_buckets = [ i for i in ss_cal.buckets ]
+
+    # Copy results from frePPLe forecast model into db model
+    for i in frepple_forecast.members:
+      for j in db_forecastplan:
+        if i.due >= j.startdate and i.due <= j.enddate:
+          j.forecasttotal = i.total
+          j.forecastnet = i.quantity
+          j.forecastconsumed = i.consumed
+          break
+
+    # Collect the forecast results
+    # We aggregate the low-level results into the requested reporting buckets
+    agg_buckets_query = BucketDetail.objects.using(request.database).filter(
+      bucket=request.user.horizonbuckets,
+      startdate__gte=replanner.forecastplan_min,
+      startdate__lte=replanner.forecastplan_max
+      )
+    agg_buckets = [ i for i in agg_buckets_query ]
+    agg_bucket_idx = 0
+    orderstotal = 0
+    ordersopen = 0
+    ordersadjustment = None
+    forecastbaseline = 0
+    forecastadjustment = None
+    forecasttotal = 0
+    forecastnet = 0
+    forecastconsumed = 0
+    result["forecast"] = []
+    for i in db_forecastplan:
+      if i.startdate <= agg_buckets[agg_bucket_idx].startdate:
+        if i.orderstotal:
+          orderstotal += i.orderstotal
+        if i.ordersopen:
+          ordersopen += i.ordersopen
+        if i.ordersadjustment:
+          if ordersadjustment:
+            ordersadjustment += i.ordersadjustment
+          else:
+            ordersadjustment = Decimal(i.ordersadjustment)
+        if i.forecastbaseline:
+          forecastbaseline += i.forecastbaseline
+        if i.forecastadjustment:
+          if forecastadjustment:
+            forecastadjustment += i.forecastadjustment
+          else:
+            forecastadjustment = Decimal(i.forecastadjustment)
+        if i.forecasttotal:
+          forecasttotal += i.forecasttotal
+        if i.forecastnet:
+          forecastnet += i.forecastnet
+        if i.forecastconsumed:
+          forecastconsumed += i.forecastconsumed
+      else:
+        result["forecast"].append({
+          'bucket': agg_buckets[agg_bucket_idx].name,
+          'orderstotal': int(orderstotal),
+          'ordersopen': int(ordersopen),
+          'ordersadjustment': int(ordersadjustment) if ordersadjustment is not None else None,
+          'forecastbaseline': int(forecastbaseline),
+          'forecastadjustment': int(forecastadjustment) if forecastadjustment is not None else None,
+          'forecasttotal': int(forecasttotal),
+          'forecastnet': int(forecastnet),
+          'forecastconsumed': int(forecastconsumed)
+          })
+        if i.orderstotal:
+          orderstotal = i.orderstotal
+        else:
+          orderstotal = 0
+        if i.ordersopen:
+          ordersopen = i.ordersopen
+        else:
+          ordersopen = 0
+        if i.ordersadjustment:
+          ordersadjustment = i.ordersadjustment
+        else:
+          ordersadjustment = None
+        if i.forecastbaseline:
+          forecastbaseline = i.forecastbaseline
+        else:
+          forecastbaseline = 0
+        if i.forecastadjustment:
+          forecastadjustment = i.forecastadjustment
+        else:
+          forecastadjustment = None
+        if i.forecasttotal:
+          forecasttotal = i.forecasttotal
+        else:
+          forecasttotal = 0
+        if i.forecastnet:
+          forecastnet = i.forecastnet
+        else:
+          forecastnet = 0
+        if i.forecastconsumed:
+          forecastconsumed = i.forecastconsumed
+        else:
+          forecastconsumed = 0
+        agg_bucket_idx += 1
+        if agg_bucket_idx >= len(agg_buckets):
+          break
+    if agg_bucket_idx < len(agg_buckets):
+      result["forecast"].append({
+        'bucket': agg_buckets[agg_bucket_idx].name,
+        'orderstotal': int(orderstotal),
+        'ordersopen': int(ordersopen),  # TODO
+        'ordersadjustment': int(ordersadjustment) if ordersadjustment is not None else None,
+        'forecastbaseline': int(forecastbaseline),
+        'forecastadjustment': int(forecastadjustment) if forecastadjustment is not None else None,
+        'forecasttotal': int(forecasttotal),
+        'forecastnet': int(forecastnet),
+        'forecastconsumed': int(forecastconsumed)
+        })
+
+    # Retrieve inventory plan
+    #result["plan"] = []
+    #result["transactions"] = []
+    start_oh = 0
+    demand_local = 0
+    demand_dependent = 0
+    supply_confirmed = 0
+    supply_proposed = 0
+    end_oh = 0
+    for i in frepple_buf.flowplans:
+      #if i.date
+      print(i.date, i.quantity)
+      if i.date <= agg_buckets[agg_bucket_idx].startdate:
+        pass
+
+    # Cleaning up
+    frepple.demand(name=tmp, action='R')
+    frepple.buffer(name=tmp, action='R')
+    frepple.calendar(name=roq_cal.name, action='R')
+    frepple.calendar(name=ss_cal.name, action='R')
+    frepple.operation(name=frepple_depdemand_oper.name, action='R')
+    frepple.operation(name=frepple_locdemand_oper.name, action='R')
+    frepple.item(name=tmp, action='R')
+
+    # Return the new plan
+    return result
 
 
 class DRPitem(DRPitemlocation):
