@@ -26,13 +26,13 @@ urlpatterns = patterns(
   (r'^constraintforecast/(.+)/$', freppledb.forecast.views.ConstraintReport.as_view()),
   (r'^supplypath/forecast/(.+)/$', freppledb.forecast.views.UpstreamForecastPath.as_view()),
 
-  #REST framework
-  (r'^api/forecast/forecastdemand/$', freppledb.forecast.serializers.ForecastDemandREST.as_view()),
-  (r'^api/forecast/forecast/$', freppledb.forecast.serializers.ForecastREST.as_view()),
-  (r'^api/forecast/forecastplan/$', freppledb.forecast.serializers.ForecastPlanREST.as_view()),
+  # REST API framework
+  (r'^api/forecast/forecastdemand/$', freppledb.forecast.serializers.ForecastDemandAPI.as_view()),
+  (r'^api/forecast/forecast/$', freppledb.forecast.serializers.ForecastAPI.as_view()),
+  (r'^api/forecast/forecastplan/$', freppledb.forecast.serializers.ForecastPlanAPI.as_view()),
 
-  (r'^api/forecast/forecastdemand/(?P<pk>(.+))/$', freppledb.forecast.serializers.ForecastDemanddetailREST.as_view()),
-  (r'^api/forecast/forecast/(?P<pk>(.+))/$', freppledb.forecast.serializers.ForecastdetailREST.as_view()),
-  (r'^api/forecast/forecastplan/(?P<pk>(.+))/$', freppledb.forecast.serializers.ForecastPlandetailREST.as_view()),
+  (r'^api/forecast/forecastdemand/(?P<pk>(.+))/$', freppledb.forecast.serializers.ForecastDemanddetailAPI.as_view()),
+  (r'^api/forecast/forecast/(?P<pk>(.+))/$', freppledb.forecast.serializers.ForecastdetailAPI.as_view()),
+  (r'^api/forecast/forecastplan/(?P<pk>(.+))/$', freppledb.forecast.serializers.ForecastPlandetailAPI.as_view()),
 
   )

@@ -1,20 +1,17 @@
+#
+# Copyright (C) 2015 by frePPLe bvba
+#
+# All information contained herein is, and remains the property of frePPLe.
+# You are allowed to use and modify the source code, as long as the software is used
+# within your company.
+# You are not allowed to distribute the software, either in the form of source code
+# or in the form of compiled binaries.
+#
+
 from rest_framework import serializers
-from rest_framework.response import Response
-from rest_framework import status, viewsets, generics, permissions, renderers
-from rest_framework.decorators import api_view, detail_route
 
-from django.views.decorators.csrf import csrf_protect, csrf_exempt
-
+from freppledb.common.api.views import frePPleListCreateAPIView, frePPleRetrieveUpdateDestroyAPIView
 import freppledb.forecast.models
-
-class frePPleListCreateAPIView(generics.ListCreateAPIView):
-    def get_queryset(self):
-      return super(frePPleListCreateAPIView, self).get_queryset().using(self.request.database)
-
-class frePPleRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
-    def get_queryset(self):
-      return super(frePPleRetrieveUpdateDestroyAPIView, self).get_queryset().using(self.request.database)
-
 
 
 class ForecastSerializer(serializers.ModelSerializer):
@@ -23,26 +20,24 @@ class ForecastSerializer(serializers.ModelSerializer):
       fields = ('name', 'description', 'category', 'subcategory', 'customer',
                 'item', 'location', 'method', 'operation', 'priority', 'minshipment',
                 'maxlateness', 'discrete', 'planned', 'out_smape', 'out_method', 'source', 'lastmodified')
-class ForecastREST(frePPleListCreateAPIView):
+class ForecastAPI(frePPleListCreateAPIView):
     queryset = freppledb.forecast.models.Forecast.objects.all()#.using(request.database)
     serializer_class = ForecastSerializer
-class ForecastdetailREST(frePPleRetrieveUpdateDestroyAPIView):
+class ForecastdetailAPI(frePPleRetrieveUpdateDestroyAPIView):
     queryset = freppledb.forecast.models.Forecast.objects.all()#.using(request.database)
     serializer_class = ForecastSerializer
-
 
 
 class ForecastDemandSerializer(serializers.ModelSerializer):
     class Meta:
       model = freppledb.forecast.models.ForecastDemand
       fields = ('id', 'forecast', 'startdate', 'enddate', 'quantity', 'source', 'lastmodified')
-class ForecastDemandREST(frePPleListCreateAPIView):
+class ForecastDemandAPI(frePPleListCreateAPIView):
     queryset = freppledb.forecast.models.ForecastDemand.objects.all()#.using(request.database)
     serializer_class = ForecastDemandSerializer
-class ForecastDemanddetailREST(frePPleRetrieveUpdateDestroyAPIView):
+class ForecastDemanddetailAPI(frePPleRetrieveUpdateDestroyAPIView):
     queryset = freppledb.forecast.models.ForecastDemand.objects.all()#.using(request.database)
     serializer_class = ForecastDemandSerializer
-
 
 
 class ForecastPlanSerializer(serializers.ModelSerializer):
@@ -54,12 +49,9 @@ class ForecastPlanSerializer(serializers.ModelSerializer):
                 'ordersplannedvalue', 'forecastbaselinevalue', 'forecastadjustmentvalue',
                 'ordersopenvalue', 'ordersplannedvalue', 'forecastbaselinevalue', 'forecastadjustmentvalue',
                 'forecasttotalvalue', 'forecastnetvalue', 'forecastconsumedvalue', 'forecastplannedvalue')
-class ForecastPlanREST(frePPleListCreateAPIView):
+class ForecastPlanAPI(frePPleListCreateAPIView):
     queryset = freppledb.forecast.models.ForecastPlan.objects.all()#.using(request.database)
     serializer_class = ForecastPlanSerializer
-class ForecastPlandetailREST(frePPleRetrieveUpdateDestroyAPIView):
+class ForecastPlandetailAPI(frePPleRetrieveUpdateDestroyAPIView):
     queryset = freppledb.forecast.models.ForecastPlan.objects.all()#.using(request.database)
     serializer_class = ForecastPlanSerializer
-
-
-
