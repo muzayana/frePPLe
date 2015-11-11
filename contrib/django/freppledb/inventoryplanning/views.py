@@ -45,15 +45,13 @@ logger = logging.getLogger(__name__)
 
 class Replanner:
 
-  loglevel = 9
+  loglevel = 0
 
   def __init__(self, db):
     # Load the frepple extension module in our web server process
     import frepple
 
     if 'demand_forecast' not in [ a[0] for a in inspect.getmembers(frepple) ]:
-      #frepple.loadmodule('c:\\develop\\frepple.enterprise\\bin\\mod_forecast.so')
-      #frepple.loadmodule('c:\\develop\\frepple.enterprise\\bin\\mod_inventoryplanning.so')
       frepple.loadmodule('mod_forecast.so')
       frepple.loadmodule('mod_inventoryplanning.so')
 
@@ -1033,7 +1031,9 @@ class DRPitemlocation(View):
       "type": "itemlocation",
       "name": itemlocation,
       "displayvalue": editvalue,
-      "parameters": {}
+      "parameters": {},
+      "plan": [],
+      "transactions": []
       }
 
     if editvalue:
@@ -1097,9 +1097,6 @@ class DRPitemlocation(View):
         frepple_itemdistribution.effective_start = i.effective_start
       if i.effective_end:
         frepple_itemdistribution.effective_end = i.effective_end
-    for j in frepple.items():
-      print("-x-", j.name)
-    print ("----", frepple_buf.producing.name)
     frepple_depdemand_oper = frepple.operation_fixed_time(
       name="%s dependent demand" % tmp
       )
@@ -1190,30 +1187,39 @@ class DRPitemlocation(View):
             False             # Do not save the results
             )
 
-    # Generate the baseline forecast
-    replanner.forecast_solver.timeseries(
-      frepple_forecast,
-      [
-        (float(i.orderstotal) if i.orderstotal else 0) + (float(i.ordersadjustment) if i.ordersadjustment else 0)
-        for i in db_forecastplan
-        if i.startdate < frepple.settings.current
-      ],
-      replanner.fcst_buckets
-      )
+    if db_forecast.method != 'manual':
+      # Generate the baseline forecast
+      replanner.forecast_solver.timeseries(
+        frepple_forecast,
+        [
+          (float(i.orderstotal) if i.orderstotal else 0) + (float(i.ordersadjustment) if i.ordersadjustment else 0)
+          for i in db_forecastplan
+          if i.startdate < frepple.settings.current
+        ],
+        replanner.fcst_buckets
+        )
 
-    # Copy results from frePPLe forecast model into db model
-    for i in frepple_forecast.members:
+      # Copy results from frePPLe forecast model into db model
+      for i in frepple_forecast.members:
+        for j in db_forecastplan:
+          if i.due >= j.startdate and i.due <= j.enddate:
+            j.forecastbaseline = i.total
+            break
+
+      # Get the forecast metrics
+      result['parameters']["forecast_out_smape"] = round(frepple_forecast.smape_error * 10000) / 100
+      result['parameters']["forecast_out_method"] = frepple_forecast.method
+
+    else:
+      # Manual forecast
+
+      # Reset the baseline forecast to 0
       for j in db_forecastplan:
-        if i.due >= j.startdate and i.due <= j.enddate:
-          j.forecastbaseline = i.total
-          break
+        j.forecastbaseline = j.forecasttotal = 0
 
-    # Get the forecast metrics
-    result['parameters']["forecast_out_smape"] = round(frepple_forecast.smape_error * 10000) / 100
-    result['parameters']["forecast_out_method"] = frepple_forecast.method or 'manual'
-    # TODO handle override of standard deviation
-    #if "demand_deviation" not in result['parameters']:
-    #  result['parameters']["demand_deviation"] = frepple_forecast.deviation
+      # Get the forecast metrics
+      result['parameters']["forecast_out_smape"] = 0
+      result['parameters']["forecast_out_method"] = 'manual'
 
     # Apply the forecast overrides from the database or sent from the server
     for i in db_forecastplan:
@@ -1321,7 +1327,7 @@ class DRPitemlocation(View):
         frepple_buf.ss_type = val
 
     # Calculate safety stock and reorder quantity
-    # TODO this solves for ALL buffers
+    # TODO this solves for ALL buffers, not only the replanned one
     replanner.ip_solver.solve()
 
     # Collect inventory planning results
@@ -1331,6 +1337,9 @@ class DRPitemlocation(View):
     ss_cal = frepple.calendar(name="SS for %s" % tmp)
     roq_cal_buckets = [ i for i in roq_cal.buckets ]
     ss_cal_buckets = [ i for i in ss_cal.buckets ]
+
+    # Create constrained plan
+    replanner.mrp_solver.solve()
 
     # Copy results from frePPLe forecast model into db model
     for i in frepple_forecast.members:
@@ -1443,20 +1452,75 @@ class DRPitemlocation(View):
         'forecastconsumed': int(forecastconsumed)
         })
 
-    # Retrieve inventory plan
-    #result["plan"] = []
-    #result["transactions"] = []
-    start_oh = 0
+    # Retrieve inventory plan and transactions
+    agg_bucket_idx = 0
+    while agg_buckets[agg_bucket_idx].enddate < replanner.current_date:
+      agg_bucket_idx += 1
+    start_oh = frepple_buf.onhand
     demand_local = 0
     demand_dependent = 0
     supply_confirmed = 0
     supply_proposed = 0
     end_oh = 0
-    for i in frepple_buf.flowplans:
-      #if i.date
-      print(i.date, i.quantity)
-      if i.date <= agg_buckets[agg_bucket_idx].startdate:
-        pass
+    for fl in frepple_buf.flowplans:
+      if fl.date < agg_buckets[agg_bucket_idx].startdate:
+        continue
+      if fl.date <= agg_buckets[agg_bucket_idx].enddate:
+        # New bucket started
+        # TODO
+        end_oh = start_oh + supply_confirmed + supply_proposed - demand_local - demand_dependent
+      if fl.quantity > 0:
+        if fl.operationplan.status == 'confirmed':
+          supply_confirmed += fl.quantity
+        else:
+          supply_proposed += fl.quantity
+      else:
+        if fl.operationplan.demand:
+          demand_local -= fl.quantity
+        else:
+          demand_dependent -= fl.quantity
+      opplan = fl.operationplan
+      if isinstance(opplan.operation, frepple.operation_itemsupplier):
+        result["transactions"].append({
+          "criticality": opplan.criticality, # TODO incremental calculation can give different value
+          "date": str(opplan.end),
+          "startdate": str(opplan.start),
+          "enddate": str(opplan.end),
+          "id": opplan.id, # TODO incremental calculation can give different value
+          "item": ip.buffer.item.name,
+          "location": fl.buffer.location.name,
+          "origin": opplan.operation.itemsupplier.supplier.name,
+          "quantity": opplan.quantity,
+          "reference": opplan.reference,
+          "status": opplan.status,
+          "type": "PO",
+          "value": opplan.quantity * fl.buffer.item.price,
+          "lastmodified": str(datetime.now())
+          })
+      elif isinstance(opplan.operation, frepple.operation_itemdistribution):
+        result["transactions"].append({
+          "criticality": opplan.criticality, # TODO incremental calculation can give different value
+          "date": str(opplan.end if fl.quantity > 0 else opplan.start),
+          "startdate": str(opplan.start),
+          "enddate": str(opplan.end),
+          "id": opplan.id, # TODO incremental calculation can give different value
+          "item": ip.buffer.item.name,
+          "location": fl.buffer.location.name,
+          "origin": opplan.operation.origin.location.name,
+          "quantity": opplan.quantity,
+          "reference": opplan.reference,
+          "status": opplan.status,
+          "type": "DO in" if fl.quantity > 0 else "DO out",
+          "value": opplan.quantity * fl.buffer.item.price,
+          "lastmodified": str(datetime.now())
+          })
+
+    # Don't send empty plans back (and the client browser will continue just
+    # to display the previous plan).
+    if not result["plan"]:
+      del result["plan"]
+    if not result["transactions"]:
+      del result["transactions"]
 
     # Cleaning up
     frepple.demand(name=tmp, action='R')

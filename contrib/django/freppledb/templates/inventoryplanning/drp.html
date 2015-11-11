@@ -418,8 +418,6 @@ function save(simulate)
           // We received simulation results from the server.
           // Merge the simulation results in the existing results (because the simulation returns
           // a subset of the results only).
-          console.log("old");
-          console.log(result);
           for (var i in newdata)
           {
             if (i == 'parameters')
@@ -428,8 +426,6 @@ function save(simulate)
             else
               result[i] = newdata[i];
           }
-          console.log("new");
-          console.log(result);
           // Populate the new results in the grid
           displayResult(false);
           // Apply the grid changes again, to make them show up in red
@@ -1020,7 +1016,7 @@ function displayResult(reset)
   $("#save, #undo, #commentitem, #commentitemlocation, #commentlocation").prop('disabled', false);
 
   // Debugging
-  console.log(result);
+  //console.log(result);
 
   // Update title
   if (result.type == "itemlocation")
@@ -1410,7 +1406,7 @@ $(function() {
 &nbsp;&nbsp;
 <input type="submit"  role="button" id="commentlocation" value="{% trans 'new location comment'|capfirst %}" onclick="return setCommentType('location')" aria-disabled="false" style="font-size:12px" disabled="disabled" class="ui-button ui-widget ui-state-default ui-state-disabled ui-corner-all" />
 &nbsp;&nbsp;
-<textarea style="display:none; width:100%" id="newcomment" name="comment" rows="5" oninput="activateSaveUndo(); $('#recalculate').removeClass('save_undo_button_active').addClass('save_undo_button_inactive')"></textarea><br/>{% endif %}
+<textarea style="display:none; width:100%" id="newcomment" name="comment" rows="5" oninput="activateSaveUndo()"></textarea><br/>{% endif %}
 <span id="pastcomments">{% trans "no comments yet"|capfirst %}</span>
 </div>
 
