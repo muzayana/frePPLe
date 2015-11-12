@@ -269,6 +269,19 @@ function reapplyChanges(data)
 		}
 	}
   {% endif %}
+
+  {% if perms.input.change_calendarbucket %}// Get inventory override changes
+  if ("plan" in data) {
+    for (var planchange in data["plan"])
+    {
+      var cell = $('td[aria-describedby="plangrid_' + data["plan"][planchange].bucket + '"');
+      if ("roqoverride" in data["plan"][planchange])
+        cell.find("input.roqoverride").addClass("dirty-cell");
+      if ("ssoverride" in data["plan"][planchange])
+        cell.find("input.ssoverride").addClass("dirty-cell");
+    }
+  }
+  {% endif %}
 }
 
 
@@ -327,11 +340,11 @@ function collectChanges() {
      var colmodel = jQuery("#plangrid").jqGrid ('getGridParam', 'colModel')[curCol];
      if ($(this).hasClass('roqoverride'))
        planchanges.push({
-          'startdate': colmodel['startdate'], 'enddate': colmodel['enddate'], 'roqoverride': $(this).val()
+          'startdate': colmodel['startdate'], 'enddate': colmodel['enddate'], 'roqoverride': $(this).val(), 'bucket': colmodel['name']
           });
      if ($(this).hasClass('ssoverride'))
        planchanges.push({
-         'startdate': colmodel['startdate'], 'enddate': colmodel['enddate'], 'ssoverride': $(this).val()
+         'startdate': colmodel['startdate'], 'enddate': colmodel['enddate'], 'ssoverride': $(this).val(), 'bucket': colmodel['name']
          });
   });
   if (!$.isEmptyObject(planchanges))
@@ -1016,7 +1029,7 @@ function displayResult(reset)
   $("#save, #undo, #commentitem, #commentitemlocation, #commentlocation").prop('disabled', false);
 
   // Debugging
-  //console.log(result);
+  console.log(result);
 
   // Update title
   if (result.type == "itemlocation")
@@ -1048,7 +1061,7 @@ function displayResult(reset)
   if ("ss_calculated" in result.parameters)
 	  $("#ss_calculated").html(result.parameters.ss_calculated);
   if ("nostock" in result.parameters)
-	  $("#nostock").prop('checked', result.parameters.nostock == "True");
+	  $("#nostock").prop('checked', result.parameters.nostock);
   if ("roq_min_qty" in result.parameters)
     $("#roq_min_qty").val(result.parameters.roq_min_qty);
   if ("roq_min_poc" in result.parameters)
@@ -1167,13 +1180,14 @@ function displayResult(reset)
          {name:'reference',index:'reference',editable:true,label:'{% trans "reference"|capfirst %}',align:'left',title:false,width:200,counter:3,searchoptions:{searchhidden: true}{% if openbravo %}, editable: false{% endif %}},
          {name:'status',index:'status',editable:true,label:'{% trans "status"|capfirst %}',align:'center',title:false,formatter:'select', edittype:'select', editoptions:{value:'proposed:proposed;{% if openbravo %}approved:approved;{% endif %}confirmed:confirmed;closed:closed'}, {% if openbravo %}editable: false, {% endif %}width:100,counter:4,searchoptions:{searchhidden: true}},
          {name:'item',index:'item',editable:true,label:'{% trans "item"|capfirst %}',align:'left',title:false,formatter:'item',width:200,counter:5,searchoptions:{searchhidden: true}},
-         {name:'origin',index:'origin',editable:true,label:'{% trans "origin"|capfirst %}',align:'left',title:false,formatter:'location',width:200,counter:6,searchoptions:{searchhidden: true}},
-         {name:'startdate',index:'startdate',editable:true,label:'{% trans "start date"|capfirst %}',align:'center',title:false,formatter:'date',formatoptions:{srcformat:'Y-m-d H:i:s',newformat:'Y-m-d H:i:s'},width:140,counter:7,searchoptions:{searchhidden: true}},
-         {name:'enddate',index:'enddate',editable:true,label:'{% trans "end date"|capfirst %}',align:'center',title:false,formatter:'date',formatoptions:{srcformat:'Y-m-d H:i:s',newformat:'Y-m-d H:i:s'},width:140,counter:8,searchoptions:{searchhidden: true}},
-         {name:'quantity',index:'quantity',editable:true,label:'{% trans "quantity"|capfirst %}',align:'center',title:false,formatter:'number',searchrules:{number:true},width:70,counter:9,searchoptions:{searchhidden: true}},
-         {name:'value',index:'value',editable:true,label:'{% trans "value"|capfirst %}',align:'center',title:false,formatter:'number',searchrules:{number:true},width:70,counter:10,searchoptions:{searchhidden: true}},
-         {name:'criticality',index:'criticality',editable:false,label:'{% trans "criticality"|capfirst %}',align:'center',title:false,formatter:'number',searchrules:{number:true},width:70,counter:11,searchoptions:{searchhidden: true}},
-         {name:'lastmodified',index:'lastmodified',editable:false,label:'Last Modified',align:'center',title:false,formatter:'date',formatoptions:{srcformat:'Y-m-d H:i:s',newformat:'Y-m-d H:i:s'},width:140,counter:12,searchoptions:{searchhidden: true}}
+         {name:'location',index:'location',editable:true,label:'{% trans "location"|capfirst %}',align:'left',title:false,width:200,counter:6,searchoptions:{searchhidden: true}},
+         {name:'origin',index:'origin',editable:true,label:'{% trans "origin"|capfirst %}',align:'left',title:false,width:200,counter:7,searchoptions:{searchhidden: true}},
+         {name:'startdate',index:'startdate',editable:true,label:'{% trans "start date"|capfirst %}',align:'center',title:false,formatter:'date',formatoptions:{srcformat:'Y-m-d H:i:s',newformat:'Y-m-d H:i:s'},width:140,counter:8,searchoptions:{searchhidden: true}},
+         {name:'enddate',index:'enddate',editable:true,label:'{% trans "end date"|capfirst %}',align:'center',title:false,formatter:'date',formatoptions:{srcformat:'Y-m-d H:i:s',newformat:'Y-m-d H:i:s'},width:140,counter:9,searchoptions:{searchhidden: true}},
+         {name:'quantity',index:'quantity',editable:true,label:'{% trans "quantity"|capfirst %}',align:'center',title:false,formatter:'number',searchrules:{number:true},width:70,counter:10,searchoptions:{searchhidden: true}},
+         {name:'value',index:'value',editable:true,label:'{% trans "value"|capfirst %}',align:'center',title:false,formatter:'number',searchrules:{number:true},width:70,counter:11,searchoptions:{searchhidden: true}},
+         {name:'criticality',index:'criticality',editable:false,label:'{% trans "criticality"|capfirst %}',align:'center',title:false,formatter:'number',searchrules:{number:true},width:70,counter:12,searchoptions:{searchhidden: true}},
+         {name:'lastmodified',index:'lastmodified',editable:false,label:'Last Modified',align:'center',title:false,formatter:'date',formatoptions:{srcformat:'Y-m-d H:i:s',newformat:'Y-m-d H:i:s'},width:140,counter:13,searchoptions:{searchhidden: true}}
          ],
       rowNum:20,
       rowList:[20, 30, 50],
@@ -1181,7 +1195,7 @@ function displayResult(reset)
       sortname: 'date',
       sortorder: "asc",
       width: $('#content-main').width(),
-      height: 200,
+      height: 'auto',
       {% if perms.input.change_purchaseorder or perms.input.change_distributionorder %}
       multiselect: true,
       cellEdit: true,
