@@ -58,11 +58,14 @@ class InventoryPlanningSolver : public Solver
 
     static double holding_cost;
 
+    static bool service_level_on_average_inventory;
+
   public:
     static const Keyword tag_fixed_order_cost;
     static const Keyword tag_holding_cost;
     static const Keyword tag_horizon_start;
     static const Keyword tag_horizon_end;
+    static const Keyword tag_service_level_on_average_inventory;
 
     Calendar* getCalendar() const
     {
@@ -118,6 +121,16 @@ class InventoryPlanningSolver : public Solver
       holding_cost = d;
     }
 
+    bool getServiceLevelOnAverageInventory() const
+    {
+      return service_level_on_average_inventory;
+    }
+
+    void setServiceLevelOnAverageInventory(bool b)
+    {
+      service_level_on_average_inventory = b;
+    }
+
     static int initialize();
     virtual const MetaClass& getType() const {return *metadata;}
     static const MetaClass *metadata;
@@ -144,6 +157,7 @@ class InventoryPlanningSolver : public Solver
       m->addIntField<Cls>(tag_horizon_end, &Cls::getHorizonEnd, &Cls::setHorizonEnd);
       m->addDoubleField<Cls>(tag_fixed_order_cost, &Cls::getFixedOrderCost, &Cls::setFixedOrderCost);
       m->addDoubleField<Cls>(tag_holding_cost, &Cls::getHoldingCost, &Cls::setHoldingCost);
+      m->addBoolField<Cls>(tag_service_level_on_average_inventory, &Cls::getServiceLevelOnAverageInventory, &Cls::setServiceLevelOnAverageInventory);
     }
 
   static distribution matchDistributionName(string&);

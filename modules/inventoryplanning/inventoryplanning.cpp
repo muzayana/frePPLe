@@ -22,6 +22,7 @@ const Keyword InventoryPlanningSolver::tag_fixed_order_cost("fixed_order_cost");
 const Keyword InventoryPlanningSolver::tag_holding_cost("holding_cost");
 const Keyword InventoryPlanningSolver::tag_horizon_start("horizon_start");
 const Keyword InventoryPlanningSolver::tag_horizon_end("horizon_end");
+const Keyword InventoryPlanningSolver::tag_service_level_on_average_inventory("service_level_on_average_inventory");
 
 const MetaClass *InventoryPlanningSolver::metadata;
 Calendar *InventoryPlanningSolver::cal = NULL;
@@ -30,6 +31,7 @@ int InventoryPlanningSolver::horizon_end = 365;
 double InventoryPlanningSolver::fixed_order_cost = 20;
 double InventoryPlanningSolver::holding_cost = 0.05;
 Duration InventoryPlanningSolver::bucket_size;
+bool InventoryPlanningSolver::service_level_on_average_inventory = true;
 
 
 int InventoryPlanningSolver::initialize()
@@ -708,8 +710,10 @@ int InventoryPlanningSolver::calulateStockLevel(
 	// or think of a formula giving the stock level based on the fill rate without iterating
 	unsigned int rop = static_cast<int>(floor(mean));
 	double fillRate;
-	while ((fillRate = calculateFillRate(mean, variance, rop, roq, dist)) < fillRateMinimum)
-		++rop;
+
+  // Compute the fill rate, either based on the average inventory or based on the safety stock only
+  while ((fillRate = calculateFillRate(mean, variance, rop, service_level_on_average_inventory ? roq : 1, dist)) < fillRateMinimum)
+    ++rop;
 
 	// Now we are sure the that lower bound is respected, what about the upper bound
 	if (minimumStrongest == true || fillRate <= fillRateMaximum)

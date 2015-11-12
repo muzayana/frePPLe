@@ -259,6 +259,7 @@ def createInventoryPlan(database=DEFAULT_DB_ALIAS):
     holding_cost=float(Parameter.getValue('inventoryplanning.holding_cost', database, 0.05)),
     fixed_order_cost=float(Parameter.getValue('inventoryplanning.fixed_order_cost', database, 20)),
     loglevel=int(Parameter.getValue('inventoryplanning.loglevel', database, 0)),
+    service_level_on_average_inventory=(Parameter.getValue("inventoryplanning.service_level_on_average_inventory", database, "true") == "true")
     ).solve()
 
   # Step 5.
