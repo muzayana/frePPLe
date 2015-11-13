@@ -1115,7 +1115,7 @@ class DRPitemlocation(View):
     for dmd in Demand.objects.all().using(request.database).filter(
       item=ip.buffer.item.name, location=ip.buffer.location.name, status='open'
       ):
-        d = frepple.demand(
+        frepple_demand = frepple.demand(
           name="%s %s" % (tmp, idx),
           item=frepple_item,
           location=frepple_location,
@@ -1124,9 +1124,9 @@ class DRPitemlocation(View):
           priority=dmd.priority
           )
         if dmd.minshipment:
-          d.minshipment = dmd.minshipment
+          frepple_demand.minshipment = dmd.minshipment
         if dmd.maxlateness is not None:
-          d.maxlateness = dmd.maxlateness
+          frepple_demand.maxlateness = dmd.maxlateness
         idx += 1
 
     # Create forecast model
@@ -1380,17 +1380,9 @@ class DRPitemlocation(View):
       if val:
         frepple_buf.ss_type = val
 
-    # Calculate safety stock and reorder quantity
-    # TODO this solves for ALL buffers, not only the replanned one
-    replanner.ip_solver.solve()
-
-    # Collect inventory planning results
-    result['parameters']["roq_calculated"] = round(frepple_buf.ip_calculated_roq)
-    result['parameters']["ss_calculated"] = round(frepple_buf.ip_calculated_ss)
+    # Load inventory planning overrides from the database
     roq_cal = frepple.calendar(name="ROQ for %s" % tmp)
     ss_cal = frepple.calendar(name="SS for %s" % tmp)
-
-    # Load inventory planning overrides from the database
     for db_cal in CalendarBucket.objects.all().using(request.database).filter(
       calendar="ROQ for %s" % ip.buffer.item.name
       ).exclude(source='Inventory planning'):
@@ -1420,6 +1412,7 @@ class DRPitemlocation(View):
           else:
             if bck.source == 'Inventory planning' and (not found or found.priority > bck.priority):
               found = bck
+      bck = None
       return found.value if found else None
 
     # Apply inventory planning overrides received from the client
@@ -1437,7 +1430,7 @@ class DRPitemlocation(View):
             bck.source = 'manual'
         if 'ssoverride' in ovr:
           if ovr['ssoverride'] == '':
-            pass
+            pass # todo: delete existing entry
           else:
             bck = ss_cal.addBucket()
             bck.value = float(ovr['ssoverride'])
@@ -1446,11 +1439,18 @@ class DRPitemlocation(View):
             bck.priority = -1
             bck.source = 'manual'
 
-    roq_cal_buckets = [ i for i in roq_cal.buckets ]
-    ss_cal_buckets = [ i for i in ss_cal.buckets ]
+    # Calculate safety stock and reorder quantity
+    # TODO this solves for ALL buffers, not only the replanned one
+    replanner.ip_solver.solve()
 
     # Create constrained plan
     replanner.mrp_solver.solve()
+
+    # Collect inventory planning results
+    result['parameters']["roq_calculated"] = round(frepple_buf.ip_calculated_roq)
+    result['parameters']["ss_calculated"] = round(frepple_buf.ip_calculated_ss)
+    roq_cal_buckets = [ i for i in roq_cal.buckets ]
+    ss_cal_buckets = [ i for i in ss_cal.buckets ]
 
     # Copy results from frePPLe forecast model into db model
     for i in frepple_forecast.members:
@@ -1573,7 +1573,6 @@ class DRPitemlocation(View):
     supply_proposed = 0
     end_oh = 0
     for fl in frepple_buf.flowplans:
-      print(fl.date, fl.quantity, fl.operationplan.operation.name)
       if fl.date < agg_buckets[agg_bucket_idx].startdate:
         continue
       if fl.date > agg_buckets[agg_bucket_idx].enddate:
@@ -1629,39 +1628,39 @@ class DRPitemlocation(View):
           demand_local -= fl.quantity
         else:
           demand_dependent -= fl.quantity
-      opplan = fl.operationplan
-      if isinstance(opplan.operation, frepple.operation_itemsupplier):
+      frepple_operationplan = fl.operationplan
+      if isinstance(frepple_operationplan.operation, frepple.operation_itemsupplier):
         result["transactions"].append({
-          "criticality": opplan.criticality, # TODO incremental calculation can give different value
-          "date": str(opplan.end),
-          "startdate": str(opplan.start),
-          "enddate": str(opplan.end),
-          "id": opplan.id, # TODO incremental calculation can give different value
+          "criticality": frepple_operationplan.criticality, # TODO incremental calculation can give different value
+          "date": str(frepple_operationplan.end),
+          "startdate": str(frepple_operationplan.start),
+          "enddate": str(frepple_operationplan.end),
+          "id": frepple_operationplan.id, # TODO incremental calculation can give different value
           "item": ip.buffer.item.name,
           "location": fl.buffer.location.name,
-          "origin": opplan.operation.itemsupplier.supplier.name,
-          "quantity": opplan.quantity,
-          "reference": opplan.reference,
-          "status": opplan.status,
+          "origin": frepple_operationplan.operation.itemsupplier.supplier.name,
+          "quantity": frepple_operationplan.quantity,
+          "reference": frepple_operationplan.reference,
+          "status": frepple_operationplan.status,
           "type": "PO",
-          "value": opplan.quantity * fl.buffer.item.price,
+          "value": frepple_operationplan.quantity * fl.buffer.item.price,
           "lastmodified": str(datetime.now())
           })
-      elif isinstance(opplan.operation, frepple.operation_itemdistribution):
+      elif isinstance(frepple_operationplan.operation, frepple.operation_itemdistribution):
         result["transactions"].append({
-          "criticality": opplan.criticality, # TODO incremental calculation can give different value
-          "date": str(opplan.end if fl.quantity > 0 else opplan.start),
-          "startdate": str(opplan.start),
+          "criticality": frepple_operationplan.criticality, # TODO incremental calculation can give different value
+          "date": str(frepple_operationplan.end if fl.quantity > 0 else frepple_operationplan.start),
+          "startdate": str(frepple_operationplan.start),
           "enddate": str(opplan.end),
-          "id": opplan.id, # TODO incremental calculation can give different value
+          "id": frepple_operationplan.id, # TODO incremental calculation can give different value
           "item": ip.buffer.item.name,
           "location": fl.buffer.location.name,
-          "origin": opplan.operation.origin.location.name,
-          "quantity": opplan.quantity,
-          "reference": opplan.reference,
-          "status": opplan.status,
+          "origin": frepple_operationplan.operation.origin.location.name,
+          "quantity": frepple_operationplan.quantity,
+          "reference": frepple_operationplan.reference,
+          "status": frepple_operationplan.status,
           "type": "DO in" if fl.quantity > 0 else "DO out",
-          "value": opplan.quantity * fl.buffer.item.price,
+          "value": frepple_operationplan.quantity * fl.buffer.item.price,
           "lastmodified": str(datetime.now())
           })
     # Empty buckets at the end of the plan
@@ -1691,17 +1690,13 @@ class DRPitemlocation(View):
 
     # Cleaning up
     # We remove any references to frePPLe objects in Python, before
-    # calling the remove function in frePPLe. This avoid trouble with the
+    # calling the remove function in frePPLe. This avoids trouble with the
     # Python garbage collector and avoids warnings from frePPLe.
-    frepple_forecast = None
-    frepple_buf = None
-    frepple_depdemand_oper = None
-    frepple_item = None
-    frepple_locdemand_oper = None
-    roq_cal = None
-    ss_cal = None
-    roq_cal_buckets = None
-    ss_cal_buckets = None
+    frepple_forecast = frepple_buf = frepple_depdemand_oper = None
+    frepple_item = frepple_locdemand_oper = roq_cal = ss_cal = None
+    roq_cal_buckets = ss_cal_buckets = frepple_itemsupplier = None
+    frepple_itemdistribution = frepple_demand = frepple_location = None
+    frepple_operationplan = i = j = fl = None
     gc.collect()
     frepple.demand(name=tmp, action='R')
     frepple.buffer(name=tmp, action='R')
