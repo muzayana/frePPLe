@@ -126,16 +126,6 @@ PyObject* ForecastSolver::create(PyTypeObject* pytype, PyObject* args, PyObject*
 }
 
 
-bool ForecastSolver::callback(Demand* l, const Signal a)
-{
-  // Call the netting function
-  solve(l, NULL);
-
-  // Always return 'okay'
-  return true;
-}
-
-
 void ForecastSolver::solve(const Demand* l, void* v)
 {
   // Forecast don't net themselves, and hidden demands either...
@@ -207,14 +197,22 @@ Forecast* ForecastSolver::matchDemandToForecast(const Demand* l)
       // Loop through all matching keys
       while (x != Forecast::ForecastDictionary.end() && x->first == key)
       {
-        if (
-          (!getMatchUsingDeliveryOperation() || x->second->getDeliveryOperation() == l->getDeliveryOperation())
-          && (l->getLocation() && x->second->getLocation() && l->getLocation()->isMemberOf(x->second->getLocation()) )
-          )
-          // Bingo! Found a matching key, if required plus matching delivery operation
+        // Check for a match using the delivery operation, or ...
+        if (getMatchUsingDeliveryOperation())
+        {
+          if (x->second->getDeliveryOperation() == l->getDeliveryOperation())
+            return x->second;
+        }
+        // ... check for a match using the location
+        else if (!x->second->getLocation())
+          // Forecast doesn't specify a location. Any location of the
+          // demand is considered a match.
           return x->second;
-        else
-          ++ x;
+        else if (l->getLocation() && l->getLocation()->isMemberOf(x->second->getLocation()))
+          // Forecast location specifies a location, and it matches the
+          // location of the demand.
+          return x->second;
+        ++x;
       }
       // Not found: try a higher level match in first dimension
       if (Customer_Then_Item_Hierarchy)

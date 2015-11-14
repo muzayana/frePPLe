@@ -532,7 +532,7 @@ class Forecast : public Demand
     {
       public:
         /** Forecast evaluation. */
-        virtual double generateForecast
+        virtual pair<double,bool> generateForecast
         (Forecast*, const double[], unsigned int, const double[], ForecastSolver*) = 0;
 
         /** This method is called when this forecast method has generated the
@@ -572,7 +572,7 @@ class Forecast : public Demand
         }
 
         /** Forecast evaluation. */
-        double generateForecast(Forecast* fcst, const double history[],
+        pair<double,bool> generateForecast(Forecast* fcst, const double history[],
             unsigned int count, const double weight[], ForecastSolver*);
 
         /** Forecast value updating. */
@@ -633,7 +633,7 @@ class Forecast : public Demand
         }
 
         /** Forecast evaluation. */
-        double generateForecast(Forecast* fcst, const double history[],
+        pair<double,bool> generateForecast(Forecast* fcst, const double history[],
             unsigned int count, const double weight[], ForecastSolver*);
 
         /** Forecast value updating. */
@@ -744,7 +744,7 @@ class Forecast : public Demand
           : alfa(a), gamma(g), trend_i(0), constant_i(0) {}
 
         /** Forecast evaluation. */
-        double generateForecast(Forecast* fcst, const double history[],
+        pair<double,bool> generateForecast(Forecast* fcst, const double history[],
             unsigned int count, const double weight[], ForecastSolver*);
 
         /** Forecast value updating. */
@@ -961,7 +961,7 @@ class Forecast : public Demand
           : alfa(a), beta(b), period(0), autocorrelation(0.0), L_i(0), T_i(0) {}
 
         /** Forecast evaluation. */
-        double generateForecast(Forecast* fcst, const double history[],
+        pair<double,bool> generateForecast(Forecast* fcst, const double history[],
             unsigned int count, const double weight[], ForecastSolver*);
 
         /** Forecast value updating. */
@@ -1176,7 +1176,7 @@ class Forecast : public Demand
         }
 
         /** Forecast evaluation. */
-        double generateForecast(Forecast* fcst, const double history[],
+        pair<double,bool> generateForecast(Forecast* fcst, const double history[],
             unsigned int count, const double weight[], ForecastSolver*);
 
         /** Forecast value updating. */
@@ -1289,6 +1289,7 @@ class Forecast : public Demand
 
     template<class Cls> static inline void registerFields(MetaClass* m)
     {
+      m->addPointerField<Cls, Calendar>(Tags::calendar, &Cls::getCalendar, &Cls::setCalendar);
       m->addBoolField<Cls>(Tags::discrete, &Cls::getDiscrete, &Cls::setDiscrete, BOOL_TRUE);
       m->addUnsignedLongField<Cls>(tag_methods, &Cls::getMethods, &Cls::setMethods, METHOD_ALL);
       m->addBoolField<Cls>(tag_planned, &Cls::getPlanned, &Cls::setPlanned, BOOL_TRUE);
@@ -1372,7 +1373,14 @@ class Forecast : public Demand
     /** Specify a bucket calendar for the forecast. Once forecasted
       * quantities have been entered for the forecast, the calendar
       * can't be updated any more. */
-    static void setCalendar(Calendar* c)
+    static void setCalendar_static(Calendar* c)
+    {
+      if (calptr && c != calptr)
+        throw DataException("Forecasting buckets can't be changed once specified");
+      calptr = c;
+    }
+
+    void setCalendar(Calendar* c)
     {
       if (calptr && c != calptr)
         throw DataException("Forecasting buckets can't be changed once specified");
@@ -1383,7 +1391,12 @@ class Forecast : public Demand
       * This is a static method: all forecast use the exact same
       * forecasting buckets.
       */
-    static Calendar* getCalendar()
+    static Calendar* getCalendar_static()
+    {
+      return calptr;
+    }
+
+    Calendar* getCalendar() const
     {
       return calptr;
     }
@@ -1650,17 +1663,14 @@ class ForecastSolver : public Solver
     /** Generates a baseline forecast. */
     static PyObject* timeseries(PyObject*, PyObject*);
 
-    /** Callback function, used for netting orders against the forecast. */
-    bool callback(Demand* l, const Signal a);
-
     void setCalendar(Calendar* c)
     {
-      Forecast::setCalendar(c);
+      Forecast::setCalendar_static(c);
     }
 
     Calendar* getCalendar() const
     {
-      return Forecast::getCalendar();
+      return Forecast::getCalendar_static();
     }
 
     string getDueWithinBucket() const

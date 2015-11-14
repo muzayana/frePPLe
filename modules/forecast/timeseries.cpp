@@ -136,16 +136,23 @@ void Forecast::generateFutureValues(
   // Evaluate each forecast method
   double best_error = DBL_MAX;
   int best_method = -1;
-  double error;
+  bool forced_method = false;
   try
   {
     for (int i=0; i<numberOfMethods; ++i)
     {
-      error = qualifiedmethods[i]->generateForecast(this, history, historycount, weight, solver);
-      if (error < best_error)
+      pair<double,bool> res = qualifiedmethods[i]->generateForecast(
+        this, history, historycount, weight, solver
+        );
+      if (res.first < best_error || res.second)
       {
-        best_error = error;
+        best_error = res.first;
         best_method = i;
+        if (res.second)
+        {
+          forced_method = true;
+          break;
+        }
       }
     }
     if (methods==METHOD_SEASONAL && best_error == DBL_MAX)
@@ -154,7 +161,7 @@ void Forecast::generateFutureValues(
       // couldn't detect any cycles. We fall back to the trend method.
       qualifiedmethods[0] = &double_exp;
       best_method = 0;
-      best_error = double_exp.generateForecast(this, history, historycount, weight, solver);
+      best_error = double_exp.generateForecast(this, history, historycount, weight, solver).first;
     }
   }
   catch (...)
@@ -192,7 +199,7 @@ void Forecast::generateFutureValues(
 unsigned int Forecast::MovingAverage::defaultorder = 5;
 
 
-double Forecast::MovingAverage::generateForecast
+pair<double,bool> Forecast::MovingAverage::generateForecast
 (Forecast* fcst, const double history[], unsigned int count, const double weight[], ForecastSolver* solver)
 {
   double error_smape = 0.0, error_smape_weights = 0.0;
@@ -228,7 +235,7 @@ double Forecast::MovingAverage::generateForecast
     logger << (fcst ? fcst->getName() : "") << ": moving average : "
         << "smape " << error_smape
         << ", forecast " << avg << endl;
-  return error_smape;
+  return pair<double,bool>(error_smape,false);
 }
 
 
@@ -254,13 +261,13 @@ double Forecast::SingleExponential::min_alfa = 0.03;
 double Forecast::SingleExponential::max_alfa = 1.0;
 
 
-double Forecast::SingleExponential::generateForecast
+pair<double,bool> Forecast::SingleExponential::generateForecast
 (Forecast* fcst, const double history[], unsigned int count, const double weight[], ForecastSolver* solver)
 {
   // Verify whether this is a valid forecast method.
   //   - We need at least 5 buckets after the warmup period.
   if (count < fcst->getForecastSkip() + 5)
-    return DBL_MAX;
+    return pair<double,bool>(DBL_MAX,false);
 
   unsigned int iteration = 1;
   bool upperboundarytested = false;
@@ -414,7 +421,7 @@ double Forecast::SingleExponential::generateForecast
         << ", " << iteration << " iterations"
         << ", forecast " << f_i
         << ", standard deviation " << best_standarddeviation << endl;
-  return best_smape;
+  return pair<double,bool>(best_smape,false);
 }
 
 
@@ -443,13 +450,13 @@ double Forecast::DoubleExponential::max_gamma = 1.0;
 double Forecast::DoubleExponential::dampenTrend = 0.8;
 
 
-double Forecast::DoubleExponential::generateForecast
+pair<double,bool> Forecast::DoubleExponential::generateForecast
 (Forecast* fcst, const double history[], unsigned int count, const double weight[], ForecastSolver* solver)
 {
   // Verify whether this is a valid forecast method.
   //   - We need at least 5 buckets after the warmup period.
   if (count < fcst->getForecastSkip() + 5)
-    return DBL_MAX;
+    return pair<double,bool>(DBL_MAX,false);
 
   // Define variables
   double error=0.0, error_smape=0.0, error_smape_weights=0.0, delta_alfa, delta_gamma, determinant;
@@ -664,7 +671,7 @@ double Forecast::DoubleExponential::generateForecast
         << ", trend " << trend_i
         << ", forecast " << (trend_i + constant_i)
         << ", standard deviation " << best_standarddeviation << endl;
-  return best_smape;
+  return pair<double,bool>(best_smape,false);
 }
 
 
@@ -773,14 +780,15 @@ void Forecast::Seasonal::detectCycle(const double history[], unsigned int count)
 }
 
 
-double Forecast::Seasonal::generateForecast  // TODO No outlier detection in this method
+pair<double,bool> Forecast::Seasonal::generateForecast  // TODO No outlier detection in this method
 (Forecast* fcst, const double history[], unsigned int count, const double weight[], ForecastSolver* solver)
 {
   // Check for seasonal cycles
   detectCycle(history, count);
 
   // Return if no seasonality is found
-  if (!period) return DBL_MAX;
+  if (!period) 
+    return pair<double,bool>(DBL_MAX, false);
 
   // Define variables
   double error=0.0, error_smape=0.0, error_smape_weights=0.0, determinant, delta_alfa, delta_beta;
@@ -1030,9 +1038,9 @@ double Forecast::Seasonal::generateForecast  // TODO No outlier detection in thi
         << endl;
 
   // If the autocorrelation is high enough (ie there is a very obvious
-  // seasonal pattern) we cheat an return 0.0 as the error.
+  // seasonal pattern) the second element in the pair is "true".
   // This enforces the use of the seasonal method.
-  return (autocorrelation > min_autocorrelation) ? 0.0 : best_smape;
+  return pair<double,bool>(best_smape, autocorrelation > max_autocorrelation);
 }
 
 
@@ -1066,7 +1074,7 @@ double Forecast::Croston::max_alfa = 1.0;
 double Forecast::Croston::min_intermittence = 0.33;
 
 
-double Forecast::Croston::generateForecast
+pair<double,bool> Forecast::Croston::generateForecast
 (Forecast* fcst, const double history[], unsigned int count, const double weight[], ForecastSolver* solver)
 {
   // Count non-zero buckets
@@ -1192,7 +1200,7 @@ double Forecast::Croston::generateForecast
         << ", " << iteration << " iterations"
         << ", forecast " << f_i
         << ", standard deviation " << best_standarddeviation << endl;
-  return best_smape;
+  return pair<double,bool>(best_smape, false);
 }
 
 

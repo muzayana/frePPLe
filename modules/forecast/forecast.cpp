@@ -161,14 +161,11 @@ ForecastBucket::ForecastBucket(Forecast* f, Date d, Date e, double w, ForecastBu
 bool Forecast::callback(Calendar* l, const Signal a)
 {
   // This function is called when a calendar is about to be deleted.
-  // If that calendar is being used for a forecast we reset the calendar
-  // pointer to null.
+  // If that calendar happens to be the one defining calendar buckets, we
+  // reset the calendar pointer to null.
   if (calptr == l)
-  {
-    for (MapOfForecasts::iterator x = ForecastDictionary.begin();
-      x != ForecastDictionary.end(); ++x)
-        x->second->calptr = NULL;
-  }
+    calptr = NULL;
+
   return true;
 }
 
