@@ -124,6 +124,8 @@ Page custom FinishOpen FinishLeave
 !insertmacro MUI_LANGUAGE "French"
 !insertmacro MUI_LANGUAGE "Italian"
 !insertmacro MUI_LANGUAGE "Japanese"
+!insertmacro MUI_LANGUAGE "Portugese"
+!insertmacro MUI_LANGUAGE "PortugueseBR"
 !insertmacro MUI_LANGUAGE "SimpChinese"
 !insertmacro MUI_LANGUAGE "Spanish"
 !insertmacro MUI_LANGUAGE "TradChinese"
@@ -261,6 +263,12 @@ Section "Application" SecAppl
   StrCmp $6 "Japanese" 0 +3
     StrCpy $6 "ja"
     Goto ok2
+  StrCmp $6 "Portuguese" 0 +3
+    StrCpy $6 "pt"
+    Goto ok2
+  StrCmp $6 "Brazilian Portuguese" 0 +3
+    StrCpy $6 "pt-br"
+    Goto ok2
   StrCmp $6 "Simplified Chinese" 0 +3
     StrCpy $6 "zh_cn"
     Goto ok2
@@ -313,7 +321,9 @@ Section "Application" SecAppl
   FileWrite $R4 "    'HOST': '$4',     # Set to empty string for localhost.$\r$\n"
   FileWrite $R4 "    'PORT': '$5',     # Set to empty string for default port number.$\r$\n"
   FileWrite $R4 "    'OPTIONS': {},  # Backend specific configuration parameters.$\r$\n"
-  FileWrite $R4 "    'TEST_NAME': 'test_$1',  # Database used when running the test suite.$\r$\n"
+  FileWrite $R4 "    'TEST': {$\r$\n"
+  FileWrite $R4 "      'NAME': 'test_$1',  # Database used when running the test suite.$\r$\n"
+  FileWrite $R4 "      },$\r$\n"
   FileWrite $R4 "    },$\r$\n"
   FileWrite $R4 "  }$\r$\n$\r$\n"
   FileWrite $R4 "FREPPLE_LOGDIR = r'$LOCALAPPDATA\${PRODUCT_NAME}\${PRODUCT_VERSION}'$\r$\n$\r$\n"
