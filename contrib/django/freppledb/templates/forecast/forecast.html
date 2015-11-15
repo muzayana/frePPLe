@@ -317,6 +317,22 @@ function drawGraphs(jsondata)
 }
 {% endif %}
 {% if args.0 or mode == "table" %}
+
+function assureVisible()
+{
+  var left_of_cell = $(event.target).offset().left;
+  var min_visible = $("#grid_frozen").offset().left + $("#grid_frozen").width();
+  var max_visible = $("#gbox_grid").offset().left + $("#gbox_grid").width();
+  if (left_of_cell < min_visible || left_of_cell + $(event.target).width() > max_visible)
+  {
+    // The input cell which gets the focus isn't visible. This happens normally
+    // only when using the tab button to navigate to a new cell.
+    // We adjust the scroll position to make it visible.
+    var scr = $(".ui-jqgrid-bdiv");
+    scr.scrollLeft(scr.scrollLeft() + left_of_cell - min_visible - 3);
+  }
+}
+
 function getDirtyData()
 {
   var changes = [];
@@ -380,7 +396,7 @@ function crosses (cellvalue, options, rowdata)
         break;
       case 2: // Orders adjustment{% if perms.forecast.change_forecastdemand %}
         if (cellvalue[10] == 1)
-          result += '<input type="number" class="smallpadding adjhistory" value="' + ((cellvalue[2] === null) ? '' : Math.round(cellvalue[2])) + '" oninput="onChange(event)" onclick="$(this).select();"/><br>';
+          result += '<input type="number" class="smallpadding adjhistory" value="' + ((cellvalue[2] === null) ? '' : Math.round(cellvalue[2])) + '" oninput="onChange(event)" onclick="$(this).select();" onfocus="assureVisible()"/><br>';
         else
           result += '<br>';
         {% else %}
@@ -394,7 +410,7 @@ function crosses (cellvalue, options, rowdata)
         break;
       case 4: // Forecast override{% if perms.forecast.change_forecastdemand %}
         if (cellvalue[11] == 1)
-          result += '<input type="number" min="0" class="smallpadding adjforecast" value="' + ((cellvalue[4] === null) ? '' : (Math.round(cellvalue[4]*10)/10)) + '" oninput="onChange(event)" onclick="$(this).select();"/><br>';
+          result += '<input type="number" min="0" class="smallpadding adjforecast" value="' + ((cellvalue[4] === null) ? '' : (Math.round(cellvalue[4]*10)/10)) + '" oninput="onChange(event)" onclick="$(this).select();" onfocus="assureVisible()"/><br>';
         else
           result += '<br>';
         {% else %}
