@@ -76,9 +76,36 @@ Here are the steps to get a fully working environment.
        create user USR with password 'PWD';
        create database DB encoding 'utf-8' owner USR;
 
-#. **Install the Python database drivers**
+#. **Install the Python database drivers and other python modules**
 
-   You'll need to install the python-psycopg2 package for PostgreSQL.
+   You should install the python-psycopg2 (or python3-psycopg2) package from your linux distribution.
+
+   In the root of your python install you will find a "frePPLe-pip-requirements.txt" with a list like:
+   ::
+
+      chardet >= 2.0.1
+      CherryPy >= 3.2.2
+      colorama >= 0.2.5
+      djangorestframework >= 3.3.1
+      et-xmlfile >= 1.0.0
+      html5lib >= 0.999
+      jdcal >= 1.0
+      Markdown >= 2.6.4
+      openpyxl >= 2.3.0-b2
+      pip >= 1.5.4
+      pycurl >= 7.19.3
+      requests >= 2.2.1
+      Routes >= 2.0
+      setuptools >= 3.3
+      six >= 1.5.2
+      urllib3 >= 1.7.1
+
+   To install the requirements just issue a pip3 (or pip depending on your distribution) command:
+   ::
+
+      sudo pip install -r requirements.txt
+
+
 
 #. **Install Django**
 
@@ -99,16 +126,6 @@ Here are the steps to get a fully working environment.
       cd django-frepple_3.0
       python3 setup.py install
 
-#. **Install OpenPyXL**
-
-   This python package allows us to read and write Excel spreadsheet files. It
-   is best to install it from PyPi using pip.
-   ::
-
-     pip3 install openpyxl
-
-   Most linux distributions don't install pip by default, so you'll need to install
-   that first. See below for the commands for this on Ubuntu and RHEL.
 
 #. **Install the frepple binary package**
 
@@ -278,9 +295,8 @@ inspiration for your own deployments.
   cd django-frepple_$FREPPLERELEASE
   sudo python3 setup.py install
 
-  # Install openpyxl
+  # Install pip for python >= 3.0
   sudo apt-get -y install python3-pip
-  sudo pip3 install openpyxl
 
   # Install the frePPLe binary .deb package and the necessary dependencies.
   # There are frepple, frepple-doc and frepple-dev debian package files.
@@ -288,6 +304,9 @@ inspiration for your own deployments.
   cd ~
   sudo dpkg -i frepple_*.deb
   sudo apt-get -f -y -q install
+
+  # Install the requirements just issue a pip3 (or pip depending on your distribution) command from your frePPLe root:
+  sudo pip install -r requirements.txt
 
   # Configure apache web server
   sudo a2enmod expires
@@ -342,12 +361,14 @@ inspiration for your own deployments.
   sudo -S -n rpm -Uvh http://download.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.noarch.rpm
   sudo -S -n yum -y install yum-plugin-protectbase.noarch
   sudo -S -n yum -y install python3-pip
-  sudo pip3 install openpyxl
 
   # Install the frePPLe binary RPM package and the necessary dependencies.
   # There are frepple, frepple-doc and frepple-dev package files.
   # Normally you only need to install the frepple package.
   yum --nogpgcheck localinstall  *.rpm
+
+
+
 
   # Create frepple database schema
   frepplectl migrate --noinput
@@ -403,12 +424,14 @@ You can use it as a guideline and inspiration for your own deployments.
   # pip is in SUSE included in the Python3 package but must be enabled.
   # After pip3 is available we can finish by installing openpyxl itself.
   sudo python3 -m ensure pip
-  sudo pip3 install openpyxl
 
   # Install the frePPLe binary RPM package and the necessary dependencies.
   # There are frepple, frepple-doc and frepple-dev package files.
   # Normally you only need to install the frepple package.
   sudo rpm -i *.rpm
+
+  # Install the requirements just issue a pip3 (or pip depending on your distribution) command from your frePPLe root:
+  sudo pip3 install -r requirements.txt
 
   # Create frepple database schema
   frepplectl migrate --noinput
