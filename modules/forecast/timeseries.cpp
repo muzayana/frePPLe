@@ -203,30 +203,87 @@ pair<double,bool> Forecast::MovingAverage::generateForecast
 (Forecast* fcst, const double history[], unsigned int count, const double weight[], ForecastSolver* solver)
 {
   double error_smape = 0.0, error_smape_weights = 0.0;
+  double clean_history[300];
 
-  // Calculate the forecast and forecast error.
-  for (unsigned int i = 1; i <= count; ++i)
+  // Loop over the outliers 'scan'/0 and 'filter'/1 modes
+  double standarddeviation = 0.0;
+  double maxdeviation = 0.0;
+  for (short outliers = 0; outliers<=1; outliers++)
   {
-    double sum = 0.0;
-    if (i > order)
+    if (outliers)
+      clean_history[0] = history[0];
+
+    // Calculate the forecast and forecast error.
+    for (unsigned int i = 1; i <= count; ++i)
     {
-      for (unsigned int j = 0; j < order; ++j)
-        sum += history[i-j-1];
-      avg = sum / order;
+      if (outliers == 0)
+      {
+        double sum = 0.0;
+        if (i > order)
+        {
+          for (unsigned int j = 0; j < order; ++j)
+            sum += history[i-j-1];
+          avg = sum / order;
+        }
+        else
+        {
+          // For the first few values
+          for (unsigned int j = 0; j < i; ++j)
+            sum += history[i-j-1];
+          avg = sum / i;
+        }
+        if (i == count) break;
+
+        // Scan outliers by computing the standard deviation
+        // and keeping track of the difference between actuals and forecast
+        standarddeviation += (avg - history[i]) * (avg - history[i]);
+        if (fabs(avg - history[i]) > maxdeviation)
+          maxdeviation = fabs(avg - history[i]);
+      }
+      else
+      {
+        double sum = 0.0;
+        if (i > order)
+        {
+          for (unsigned int j = 0; j < order; ++j)
+            sum += clean_history[i-j-1];
+          avg = sum / order;
+        }
+        else
+        {
+          // For the first few values
+          for (unsigned int j = 0; j < i; ++j)
+            sum += clean_history[i-j-1];
+          avg = sum / i;
+        }
+        if (i == count) break;
+
+        // Clean outliers from history.
+        // We copy the cleaned history data in a new array.
+        if (history[i] > avg + Forecast::Forecast_maxDeviation * standarddeviation)
+          clean_history[i] = avg + Forecast::Forecast_maxDeviation * standarddeviation;
+        else if (history[i] < avg - Forecast::Forecast_maxDeviation * standarddeviation)
+          clean_history[i] = avg - Forecast::Forecast_maxDeviation * standarddeviation;
+        else
+          clean_history[i] = history[i];
+      }
+
+      if (i >= fcst->getForecastSkip() && i < count && fabs(avg + history[i]) > ROUNDING_ERROR)
+      {
+        error_smape += fabs(avg - history[i]) / (avg + history[i]) * weight[i];
+        error_smape_weights += weight[i];
+      }
     }
-    else
+
+    // Check outliers
+    if (outliers == 0)
     {
-      // For the first few values
-      for (unsigned int j = 0; j < i; ++j)
-        sum += history[i-j-1];
-      avg = sum / i;
+      standarddeviation = sqrt(standarddeviation / (count-1));
+      maxdeviation /= standarddeviation;
+      // Don't repeat if there are no outliers
+      if (maxdeviation < Forecast::Forecast_maxDeviation) break;
     }
-    if (i >= fcst->getForecastSkip() && i < count && fabs(avg + history[i]) > ROUNDING_ERROR)
-    {
-      error_smape += fabs(avg - history[i]) / (avg + history[i]) * weight[i];
-      error_smape_weights += weight[i];
-    }
-  }
+  } // End loop: 'scan' or 'filter' mode for outliers
 
   // Echo the result
   if (error_smape_weights)
@@ -787,7 +844,7 @@ pair<double,bool> Forecast::Seasonal::generateForecast  // TODO No outlier detec
   detectCycle(history, count);
 
   // Return if no seasonality is found
-  if (!period) 
+  if (!period)
     return pair<double,bool>(DBL_MAX, false);
 
   // Define variables
