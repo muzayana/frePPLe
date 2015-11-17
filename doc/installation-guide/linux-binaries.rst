@@ -76,55 +76,31 @@ Here are the steps to get a fully working environment.
        create user USR with password 'PWD';
        create database DB encoding 'utf-8' owner USR;
 
-#. **Install the Python database drivers and other python modules**
+#. **Install the Python database drivers, Django and other python modules**
 
    You should install the python-psycopg2 (or python3-psycopg2) package from your linux distribution.
+   
+   Since frePPle requires some patches to the standard Django package,
+   you can't install the binary package that comes with your Linux distribution.
 
-   In the root of your python install you will find a "frePPLe-pip-requirements.txt" with a list like:
+   Instead, the source from our cloned and patched version of django will be downloaded
+   and installed.
+
+   In the root of your python install you will find a "requirements.txt" file containing a list like:
    ::
 
-      chardet >= 2.0.1
       CherryPy >= 3.2.2
-      colorama >= 0.2.5
-      djangorestframework >= 3.3.1
       et-xmlfile >= 1.0.0
       html5lib >= 0.999
       jdcal >= 1.0
-      Markdown >= 2.6.4
       openpyxl >= 2.3.0-b2
-      pip >= 1.5.4
-      pycurl >= 7.19.3
-      requests >= 2.2.1
-      Routes >= 2.0
-      setuptools >= 3.3
-      six >= 1.5.2
-      urllib3 >= 1.7.1
+      https://github.com/frePPLe/django/tarball/frepple_3.0
+      djangorestframework >= 3.3.1
 
    To install the requirements just issue a pip3 (or pip depending on your distribution) command:
    ::
 
       sudo pip install -r requirements.txt
-
-
-
-#. **Install Django**
-
-   Since frePPle requires some patches to the standard Django package,
-   you can't install the binary package that comes with your Linux distribution.
-
-   Instead, download the source from our cloned and patched version of django
-   and install that. The URL of the django clone is https://github.com/frePPLe/django
-
-   Make sure you download the branch for the correct frePPLe version
-
-   The shell commands for these steps are (replace 3.0 with the correct frePPLe
-   version:
-   ::
-
-      wget https://github.com/frePPLe/django/archive/frepple_3.0.tar.gz
-      tar xvfz frepple_3.0.tar.gz
-      cd django-frepple_3.0
-      python3 setup.py install
 
 
 #. **Install the frepple binary package**
@@ -367,9 +343,6 @@ inspiration for your own deployments.
   # Normally you only need to install the frepple package.
   yum --nogpgcheck localinstall  *.rpm
 
-
-
-
   # Create frepple database schema
   frepplectl migrate --noinput
 
@@ -414,13 +387,7 @@ You can use it as a guideline and inspiration for your own deployments.
   exit
   rcpostgrsql restart
 
-  # Install a patched version of Django
-  wget -q https://github.com/frePPLe/django/archive/frepple_$FREPPLERELEASE.tar.gz
-  tar xfz frepple_$FREPPLERELEASE.tar.gz
-  cd django-frepple_$FREPPLERELEASE
-  sudo -S -n python3 setup.py install
-
-  # Install openpyxl
+  # Install Django, openpyxl, ...
   # pip is in SUSE included in the Python3 package but must be enabled.
   # After pip3 is available we can finish by installing openpyxl itself.
   sudo python3 -m ensure pip
