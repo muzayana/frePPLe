@@ -1067,10 +1067,10 @@ class DRPitemlocation(View):
       item=frepple_item,
       location=frepple_location
       )
-    for i in ItemSupplier.objects.all().using(request.database).filter(item=ip.buffer.item.name, location=ip.buffer.location.name):
+    for i in ItemSupplier.objects.all().using(request.database).filter(item=ip.buffer.item.name):
       frepple_itemsupplier = frepple.itemsupplier(
         supplier=frepple.supplier(name=i.supplier.name),
-        location=frepple_location,
+        location=frepple.location(name=i.location.name) if i.location else None,
         item=frepple_item,
         leadtime=i.leadtime,
         )
@@ -1084,10 +1084,10 @@ class DRPitemlocation(View):
         frepple_itemsupplier.effective_start = i.effective_start
       if i.effective_end:
         frepple_itemsupplier.effective_end = i.effective_end
-    for i in ItemDistribution.objects.all().using(request.database).filter(item=ip.buffer.item.name, location=ip.buffer.location.name):
+    for i in ItemDistribution.objects.all().using(request.database).filter(item=ip.buffer.item.name):
       frepple_itemdistribution = frepple.itemdistribution(
         origin=frepple.location(name=i.origin.name),
-        location=frepple.location(name=i.location.name),
+        destination=frepple.location(name=i.location.name) if i.location else None,
         item=frepple_item,
         leadtime=i.leadtime,
         )
@@ -1651,7 +1651,7 @@ class DRPitemlocation(View):
           "criticality": frepple_operationplan.criticality, # TODO incremental calculation can give different value
           "date": str(frepple_operationplan.end if fl.quantity > 0 else frepple_operationplan.start),
           "startdate": str(frepple_operationplan.start),
-          "enddate": str(opplan.end),
+          "enddate": str(frepple_operationplan.end),
           "id": frepple_operationplan.id, # TODO incremental calculation can give different value
           "item": ip.buffer.item.name,
           "location": fl.buffer.location.name,
