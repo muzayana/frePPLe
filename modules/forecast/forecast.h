@@ -527,12 +527,23 @@ class Forecast : public Demand
     static const unsigned long METHOD_MOVINGAVERAGE = 16;
     static const unsigned long METHOD_ALL = 31;
 
+    /** An auxiliary method to return metrics from a forecast methods. */
+    struct Metrics
+    {
+      double smape;
+      double standarddeviation;
+      bool force;
+
+      Metrics(double a, double b, bool c)
+        : smape(a), standarddeviation(b), force(c) {};
+    };
+
     /** @brief Abstract base class for all forecasting methods. */
     class ForecastMethod
     {
       public:
         /** Forecast evaluation. */
-        virtual pair<double,bool> generateForecast
+        virtual Metrics generateForecast
         (Forecast*, const double[], unsigned int, const double[], ForecastSolver*) = 0;
 
         /** This method is called when this forecast method has generated the
@@ -572,7 +583,7 @@ class Forecast : public Demand
         }
 
         /** Forecast evaluation. */
-        pair<double,bool> generateForecast(Forecast* fcst, const double history[],
+        Metrics generateForecast(Forecast* fcst, const double history[],
             unsigned int count, const double weight[], ForecastSolver*);
 
         /** Forecast value updating. */
@@ -633,7 +644,7 @@ class Forecast : public Demand
         }
 
         /** Forecast evaluation. */
-        pair<double,bool> generateForecast(Forecast* fcst, const double history[],
+        Metrics generateForecast(Forecast* fcst, const double history[],
             unsigned int count, const double weight[], ForecastSolver*);
 
         /** Forecast value updating. */
@@ -744,7 +755,7 @@ class Forecast : public Demand
           : alfa(a), gamma(g), trend_i(0), constant_i(0) {}
 
         /** Forecast evaluation. */
-        pair<double,bool> generateForecast(Forecast* fcst, const double history[],
+        Metrics generateForecast(Forecast* fcst, const double history[],
             unsigned int count, const double weight[], ForecastSolver*);
 
         /** Forecast value updating. */
@@ -961,7 +972,7 @@ class Forecast : public Demand
           : alfa(a), beta(b), period(0), autocorrelation(0.0), L_i(0), T_i(0) {}
 
         /** Forecast evaluation. */
-        pair<double,bool> generateForecast(Forecast* fcst, const double history[],
+        Metrics generateForecast(Forecast* fcst, const double history[],
             unsigned int count, const double weight[], ForecastSolver*);
 
         /** Forecast value updating. */
@@ -1176,7 +1187,7 @@ class Forecast : public Demand
         }
 
         /** Forecast evaluation. */
-        pair<double,bool> generateForecast(Forecast* fcst, const double history[],
+        Metrics generateForecast(Forecast* fcst, const double history[],
             unsigned int count, const double weight[], ForecastSolver*);
 
         /** Forecast value updating. */
@@ -1387,7 +1398,7 @@ class Forecast : public Demand
       calptr = c;
     }
 
-    /** Returns a reference to the calendar used for this forecast. 
+    /** Returns a reference to the calendar used for this forecast.
       * This is a static method: all forecast use the exact same
       * forecasting buckets.
       */

@@ -190,7 +190,14 @@ def measure(param, loglevel):
   return (totalsmape, countsmape)
 
 # ACTUAL TEST
-measure(0, 2)
+result = measure(0, 2)
+if round(result[0]['1'] / result[1]['1'], 2) > 9.70:
+  raise Exception("Failure: Short term forecast error is higher than expected.")
+if round(result[0]['total'] / result[1]['total'], 2) > 18.80:
+  raise Exception("Failure: Long term forecast error is higher than expected.")
+if round(result[0]['total'] / result[1]['total'], 2) > 14.08:
+  raise Exception("Failure: Long term forecast error is higher than expected.")
+print("Forecast errors are matching our expected scrore.")
 
 # PARAMETER TUNING LOOP
 # Quickly test a range of parameter values. The measure function needs to
