@@ -47,27 +47,6 @@ void Forecast::generateFutureValues(
     --historycount;
   }
 
-  // Compute the corrected standard deviation of the demand history
-  if (historycount)
-  {
-    double mean = 0.0;
-    for (unsigned int i = 0; i < historycount; ++i)
-      mean += history[i];
-    mean /= historycount;
-    deviation = 0.0;
-    for (unsigned int i = 0; i < historycount; ++i)
-    {
-      double tmp = history[i] - mean;
-      deviation += tmp * tmp;
-    }
-    if (historycount > 1)
-      deviation = sqrt(deviation / (historycount - 1));
-    else
-      deviation = sqrt(deviation / historycount);
-  }
-  else
-    deviation = 0.0;
-
   // We create the forecasting objects in stack memory for best performance.
   MovingAverage moving_avg;
   Croston croston;
@@ -141,16 +120,18 @@ void Forecast::generateFutureValues(
   {
     for (int i=0; i<numberOfMethods; ++i)
     {
-      pair<double,bool> res = qualifiedmethods[i]->generateForecast(
+      Metrics res = qualifiedmethods[i]->generateForecast(
         this, history, historycount, weight, solver
         );
-      if (res.first < best_error || res.second)
+      if (res.smape < best_error || res.force)
       {
-        best_error = res.first;
+        best_error = res.smape;
         best_method = i;
-        if (res.second)
+        deviation = res.standarddeviation;
+        if (res.force)
         {
           forced_method = true;
+          deviation = res.standarddeviation;
           break;
         }
       }
@@ -161,7 +142,9 @@ void Forecast::generateFutureValues(
       // couldn't detect any cycles. We fall back to the trend method.
       qualifiedmethods[0] = &double_exp;
       best_method = 0;
-      best_error = double_exp.generateForecast(this, history, historycount, weight, solver).first;
+      Metrics res = double_exp.generateForecast(this, history, historycount, weight, solver);
+      best_error = res.smape;
+      deviation = res.standarddeviation;
     }
   }
   catch (...)
@@ -199,7 +182,7 @@ void Forecast::generateFutureValues(
 unsigned int Forecast::MovingAverage::defaultorder = 5;
 
 
-pair<double,bool> Forecast::MovingAverage::generateForecast
+Forecast::Metrics Forecast::MovingAverage::generateForecast
 (Forecast* fcst, const double history[], unsigned int count, const double weight[], ForecastSolver* solver)
 {
   double error_smape = 0.0, error_smape_weights = 0.0;
@@ -291,8 +274,9 @@ pair<double,bool> Forecast::MovingAverage::generateForecast
   if (solver->getLogLevel()>0)
     logger << (fcst ? fcst->getName() : "") << ": moving average : "
         << "smape " << error_smape
-        << ", forecast " << avg << endl;
-  return pair<double,bool>(error_smape,false);
+        << ", forecast " << avg
+        << ", standard deviation " << standarddeviation << endl;
+  return Forecast::Metrics(error_smape, standarddeviation, false);
 }
 
 
@@ -318,13 +302,13 @@ double Forecast::SingleExponential::min_alfa = 0.03;
 double Forecast::SingleExponential::max_alfa = 1.0;
 
 
-pair<double,bool> Forecast::SingleExponential::generateForecast
+Forecast::Metrics Forecast::SingleExponential::generateForecast
 (Forecast* fcst, const double history[], unsigned int count, const double weight[], ForecastSolver* solver)
 {
   // Verify whether this is a valid forecast method.
   //   - We need at least 5 buckets after the warmup period.
   if (count < fcst->getForecastSkip() + 5)
-    return pair<double,bool>(DBL_MAX,false);
+    return Forecast::Metrics(DBL_MAX, DBL_MAX, false);
 
   unsigned int iteration = 1;
   bool upperboundarytested = false;
@@ -478,7 +462,7 @@ pair<double,bool> Forecast::SingleExponential::generateForecast
         << ", " << iteration << " iterations"
         << ", forecast " << f_i
         << ", standard deviation " << best_standarddeviation << endl;
-  return pair<double,bool>(best_smape,false);
+  return Forecast::Metrics(best_smape, best_standarddeviation, false);
 }
 
 
@@ -507,13 +491,13 @@ double Forecast::DoubleExponential::max_gamma = 1.0;
 double Forecast::DoubleExponential::dampenTrend = 0.8;
 
 
-pair<double,bool> Forecast::DoubleExponential::generateForecast
+Forecast::Metrics Forecast::DoubleExponential::generateForecast
 (Forecast* fcst, const double history[], unsigned int count, const double weight[], ForecastSolver* solver)
 {
   // Verify whether this is a valid forecast method.
   //   - We need at least 5 buckets after the warmup period.
   if (count < fcst->getForecastSkip() + 5)
-    return pair<double,bool>(DBL_MAX,false);
+    return Forecast::Metrics(DBL_MAX, DBL_MAX, false);
 
   // Define variables
   double error=0.0, error_smape=0.0, error_smape_weights=0.0, delta_alfa, delta_gamma, determinant;
@@ -728,7 +712,7 @@ pair<double,bool> Forecast::DoubleExponential::generateForecast
         << ", trend " << trend_i
         << ", forecast " << (trend_i + constant_i)
         << ", standard deviation " << best_standarddeviation << endl;
-  return pair<double,bool>(best_smape,false);
+  return Forecast::Metrics(best_smape, best_standarddeviation, false);
 }
 
 
@@ -837,7 +821,7 @@ void Forecast::Seasonal::detectCycle(const double history[], unsigned int count)
 }
 
 
-pair<double,bool> Forecast::Seasonal::generateForecast  // TODO No outlier detection in this method
+Forecast::Metrics Forecast::Seasonal::generateForecast  // TODO No outlier detection in this method
 (Forecast* fcst, const double history[], unsigned int count, const double weight[], ForecastSolver* solver)
 {
   // Check for seasonal cycles
@@ -845,7 +829,7 @@ pair<double,bool> Forecast::Seasonal::generateForecast  // TODO No outlier detec
 
   // Return if no seasonality is found
   if (!period)
-    return pair<double,bool>(DBL_MAX, false);
+    return Forecast::Metrics(DBL_MAX, DBL_MAX, false);
 
   // Define variables
   double error=0.0, error_smape=0.0, error_smape_weights=0.0, determinant, delta_alfa, delta_beta;
@@ -1095,9 +1079,9 @@ pair<double,bool> Forecast::Seasonal::generateForecast  // TODO No outlier detec
         << endl;
 
   // If the autocorrelation is high enough (ie there is a very obvious
-  // seasonal pattern) the second element in the pair is "true".
+  // seasonal pattern) the third element in the return struct is "true".
   // This enforces the use of the seasonal method.
-  return pair<double,bool>(best_smape, autocorrelation > max_autocorrelation);
+  return Forecast::Metrics(best_smape, best_standarddeviation, autocorrelation > max_autocorrelation);
 }
 
 
@@ -1131,7 +1115,7 @@ double Forecast::Croston::max_alfa = 1.0;
 double Forecast::Croston::min_intermittence = 0.33;
 
 
-pair<double,bool> Forecast::Croston::generateForecast
+Forecast::Metrics Forecast::Croston::generateForecast
 (Forecast* fcst, const double history[], unsigned int count, const double weight[], ForecastSolver* solver)
 {
   // Count non-zero buckets
@@ -1257,7 +1241,7 @@ pair<double,bool> Forecast::Croston::generateForecast
         << ", " << iteration << " iterations"
         << ", forecast " << f_i
         << ", standard deviation " << best_standarddeviation << endl;
-  return pair<double,bool>(best_smape, false);
+  return Forecast::Metrics(best_smape, best_standarddeviation, false);
 }
 
 
