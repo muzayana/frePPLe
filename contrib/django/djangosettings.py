@@ -377,12 +377,14 @@ DEFAULT_DASHBOARD = [
 
 # The following settings are for the 2 factor email registration on the cloud setup
 ACCOUNT_ACTIVATION_DAYS = 7 # One-week activation window; you may, of course, use a different value.
-site = { 'id':1, 'domain':'127.0.0.1:8000', 'name':'127.0.0.1:8000',}
+site = { 'id':1, 'domain':'127.0.0.1:8000', 'name':'frePPLe Cloud',}
 EMAIL_USE_TLS = True
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_HOST_USER = 'user@frepple.com'
 EMAIL_HOST_PASSWORD = 'Password'
 EMAIL_PORT = 587
+LOGIN_URL = '/'
+DEFAULT_USER_GROUP = 'cloudgroup'
 
 
 # Port number for the CherryPy web server

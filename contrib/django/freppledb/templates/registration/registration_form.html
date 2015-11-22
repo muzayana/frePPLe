@@ -1,12 +1,51 @@
 {% extends "registration/registration_base.html" %}
 {% load i18n %}
 
-{% block title %}{% trans "Register for an account" %}{% endblock %}
+function copyfield(f) {
+    f.id_username.value = f.id_email.value;
+}
+
+
+{% block extrastyle %}{{block.super}}<link rel="stylesheet" type="text/css" href="{{STATIC_URL}}admin/css/login.css" />
+<style>
+  #headerbar {
+    background-color: transparent;
+  }
+  #login-form, #content {
+    margin-top: 0px;
+  }
+  body.login {
+    background: white;
+  }
+  .login #container {
+    border: none;
+  }
+  input[type=submit] {
+    background: #838d11;
+    color: #fff;
+    padding: 10px 20px 10px 20px;
+  }
+</style>
+{% endblock %}
+
+{% block branding %}<img style="display:block; margin-left:auto; margin-right:auto" src="{{STATIC_URL}}img/frepple_logo.svg" height="94" width="240" alt="frePPLe&nbsp;{% version %}">{% endblock %}
+
+{% block bodyclass %}login{% endblock %}
+
+{% block content_title %}{% trans "Register for a frePPLe account" %}{% endblock %}
 
 {% block content %}
-<form method="post" action="">
+
+
+
+<form method="post" action=""  onSubmit ="copyfield(this.form)">
     {% csrf_token %}
-    {{ form.as_p }}
+      <p class="required"><label class="required" for="id_email">E-mail:</label> <input id="id_email" name="email" type="email" value="" /></p>
+      <br>
+      <p class="required"><label class="required" for="id_username"></label> <input id="id_username" maxlength="30" name="username" type="text" style="display:none;" value="frePPle"/> </p>
+      <p class="required"><label class="required" for="id_password1">Password:</label> <input id="id_password1" name="password1" type="password" /></p>
+      <p> <span class="helptext">Enter the same password as above, for verification.</span></p>
+      <p class="required"><label class="required" for="id_password2">Password confirmation:</label> <input id="id_password2" name="password2" type="password" /></p>
     <input type="submit" value="{% trans 'Submit' %}" />
 </form>
 {% endblock %}
