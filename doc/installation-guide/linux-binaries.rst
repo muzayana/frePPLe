@@ -76,10 +76,12 @@ Here are the steps to get a fully working environment.
        create user USR with password 'PWD';
        create database DB encoding 'utf-8' owner USR;
 
+#. **Install the Python database drivers**
+
+   You'll need to install the python-psycopg2 (or python3-psycopg2 depending on your linux distribution) package for PostgreSQL.
+
 #. **Install the Python database drivers, Django and other python modules**
 
-   You should install the python-psycopg2 (or python3-psycopg2) package from your linux distribution.
-   
    Since frePPle requires some patches to the standard Django package,
    you can't install the binary package that comes with your Linux distribution.
 

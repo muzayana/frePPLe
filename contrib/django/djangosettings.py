@@ -19,6 +19,7 @@ try:
 except:
   DEBUG = False
 
+
 ADMINS = (
     # ('Your Name', 'your_email@domain.com'),
 )
@@ -33,7 +34,7 @@ SECRET_KEY = '%@mzit!i8b*$zc&6oev96=RANDOMSTRING'
 DATABASES = {
   'default': {
     'ENGINE': 'django.db.backends.postgresql_psycopg2',
-    'NAME': 'frepple',
+    'NAME': 'Enterprise',
     'USER': 'frepple',
     'PASSWORD': 'frepple',
     'HOST': '',     # Set to empty string for localhost.
@@ -43,21 +44,19 @@ DATABASES = {
       'NAME': 'test_frepple' # Database name used when running the test suite.
       }
     },
-  'scenario1': {
+  'Tires': {
     'ENGINE': 'django.db.backends.postgresql_psycopg2',
-    'NAME': 'scenario1',
+    'NAME': 'Tires',
     'USER': 'frepple',
     'PASSWORD': 'frepple',
     'HOST': '',     # Set to empty string for localhost.
     'OPTIONS': {},  # Backend specific configuration parameters.
     'PORT': '',     # Set to empty string for default.
-    'TEST': {
-      'NAME': 'test_scenario1' # Database name used when running the test suite.
-      }
+    'TEST_NAME': 'tires'    # Database for running the test suite
     },
-  'scenario2': {
+  'Polchem': {
     'ENGINE': 'django.db.backends.postgresql_psycopg2',
-    'NAME': 'scenario2',
+    'NAME': 'Polchem',
     'USER': 'frepple',
     'PASSWORD': 'frepple',
     'HOST': '',     # Set to empty string for localhost.
@@ -67,9 +66,9 @@ DATABASES = {
       'NAME': 'test_scenario2' # Database name used when running the test suite.
       }
     },
-  'scenario3': {
+  'Escenario3': {
     'ENGINE': 'django.db.backends.postgresql_psycopg2',
-    'NAME': 'scenario3',
+    'NAME': 'Escenario3',
     'USER': 'frepple',
     'PASSWORD': 'frepple',
     'HOST': '',     # Set to empty string for localhost.
@@ -95,7 +94,7 @@ OODO_PASSWORDS = {
 # If passwords are set in this file they will be used instead of the ones set in the database parameters table
 OPENBRAVO_PASSWORDS = {
   'default': '',
-  'scenario1': '',
+  'Tires': '',
   'scenario2': '',
   'scenario3': ''
   }
@@ -178,6 +177,7 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
     'freppledb.boot',
     'freppledb.quoting',
     'freppledb.inventoryplanning',
@@ -189,7 +189,6 @@ INSTALLED_APPS = (
     'freppledb.output',
     'freppledb.execute',
     'freppledb.common',
-    'rest_framework',
 )
 
 # Custom attribute fields in the database
@@ -238,7 +237,12 @@ REST_FRAMEWORK = {
   'DEFAULT_RENDERER_CLASSES': (
     'rest_framework.renderers.JSONRenderer',
     'freppledb.common.api.renderers.freppleBrowsableAPI',
-  )
+  ),
+
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+#    'PAGE_SIZE': 100,                 # Default to 10
+    # Use Django's standard `django.contrib.auth` permissions,
+    # or allow read-only access for unauthenticated users.
 }
 
 LOCALE_PATHS = (
@@ -372,6 +376,5 @@ DEFAULT_DASHBOARD = [
     ("inventory_by_item",{"limit":10}),
   ]},
   ]
-
 # Port number for the CherryPy web server
 PORT = 8000
