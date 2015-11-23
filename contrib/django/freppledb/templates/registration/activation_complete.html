@@ -1,23 +1,31 @@
-{% extends "admin/base.html" %}
+{% extends "registration/registration_base.html" %}
 {% load i18n %}
-{% block title %}{% if title %}{{title|capfirst}} - {% endif %}frePPLe{% endblock %}
-{% block branding %}<img src="{{STATIC_URL}}img/frepple.svg" height="40" width="124" alt="frePPLe&nbsp;{% version %}">{% endblock %}
-{% block extrastyle %}{{block.super}}<link rel="stylesheet" type="text/css" media="screen" href="{{STATIC_URL}}css/{{request.theme}}/jquery-ui.min.css" />
-<link rel="stylesheet" type="text/css" media="screen" href="{{STATIC_URL}}css/font-awesome.min.css" />
-<link rel="stylesheet" type="text/css" media="screen" href="{{STATIC_URL}}css/ui.jqgrid.css" />
-<link rel="stylesheet" type="text/css" media="screen" href="{{STATIC_URL}}css/uix.multiselect.css" />
-<link rel="stylesheet" type="text/css" href="{{STATIC_URL}}css/frepple.css" />
-<link rel="stylesheet" type="text/css" href="{{STATIC_URL}}css/{{request.theme}}/custom.css" />
-<link rel="shortcut icon" href="{{STATIC_URL}}favicon.ico"/>
+
+{% block extrastyle %}{{block.super}}<link rel="stylesheet" type="text/css" href="{{STATIC_URL}}admin/css/login.css" />
+<style>
+  #headerbar {
+    background-color: transparent;
+  }
+  #login-form, #content {
+    margin-top: 0px;
+  }
+  body.login {
+    background: white;
+  }
+  .login #container {
+    border: none;
+  }
+</style>
 {% endblock %}
+{% block bodyclass %}login{% endblock %}
 
 {% block title_content %}{% trans "Account Activated" %}{% endblock %}
 
 {% block content %}
 <p>
     {% trans "Your account is now activated." %}
-    {% if not user.is_authenticated %}
-    {% trans "You can log in." %}
+    {% if not user.is_authenticated %}<br>
+    {% trans "You may now:" %}&nbsp;<a href="{{ login_url }}"><strong>{% trans "log in" %}</strong></a>.
     {% endif %}
 </p>
 {% endblock %}

@@ -1,1 +1,47 @@
-{% extends "admin/base.html" %}
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block extrastyle %}{{block.super}}<link rel="stylesheet" type="text/css" href="{{STATIC_URL}}admin/css/login.css" />
+<style>
+  #headerbar {
+    background-color: transparent;
+  }
+  #login-form, #content {
+    margin-top: 0px;
+  }
+  body.login {
+    background: white;
+  }
+  .login #container {
+    border: none;
+  }
+  input[type=submit] {
+    background: #838d11;
+    color: #fff;
+    padding: 10px 20px 10px 20px;
+  }
+.login .form-row input {
+    clear: both;
+    padding: 6px;
+    width: 100%;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+}
+input[type=submit] {
+    background: #838d11;
+    color: #fff;
+    padding: 10px 20px 10px 20px;
+  }
+</style>
+{% endblock %}
+
+{% block branding %}<img style="display:block; margin-left:auto; margin-right:auto" src="{{STATIC_URL}}img/frepple_logo.svg" height="94" width="240" alt="frePPLe&nbsp;{% version %}">{% endblock %}
+
+{% block bodyclass %}login{% endblock %}
+
+{% block nav-global %}{% endblock %}
+
+{% block content_title %}{% endblock %}
+
+{% block breadcrumbs %}{% endblock %}

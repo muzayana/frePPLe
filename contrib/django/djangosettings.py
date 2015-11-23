@@ -385,6 +385,7 @@ EMAIL_HOST_PASSWORD = 'Password'
 EMAIL_PORT = 587
 LOGIN_URL = '/'
 DEFAULT_USER_GROUP = 'cloudgroup'
+REGISTRATION_FORM =  'freppledb.registration.forms.RegistrationfrePPLeCloud' #'registration.forms.RegistrationFormNoFreeEmail'
 
 
 # Port number for the CherryPy web server

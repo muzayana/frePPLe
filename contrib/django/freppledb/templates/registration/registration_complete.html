@@ -15,17 +15,9 @@
   .login #container {
     border: none;
   }
-  input[type=submit] {
-    background: #838d11;
-    color: #fff;
-    padding: 10px 20px 10px 20px;
-  }
 </style>
 {% endblock %}
 
-{% block branding %}<img style="display:block; margin-left:auto; margin-right:auto" src="{{STATIC_URL}}img/frepple_logo.svg" height="94" width="240" alt="frePPLe&nbsp;{% version %}">{% endblock %}
-
-{% block bodyclass %}login{% endblock %}
 
 {% block title %}{% trans "Activation email sent" %}{% endblock %}
 
