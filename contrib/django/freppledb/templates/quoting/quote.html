@@ -2,7 +2,8 @@
 {% load i18n %}
 
 {% block extrahead %}{{block.super}}
-<script type="text/javascript" src="/static/admin/js/admin/RelatedObjectLookups.js"></script>
+<script type="text/javascript" src="{{STATIC_URL}}admin/js/admin/RelatedObjectLookups.js"></script>
+<link rel="stylesheet" type="text/css" href="{{STATIC_URL}}admin/css/forms.css" />
 <style>
 #id_name, #id_description {
   width: 20em;
@@ -28,38 +29,45 @@ function extraPreference() {
 
 function getQuote(event)
 {
-  var $demand = $('<demand/>');
-  $demand.attr("name",$("#id_name").val())
-    .append( $('<description/>').text($("#id_description").val()) )
+  var demand = $('<demand/>');
+  demand.attr("name",$("#id_name").val())
     .append( $('<quantity/>').text($("#id_quantity").val()) )
     .append( $('<item/>').attr("name", $("#id_item").val()) )
-    .append( $('<due/>').text($("#id_due_0").val() + 'T' + $("#id_due_1").val()) )
+    .append( $('<due/>').text($("#id_due_0").val() + 'T' + $("#id_due_1").val()) )    
     .append( $('<priority>1000000</priority>') );
-  var v = $("#id_customer").val();
+  var v = $("#id_description").val();
   if (v!=null && v!='')
-    $demand.append( $('<customer/>').attr("name", v) );
+    demand.append( $('<description/>').text(v) );
+  v = $("#id_location").val();
+  if (v!=null && v!='')
+    demand.append( $('<location/>').attr("name", v) )
+  v = $("#id_customer").val();
+  if (v!=null && v!='')
+    demand.append( $('<customer/>').attr("name", v) );
   v = $("#id_minshipment").val();
   if (v!=null && v!='' && !isNaN(v))
-    $demand.append( $('<minshipment/>').text(v) );
+    demand.append( $('<minshipment/>').text(v) );
   else
-    $demand.append( $('<minshipment/>').text(0) );
+    demand.append( $('<minshipment/>').text(0) );
   v = $("#id_maxlateness").val();
   if (v!=null && v!='')
-    $demand.append( $('<maxlateness/>').text(v) );
-  var $demands = $('<demands/>').append($demand);
-  var $plan = $('<plan/>').attr("xmlns:xsi","http://www.w3.org/2001/XMLSchema-instance").append($demands);
-  var $root = $('<XMLDocument />').append($plan);
+    demand.append( $('<maxlateness/>').text(v) );
+  var demands = $('<demands/>').append(demand);
+  var plan = $('<plan/>').attr("xmlns:xsi","http://www.w3.org/2001/XMLSchema-instance").append(demands);
+  var root = $('<XMLDocument />').append(plan);
   $.ajax({
     type: 'POST',
     url: '{{request.prefix}}/quote/quote/',
     contentType: 'application/xml; charset=utf-8',
-    data: $root.html(),
+    data: root.html(),
     dataType: 'xml',
     success: function (xmldata, status, jqXHR) {
-      $("#id_name").val($(xmldata).find('demands > demand').attr('name'));
+    	console.log(xmldata);
+      $("#id_name").val($(xmldata).find('demands > demand > name').text());
       $("#id_description").val($(xmldata).find('demands > demand > description').text());
-      $("#id_item").val($(xmldata).find('demands > demand > item').attr('name'));
-      $("#id_customer").val($(xmldata).find('demands > demand > customer').attr('name'));
+      $("#id_item").val($(xmldata).find('demands > demand > item > name').text());
+      $("#id_customer").val($(xmldata).find('demands > demand > customer > name').text());
+      $("#id_location").val($(xmldata).find('demands > demand > location > name').text());
       $("#id_quantity").val($(xmldata).find('demands > demand > quantity').text());
       var due = $(xmldata).find('demands > demand > due').text();
       $("#id_due_0").val(due.substring(0,10));
@@ -96,37 +104,43 @@ function getQuote(event)
 
 function inquireQuote(event)
 {
-  var $demand = $('<demand/>');
-  $demand.attr("name",$("#id_name").val())
-    .append( $('<description/>').text($("#id_description").val()) )
+  var demand = $('<demand/>');
+  demand.attr("name",$("#id_name").val())
     .append( $('<quantity/>').text($("#id_quantity").val()) )
     .append( $('<item/>').attr("name", $("#id_item").val()) )
     .append( $('<due/>').text($("#id_due_0").val() + 'T' + $("#id_due_1").val()) )
     .append( $('<priority>1000000</priority>') );
-  var v = $("#id_customer").val();
+  var v = $("#id_description").val();
   if (v!=null && v!='')
-    $demand.append( $('<customer/>').attr("name", v) );
-  v = $("#id_minshipment").val();
+    demand.append( $('<description/>').text(v) );
+  v = $("#id_location").val();
+  if (v!=null && v!='')
+    demand.append( $('<location/>').attr("name", v) )
+  v = $("#id_customer").val();
+  if (v!=null && v!='')
+    demand.append( $('<customer/>').attr("name", v) );
+  v = ("#id_minshipment").val();
   if (v!=null && v!='' && !isNaN(v))
-    $demand.append( $('<minshipment/>').text(v) );
+    demand.append( $('<minshipment/>').text(v) );
   else
-    $demand.append( $('<minshipment/>').text(0) );
+    demand.append( $('<minshipment/>').text(0) );
   v = $("#id_maxlateness").val();
   if (v!=null && v!='')
-    $demand.append( $('<maxlateness/>').text(v) );
-  var $demands = $('<demands/>').append($demand);
-  var $plan = $('<plan/>').attr("xmlns:xsi","http://www.w3.org/2001/XMLSchema-instance").append($demands);
-  var $root = $('<XMLDocument />').append($plan);
+    demand.append( $('<maxlateness/>').text(v) );
+  var demands = $('<demands/>').append(demand);
+  var plan = $('<plan/>').attr("xmlns:xsi","http://www.w3.org/2001/XMLSchema-instance").append(demands);
+  var root = $('<XMLDocument />').append(plan);
   $.ajax({
     type: 'POST',
     url: '{{request.prefix}}/quote/inquiry/',
     contentType: 'application/xml; charset=utf-8',
-    data: $root.html(),
+    data: root.html(),
     dataType: 'xml',
     success: function (xmldata, status, jqXHR) {
       $("#id_name").val($(xmldata).find('demands > demand').attr('name'));
       $("#id_description").val($(xmldata).find('demands > demand > description').text());
       $("#id_item").val($(xmldata).find('demands > demand > item').attr('name'));
+      $("#id_location").val($(xmldata).find('demands > demand > location').attr('name'));
       $("#id_customer").val($(xmldata).find('demands > demand > customer').attr('name'));
       $("#id_quantity").val($(xmldata).find('demands > demand > quantity').text());
       var due = $(xmldata).find('demands > demand > due').text();
@@ -176,6 +190,7 @@ function cancelQuote(event)
       $("#id_description").val('');
       $("#id_item").val('');
       $("#id_customer").val('');
+      $("#id_location").val('');      
       $("#id_quantity").val('1');
       $("#id_due_0").val('');
       $("#id_due_1").val('00:00:00');
@@ -210,6 +225,7 @@ function confirmQuote(event)
       $("#id_description").val('');
       $("#id_item").val('');
       $("#id_customer").val('');
+      $("#id_location").val('');   
       $("#id_quantity").val('1');
       $("#id_due_0").val('');
       $("#id_due_1").val('00:00:00');
@@ -243,6 +259,7 @@ function displayInfo(rowid) {
       $("#id_description").val($(xmldata).find('demands > demand > description').text());
       $("#id_item").val($(xmldata).find('demands > demand > item').attr('name'));
       $("#id_customer").val($(xmldata).find('demands > demand > customer').attr('name'));
+      $("#id_location").val($(xmldata).find('demands > demand > location').attr('name'));
       $("#id_quantity").val($(xmldata).find('demands > demand > quantity').text());
       var due = $(xmldata).find('demands > demand > due').text();
       $("#id_due_0").val(due.substring(0,10));

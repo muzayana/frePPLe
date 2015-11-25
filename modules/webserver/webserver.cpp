@@ -141,6 +141,7 @@ PyObject* runWebServer (PyObject* self, PyObject* args, PyObject* kwds)
       DatabaseWriter::launchWriter(database_connection);
       // Load chat history
       WebServer::loadChatHistory(database_connection);
+      WebServer::setConnectionString(database_connection);
     }
   }
 

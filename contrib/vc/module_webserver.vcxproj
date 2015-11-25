@@ -221,6 +221,7 @@
     <ClCompile Include="..\..\modules\webserver\http_post.cpp" />
     <ClCompile Include="..\..\modules\webserver\json.cpp" />
     <ClCompile Include="..\..\modules\webserver\module.cpp" />
+    <ClCompile Include="..\..\modules\webserver\quoting.cpp" />
     <ClCompile Include="..\..\modules\webserver\webclient.cpp" />
     <ClCompile Include="..\..\modules\webserver\webserver.cpp" />
     <ClCompile Include="..\..\modules\webserver\websocket_chat.cpp" />

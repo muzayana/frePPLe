@@ -70,5 +70,8 @@
     <ClCompile Include="..\..\modules\webserver\webtoken.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\modules\webserver\quoting.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

@@ -8,7 +8,7 @@ CLEANFILES = *.gcda *.gcov *.gcno
 
 pkglib_LTLIBRARIES = mod_webserver.la
 mod_webserver_la_LDFLAGS = -module -shrext .so -avoid-version
-mod_webserver_la_SOURCES = CivetServer.cpp civetweb.c module.cpp webserver.cpp webclient.cpp http_get.cpp http_post.cpp http_delete.cpp websocket_get.cpp websocket_chat.cpp json.cpp database.cpp webtoken.cpp
+mod_webserver_la_SOURCES = CivetServer.cpp civetweb.c module.cpp webserver.cpp webclient.cpp http_get.cpp http_post.cpp http_delete.cpp websocket_get.cpp websocket_chat.cpp json.cpp database.cpp webtoken.cpp quoting.cpp
 mod_webserver_la_LIBADD = ../../src/libfrepple.la
 if CYGWIN
 mod_webserver_la_CPPFLAGS = -DUSE_IPV6 -DUSE_WEBSOCKET -DNO_SSL -DNO_CGI

@@ -101,6 +101,7 @@ class PublisherBase;
 /** @brief A simple wrapper around an SQL statement with arguments.
   *
   * TODO: make this class more lightweight to copy and create?
+  * TODO: more flexible argument type handling?
   */
 class DatabaseStatement
 {
@@ -110,21 +111,41 @@ class DatabaseStatement
     DatabaseStatement(string s)
       : sql(s), args(0) {};
 
-    /** Constructor. */
     DatabaseStatement(string s, string a1)
-      : sql(s), args(1), arg1(a1) {};
+      : sql(s), args(1) { arg[0] = a1; }
 
-    /** Constructor. */
     DatabaseStatement(string s, string a1, string a2)
-      : sql(s), args(2), arg1(a1), arg2(a2) {};
+      : sql(s), args(2) { arg[0]=a1; arg[1]=a2; }
 
-    /** Constructor. */
     DatabaseStatement(string s, string a1, string a2, string a3)
-      : sql(s), args(3), arg1(a1), arg2(a2), arg3(a3) {};
+      : sql(s), args(3) { arg[0]=a1; arg[1]=a2; arg[1]=a3; }
 
-    /** Constructor. */
     DatabaseStatement(string s, string a1, string a2, string a3, string a4)
-      : sql(s), args(4), arg1(a1), arg2(a2), arg3(a3), arg4(a4) {};
+      : sql(s), args(4) { arg[0]=a1; arg[1]=a2; arg[2]=a3; arg[3]=a4; }
+
+    DatabaseStatement(string s, string a1, string a2, string a3, string a4, string a5)
+      : sql(s), args(5) { arg[0]=a1; arg[1]=a2; arg[2]=a3; arg[3]=a4; arg[4]=a5; }
+
+    DatabaseStatement(string s, string a1, string a2, string a3, string a4, string a5, string a6)
+      : sql(s), args(6) { arg[0]=a1; arg[1]=a2; arg[2]=a3; arg[3]=a4; arg[4]=a5; arg[5]=a6; }
+
+    DatabaseStatement(string s, string a1, string a2, string a3, string a4, string a5, string a6, string a7)
+      : sql(s), args(7) { arg[0]=a1; arg[1]=a2; arg[2]=a3; arg[3]=a4; arg[4]=a5; arg[5]=a6; arg[6]=a7; }
+
+    DatabaseStatement(string s, string a1, string a2, string a3, string a4, string a5, string a6, string a7, string a8)
+      : sql(s), args(8) { arg[0]=a1; arg[1]=a2; arg[2]=a3; arg[3]=a4; arg[4]=a5; arg[5]=a6; arg[6]=a7; arg[7]=a8; }
+
+    DatabaseStatement(string s, string a1, string a2, string a3, string a4, string a5, string a6, string a7, string a8, string a9)
+      : sql(s), args(9) { arg[0]=a1; arg[1]=a2; arg[2]=a3; arg[3]=a4; arg[4]=a5; arg[5]=a6; arg[6]=a7; arg[7]=a8; arg[8]=a9; }
+
+    DatabaseStatement(string s, string a1, string a2, string a3, string a4, string a5, string a6, string a7, string a8, string a9, string a10)
+      : sql(s), args(10) { arg[0]=a1; arg[1]=a2; arg[2]=a3; arg[3]=a4; arg[4]=a5; arg[5]=a6; arg[6]=a7; arg[7]=a8; arg[8]=a9; arg[9]=a10; }
+
+    DatabaseStatement(string s, string a1, string a2, string a3, string a4, string a5, string a6, string a7, string a8, string a9, string a10, string a11)
+      : sql(s), args(11) { arg[0]=a1; arg[1]=a2; arg[2]=a3; arg[3]=a4; arg[4]=a5; arg[5]=a6; arg[6]=a7; arg[7]=a8; arg[8]=a9; arg[9]=a10; arg[10]=a11;}
+
+    DatabaseStatement(string s, string a1, string a2, string a3, string a4, string a5, string a6, string a7, string a8, string a9, string a10, string a11, string a12)
+      : sql(s), args(12) { arg[0]=a1; arg[1]=a2; arg[2]=a3; arg[3]=a4; arg[4]=a5; arg[5]=a6; arg[6]=a7; arg[7]=a8; arg[8]=a9; arg[9]=a10; arg[10]=a11; arg[11]=a12;}
 
     /** Execute the statement on a database connection. */
     PGresult *execute(PGconn*) const;
@@ -132,10 +153,7 @@ class DatabaseStatement
   private:
     string sql;
     short int args;
-    string arg1;
-    string arg2;
-    string arg3;
-    string arg4;
+    string arg[12];
 };
 
 
@@ -143,13 +161,15 @@ inline ostream& operator<<(ostream &os, const DatabaseStatement& stmt)
 {
   os << stmt.sql;
   if (stmt.args > 0)
-    os << " with arguments " << stmt.arg1;
-  if (stmt.args > 1)
-    os << ", " << stmt.arg2;
-  if (stmt.args > 2)
-    os << ", " << stmt.arg3;
-  if (stmt.args > 3)
-    os << ", " << stmt.arg4;
+  {
+    for (int i = 0; i < stmt.args; ++i)
+    {
+      if (i)
+        os << ", " << stmt.arg[i];
+      else
+        os << " with arguments " << stmt.arg[i];
+    }
+  }
   return os;
 }
 
@@ -285,6 +305,14 @@ class DatabaseWriter : public NonCopyable
     static void pushStatement(const string&, const string&, const string&);
     static void pushStatement(const string&, const string&, const string&, const string&);
     static void pushStatement(const string&, const string&, const string&, const string&, const string&);
+    static void pushStatement(const string&, const string&, const string&, const string&, const string&, const string&);
+    static void pushStatement(const string&, const string&, const string&, const string&, const string&, const string&, const string&);
+    static void pushStatement(const string&, const string&, const string&, const string&, const string&, const string&, const string&, const string&);
+    static void pushStatement(const string&, const string&, const string&, const string&, const string&, const string&, const string&, const string&, const string&);
+    static void pushStatement(const string&, const string&, const string&, const string&, const string&, const string&, const string&, const string&, const string&, const string&);
+    static void pushStatement(const string&, const string&, const string&, const string&, const string&, const string&, const string&, const string&, const string&, const string&, const string&);
+    static void pushStatement(const string&, const string&, const string&, const string&, const string&, const string&, const string&, const string&, const string&, const string&, const string&, const string&);
+    static void pushStatement(const string&, const string&, const string&, const string&, const string&, const string&, const string&, const string&, const string&, const string&, const string&, const string&, const string&);
 
     /** Method to launch a singleton database writer.
       * An exception is thrown if the writer is already launched.
@@ -608,6 +636,11 @@ class WebServer : public CivetHandler
     /** Load the recent chat history from the database into a memory buffer. */
     static void loadChatHistory(const string&);
 
+    static void setConnectionString(const string& c)
+    {
+      connectionstring = c;
+    }
+
   private:
     /** Flag to trigger shutting down the server. */
     bool *exitNow;
@@ -630,11 +663,117 @@ class WebServer : public CivetHandler
     /** Dispatcher for websocket data in the form: /unregister/ */
     static int websocket_unregister(struct mg_connection*, int, char*, size_t, WebClient*);
 
-    /** Recent chat messages kept in memory. */
-    static list<string> history;
+    /** Handler for order quoting logic.
+      * Second argument is 'true' for a quote and 'false' for an inquiry.
+      */
+    bool quote_or_inquiry(struct mg_connection*, bool);
 
     /** Builds the main index page. */
     static void buildIndex(string&);
+
+    /** Recent chat messages kept in memory. */
+    static list<string> chat_history;
+
+    /** Verbosity level for the quoting service. */
+    static short loglevel;
+
+    static string connectionstring;
+};
+
+
+/** Parser for multi-part post data sent to the web server.
+  *
+  * This code is copied & inspired on https://github.com/iafonov/multipart-parser-c
+  * which is published under MIT License.
+  */
+class MultiPartParser
+{
+  private:
+    enum multipart_parser_state
+    {
+      s_uninitialized = 1,
+      s_start,
+      s_start_boundary,
+      s_header_field_start,
+      s_header_field,
+      s_headers_almost_done,
+      s_header_value_start,
+      s_header_value,
+      s_header_value_almost_done,
+      s_part_data_start,
+      s_part_data,
+      s_part_data_almost_boundary,
+      s_part_data_boundary,
+      s_part_data_almost_end,
+      s_part_data_end,
+      s_part_data_final_hyphen,
+      s_end
+    };
+
+    int on_header_field(const char *at, size_t length)
+    {
+      logger << "headerfield: " << string(at).substr(0, length) << endl;
+      return 0;
+    }
+
+    int on_header_value(const char *at, size_t length)
+    {
+      logger << "headervalue: " << string(at).substr(0, length) << endl;
+      return 0;
+    }
+
+    int on_part_data(const char *at, size_t length)
+    {
+      logger << "partdata: " << string(at).substr(0, length) << endl;
+      return 0;
+    }
+
+    int on_part_data_begin()
+    {
+      return 0;
+    }
+
+    int on_headers_complete()
+    {
+      return 0;
+    }
+
+    int on_part_data_end()
+    {
+      return 0;
+    }
+
+    int on_body_end()
+    {
+      return 0;
+    }
+
+    size_t index;
+    size_t boundary_length;
+
+    void* data;
+
+    unsigned char state;
+
+    char* lookbehind;
+
+    string multipart_boundary;
+
+
+  public:
+    MultiPartParser(char *boundary);
+
+    size_t execute(const char *buf, size_t len);
+
+    void multipart_parser_set_data(void* d)
+    {
+      data = d;
+    }
+
+    void* multipart_parser_get_data()
+    {
+      return data;
+    }
 };
 
 
