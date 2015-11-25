@@ -14,20 +14,21 @@
 # You should have received a copy of the GNU Affero General Public
 # License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # 
+# Joao Ranita <jranita@frepple.com>, 2015.
 msgid ""
 msgstr ""
 "Project-Id-Version: 3.0.beta\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-10-23 16:27+0200\n"
-"PO-Revision-Date: 2014-10-26 11:51+0100\n"
-"Last-Translator: Johan De Taeye <jdetaeye@frepple.com>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
+"POT-Creation-Date: 2015-11-22 14:53+0100\n"
+"PO-Revision-Date: 2015-11-25 11:28+0200\n"
+"Last-Translator: Joao Ranita <jranita@frepple.com>\n"
+"Language-Team: frepple\n"
+"Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Poedit 1.5.4\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Virtaal 0.7.1\n"
 
 #: .\common\static\js\frepple.js:41
 msgid "There are unsaved changes on this page."
@@ -45,199 +46,191 @@ msgstr "先保存或取消你的变动。"
 msgid "Save"
 msgstr "保存"
 
-#: .\common\static\js\frepple.js:127 .\common\static\js\frepple.js:573
-#: .\common\static\js\frepple.js:842 .\common\static\js\frepple.js:903
-#: .\common\static\js\frepple.js:963 .\common\static\js\frepple.js:1020
-#: .\common\static\js\frepple.js:1358 .\common\static\js\frepple.js:1602
+#: .\common\static\js\frepple.js:127 .\common\static\js\frepple.js:476
+#: .\common\static\js\frepple.js:682 .\common\static\js\frepple.js:743
+#: .\common\static\js\frepple.js:803 .\common\static\js\frepple.js:860
+#: .\common\static\js\frepple.js:1278 .\common\static\js\frepple.js:1522
 msgid "Cancel"
 msgstr "取消"
 
-#: .\common\static\js\frepple.js:419
+#: .\common\static\js\frepple.js:322
 msgid "Select"
 msgstr "选择"
 
-#: .\common\static\js\frepple.js:510 .\common\static\js\frepple.js:1274
+#: .\common\static\js\frepple.js:413 .\common\static\js\frepple.js:1194
 msgid "Customize"
 msgstr "定制"
 
-#: .\common\static\js\frepple.js:516 .\common\static\js\frepple.js:869
-#: .\common\static\js\frepple.js:1281
+#: .\common\static\js\frepple.js:419 .\common\static\js\frepple.js:709
+#: .\common\static\js\frepple.js:1201
 msgid "OK"
 msgstr "确定"
 
-#: .\common\static\js\frepple.js:577
+#: .\common\static\js\frepple.js:480
 msgid "reset"
 msgstr ""
 
-#: .\common\static\js\frepple.js:593 .\common\static\js\frepple.js:698
-#: .\common\static\js\frepple.js:1241 .\common\static\js\frepple.js:1346
+#: .\common\static\js\frepple.js:496 .\common\static\js\frepple.js:601
+#: .\common\static\js\frepple.js:1161 .\common\static\js\frepple.js:1266
 #: .\planningboard\static\planningboard\js\planningboard.js:652
 #: .\planningboard\static\planningboard\js\planningboard.js:1039
 msgid "Error saving report settings"
 msgstr "保存报表设置出错"
 
-#: .\common\static\js\frepple.js:738
-msgid "export selected records to openbravo"
-msgstr ""
-
-#: .\common\static\js\frepple.js:744 .\common\static\js\frepple.js:748
-#, fuzzy
-#| msgid "Export"
-msgid "export"
-msgstr "导出"
-
-#: .\common\static\js\frepple.js:759
-#, fuzzy
-#| msgid "Export"
-msgid "export: OK"
-msgstr "导出"
-
-#: .\common\static\js\frepple.js:761
-msgid "data exported to openbravo"
-msgstr ""
-
-#: .\common\static\js\frepple.js:767
-msgid "close"
-msgstr ""
-
-#: .\common\static\js\frepple.js:774
-#, fuzzy
-#| msgid "Error deleting data"
-msgid "error exporting data"
-msgstr "删除数据出错"
-
-#: .\common\static\js\frepple.js:780
-msgid "retry"
-msgstr ""
-
-#: .\common\static\js\frepple.js:788
-#, fuzzy
-#| msgid "Cancel"
-msgid "cancel"
-msgstr "取消"
-
-#: .\common\static\js\frepple.js:803 .\common\static\js\frepple.js:809
-#, fuzzy
+#: .\common\static\js\frepple.js:643 .\common\static\js\frepple.js:649
 #| msgid "Export"
 msgid "Export format"
-msgstr "导出"
+msgstr ""
 
-#: .\common\static\js\frepple.js:804 .\common\static\js\frepple.js:811
+#: .\common\static\js\frepple.js:644 .\common\static\js\frepple.js:651
 msgid "Spreadsheet list"
 msgstr ""
 
-#: .\common\static\js\frepple.js:805 .\common\static\js\frepple.js:813
+#: .\common\static\js\frepple.js:645 .\common\static\js\frepple.js:653
 msgid "CSV list"
 msgstr ""
 
-#: .\common\static\js\frepple.js:810
+#: .\common\static\js\frepple.js:650
 msgid "Spreadsheet table"
 msgstr ""
 
-#: .\common\static\js\frepple.js:812
+#: .\common\static\js\frepple.js:652
 msgid "CSV table"
 msgstr ""
 
-#: .\common\static\js\frepple.js:816
+#: .\common\static\js\frepple.js:656
 msgid "Export CSV or Excel file"
 msgstr ""
 
-#: .\common\static\js\frepple.js:820
-#, fuzzy
+#: .\common\static\js\frepple.js:660
 #| msgid "Export"
 msgid "Export"
-msgstr "导出"
+msgstr ""
 
-#: .\common\static\js\frepple.js:923
+#: .\common\static\js\frepple.js:763
 #, javascript-format
 msgid "You are about to delete %s objects AND ALL RELATED RECORDS!"
 msgstr "你将会删除 %s 项目和所有相关的记录！"
 
-#: .\common\static\js\frepple.js:925
+#: .\common\static\js\frepple.js:765
 msgid "Delete data"
 msgstr "删除资料"
 
-#: .\common\static\js\frepple.js:932 .\common\static\js\frepple.js:989
+#: .\common\static\js\frepple.js:772 .\common\static\js\frepple.js:829
 msgid "Confirm"
 msgstr "确定"
 
-#: .\common\static\js\frepple.js:950
-#, fuzzy
+#: .\common\static\js\frepple.js:790
 #| msgid "Error deleting data"
 msgid "Error deleting data"
-msgstr "删除数据出错"
+msgstr ""
 
-#: .\common\static\js\frepple.js:980
-#, fuzzy, javascript-format
+#: .\common\static\js\frepple.js:820
+#, javascript-format
 #| msgid "You are about to duplicate %s objects"
 msgid "You are about to duplicate %s objects"
-msgstr "你将要复制%s项目。"
+msgstr ""
 
-#: .\common\static\js\frepple.js:982
+#: .\common\static\js\frepple.js:822
 msgid "Copy data"
 msgstr "复制数据"
 
-#: .\common\static\js\frepple.js:1007
+#: .\common\static\js\frepple.js:847
 msgid "Error copying data"
 msgstr "复制数据出错"
 
-#: .\common\static\js\frepple.js:1044 .\common\static\js\frepple.js:1050
+#: .\common\static\js\frepple.js:884 .\common\static\js\frepple.js:890
 msgid "Filtered where"
 msgstr "过滤"
 
-#: .\common\static\js\frepple.js:1267
+#: .\common\static\js\frepple.js:1059
+msgid "export selected records to openbravo"
+msgstr ""
+
+#: .\common\static\js\frepple.js:1061 .\common\static\js\frepple.js:1065
+#| msgid "Export"
+msgid "export"
+msgstr ""
+
+#: .\common\static\js\frepple.js:1069
+msgid "connecting to openbravo..."
+msgstr ""
+
+#: .\common\static\js\frepple.js:1079
+msgid "Export successful"
+msgstr ""
+
+#: .\common\static\js\frepple.js:1087
+msgid "close"
+msgstr ""
+
+#: .\common\static\js\frepple.js:1099
+#| msgid "Error saving report settings"
+msgid "Error during export"
+msgstr ""
+
+#: .\common\static\js\frepple.js:1100
+msgid "retry"
+msgstr ""
+
+#: .\common\static\js\frepple.js:1106
+#| msgid "Cancel"
+msgid "cancel"
+msgstr ""
+
+#: .\common\static\js\frepple.js:1187
 msgid "Add"
 msgstr ""
 
-#: .\common\static\js\frepple.js:1328
+#: .\common\static\js\frepple.js:1248
 msgid "Reset"
 msgstr ""
 
-#: .\common\static\js\frepple.js:1565
+#: .\common\static\js\frepple.js:1485
 msgid "Load an Excel file or a CSV-formatted text file."
 msgstr ""
 
-#: .\common\static\js\frepple.js:1566
+#: .\common\static\js\frepple.js:1486
 msgid "The first row should contain the field names."
 msgstr "第一行包含了字段名。"
 
-#: .\common\static\js\frepple.js:1567
+#: .\common\static\js\frepple.js:1487
 msgid "First delete all existing records AND ALL RELATED TABLES"
 msgstr "首先删除所有存在的记录和所有相关的表。"
 
-#: .\common\static\js\frepple.js:1568
+#: .\common\static\js\frepple.js:1488
 msgid "Data file"
 msgstr "数据文件"
 
-#: .\common\static\js\frepple.js:1571
+#: .\common\static\js\frepple.js:1491
 msgid "Import CSV or Excel file"
 msgstr ""
 
-#: .\common\static\js\frepple.js:1575
+#: .\common\static\js\frepple.js:1495
 msgid "Import"
 msgstr "导入"
 
-#: .\common\static\js\frepple.js:2045
+#: .\common\static\js\frepple.js:1965
 msgid "Guided tour"
 msgstr ""
 
-#: .\common\static\js\frepple.js:2069
+#: .\common\static\js\frepple.js:1989
 msgid "Previous"
 msgstr "前一个"
 
-#: .\common\static\js\frepple.js:2074 .\common\static\js\frepple.js:2207
+#: .\common\static\js\frepple.js:1994 .\common\static\js\frepple.js:2127
 msgid "Stop"
 msgstr "停止"
 
-#: .\common\static\js\frepple.js:2074 .\common\static\js\frepple.js:2198
+#: .\common\static\js\frepple.js:1994 .\common\static\js\frepple.js:2118
 msgid "Play"
 msgstr "播放"
 
-#: .\common\static\js\frepple.js:2080
+#: .\common\static\js\frepple.js:2000
 msgid "Next"
 msgstr "下一个"
 
-#: .\common\static\js\frepple.js:2173
+#: .\common\static\js\frepple.js:2093
 msgid "out of"
 msgstr "缺少"
 
@@ -245,6 +238,16 @@ msgstr "缺少"
 #, javascript-format
 msgid "%s allocated out of %s"
 msgstr ""
+
+#, fuzzy
+#~| msgid "Export"
+#~ msgid "export: OK"
+#~ msgstr "导出"
+
+#, fuzzy
+#~| msgid "Error deleting data"
+#~ msgid "error exporting data"
+#~ msgstr "删除数据出错"
 
 #, fuzzy
 #~| msgid "Cancel"

@@ -14,22 +14,22 @@
 # You should have received a copy of the GNU Affero General Public
 # License along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
+# Joao Ranita <jranita@frepple.com>, 2015.
 msgid ""
 msgstr ""
 "Project-Id-Version: 3.0.beta\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2015-10-12 10:56+0200\n"
-"PO-Revision-Date: 2014-10-26 11:56+0100\n"
-"Last-Translator: Johan De Taeye <jdetaeye@frepple.com>\n"
-"Language-Team: American English <kde-i18n-doc@kde.org>\n"
-"Language: en_US\n"
+"PO-Revision-Date: 2015-11-25 10:07+0200\n"
+"Last-Translator: Joao Ranita <jranita@frepple.com>\n"
+"Language-Team: frepple\n"
+"Language: it\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Basepath: /home/frepple/workspace/frepple/contrib/django/freppledb\n"
-"X-Generator: Poedit 1.5.4\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Poedit-SearchPath-0: \n"
+"X-Generator: Virtaal 0.7.1\n"
+"X-Poedit-Basepath: /home/frepple/workspace/frepple/contrib/django/freppledb\n"
 
 #: planningboard/templates/planningboard/index.html:86
 #: templates/output/pegging.html:95 templates/output/resourcegantt.html:91
@@ -64,48 +64,36 @@ msgid "Configure time buckets"
 msgstr ""
 
 #: planningboard/templates/planningboard/index.html:99
-#, fuzzy
-#| msgid "demand"
 msgid "Demand"
-msgstr "ordine"
+msgstr ""
 
 #: planningboard/templates/planningboard/index.html:100
-#, fuzzy
-#| msgid "resource"
 msgid "Resource"
-msgstr "risorsa"
+msgstr ""
 
 #: planningboard/templates/planningboard/index.html:101
-#, fuzzy
-#| msgid "buffer"
 msgid "Buffer"
-msgstr "buffer"
+msgstr "Buffer"
 
 #: planningboard/templates/planningboard/index.html:102
-#, fuzzy
-#| msgid "operation"
 msgid "Operation"
-msgstr "operazione"
+msgstr "Operazione"
 
 #: planningboard/templates/planningboard/index.html:103
 msgid "Supplier"
 msgstr ""
 
 #: planningboard/templates/planningboard/index.html:104
-#, fuzzy
-#| msgid "message"
 msgid "Messages"
-msgstr "messaggio"
+msgstr ""
 
 #: planningboard/templates/planningboard/index.html:105
 msgid "Chart"
 msgstr ""
 
 #: planningboard/templates/planningboard/index.html:109
-#, fuzzy
-#| msgid "Due date of the demand"
 msgid "Clear the plan of selected demands"
-msgstr "Data di scadenza dell'ordine"
+msgstr ""
 
 #: planningboard/templates/planningboard/index.html:110
 msgid "Plan selected demands backward from their due date"
@@ -289,10 +277,8 @@ msgid "Undo changes"
 msgstr ""
 
 #: templates/admin/base_site_grid.html:117
-#, fuzzy
-#| msgid "location"
 msgid "select action"
-msgstr "localizzazione"
+msgstr ""
 
 #: templates/admin/base_site_gridpivot.html:107
 msgid "Display table"
@@ -303,10 +289,8 @@ msgid "Display graph"
 msgstr ""
 
 #: templates/admin/base_site_nav.html:9
-#, fuzzy
-#| msgid "search mode"
 msgid "search"
-msgstr "metodo di ricerca"
+msgstr ""
 
 #: templates/admin/change_form.html:15 templates/bucketcontext.html:3
 #: templates/buckettabs.html:4 templates/buffercontext.html:3
@@ -637,10 +621,8 @@ msgid ""
 msgstr ""
 
 #: templates/execute/execute.html:251
-#, fuzzy
-#| msgid "net forecast"
 msgid "Generate forecast"
-msgstr "previsione netta"
+msgstr ""
 
 #: templates/execute/execute.html:252
 msgid "Generate production plan"
@@ -1040,10 +1022,8 @@ msgstr ""
 #: templates/inventoryplanning/drp.html:531
 #: templates/inventoryplanning/drp.html:633
 #: templates/inventoryplanning/drp.html:1117
-#, fuzzy
-#| msgid "net quantity"
 msgid "reorder quantity"
-msgstr "quantità netta"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:362
 #: templates/inventoryplanning/drp.html:533
@@ -1063,16 +1043,12 @@ msgid "safety stock override"
 msgstr ""
 
 #: templates/inventoryplanning/drp.html:365
-#, fuzzy
-#| msgid "start inventory"
 msgid "starting inventory"
-msgstr "livello iniziale di scorte"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:366
-#, fuzzy
-#| msgid "total demand"
 msgid "local demand"
-msgstr "domanda totale"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:367
 msgid "dependent demand"
@@ -1095,10 +1071,8 @@ msgid "total supply"
 msgstr "fornitura totale"
 
 #: templates/inventoryplanning/drp.html:372
-#, fuzzy
-#| msgid "end inventory"
 msgid "ending inventory"
-msgstr "livello di scorte finale"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:539
 #: templates/inventoryplanning/drp.html:630 templates/output/buffer.html:141
@@ -1136,8 +1110,6 @@ msgstr "localizzazione"
 
 #: templates/inventoryplanning/drp.html:891
 #: templates/inventoryplanning/drp.html:925
-#, fuzzy
-#| msgid "data field"
 msgid "fields"
 msgstr "campo dati"
 
@@ -1154,10 +1126,8 @@ msgid "type"
 msgstr "tipo"
 
 #: templates/inventoryplanning/drp.html:962
-#, fuzzy
-#| msgid "Preferences"
 msgid "reference"
-msgstr "Preferenze"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:965
 msgid "origin"
@@ -1186,10 +1156,8 @@ msgid "criticality"
 msgstr ""
 
 #: templates/inventoryplanning/drp.html:1082
-#, fuzzy
-#| msgid "location"
 msgid "Select action"
-msgstr "localizzazione"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:1083
 msgid "proposed"
@@ -1215,10 +1183,8 @@ msgid "forecast"
 msgstr "previsione"
 
 #: templates/inventoryplanning/drp.html:1091
-#, fuzzy
-#| msgid "operations"
 msgid "Transactions"
-msgstr "operazioni"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:1100
 #: templates/inventoryplanning/drp.html:1116
@@ -1230,16 +1196,12 @@ msgid "Forecast method"
 msgstr ""
 
 #: templates/inventoryplanning/drp.html:1110
-#, fuzzy
-#| msgid "Forecast Report"
 msgid "SMAPE Forecast error"
-msgstr "Rapporto Previsionale"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:1120
-#, fuzzy
-#| msgid "consumed quantity"
 msgid "economic order quantity"
-msgstr "quantità consumata"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:1120
 #: templates/inventoryplanning/drp.html:1121
@@ -1267,10 +1229,8 @@ msgid "statistical distribution"
 msgstr ""
 
 #: templates/inventoryplanning/drp.html:1128
-#, fuzzy
-#| msgid "Detect automatically"
 msgid "automatic"
-msgstr "Individua autoamaticamente"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:1129
 msgctxt "statistical distribution"
@@ -1286,10 +1246,8 @@ msgid "negative binomial"
 msgstr ""
 
 #: templates/inventoryplanning/drp.html:1133
-#, fuzzy
-#| msgid "Demand plan detail"
 msgid "demand standard deviation"
-msgstr "Dettaglio del piano della domanda"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:1134
 msgid "lead time standard deviation"
@@ -1405,54 +1363,10 @@ msgstr ""
 msgid "Confirm"
 msgstr ""
 
-#: templates/registration/password_change_done.html:8
-#: templates/registration/password_change_form.html:9
-msgctxt "Translation included with django"
-msgid "Password change"
-msgstr ""
-
-#: templates/registration/password_change_done.html:10
-#: templates/registration/password_change_done.html:14
-msgctxt "Translation included with django"
-msgid "Password change successful"
-msgstr ""
-
-#: templates/registration/password_change_done.html:16
-msgctxt "Translation included with django"
-msgid "Your password was changed."
-msgstr ""
-
 # Translation included with django
 #: templates/registration/password_change_form.html:11
 #: templates/registration/password_change_form.html:15
 msgid "Password change"
-msgstr ""
-
-#: templates/registration/password_change_form.html:17
-msgctxt "Translation included with django"
-msgid ""
-"Please enter your old password, for security's sake, and then enter your new "
-"password twice so we can verify you typed it in correctly."
-msgstr ""
-
-#: templates/registration/password_change_form.html:22
-msgctxt "Translation included with django"
-msgid "Old password:"
-msgstr ""
-
-#: templates/registration/password_change_form.html:24
-msgctxt "Translation included with django"
-msgid "New password:"
-msgstr ""
-
-#: templates/registration/password_change_form.html:26
-msgctxt "Translation included with django"
-msgid "Confirm password:"
-msgstr ""
-
-#: templates/registration/password_change_form.html:28
-msgctxt "Translation included with django"
-msgid "Change my password"
 msgstr ""
 
 #: templates/resourcecontext.html:7 templates/resourcetabs.html:8
