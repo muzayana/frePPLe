@@ -1,23 +1,34 @@
 {% extends "admin/base_site_grid.html" %}
 {% load i18n %}
 
-{% block extrahead %}{{block.super}}
-<script type="text/javascript" src="{{STATIC_URL}}admin/js/admin/RelatedObjectLookups.js"></script>
+{% block extrastyle %}
+<link rel="stylesheet" type="text/css" href="{{STATIC_URL}}admin/css/base.css" />
 <link rel="stylesheet" type="text/css" href="{{STATIC_URL}}admin/css/forms.css" />
 <style>
-#id_name, #id_description {
+
+#id_name, #id_description, #id_item, #id_location, #id_customer {
   width: 20em;
 }
+
 .quotebutton {
   width: 23%;
   float: left;
   margin-left: 5px;
 }
+
 #status h1 {
   padding-top: 5px;
   padding-bottom: 5px;
 }
+
+td, th {
+  border-bottom: none;
+}
+
 </style>
+{{block.super}}{% endblock %}
+
+{% block extrahead %}{{block.super}}
 <script type="text/javascript">
 
 function extraPreference() {
@@ -100,6 +111,7 @@ function getQuote(event)
       }
     });
   event.preventDefault();
+  event.stopPropagation();
 }
 
 function inquireQuote(event)
@@ -175,6 +187,7 @@ function inquireQuote(event)
       }
     });
   event.preventDefault();
+  event.stopPropagation();
 }
 
 function cancelQuote(event)
@@ -192,7 +205,8 @@ function cancelQuote(event)
       $("#id_customer").val('');
       $("#id_location").val('');      
       $("#id_quantity").val('1');
-      $("#id_due_0").val('');
+      var today = new Date();
+      $("#id_due_0").val('' + today.getFullYear() + '-' + (today.getMonth()+1) + '-' + today.getDate());
       $("#id_due_1").val('00:00:00');
       $("#id_minshipment").val('1');
       $("#id_maxlateness").val('');
@@ -210,6 +224,7 @@ function cancelQuote(event)
       }
     });
   event.preventDefault();
+  event.stopPropagation();
 }
 
 function confirmQuote(event)
@@ -227,7 +242,8 @@ function confirmQuote(event)
       $("#id_customer").val('');
       $("#id_location").val('');   
       $("#id_quantity").val('1');
-      $("#id_due_0").val('');
+      var today = new Date();
+      $("#id_due_0").val('' + today.getFullYear() + '-' + (today.getMonth()+1) + '-' + today.getDate());
       $("#id_due_1").val('00:00:00');
       $("#id_minshipment").val('');
       $("#id_maxlateness").val('');
@@ -245,6 +261,7 @@ function confirmQuote(event)
       }
     });
   event.preventDefault();
+  event.stopPropagation();
 }
 
 function displayInfo(rowid) {
@@ -299,11 +316,10 @@ $(function() {
       dateFormat: "yy-mm-dd", changeMonth:true,
       changeYear:true, yearRange: "c-1:c+5"
       });
+  var today = new Date();
+  $("#id_due_0").val('' + today.getFullYear() + '-' + (today.getMonth()+1) + '-' + today.getDate());  
   $("#id_due_1").val('00:00:00');
-  $("#form_quote").button().click(getQuote);
-  $("#form_inquiry").button().click(inquireQuote);
-  $("#form_cancel").button().click(cancelQuote);
-  $("#form_confirm").button().click(confirmQuote);
+  $("#id_quantity").val('1');
   $("#fields").resizable({
     handles:'e',
     minWidth:350,
@@ -330,12 +346,13 @@ $(function() {
 <td>{{ field.errors }}{{ field }}</td>
 </tr>
 {% endfor %}</tbody></table>
-<br/>
-<div class="quotebutton"><button style="width:100%" id="form_inquiry">{% trans 'inquiry'|capfirst %}</button></div>
-<div class="quotebutton"><button style="width:100%" id="form_quote">{% trans 'quote'|capfirst %}</button></div>
-<div class="quotebutton"><button style="width:100%" id="form_cancel">{% filter capfirst|force_escape %}{% trans 'Cancel' context "Translation included with Django" %}{% endfilter %}</button></div>
-<div class="quotebutton"><button style="width:100%" id="form_confirm">{% trans 'confirm'|capfirst %}</button></div>
+<br>
 </form>
+<input type="submit" class="quotebutton ui-button ui-widget ui-state-default ui-corner-all" id="form_inquiry" value="{% trans 'inquiry'|capfirst %}" onclick="inquireQuote(event)">
+<input type="submit" class="quotebutton ui-button ui-widget ui-state-default ui-corner-all" id="form_quote" value="{% trans 'quote'|capfirst %}" onclick="getQuote(event)">
+<input type="submit" class="quotebutton ui-button ui-widget ui-state-default ui-corner-all" id="form_cancel" value="{% filter capfirst|force_escape %}{% trans 'Cancel' context "Translation included with Django" %}{% endfilter %}" onclick="cancelQuote(event)">
+<input type="submit" class="quotebutton ui-button ui-widget ui-state-default ui-corner-all" id="form_confirm" value="{% trans 'confirm'|capfirst %}" onclick="confirmQuote(event)">
+
 </div>
 <div id="status" style="display: inline-block; overflow-x: auto; vertical-align:top"><h1>{% trans "deliveries"|capfirst %}</h1><br/>
 <h1>{% trans "problems"|capfirst %}</h1><br/>

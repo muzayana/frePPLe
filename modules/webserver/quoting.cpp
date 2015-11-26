@@ -38,13 +38,13 @@ bool WebServer::quote_or_inquiry(struct mg_connection* conn, bool keepreservatio
   mg_get_var(post_data, post_data_len, "input_1", input1, sizeof(input1));
   mg_get_var(post_data, post_data_len, "input_2", input2, sizeof(input2));
   */
-  
+
   /** TODO POST encoded as multipart/form-data encoded JSON data. */
-  
+
   /** POST encoded as multipart/form-data encoded XML data. */
   int post_data_len = mg_read(conn, post_data, sizeof(post_data));
 
-  // Poor man's request data parser: We consider everything between "<plan" 
+  // Poor man's request data parser: We consider everything between "<plan"
   // and "</plan>" as posted data content.
   /** TODO need to test MultiPartParser
   MultiPartParser parser("----------ThIs_Is_tHe_bouNdaRY_$");
@@ -137,8 +137,8 @@ bool WebServer::quote_or_inquiry(struct mg_connection* conn, bool keepreservatio
         "(name, quantity, priority, description, status, item_id, location_id, "
         "customer_id, minshipment, maxlateness, category, due, lastmodified) "
         "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, now())",
-      (*dmd)->getName(), 
-      to_string(static_cast<long double>((*dmd)->getQuantity())), 
+      (*dmd)->getName(),
+      to_string(static_cast<long double>((*dmd)->getQuantity())),
       to_string(static_cast<long long>((*dmd)->getPriority())),
       (*dmd)->getDescription(),
       string("quote"),

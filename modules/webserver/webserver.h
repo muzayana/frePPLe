@@ -108,43 +108,43 @@ class DatabaseStatement
   friend ostream& operator<<(ostream &, const DatabaseStatement&);
   public:
     /** Constructor. */
-    DatabaseStatement(string s)
+    DatabaseStatement(const string& s)
       : sql(s), args(0) {};
 
-    DatabaseStatement(string s, string a1)
+    DatabaseStatement(const string& s, const string& a1)
       : sql(s), args(1) { arg[0] = a1; }
 
-    DatabaseStatement(string s, string a1, string a2)
+    DatabaseStatement(const string& s, const string& a1, const string& a2)
       : sql(s), args(2) { arg[0]=a1; arg[1]=a2; }
 
-    DatabaseStatement(string s, string a1, string a2, string a3)
+    DatabaseStatement(const string& s, const string& a1, const string& a2, const string& a3)
       : sql(s), args(3) { arg[0]=a1; arg[1]=a2; arg[1]=a3; }
 
-    DatabaseStatement(string s, string a1, string a2, string a3, string a4)
+    DatabaseStatement(const string& s, const string& a1, const string& a2, const string& a3, const string& a4)
       : sql(s), args(4) { arg[0]=a1; arg[1]=a2; arg[2]=a3; arg[3]=a4; }
 
-    DatabaseStatement(string s, string a1, string a2, string a3, string a4, string a5)
+    DatabaseStatement(const string& s, const string& a1, string a2, const string& a3, const string& a4, const string& a5)
       : sql(s), args(5) { arg[0]=a1; arg[1]=a2; arg[2]=a3; arg[3]=a4; arg[4]=a5; }
 
-    DatabaseStatement(string s, string a1, string a2, string a3, string a4, string a5, string a6)
+    DatabaseStatement(const string& s, const string& a1, const string& a2, const string& a3, const string& a4, const string& a5, const string& a6)
       : sql(s), args(6) { arg[0]=a1; arg[1]=a2; arg[2]=a3; arg[3]=a4; arg[4]=a5; arg[5]=a6; }
 
-    DatabaseStatement(string s, string a1, string a2, string a3, string a4, string a5, string a6, string a7)
+    DatabaseStatement(const string& s, const string& a1, const string& a2, const string& a3, const string& a4, const string& a5, const string& a6, const string& a7)
       : sql(s), args(7) { arg[0]=a1; arg[1]=a2; arg[2]=a3; arg[3]=a4; arg[4]=a5; arg[5]=a6; arg[6]=a7; }
 
-    DatabaseStatement(string s, string a1, string a2, string a3, string a4, string a5, string a6, string a7, string a8)
+    DatabaseStatement(const string& s, const string& a1, const string& a2, const string& a3, const string& a4, const string& a5, const string& a6, const string& a7, const string& a8)
       : sql(s), args(8) { arg[0]=a1; arg[1]=a2; arg[2]=a3; arg[3]=a4; arg[4]=a5; arg[5]=a6; arg[6]=a7; arg[7]=a8; }
 
-    DatabaseStatement(string s, string a1, string a2, string a3, string a4, string a5, string a6, string a7, string a8, string a9)
+    DatabaseStatement(const string& s, const string& a1, const string& a2, const string& a3, const string& a4, const string& a5, const string& a6, const string& a7, const string& a8, const string& a9)
       : sql(s), args(9) { arg[0]=a1; arg[1]=a2; arg[2]=a3; arg[3]=a4; arg[4]=a5; arg[5]=a6; arg[6]=a7; arg[7]=a8; arg[8]=a9; }
 
-    DatabaseStatement(string s, string a1, string a2, string a3, string a4, string a5, string a6, string a7, string a8, string a9, string a10)
+    DatabaseStatement(const string& s, const string& a1, const string& a2, const string& a3, const string& a4, const string& a5, const string& a6, const string& a7, const string& a8, const string& a9, const string& a10)
       : sql(s), args(10) { arg[0]=a1; arg[1]=a2; arg[2]=a3; arg[3]=a4; arg[4]=a5; arg[5]=a6; arg[6]=a7; arg[7]=a8; arg[8]=a9; arg[9]=a10; }
 
-    DatabaseStatement(string s, string a1, string a2, string a3, string a4, string a5, string a6, string a7, string a8, string a9, string a10, string a11)
+    DatabaseStatement(const string& s, const string& a1, const string& a2, const string& a3, const string& a4, const string& a5, const string& a6, const string& a7, const string& a8, const string& a9, const string& a10, const string& a11)
       : sql(s), args(11) { arg[0]=a1; arg[1]=a2; arg[2]=a3; arg[3]=a4; arg[4]=a5; arg[5]=a6; arg[6]=a7; arg[7]=a8; arg[8]=a9; arg[9]=a10; arg[10]=a11;}
 
-    DatabaseStatement(string s, string a1, string a2, string a3, string a4, string a5, string a6, string a7, string a8, string a9, string a10, string a11, string a12)
+    DatabaseStatement(const string& s, const string& a1, const string& a2, const string& a3, const string& a4, const string& a5, const string& a6, const string& a7, const string& a8, const string& a9, const string& a10, const string& a11, const string& a12)
       : sql(s), args(12) { arg[0]=a1; arg[1]=a2; arg[2]=a3; arg[3]=a4; arg[4]=a5; arg[5]=a6; arg[6]=a7; arg[7]=a8; arg[8]=a9; arg[9]=a10; arg[10]=a11; arg[11]=a12;}
 
     /** Execute the statement on a database connection. */
