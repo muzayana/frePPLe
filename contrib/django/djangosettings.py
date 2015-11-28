@@ -345,6 +345,9 @@ THEMES = [
   'grass', 'lemon', 'water', 'snow', 'strawberry', 'earth'
   ]
 
+# A default user-group to which new users are automatically added
+DEFAULT_USER_GROUP = None
+
 # The default user interface theme
 DEFAULT_THEME = 'grass'
 
