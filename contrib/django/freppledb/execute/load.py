@@ -55,6 +55,7 @@ class loadData(object):
     except:
       frepple.settings.current = datetime.now().replace(microsecond=0)
       print('Using system clock as current date: %s' % frepple.settings.current)
+    print('Current date: %s' % frepple.settings.current)
 
 
   def loadLocations(self):
