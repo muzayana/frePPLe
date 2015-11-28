@@ -477,7 +477,7 @@ var grid = {
          click: function() { $(this).dialog("close"); }
          },
          {
-         text: gettext("reset"),
+         text: gettext("Reset"),
          click: function() {
            var result = {};
            result[reportkey] = null;
@@ -1056,17 +1056,17 @@ var openbravo = {
 
 	  // Send to the server for upload into openbravo
 	  $('#popup')
-	  .html(gettext("export selected records to openbravo"))
+	  .html(gettext("Export selected records to openbravo"))
 	  .dialog({
-	    title: gettext("export"),
+	    title: gettext("Export"),
 	    autoOpen: true, resizable: false, width: 390, height: 'auto', modal: true,
 	    buttons: [
 	      {
-	        text: gettext("export"),
+	        text: gettext("Export"),
 	        id: 'button_export',
 	        click: function() {
 
-	          $('#popup').html(gettext("connecting to openbravo..."));
+	          $('#popup').html(gettext("Connecting to openbravo..."));
 	          // Send the update to the server
 	          var database = $('#database').val();
 	          database = (database===undefined || database==='default') ? '' : '/' + database;
@@ -1084,7 +1084,7 @@ var openbravo = {
 	                     height: 'auto',
 	                     model: false
 	                   });
-	                 $('#button_close').find('.ui-button-text').text(gettext('close'));
+	                 $('#button_close').find('.ui-button-text').text(gettext('Close'));
 	                 $('#button_export').removeClass("ui-state-default").addClass("ui-state-disabled").prop('disabled', 'disabled');
 	                 // Mark selected rows as "approved" if the original status was "proposed".
 	                 for (var i in sel)
@@ -1097,13 +1097,13 @@ var openbravo = {
 	               error: function (result, stat, errorThrown) {
                      fmts = ngettext("Error during export")
 	                 $('#popup').html(gettext("Error during export") + ':' + result.responseText);
-	                 $('#button_export').find('.ui-button-text').text(gettext('retry'));
+	                 $('#button_export').find('.ui-button-text').text(gettext('Retry'));
 	               }
 	           });
 	        }
 	      },
 	      {
-	        text: gettext("cancel"),
+	        text: gettext("Cancel"),
 	        id: 'button_close',
 	        click: function() { $(this).dialog("close"); }
 	      }

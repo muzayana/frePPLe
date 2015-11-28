@@ -19,7 +19,7 @@ msgstr ""
 "Project-Id-Version: 3.0.beta\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2015-10-12 10:56+0200\n"
-"PO-Revision-Date: 2014-10-26 12:21+0100\n"
+"PO-Revision-Date: 2015-11-25 09:26+0100\n"
 "Last-Translator: Johan De Taeye <jdetaeye@frepple.com>\n"
 "Language-Team: Japanese <kde-i18n-doc@kde.org>\n"
 "Language: ja_JP\n"
@@ -27,7 +27,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Poedit 1.5.4\n"
+"X-Generator: Poedit 1.8.6\n"
 "X-Poedit-Basepath: /home/frepple/workspace/frepple/contrib/django/freppledb\n"
 
 #: planningboard/templates/planningboard/index.html:86
@@ -63,48 +63,36 @@ msgid "Configure time buckets"
 msgstr ""
 
 #: planningboard/templates/planningboard/index.html:99
-#, fuzzy
-#| msgid "demand"
 msgid "Demand"
-msgstr "需要"
+msgstr ""
 
 #: planningboard/templates/planningboard/index.html:100
-#, fuzzy
-#| msgid "resource"
 msgid "Resource"
-msgstr "リソース"
+msgstr ""
 
 #: planningboard/templates/planningboard/index.html:101
-#, fuzzy
-#| msgid "buffer"
 msgid "Buffer"
-msgstr "バッファ"
+msgstr ""
 
 #: planningboard/templates/planningboard/index.html:102
-#, fuzzy
-#| msgid "operation"
 msgid "Operation"
-msgstr "作業"
+msgstr ""
 
 #: planningboard/templates/planningboard/index.html:103
 msgid "Supplier"
 msgstr ""
 
 #: planningboard/templates/planningboard/index.html:104
-#, fuzzy
-#| msgid "message"
 msgid "Messages"
-msgstr "メッセージ"
+msgstr ""
 
 #: planningboard/templates/planningboard/index.html:105
 msgid "Chart"
 msgstr ""
 
 #: planningboard/templates/planningboard/index.html:109
-#, fuzzy
-#| msgid "Due date of the demand"
 msgid "Clear the plan of selected demands"
-msgstr "需要の納期"
+msgstr ""
 
 #: planningboard/templates/planningboard/index.html:110
 msgid "Plan selected demands backward from their due date"
@@ -291,10 +279,8 @@ msgid "Undo changes"
 msgstr ""
 
 #: templates/admin/base_site_grid.html:117
-#, fuzzy
-#| msgid "location"
 msgid "select action"
-msgstr "地域"
+msgstr ""
 
 #: templates/admin/base_site_gridpivot.html:107
 msgid "Display table"
@@ -305,10 +291,8 @@ msgid "Display graph"
 msgstr ""
 
 #: templates/admin/base_site_nav.html:9
-#, fuzzy
-#| msgid "search mode"
 msgid "search"
-msgstr "検索モード"
+msgstr ""
 
 #: templates/admin/change_form.html:15 templates/bucketcontext.html:3
 #: templates/buckettabs.html:4 templates/buffercontext.html:3
@@ -463,8 +447,7 @@ msgstr ""
 
 # Translation included with django
 #: templates/admin/submit_line.html:3 templates/common/comments.html:22
-#: templates/common/preferences.html:22
-#: templates/inventoryplanning/drp.html:49
+#: templates/common/preferences.html:22 templates/inventoryplanning/drp.html:49
 msgid "Save"
 msgstr ""
 
@@ -641,16 +624,12 @@ msgid ""
 msgstr ""
 
 #: templates/execute/execute.html:251
-#, fuzzy
-#| msgid "net forecast"
 msgid "Generate forecast"
-msgstr "全体予測"
+msgstr ""
 
 #: templates/execute/execute.html:252
-#, fuzzy
-#| msgid "Generate model"
 msgid "Generate production plan"
-msgstr "汎用モデル"
+msgstr ""
 
 #: templates/execute/execute.html:254
 msgid ""
@@ -1069,49 +1048,35 @@ msgid "No"
 msgstr ""
 
 #: templates/inventoryplanning/drp.html:345
-#, fuzzy
-#| msgid "total orders"
 msgid "total orders 3 years ago"
-msgstr "注文の合計"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:346
-#, fuzzy
-#| msgid "orders adjustment"
 msgid "orders adjustment 3 years ago"
-msgstr "注文の修正"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:347
-#, fuzzy
-#| msgid "total orders"
 msgid "total orders 2 years ago"
-msgstr "注文の合計"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:348
-#, fuzzy
-#| msgid "orders adjustment"
 msgid "orders adjustment 2 years ago"
-msgstr "注文の修正"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:349
-#, fuzzy
-#| msgid "total orders"
 msgid "total orders 1 year ago"
-msgstr "注文の合計"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:350
-#, fuzzy
-#| msgid "orders adjustment"
 msgid "orders adjustment 1 year ago"
-msgstr "注文の修正"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:361
 #: templates/inventoryplanning/drp.html:531
 #: templates/inventoryplanning/drp.html:633
 #: templates/inventoryplanning/drp.html:1117
-#, fuzzy
-#| msgid "load quantity"
 msgid "reorder quantity"
-msgstr "数量をロード"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:362
 #: templates/inventoryplanning/drp.html:533
@@ -1122,29 +1087,21 @@ msgstr ""
 #: templates/inventoryplanning/drp.html:535
 #: templates/inventoryplanning/drp.html:634
 #: templates/inventoryplanning/drp.html:1118
-#, fuzzy
-#| msgid "Safety stock"
 msgid "safety stock"
-msgstr "適正在庫"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:364
 #: templates/inventoryplanning/drp.html:537
-#, fuzzy
-#| msgid "Safety stock"
 msgid "safety stock override"
-msgstr "適正在庫"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:365
-#, fuzzy
-#| msgid "start inventory"
 msgid "starting inventory"
-msgstr "棚卸の開始"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:366
-#, fuzzy
-#| msgid "total demand"
 msgid "local demand"
-msgstr "総需要"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:367
 msgid "dependent demand"
@@ -1167,10 +1124,8 @@ msgid "total supply"
 msgstr "総供給"
 
 #: templates/inventoryplanning/drp.html:372
-#, fuzzy
-#| msgid "end inventory"
 msgid "ending inventory"
-msgstr "棚卸の終了"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:539
 #: templates/inventoryplanning/drp.html:630 templates/output/buffer.html:141
@@ -1208,10 +1163,8 @@ msgstr "地域"
 
 #: templates/inventoryplanning/drp.html:891
 #: templates/inventoryplanning/drp.html:925
-#, fuzzy
-#| msgid "data field"
 msgid "fields"
-msgstr "データフィールド"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:959
 msgid "identifier"
@@ -1226,10 +1179,8 @@ msgid "type"
 msgstr "種類"
 
 #: templates/inventoryplanning/drp.html:962
-#, fuzzy
-#| msgid "Preferences"
 msgid "reference"
-msgstr "設定"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:965
 msgid "origin"
@@ -1258,10 +1209,8 @@ msgid "criticality"
 msgstr ""
 
 #: templates/inventoryplanning/drp.html:1082
-#, fuzzy
-#| msgid "location"
 msgid "Select action"
-msgstr "地域"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:1083
 msgid "proposed"
@@ -1275,26 +1224,20 @@ msgid "change status to %(status)s"
 msgstr ""
 
 #: templates/inventoryplanning/drp.html:1084
-#, fuzzy
-#| msgid "Confirm"
 msgid "confirmed"
-msgstr "確認"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:1085
-#, fuzzy
-#| msgid "Closed"
 msgid "closed"
-msgstr "終了"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:1089
 msgid "forecast"
 msgstr "予測"
 
 #: templates/inventoryplanning/drp.html:1091
-#, fuzzy
-#| msgid "operations"
 msgid "Transactions"
-msgstr "作業"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:1100
 #: templates/inventoryplanning/drp.html:1116
@@ -1306,16 +1249,12 @@ msgid "Forecast method"
 msgstr "予測方式"
 
 #: templates/inventoryplanning/drp.html:1110
-#, fuzzy
-#| msgid "Forecast Report"
 msgid "SMAPE Forecast error"
-msgstr "予測レポート"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:1120
-#, fuzzy
-#| msgid "consumed quantity"
 msgid "economic order quantity"
-msgstr "消費量"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:1120
 #: templates/inventoryplanning/drp.html:1121
@@ -1343,10 +1282,8 @@ msgid "statistical distribution"
 msgstr ""
 
 #: templates/inventoryplanning/drp.html:1128
-#, fuzzy
-#| msgid "Automatic"
 msgid "automatic"
-msgstr "自動"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:1129
 msgctxt "statistical distribution"
@@ -1362,26 +1299,20 @@ msgid "negative binomial"
 msgstr ""
 
 #: templates/inventoryplanning/drp.html:1133
-#, fuzzy
-#| msgid "Demand plan detail"
 msgid "demand standard deviation"
-msgstr "需要計画の詳細"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:1134
 msgid "lead time standard deviation"
 msgstr ""
 
 #: templates/inventoryplanning/drp.html:1139
-#, fuzzy
-#| msgid "Safety stock"
 msgid "don't stock"
-msgstr "適正在庫"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:1146
-#, fuzzy
-#| msgid "comment"
 msgid "new item comment"
-msgstr "コメント"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:1148
 msgid "new item-location comment"
@@ -1392,10 +1323,8 @@ msgid "new location comment"
 msgstr ""
 
 #: templates/inventoryplanning/drp.html:1153
-#, fuzzy
-#| msgid "comments"
 msgid "no comments yet"
-msgstr "コメント"
+msgstr ""
 
 #: templates/locationcontext.html:4
 msgid "Edit availability"
@@ -1487,57 +1416,11 @@ msgstr "照会"
 msgid "Confirm"
 msgstr "確認"
 
-#: templates/registration/password_change_done.html:8
-#: templates/registration/password_change_form.html:9
-msgctxt "Translation included with django"
-msgid "Password change"
-msgstr ""
-
-#: templates/registration/password_change_done.html:10
-#: templates/registration/password_change_done.html:14
-msgctxt "Translation included with django"
-msgid "Password change successful"
-msgstr ""
-
-#: templates/registration/password_change_done.html:16
-msgctxt "Translation included with django"
-msgid "Your password was changed."
-msgstr ""
-
 # Translation included with django
 #: templates/registration/password_change_form.html:11
 #: templates/registration/password_change_form.html:15
 msgid "Password change"
 msgstr ""
-
-#: templates/registration/password_change_form.html:17
-msgctxt "Translation included with django"
-msgid ""
-"Please enter your old password, for security's sake, and then enter your new "
-"password twice so we can verify you typed it in correctly."
-msgstr ""
-
-#: templates/registration/password_change_form.html:22
-msgctxt "Translation included with django"
-msgid "Old password:"
-msgstr ""
-
-#: templates/registration/password_change_form.html:24
-msgctxt "Translation included with django"
-msgid "New password:"
-msgstr ""
-
-#: templates/registration/password_change_form.html:26
-msgctxt "Translation included with django"
-msgid "Confirm password:"
-msgstr ""
-
-#: templates/registration/password_change_form.html:28
-#, fuzzy
-#| msgid "Change history"
-msgctxt "Translation included with django"
-msgid "Change my password"
-msgstr "変更履歴"
 
 #: templates/resourcecontext.html:7 templates/resourcetabs.html:8
 msgid "Gantt chart"

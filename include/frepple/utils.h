@@ -4944,6 +4944,9 @@ class CommandManager
 class DataInput
 {
   public:
+    /** Default constructor. */
+    explicit DataInput() : user_exit_cpp(NULL) {}
+
     /** Return the source field that will be populated on each object created
       * or updated from the XML data.
       */
@@ -4974,6 +4977,19 @@ class DataInput
       return userexit;
     }
 
+    /** Type definition for callback functions defined in C++. */
+    typedef void (*callback)(Object*);
+
+    void setUserExitCpp(callback f)
+    {
+      user_exit_cpp = f;
+    }
+
+    callback getUserExitCpp() const
+    {
+      return user_exit_cpp;
+    }
+
   private:
     /** A value to populate on the source field of all entities being created
       * or updated from the input data.
@@ -4984,6 +5000,9 @@ class DataInput
       * from the XML input. The return value is not used.
       */
     PythonFunction userexit;
+
+    /** A second type of callback function. This time called from C++. */
+    callback user_exit_cpp;
 };
 
 

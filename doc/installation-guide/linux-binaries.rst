@@ -14,7 +14,7 @@ Supported distributions
 Binary installation packages are available for the following Linux
 distributions:
 
-#. | **Fedora 20** and higher
+#. | **Fedora 22** and higher
    | FrePPLe is included in the official repositories.
 
    .. image:: _images/fedorainstall.png
@@ -76,55 +76,33 @@ Here are the steps to get a fully working environment.
        create user USR with password 'PWD';
        create database DB encoding 'utf-8' owner USR;
 
-#. **Install the Python database drivers and other python modules**
+#. **Install the Python database drivers**
 
-   You should install the python-psycopg2 (or python3-psycopg2) package from your linux distribution.
+   You'll need to install the python-psycopg2 (or python3-psycopg2 depending on your linux distribution) package for PostgreSQL.
 
-   In the root of your python install you will find a "frePPLe-pip-requirements.txt" with a list like:
+#. **Install the Python database drivers, Django and other python modules**
+
+   Since frePPle requires some patches to the standard Django package,
+   you can't install the binary package that comes with your Linux distribution.
+
+   Instead, the source from our cloned and patched version of django will be downloaded
+   and installed.
+
+   In the root of your python install you will find a "requirements.txt" file containing a list like:
    ::
 
-      chardet >= 2.0.1
       CherryPy >= 3.2.2
-      colorama >= 0.2.5
-      djangorestframework >= 3.3.1
       et-xmlfile >= 1.0.0
       html5lib >= 0.999
       jdcal >= 1.0
-      Markdown >= 2.6.4
       openpyxl >= 2.3.0-b2
-      pip >= 1.5.4
-      pycurl >= 7.19.3
-      requests >= 2.2.1
-      Routes >= 2.0
-      setuptools >= 3.3
-      six >= 1.5.2
-      urllib3 >= 1.7.1
+      https://github.com/frePPLe/django/tarball/frepple_3.0
+      djangorestframework >= 3.3.1
 
    To install the requirements just issue a pip3 (or pip depending on your distribution) command:
    ::
 
       sudo pip install -r requirements.txt
-
-
-
-#. **Install Django**
-
-   Since frePPle requires some patches to the standard Django package,
-   you can't install the binary package that comes with your Linux distribution.
-
-   Instead, download the source from our cloned and patched version of django
-   and install that. The URL of the django clone is https://github.com/frePPLe/django
-
-   Make sure you download the branch for the correct frePPLe version
-
-   The shell commands for these steps are (replace 3.0 with the correct frePPLe
-   version:
-   ::
-
-      wget https://github.com/frePPLe/django/archive/frepple_3.0.tar.gz
-      tar xvfz frepple_3.0.tar.gz
-      cd django-frepple_3.0
-      python3 setup.py install
 
 
 #. **Install the frepple binary package**
@@ -156,15 +134,17 @@ Here are the steps to get a fully working environment.
       | Change "SECRET_KEY" to some arbitrary value - important for security reasons.
       | Optionally, you can define custom attributes in this file: see below.
 
-   #. | /etc/frepple/license.xml
+   #. | **/etc/frepple/license.xml**
       | No license file is required for the Community Edition.
       | If you are using the Enterprise Edition, replace this file with the
       | license file you received from us.
 
-   #. | /etc/frepple/init.xml
-      | Comment out the lines loading modules you are not using.
+   #. | **/etc/frepple/init.xml**
+      | For a standard deployment this file doesn't need modification.
+      | Comment out the lines loading modules you are not using for a small
+      | performance improvement.
 
-   #. | /etc/httpd/conf.d/z_frepple.conf
+   #. | **/etc/httpd/conf.d/z_frepple.conf**
       | For a standard deployment this file doesn't need modification.
       | It only needs review if you have specific requirements for the setup of
       | the Apache web server.
@@ -271,8 +251,6 @@ inspiration for your own deployments.
 
 ::
 
-  export FREPPLERELEASE=3.0
-
   # Bring the server up to date
   sudo apt-get -y -q update
   sudo apt-get -y -q upgrade
@@ -285,9 +263,11 @@ inspiration for your own deployments.
   psql template1 -c "create database scenario1 encoding 'utf-8' owner frepple"
   psql template1 -c "create database scenario2 encoding 'utf-8' owner frepple"
   psql template1 -c "create database scenario3 encoding 'utf-8' owner frepple"
-  sed -i 's/peer$/md5/g' /etc/postgresql/9.*/main/pg_hba.conf
-  service postgresql restart
   exit
+  # Allow local connections to the database using a username and password.
+  # The default peer authentication isn't good for frepple.
+  sudo sed -i 's/local\(\s*\)all\(\s*\)all\(\s*\)md5/local\1all\2all\3\md5/g' /etc/postgresql/9.*/main/pg_hba.conf
+  sudo service postgresql restart
 
   # Install a patched version of Django
   wget -q https://github.com/frePPLe/django/archive/frepple_$FREPPLERELEASE.tar.gz
@@ -331,8 +311,6 @@ inspiration for your own deployments.
 
 ::
 
-  export FREPPLERELEASE=3.0
-
   # Update and upgrade
   sudo -S -n yum -y update
 
@@ -346,7 +324,10 @@ inspiration for your own deployments.
   psql -dpostgres -c "create database scenario1 encoding 'utf-8' owner frepple"
   psql -dpostgres -c "create database scenario2 encoding 'utf-8' owner frepple"
   psql -dpostgres -c "create database scenario3 encoding 'utf-8' owner frepple"
-  sed -i 's/peer$/md5/g' /var/lib/pgsql/data/pg_hba.conf
+  exit
+  # Allow local connections to the database using a username and password.
+  # The default peer authentication isn't good for frepple.
+  sudo sed -i 's/local\(\s*\)all\(\s*\)all\(\s*\)md5/local\1all\2all\3\md5/g' /etc/postgresql/9.*/main/pg_hba.conf
   sudo service postgresql restart
 
   # Install a patched version of Django
@@ -367,9 +348,6 @@ inspiration for your own deployments.
   # Normally you only need to install the frepple package.
   yum --nogpgcheck localinstall  *.rpm
 
-
-
-
   # Create frepple database schema
   frepplectl migrate --noinput
 
@@ -383,8 +361,6 @@ and configuring frePPLe with a PostgreSQL database on a SLES 12 server.
 You can use it as a guideline and inspiration for your own deployments.
 
 ::
-
-  export FREPPLERELEASE=3.0
 
   # Update and Upgrade
   sudo zypper update
@@ -410,17 +386,13 @@ You can use it as a guideline and inspiration for your own deployments.
   psql -dpostgres -c "create database scenario1 encoding 'utf-8' owner frepple"
   psql -dpostgres -c "create database scenario2 encoding 'utf-8' owner frepple"
   psql -dpostgres -c "create database scenario3 encoding 'utf-8' owner frepple"
-  sed -i 's/peer$/md5/g' /var/lib/pgsql/data/pg_hba.conf
   exit
+  # Allow local connections to the database using a username and password.
+  # The default peer authentication isn't good for frepple.
+  sudo sed -i 's/local\(\s*\)all\(\s*\)all\(\s*\)md5/local\1all\2all\3\md5/g' /etc/postgresql/9.*/main/pg_hba.conf
   rcpostgrsql restart
 
-  # Install a patched version of Django
-  wget -q https://github.com/frePPLe/django/archive/frepple_$FREPPLERELEASE.tar.gz
-  tar xfz frepple_$FREPPLERELEASE.tar.gz
-  cd django-frepple_$FREPPLERELEASE
-  sudo -S -n python3 setup.py install
-
-  # Install openpyxl
+  # Install Django, openpyxl, ...
   # pip is in SUSE included in the Python3 package but must be enabled.
   # After pip3 is available we can finish by installing openpyxl itself.
   sudo python3 -m ensure pip

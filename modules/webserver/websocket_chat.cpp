@@ -17,7 +17,10 @@
 namespace module_webserver
 {
 
-list<string> WebServer::history;
+
+list<string> WebServer::chat_history;
+short WebServer::loglevel = 3;
+string WebServer::connectionstring;
 
 
 void WebServer::loadChatHistory(const string& c)
@@ -38,7 +41,7 @@ void WebServer::loadChatHistory(const string& c)
     o.writeElement(Tags::value, res.getValueString(i, 1));
     o.writeElement(Tags::date, res.getValueDate(i, 2));
     o.writeString("}");
-    history.push_back(o.getData().c_str());
+    chat_history.push_back(o.getData().c_str());
   }
 }
 
@@ -58,9 +61,9 @@ int WebServer::websocket_chat(struct mg_connection *conn, int bits,
   o2 << "{\"category\": \"chat\", \"messages\": [" << o1.getData() << "]}";
 
   // Append to the chat history in memory
-  history.push_back(o1.getData());
-  while (history.size() > 100)
-    history.pop_front();
+  chat_history.push_back(o1.getData());
+  while (chat_history.size() > 100)
+    chat_history.pop_front();
 
   // Store the chat message in the database
   DatabaseWriter::pushStatement(

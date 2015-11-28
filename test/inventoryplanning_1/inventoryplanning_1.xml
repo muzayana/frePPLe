@@ -482,7 +482,10 @@ with open("output.1.xml", "wt", encoding='utf-8') as output:
   
     # Print the results  
     print("", file=output)
-    print("Test:", kwargs, file=output)
+    print("Test:", file=output, end="")
+    for i in sorted(kwargs.keys()):
+      print(" %s:%s" % (i, kwargs[i]), file=output, end="")
+    print("", file=output)
     for cal in frepple.calendars():
       if cal.name == 'months':
         continue

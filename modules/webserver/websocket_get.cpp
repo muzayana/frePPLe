@@ -82,11 +82,11 @@ int WebServer::websocket_get(struct mg_connection *conn, int bits,
   }
 
   // Chat history
-  if (data_len == 5 && !WebServer::history.empty())
+  if (data_len == 5 && !WebServer::chat_history.empty())
   {
     o.BeginList(tag_messages);
     bool first = true;
-    for (list<string>::const_iterator j = history.begin(); j != history.end(); ++j)
+    for (list<string>::const_iterator j = chat_history.begin(); j != chat_history.end(); ++j)
     {
       if (first)
         first = false;

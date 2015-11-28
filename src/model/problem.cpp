@@ -224,8 +224,10 @@ DECLARE_EXPORT void Problem::clearProblems(HasProblems& p, bool setchanged)
 }
 
 
-DECLARE_EXPORT Problem::iterator HasProblems::getProblems() const
+DECLARE_EXPORT Problem::iterator Plannable::getProblems() const
 {
+  if (getChanged())
+    const_cast<Plannable*>(this)->updateProblems();
   return Problem::iterator(firstProblem);
 }
 
@@ -465,11 +467,11 @@ DECLARE_EXPORT Problem::iterator& Problem::iterator::operator++()
 
   // Move to the next entity
   // We need a while loop here because some entities can be without problems
-  while (!iter && !owner && eiter!=HasProblems::endEntity())
+  while (!iter && !owner && eiter && *eiter!=HasProblems::endEntity())
   {
-    ++eiter;
-    if (eiter!=HasProblems::endEntity())
-      iter = eiter->firstProblem;
+    ++(*eiter);
+    if (*eiter != HasProblems::endEntity())
+      iter = (*eiter)->firstProblem;
   }
   return *this;
 }

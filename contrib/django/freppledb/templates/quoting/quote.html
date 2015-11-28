@@ -1,22 +1,34 @@
 {% extends "admin/base_site_grid.html" %}
 {% load i18n %}
 
-{% block extrahead %}{{block.super}}
-<script type="text/javascript" src="/static/admin/js/admin/RelatedObjectLookups.js"></script>
+{% block extrastyle %}
+<link rel="stylesheet" type="text/css" href="{{STATIC_URL}}admin/css/base.css" />
+<link rel="stylesheet" type="text/css" href="{{STATIC_URL}}admin/css/forms.css" />
 <style>
-#id_name, #id_description {
+
+#id_name, #id_description, #id_item, #id_location, #id_customer {
   width: 20em;
 }
+
 .quotebutton {
   width: 23%;
   float: left;
   margin-left: 5px;
 }
+
 #status h1 {
   padding-top: 5px;
   padding-bottom: 5px;
 }
+
+td, th {
+  border-bottom: none;
+}
+
 </style>
+{{block.super}}{% endblock %}
+
+{% block extrahead %}{{block.super}}
 <script type="text/javascript">
 
 function extraPreference() {
@@ -28,38 +40,45 @@ function extraPreference() {
 
 function getQuote(event)
 {
-  var $demand = $('<demand/>');
-  $demand.attr("name",$("#id_name").val())
-    .append( $('<description/>').text($("#id_description").val()) )
+  var demand = $('<demand/>');
+  demand.attr("name",$("#id_name").val())
     .append( $('<quantity/>').text($("#id_quantity").val()) )
     .append( $('<item/>').attr("name", $("#id_item").val()) )
-    .append( $('<due/>').text($("#id_due_0").val() + 'T' + $("#id_due_1").val()) )
+    .append( $('<due/>').text($("#id_due_0").val() + 'T' + $("#id_due_1").val()) )    
     .append( $('<priority>1000000</priority>') );
-  var v = $("#id_customer").val();
+  var v = $("#id_description").val();
   if (v!=null && v!='')
-    $demand.append( $('<customer/>').attr("name", v) );
+    demand.append( $('<description/>').text(v) );
+  v = $("#id_location").val();
+  if (v!=null && v!='')
+    demand.append( $('<location/>').attr("name", v) )
+  v = $("#id_customer").val();
+  if (v!=null && v!='')
+    demand.append( $('<customer/>').attr("name", v) );
   v = $("#id_minshipment").val();
   if (v!=null && v!='' && !isNaN(v))
-    $demand.append( $('<minshipment/>').text(v) );
+    demand.append( $('<minshipment/>').text(v) );
   else
-    $demand.append( $('<minshipment/>').text(0) );
+    demand.append( $('<minshipment/>').text(0) );
   v = $("#id_maxlateness").val();
   if (v!=null && v!='')
-    $demand.append( $('<maxlateness/>').text(v) );
-  var $demands = $('<demands/>').append($demand);
-  var $plan = $('<plan/>').attr("xmlns:xsi","http://www.w3.org/2001/XMLSchema-instance").append($demands);
-  var $root = $('<XMLDocument />').append($plan);
+    demand.append( $('<maxlateness/>').text(v) );
+  var demands = $('<demands/>').append(demand);
+  var plan = $('<plan/>').attr("xmlns:xsi","http://www.w3.org/2001/XMLSchema-instance").append(demands);
+  var root = $('<XMLDocument />').append(plan);
   $.ajax({
     type: 'POST',
     url: '{{request.prefix}}/quote/quote/',
     contentType: 'application/xml; charset=utf-8',
-    data: $root.html(),
+    data: root.html(),
     dataType: 'xml',
     success: function (xmldata, status, jqXHR) {
-      $("#id_name").val($(xmldata).find('demands > demand').attr('name'));
+    	console.log(xmldata);
+      $("#id_name").val($(xmldata).find('demands > demand > name').text());
       $("#id_description").val($(xmldata).find('demands > demand > description').text());
-      $("#id_item").val($(xmldata).find('demands > demand > item').attr('name'));
-      $("#id_customer").val($(xmldata).find('demands > demand > customer').attr('name'));
+      $("#id_item").val($(xmldata).find('demands > demand > item > name').text());
+      $("#id_customer").val($(xmldata).find('demands > demand > customer > name').text());
+      $("#id_location").val($(xmldata).find('demands > demand > location > name').text());
       $("#id_quantity").val($(xmldata).find('demands > demand > quantity').text());
       var due = $(xmldata).find('demands > demand > due').text();
       $("#id_due_0").val(due.substring(0,10));
@@ -92,41 +111,48 @@ function getQuote(event)
       }
     });
   event.preventDefault();
+  event.stopPropagation();
 }
 
 function inquireQuote(event)
 {
-  var $demand = $('<demand/>');
-  $demand.attr("name",$("#id_name").val())
-    .append( $('<description/>').text($("#id_description").val()) )
+  var demand = $('<demand/>');
+  demand.attr("name",$("#id_name").val())
     .append( $('<quantity/>').text($("#id_quantity").val()) )
     .append( $('<item/>').attr("name", $("#id_item").val()) )
     .append( $('<due/>').text($("#id_due_0").val() + 'T' + $("#id_due_1").val()) )
     .append( $('<priority>1000000</priority>') );
-  var v = $("#id_customer").val();
+  var v = $("#id_description").val();
   if (v!=null && v!='')
-    $demand.append( $('<customer/>').attr("name", v) );
-  v = $("#id_minshipment").val();
+    demand.append( $('<description/>').text(v) );
+  v = $("#id_location").val();
+  if (v!=null && v!='')
+    demand.append( $('<location/>').attr("name", v) )
+  v = $("#id_customer").val();
+  if (v!=null && v!='')
+    demand.append( $('<customer/>').attr("name", v) );
+  v = ("#id_minshipment").val();
   if (v!=null && v!='' && !isNaN(v))
-    $demand.append( $('<minshipment/>').text(v) );
+    demand.append( $('<minshipment/>').text(v) );
   else
-    $demand.append( $('<minshipment/>').text(0) );
+    demand.append( $('<minshipment/>').text(0) );
   v = $("#id_maxlateness").val();
   if (v!=null && v!='')
-    $demand.append( $('<maxlateness/>').text(v) );
-  var $demands = $('<demands/>').append($demand);
-  var $plan = $('<plan/>').attr("xmlns:xsi","http://www.w3.org/2001/XMLSchema-instance").append($demands);
-  var $root = $('<XMLDocument />').append($plan);
+    demand.append( $('<maxlateness/>').text(v) );
+  var demands = $('<demands/>').append(demand);
+  var plan = $('<plan/>').attr("xmlns:xsi","http://www.w3.org/2001/XMLSchema-instance").append(demands);
+  var root = $('<XMLDocument />').append(plan);
   $.ajax({
     type: 'POST',
     url: '{{request.prefix}}/quote/inquiry/',
     contentType: 'application/xml; charset=utf-8',
-    data: $root.html(),
+    data: root.html(),
     dataType: 'xml',
     success: function (xmldata, status, jqXHR) {
       $("#id_name").val($(xmldata).find('demands > demand').attr('name'));
       $("#id_description").val($(xmldata).find('demands > demand > description').text());
       $("#id_item").val($(xmldata).find('demands > demand > item').attr('name'));
+      $("#id_location").val($(xmldata).find('demands > demand > location').attr('name'));
       $("#id_customer").val($(xmldata).find('demands > demand > customer').attr('name'));
       $("#id_quantity").val($(xmldata).find('demands > demand > quantity').text());
       var due = $(xmldata).find('demands > demand > due').text();
@@ -161,6 +187,7 @@ function inquireQuote(event)
       }
     });
   event.preventDefault();
+  event.stopPropagation();
 }
 
 function cancelQuote(event)
@@ -176,8 +203,10 @@ function cancelQuote(event)
       $("#id_description").val('');
       $("#id_item").val('');
       $("#id_customer").val('');
+      $("#id_location").val('');      
       $("#id_quantity").val('1');
-      $("#id_due_0").val('');
+      var today = new Date();
+      $("#id_due_0").val('' + today.getFullYear() + '-' + (today.getMonth()+1) + '-' + today.getDate());
       $("#id_due_1").val('00:00:00');
       $("#id_minshipment").val('1');
       $("#id_maxlateness").val('');
@@ -195,6 +224,7 @@ function cancelQuote(event)
       }
     });
   event.preventDefault();
+  event.stopPropagation();
 }
 
 function confirmQuote(event)
@@ -210,8 +240,10 @@ function confirmQuote(event)
       $("#id_description").val('');
       $("#id_item").val('');
       $("#id_customer").val('');
+      $("#id_location").val('');   
       $("#id_quantity").val('1');
-      $("#id_due_0").val('');
+      var today = new Date();
+      $("#id_due_0").val('' + today.getFullYear() + '-' + (today.getMonth()+1) + '-' + today.getDate());
       $("#id_due_1").val('00:00:00');
       $("#id_minshipment").val('');
       $("#id_maxlateness").val('');
@@ -229,6 +261,7 @@ function confirmQuote(event)
       }
     });
   event.preventDefault();
+  event.stopPropagation();
 }
 
 function displayInfo(rowid) {
@@ -243,6 +276,7 @@ function displayInfo(rowid) {
       $("#id_description").val($(xmldata).find('demands > demand > description').text());
       $("#id_item").val($(xmldata).find('demands > demand > item').attr('name'));
       $("#id_customer").val($(xmldata).find('demands > demand > customer').attr('name'));
+      $("#id_location").val($(xmldata).find('demands > demand > location').attr('name'));
       $("#id_quantity").val($(xmldata).find('demands > demand > quantity').text());
       var due = $(xmldata).find('demands > demand > due').text();
       $("#id_due_0").val(due.substring(0,10));
@@ -282,11 +316,10 @@ $(function() {
       dateFormat: "yy-mm-dd", changeMonth:true,
       changeYear:true, yearRange: "c-1:c+5"
       });
+  var today = new Date();
+  $("#id_due_0").val('' + today.getFullYear() + '-' + (today.getMonth()+1) + '-' + today.getDate());  
   $("#id_due_1").val('00:00:00');
-  $("#form_quote").button().click(getQuote);
-  $("#form_inquiry").button().click(inquireQuote);
-  $("#form_cancel").button().click(cancelQuote);
-  $("#form_confirm").button().click(confirmQuote);
+  $("#id_quantity").val('1');
   $("#fields").resizable({
     handles:'e',
     minWidth:350,
@@ -313,12 +346,13 @@ $(function() {
 <td>{{ field.errors }}{{ field }}</td>
 </tr>
 {% endfor %}</tbody></table>
-<br/>
-<div class="quotebutton"><button style="width:100%" id="form_inquiry">{% trans 'inquiry'|capfirst %}</button></div>
-<div class="quotebutton"><button style="width:100%" id="form_quote">{% trans 'quote'|capfirst %}</button></div>
-<div class="quotebutton"><button style="width:100%" id="form_cancel">{% filter capfirst|force_escape %}{% trans 'Cancel' context "Included in Django" %}{% endfilter %}</button></div>
-<div class="quotebutton"><button style="width:100%" id="form_confirm">{% trans 'confirm'|capfirst %}</button></div>
+<br>
 </form>
+<input type="submit" class="quotebutton ui-button ui-widget ui-state-default ui-corner-all" id="form_inquiry" value="{% trans 'inquiry'|capfirst %}" onclick="inquireQuote(event)">
+<input type="submit" class="quotebutton ui-button ui-widget ui-state-default ui-corner-all" id="form_quote" value="{% trans 'quote'|capfirst %}" onclick="getQuote(event)">
+<input type="submit" class="quotebutton ui-button ui-widget ui-state-default ui-corner-all" id="form_cancel" value="{% filter capfirst|force_escape %}{% trans 'Cancel' context "Translation included with Django" %}{% endfilter %}" onclick="cancelQuote(event)">
+<input type="submit" class="quotebutton ui-button ui-widget ui-state-default ui-corner-all" id="form_confirm" value="{% trans 'confirm'|capfirst %}" onclick="confirmQuote(event)">
+
 </div>
 <div id="status" style="display: inline-block; overflow-x: auto; vertical-align:top"><h1>{% trans "deliveries"|capfirst %}</h1><br/>
 <h1>{% trans "problems"|capfirst %}</h1><br/>

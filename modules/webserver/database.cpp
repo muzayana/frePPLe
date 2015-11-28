@@ -25,32 +25,13 @@ string DatabaseWriter::defaultconnectionstring;
 
 PGresult *DatabaseStatement::execute(PGconn* conn) const
 {
-  const char* paramValues[4];
-  switch(args)
-  {
-    case 0:
-      return PQexec(conn, sql.c_str());
-    case 1:
-      paramValues[0] = arg1.c_str();
-      return PQexecParams(conn, sql.c_str(), 1, NULL, paramValues, NULL, NULL, 0);
-    case 2:
-      paramValues[0] = arg1.c_str();
-      paramValues[1] = arg2.c_str();
-      return PQexecParams(conn, sql.c_str(), 2, NULL, paramValues, NULL, NULL, 0);
-    case 3:
-      paramValues[0] = arg1.c_str();
-      paramValues[1] = arg2.c_str();
-      paramValues[2] = arg3.c_str();
-      return PQexecParams(conn, sql.c_str(), 3, NULL, paramValues, NULL, NULL, 0);
-    case 4:
-      paramValues[0] = arg1.c_str();
-      paramValues[1] = arg2.c_str();
-      paramValues[2] = arg3.c_str();
-      paramValues[3] = arg4.c_str();
-      return PQexecParams(conn, sql.c_str(), 4, NULL, paramValues, NULL, NULL, 0);
-    default:
-      throw DataException("Database statement gets more than 4 arguments passed");
-  }
+  const char* paramValues[12];
+  for (int idx = 0; idx < args; ++idx)
+    paramValues[idx] = arg[idx].empty() ? NULL : arg[idx].c_str();
+  if (args)
+    return PQexecParams(conn, sql.c_str(), args, NULL, paramValues, NULL, NULL, 0);
+  else
+    return PQexec(conn, sql.c_str());
 }
 
 
@@ -208,6 +189,93 @@ void DatabaseWriter::pushStatement(
   writeSingleton->statements.push_back(DatabaseStatement(sql, arg1, arg2, arg3, arg4));
 }
 
+
+void DatabaseWriter::pushStatement(
+  const string& sql, const string& arg1, const string& arg2, const string& arg3, const string& arg4, const string& arg5
+  )
+{
+  if (!writeSingleton)
+    throw LogicException("Database writer not initialized");
+  ScopeMutexLock l(writeSingleton->lock);
+  writeSingleton->statements.push_back(DatabaseStatement(sql, arg1, arg2, arg3, arg4, arg5));
+}
+
+
+void DatabaseWriter::pushStatement(
+  const string& sql, const string& arg1, const string& arg2, const string& arg3, const string& arg4, const string& arg5, const string& arg6
+  )
+{
+  if (!writeSingleton)
+    throw LogicException("Database writer not initialized");
+  ScopeMutexLock l(writeSingleton->lock);
+  writeSingleton->statements.push_back(DatabaseStatement(sql, arg1, arg2, arg3, arg4, arg5, arg6));
+}
+
+
+void DatabaseWriter::pushStatement(
+  const string& sql, const string& arg1, const string& arg2, const string& arg3, const string& arg4, const string& arg5, const string& arg6, const string& arg7
+  )
+{
+  if (!writeSingleton)
+    throw LogicException("Database writer not initialized");
+  ScopeMutexLock l(writeSingleton->lock);
+  writeSingleton->statements.push_back(DatabaseStatement(sql, arg1, arg2, arg3, arg4, arg5, arg6, arg7));
+}
+
+
+void DatabaseWriter::pushStatement(
+  const string& sql, const string& arg1, const string& arg2, const string& arg3, const string& arg4, const string& arg5, const string& arg6, const string& arg7, const string& arg8
+  )
+{
+  if (!writeSingleton)
+    throw LogicException("Database writer not initialized");
+  ScopeMutexLock l(writeSingleton->lock);
+  writeSingleton->statements.push_back(DatabaseStatement(sql, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8));
+}
+
+
+void DatabaseWriter::pushStatement(
+  const string& sql, const string& arg1, const string& arg2, const string& arg3, const string& arg4, const string& arg5, const string& arg6, const string& arg7, const string& arg8, const string& arg9
+  )
+{
+  if (!writeSingleton)
+    throw LogicException("Database writer not initialized");
+  ScopeMutexLock l(writeSingleton->lock);
+  writeSingleton->statements.push_back(DatabaseStatement(sql, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9));
+}
+
+
+void DatabaseWriter::pushStatement(
+  const string& sql, const string& arg1, const string& arg2, const string& arg3, const string& arg4, const string& arg5, const string& arg6, const string& arg7, const string& arg8, const string& arg9, const string& arg10
+  )
+{
+  if (!writeSingleton)
+    throw LogicException("Database writer not initialized");
+  ScopeMutexLock l(writeSingleton->lock);
+  writeSingleton->statements.push_back(DatabaseStatement(sql, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10));
+}
+
+
+void DatabaseWriter::pushStatement(
+  const string& sql, const string& arg1, const string& arg2, const string& arg3, const string& arg4, const string& arg5, const string& arg6, const string& arg7, const string& arg8, const string& arg9, const string& arg10, const string& arg11
+  )
+{
+  if (!writeSingleton)
+    throw LogicException("Database writer not initialized");
+  ScopeMutexLock l(writeSingleton->lock);
+  writeSingleton->statements.push_back(DatabaseStatement(sql, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11));
+}
+
+
+void DatabaseWriter::pushStatement(
+  const string& sql, const string& arg1, const string& arg2, const string& arg3, const string& arg4, const string& arg5, const string& arg6, const string& arg7, const string& arg8, const string& arg9, const string& arg10, const string& arg11, const string& arg12
+  )
+{
+  if (!writeSingleton)
+    throw LogicException("Database writer not initialized");
+  ScopeMutexLock l(writeSingleton->lock);
+  writeSingleton->statements.push_back(DatabaseStatement(sql, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12));
+}
 
 
 #if defined(HAVE_PTHREAD_H)

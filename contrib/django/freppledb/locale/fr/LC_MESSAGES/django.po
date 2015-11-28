@@ -22,16 +22,16 @@ msgstr ""
 "Project-Id-Version: 3.0.beta\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2015-10-12 10:56+0200\n"
-"PO-Revision-Date: 2014-11-11 17:45+0100\n"
+"PO-Revision-Date: 2015-11-24 17:38+0100\n"
 "Last-Translator: Guy Ollagnon <guy.ollagnon@demand2plan.com>\n"
-"Language-Team: American English <kde-i18n-doc@kde.org>\n"
-"Language: en_US\n"
+"Language-Team: \n"
+"Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Poedit-Basepath: /home/frepple/workspace/frepple/contrib/django/freppledb\n"
-"X-Generator: Poedit 1.6.10\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 1.8.6\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
 #: planningboard/templates/planningboard/index.html:86
 #: templates/output/pegging.html:95 templates/output/resourcegantt.html:91
@@ -66,48 +66,38 @@ msgid "Configure time buckets"
 msgstr "Configure les périodes temporelles"
 
 #: planningboard/templates/planningboard/index.html:99
-#, fuzzy
-#| msgid "demand"
 msgid "Demand"
-msgstr "demande"
+msgstr ""
+"D\n"
+"emande"
 
 #: planningboard/templates/planningboard/index.html:100
-#, fuzzy
-#| msgid "resource"
 msgid "Resource"
-msgstr "ressource"
+msgstr ""
 
 #: planningboard/templates/planningboard/index.html:101
-#, fuzzy
-#| msgid "buffer"
 msgid "Buffer"
-msgstr "SKU"
+msgstr ""
 
 #: planningboard/templates/planningboard/index.html:102
-#, fuzzy
-#| msgid "operation"
 msgid "Operation"
-msgstr "opération"
+msgstr "Opération"
 
 #: planningboard/templates/planningboard/index.html:103
 msgid "Supplier"
 msgstr ""
 
 #: planningboard/templates/planningboard/index.html:104
-#, fuzzy
-#| msgid "message"
 msgid "Messages"
-msgstr "message"
+msgstr "Messages"
 
 #: planningboard/templates/planningboard/index.html:105
 msgid "Chart"
 msgstr ""
 
 #: planningboard/templates/planningboard/index.html:109
-#, fuzzy
-#| msgid "Due date of the demand"
 msgid "Clear the plan of selected demands"
-msgstr "Date d'échéance de la demande"
+msgstr ""
 
 #: planningboard/templates/planningboard/index.html:110
 msgid "Plan selected demands backward from their due date"
@@ -294,10 +284,8 @@ msgid "Undo changes"
 msgstr "Annuler les modifications"
 
 #: templates/admin/base_site_grid.html:117
-#, fuzzy
-#| msgid "location"
 msgid "select action"
-msgstr "emplacement"
+msgstr ""
 
 #: templates/admin/base_site_gridpivot.html:107
 msgid "Display table"
@@ -308,10 +296,8 @@ msgid "Display graph"
 msgstr "Afficher le graphique"
 
 #: templates/admin/base_site_nav.html:9
-#, fuzzy
-#| msgid "search mode"
 msgid "search"
-msgstr "Mode de recherche"
+msgstr ""
 
 #: templates/admin/change_form.html:15 templates/bucketcontext.html:3
 #: templates/buckettabs.html:4 templates/buffercontext.html:3
@@ -466,8 +452,7 @@ msgstr ""
 
 # Translation included with django
 #: templates/admin/submit_line.html:3 templates/common/comments.html:22
-#: templates/common/preferences.html:22
-#: templates/inventoryplanning/drp.html:49
+#: templates/common/preferences.html:22 templates/inventoryplanning/drp.html:49
 msgid "Save"
 msgstr ""
 
@@ -651,16 +636,12 @@ msgstr ""
 "<b>Plan type</b><br/>"
 
 #: templates/execute/execute.html:251
-#, fuzzy
-#| msgid "net forecast"
 msgid "Generate forecast"
-msgstr "prévision nette"
+msgstr ""
 
 #: templates/execute/execute.html:252
-#, fuzzy
-#| msgid "Generate a constrained plan"
 msgid "Generate production plan"
-msgstr "Générer un plan contraint"
+msgstr ""
 
 #: templates/execute/execute.html:254
 msgid ""
@@ -1010,17 +991,13 @@ msgstr "Fichier journal"
 
 #: templates/forecast/forecast.html:34
 #: templates/inventoryplanning/drp.html:1069
-#, fuzzy
-#| msgid "Display table"
 msgid "Display value"
-msgstr "Afficher la table"
+msgstr "Afficher valeur"
 
 #: templates/forecast/forecast.html:35
 #: templates/inventoryplanning/drp.html:1070
-#, fuzzy
-#| msgid "Display table"
 msgid "Display units"
-msgstr "Afficher la table"
+msgstr "Afficher unités"
 
 #: templates/forecast/forecast.html:44 templates/forecast/forecast.html:47
 #: templates/forecast/forecast.html:50
@@ -1102,49 +1079,35 @@ msgid "No"
 msgstr ""
 
 #: templates/inventoryplanning/drp.html:345
-#, fuzzy
-#| msgid "total orders"
 msgid "total orders 3 years ago"
-msgstr "commandes totales"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:346
-#, fuzzy
-#| msgid "orders adjustment"
 msgid "orders adjustment 3 years ago"
-msgstr "ajustement des commandes"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:347
-#, fuzzy
-#| msgid "total orders"
 msgid "total orders 2 years ago"
-msgstr "commandes totales"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:348
-#, fuzzy
-#| msgid "orders adjustment"
 msgid "orders adjustment 2 years ago"
-msgstr "ajustement des commandes"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:349
-#, fuzzy
-#| msgid "total orders"
 msgid "total orders 1 year ago"
-msgstr "commandes totales"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:350
-#, fuzzy
-#| msgid "orders adjustment"
 msgid "orders adjustment 1 year ago"
-msgstr "ajustement des commandes"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:361
 #: templates/inventoryplanning/drp.html:531
 #: templates/inventoryplanning/drp.html:633
 #: templates/inventoryplanning/drp.html:1117
-#, fuzzy
-#| msgid "load quantity"
 msgid "reorder quantity"
-msgstr "quantité de la charge"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:362
 #: templates/inventoryplanning/drp.html:533
@@ -1155,29 +1118,21 @@ msgstr ""
 #: templates/inventoryplanning/drp.html:535
 #: templates/inventoryplanning/drp.html:634
 #: templates/inventoryplanning/drp.html:1118
-#, fuzzy
-#| msgid "Safety stock"
 msgid "safety stock"
-msgstr "Stock de sécurité"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:364
 #: templates/inventoryplanning/drp.html:537
-#, fuzzy
-#| msgid "Safety stock"
 msgid "safety stock override"
-msgstr "Stock de sécurité"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:365
-#, fuzzy
-#| msgid "start inventory"
 msgid "starting inventory"
-msgstr "stock de début"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:366
-#, fuzzy
-#| msgid "total demand"
 msgid "local demand"
-msgstr "demande totale"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:367
 msgid "dependent demand"
@@ -1200,10 +1155,8 @@ msgid "total supply"
 msgstr "approvisionnement total"
 
 #: templates/inventoryplanning/drp.html:372
-#, fuzzy
-#| msgid "end inventory"
 msgid "ending inventory"
-msgstr "stock de fin"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:539
 #: templates/inventoryplanning/drp.html:630 templates/output/buffer.html:141
@@ -1241,10 +1194,8 @@ msgstr "emplacement"
 
 #: templates/inventoryplanning/drp.html:891
 #: templates/inventoryplanning/drp.html:925
-#, fuzzy
-#| msgid "data field"
 msgid "fields"
-msgstr "champ de données"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:959
 msgid "identifier"
@@ -1259,10 +1210,8 @@ msgid "type"
 msgstr "type"
 
 #: templates/inventoryplanning/drp.html:962
-#, fuzzy
-#| msgid "Preferences"
 msgid "reference"
-msgstr "Préférences"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:965
 msgid "origin"
@@ -1291,10 +1240,8 @@ msgid "criticality"
 msgstr "criticalité"
 
 #: templates/inventoryplanning/drp.html:1082
-#, fuzzy
-#| msgid "location"
 msgid "Select action"
-msgstr "emplacement"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:1083
 msgid "proposed"
@@ -1308,26 +1255,20 @@ msgid "change status to %(status)s"
 msgstr ""
 
 #: templates/inventoryplanning/drp.html:1084
-#, fuzzy
-#| msgid "Confirm"
 msgid "confirmed"
-msgstr "Confirmer"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:1085
-#, fuzzy
-#| msgid "Closed"
 msgid "closed"
-msgstr "Fermé"
+msgstr "fermé"
 
 #: templates/inventoryplanning/drp.html:1089
 msgid "forecast"
 msgstr "prévision"
 
 #: templates/inventoryplanning/drp.html:1091
-#, fuzzy
-#| msgid "My actions"
 msgid "Transactions"
-msgstr "Mes actions"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:1100
 #: templates/inventoryplanning/drp.html:1116
@@ -1339,16 +1280,12 @@ msgid "Forecast method"
 msgstr "Methode de prévision"
 
 #: templates/inventoryplanning/drp.html:1110
-#, fuzzy
-#| msgid "Forecast Report"
 msgid "SMAPE Forecast error"
-msgstr "Rapport de prévisions"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:1120
-#, fuzzy
-#| msgid "consumed quantity"
 msgid "economic order quantity"
-msgstr "quantité consommée"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:1120
 #: templates/inventoryplanning/drp.html:1121
@@ -1376,10 +1313,8 @@ msgid "statistical distribution"
 msgstr ""
 
 #: templates/inventoryplanning/drp.html:1128
-#, fuzzy
-#| msgid "Automatic"
 msgid "automatic"
-msgstr "Automatique"
+msgstr "automatique"
 
 #: templates/inventoryplanning/drp.html:1129
 msgctxt "statistical distribution"
@@ -1395,26 +1330,20 @@ msgid "negative binomial"
 msgstr ""
 
 #: templates/inventoryplanning/drp.html:1133
-#, fuzzy
-#| msgid "Demand plan detail"
 msgid "demand standard deviation"
-msgstr "Détail du plan de demande"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:1134
 msgid "lead time standard deviation"
 msgstr ""
 
 #: templates/inventoryplanning/drp.html:1139
-#, fuzzy
-#| msgid "Safety stock"
 msgid "don't stock"
-msgstr "Stock de sécurité"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:1146
-#, fuzzy
-#| msgid "comment"
 msgid "new item comment"
-msgstr "commentaire"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:1148
 msgid "new item-location comment"
@@ -1425,10 +1354,8 @@ msgid "new location comment"
 msgstr ""
 
 #: templates/inventoryplanning/drp.html:1153
-#, fuzzy
-#| msgid "comments"
 msgid "no comments yet"
-msgstr "commentaires"
+msgstr ""
 
 #: templates/locationcontext.html:4
 msgid "Edit availability"
@@ -1520,57 +1447,11 @@ msgstr "Renseignement"
 msgid "Confirm"
 msgstr "Confirmer"
 
-#: templates/registration/password_change_done.html:8
-#: templates/registration/password_change_form.html:9
-msgctxt "Translation included with django"
-msgid "Password change"
-msgstr ""
-
-#: templates/registration/password_change_done.html:10
-#: templates/registration/password_change_done.html:14
-msgctxt "Translation included with django"
-msgid "Password change successful"
-msgstr ""
-
-#: templates/registration/password_change_done.html:16
-msgctxt "Translation included with django"
-msgid "Your password was changed."
-msgstr ""
-
 # Translation included with django
 #: templates/registration/password_change_form.html:11
 #: templates/registration/password_change_form.html:15
 msgid "Password change"
 msgstr ""
-
-#: templates/registration/password_change_form.html:17
-msgctxt "Translation included with django"
-msgid ""
-"Please enter your old password, for security's sake, and then enter your new "
-"password twice so we can verify you typed it in correctly."
-msgstr ""
-
-#: templates/registration/password_change_form.html:22
-msgctxt "Translation included with django"
-msgid "Old password:"
-msgstr ""
-
-#: templates/registration/password_change_form.html:24
-msgctxt "Translation included with django"
-msgid "New password:"
-msgstr ""
-
-#: templates/registration/password_change_form.html:26
-msgctxt "Translation included with django"
-msgid "Confirm password:"
-msgstr ""
-
-#: templates/registration/password_change_form.html:28
-#, fuzzy
-#| msgid "Change history"
-msgctxt "Translation included with django"
-msgid "Change my password"
-msgstr "Historique"
 
 #: templates/resourcecontext.html:7 templates/resourcetabs.html:8
 msgid "Gantt chart"

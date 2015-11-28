@@ -24,7 +24,7 @@ from django.views.decorators.csrf import csrf_protect
 from freppledb.common.models import Parameter
 from freppledb.common.report import GridReport, GridFieldDateTime, GridFieldText, GridFieldInteger
 from freppledb.common.report import GridFieldNumber, GridFieldLastModified
-from freppledb.input.models import Demand, Item, Customer
+from freppledb.input.models import Demand, Item, Customer, Location
 
 import logging
 logger = logging.getLogger(__name__)
@@ -40,16 +40,23 @@ def createQuoteForm(db):
     due = forms.DateField(widget=AdminSplitDateTime())
     customer = forms.ModelChoiceField(
       queryset=Customer.objects.all(),
-      widget=ForeignKeyRawIdWidget(Demand._meta.get_field("customer").rel, data_site, using=db)
+      #widget=ForeignKeyRawIdWidget(Demand._meta.get_field("customer").rel, data_site, using=db)
       )
     item = forms.ModelChoiceField(
       queryset=Item.objects.all(),
-      widget=ForeignKeyRawIdWidget(Demand._meta.get_field("item").rel, data_site, using=db)
+      #widget=ForeignKeyRawIdWidget(Demand._meta.get_field("item").rel, data_site, using=db)
+      )
+    location = forms.ModelChoiceField(
+      queryset=Location.objects.all(),
+      #widget=ForeignKeyRawIdWidget(Demand._meta.get_field("location").rel, data_site, using=db)
       )
 
     class Meta:
       model = Demand
-      fields = ('name', 'description', 'item', 'customer', 'quantity', 'due', 'minshipment', 'maxlateness')
+      fields = (
+        'name', 'description', 'item', 'customer', 'location',
+        'quantity', 'due', 'minshipment', 'maxlateness'
+        )
   return QuoteForm()
 
 
@@ -109,7 +116,7 @@ def InfoView(request, action):
     url = Parameter.getValue('quoting.service_location', database=request.database, default="localhost:8001")
     conn = http.client.HTTPConnection(url)
     if action == 'info':
-      data = json.loads(request.body)
+      data = json.loads(request.body.decode('utf-8'))
       conn.request("GET", '/demand/' + iri_to_uri(urlquote(data[0], '')) + '/?plan=P')
     elif action == 'cancel':
       data = request.GET['name']
@@ -135,12 +142,11 @@ def InfoView(request, action):
       raise Exception('Invalid action')
     response = conn.getresponse()
     result = response.read()
-    print ("zombie3")
     conn.close()
     if response.status == http.client.OK:
-      return HttpResponse(result, mimetype="text/plain")
+      return HttpResponse(result, content_type="text/plain")
     else:
-      return HttpResponseServerError(result, mimetype="text/plain")
+      return HttpResponseServerError(result, content_type="text/plain")
   except Exception as e:
     msg = "Error: %s" % e
     logger.error(msg)

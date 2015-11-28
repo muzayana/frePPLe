@@ -22,12 +22,12 @@ $(function() {
 
 <div id="request-info">
 <br>
-{% trans "HTTP request" %}:<b><br>
+{% trans "HTTP request" context "Translation included with Django" %}:<b><br>
 &nbsp;&nbsp;{{ request.method }}</b> {{request.prefix}}{{ request.get_full_path }}<br><br>
 </div>
 
 <div class="response-info">
-{% trans "HTTP response headers" %}:<br>
+{% trans "HTTP response headers" context "Translation included with Django" %}:<br>
 &nbsp;&nbsp;<b>HTTP {{ response.status_code }} {{ response.status_text }}</b>
 <br>
 {% autoescape off %}
@@ -37,7 +37,7 @@ $(function() {
 </div>
 
 <div class="response-info" style="margin-top: 20px; margin-bottom: 20px">
-{% trans "HTTP response content" %}:<br>
+{% trans "HTTP response content" context "Translation included with Django" %}:<br>
 <textarea id="records" rows="20" style="width:100%">{{ content|urlize_quoted_links }}</textarea>
 {% endautoescape %}
 </div>

@@ -347,7 +347,7 @@ class User(AbstractUser):
               )
             if settings.DEFAULT_USER_GROUP:
                   grp = Group.objects.all().using(db).get_or_create(name=settings.DEFAULT_USER_GROUP)[0]
-                  self.groups.add(grp.id)  
+                  self.groups.add(grp.id)
 
     # Continue with the regular save, as if nothing happened.
     self.is_active = tmp_is_active
@@ -359,11 +359,9 @@ class User(AbstractUser):
       update_fields=update_fields
       )
     if settings.DEFAULT_USER_GROUP and newuser:
-                  grp = Group.objects.all().using(using).get_or_create(name=settings.DEFAULT_USER_GROUP)[0]
-                  self.groups.add(grp.id)    
+      grp = Group.objects.all().using(using).get_or_create(name=settings.DEFAULT_USER_GROUP)[0]
+      self.groups.add(grp.id)
     return usr
-    
-
 
 
   def joined_age(self):

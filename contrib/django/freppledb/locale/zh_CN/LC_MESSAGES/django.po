@@ -1,34 +1,35 @@
-#
+# 
 # Copyright (C) 2007-2012 by Johan De Taeye, frePPLe bvba
-#
+# 
 # This library is free software; you can redistribute it and/or modify it
 # under the terms of the GNU Affero General Public License as published
 # by the Free Software Foundation; either version 3 of the License, or
 # (at your option) any later version.
-#
+# 
 # This library is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
 # General Public License for more details.
-#
+# 
 # You should have received a copy of the GNU Affero General Public
 # License along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
+# 
+# Joao Ranita <jranita@frepple.com>, 2015.
 msgid ""
 msgstr ""
 "Project-Id-Version: 2.1.beta\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2015-10-12 10:56+0200\n"
-"PO-Revision-Date: 2014-11-12 16:53+0800\n"
-"Last-Translator: Johan De Taeye <jdetaeye@frepple.com>\n"
-"Language-Team: American English <kde-i18n-doc@kde.org>\n"
-"Language: en_US\n"
+"PO-Revision-Date: 2015-11-25 11:26+0200\n"
+"Last-Translator: Joao Ranita <jranita@frepple.com>\n"
+"Language-Team: frepple\n"
+"Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Poedit-Basepath: /home/frepple/workspace/frepple/contrib/django/freppledb\n"
-"X-Generator: Poedit 1.5.7\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Virtaal 0.7.1\n"
+"X-Poedit-Basepath: /home/frepple/workspace/frepple/contrib/django/freppledb\n"
 "X-Poedit-SearchPath-0: \n"
 
 #: planningboard/templates/planningboard/index.html:86
@@ -64,48 +65,42 @@ msgid "Configure time buckets"
 msgstr "配置计划日期"
 
 #: planningboard/templates/planningboard/index.html:99
-#, fuzzy
 #| msgid "demand"
 msgid "Demand"
-msgstr "需求"
+msgstr ""
 
 #: planningboard/templates/planningboard/index.html:100
-#, fuzzy
 #| msgid "resource"
 msgid "Resource"
-msgstr "资源"
+msgstr ""
 
 #: planningboard/templates/planningboard/index.html:101
-#, fuzzy
 #| msgid "buffer"
 msgid "Buffer"
-msgstr "库存"
+msgstr ""
 
 #: planningboard/templates/planningboard/index.html:102
-#, fuzzy
 #| msgid "operation"
 msgid "Operation"
-msgstr "工序"
+msgstr ""
 
 #: planningboard/templates/planningboard/index.html:103
 msgid "Supplier"
 msgstr ""
 
 #: planningboard/templates/planningboard/index.html:104
-#, fuzzy
 #| msgid "message"
 msgid "Messages"
-msgstr "信息"
+msgstr ""
 
 #: planningboard/templates/planningboard/index.html:105
 msgid "Chart"
 msgstr ""
 
 #: planningboard/templates/planningboard/index.html:109
-#, fuzzy
 #| msgid "Due date of the demand"
 msgid "Clear the plan of selected demands"
-msgstr "需求的交期"
+msgstr ""
 
 #: planningboard/templates/planningboard/index.html:110
 msgid "Plan selected demands backward from their due date"
@@ -224,10 +219,9 @@ msgstr "错误:没有计划日期。"
 # Translation included with django
 #: templates/admin/base_site_grid.html:60
 #: templates/admin/base_site_gridpivot.html:67
-#, fuzzy
 #| msgid "Page not found"
 msgid "Warning: no data found"
-msgstr "找不到页面"
+msgstr ""
 
 #: templates/admin/base_site_grid.html:64
 #: templates/admin/base_site_gridpivot.html:71
@@ -295,10 +289,9 @@ msgid "Undo changes"
 msgstr "撤销修改"
 
 #: templates/admin/base_site_grid.html:117
-#, fuzzy
 #| msgid "location"
 msgid "select action"
-msgstr "地点"
+msgstr ""
 
 #: templates/admin/base_site_gridpivot.html:107
 msgid "Display table"
@@ -309,10 +302,9 @@ msgid "Display graph"
 msgstr "显示图形"
 
 #: templates/admin/base_site_nav.html:9
-#, fuzzy
 #| msgid "search mode"
 msgid "search"
-msgstr "搜索模式"
+msgstr ""
 
 #: templates/admin/change_form.html:15 templates/bucketcontext.html:3
 #: templates/buckettabs.html:4 templates/buffercontext.html:3
@@ -390,10 +382,9 @@ msgstr ""
 
 # Translation included with django
 #: templates/admin/delete_confirmation.html:35
-#, fuzzy
 #| msgid "object ID"
 msgid "Objects"
-msgstr "ID"
+msgstr ""
 
 # Translation included with django
 #: templates/admin/delete_confirmation.html:42
@@ -659,16 +650,14 @@ msgstr ""
 "<b>计划类型</b><br/>"
 
 #: templates/execute/execute.html:251
-#, fuzzy
 #| msgid "net forecast"
 msgid "Generate forecast"
-msgstr "网络预测"
+msgstr ""
 
 #: templates/execute/execute.html:252
-#, fuzzy
 #| msgid "Generate a constrained plan"
 msgid "Generate production plan"
-msgstr "产生有约束的计划"
+msgstr ""
 
 #: templates/execute/execute.html:254
 msgid ""
@@ -1001,17 +990,15 @@ msgstr "日志文件"
 
 #: templates/forecast/forecast.html:34
 #: templates/inventoryplanning/drp.html:1069
-#, fuzzy
 #| msgid "Display table"
 msgid "Display value"
-msgstr "显示表格"
+msgstr ""
 
 #: templates/forecast/forecast.html:35
 #: templates/inventoryplanning/drp.html:1070
-#, fuzzy
 #| msgid "Display table"
 msgid "Display units"
-msgstr "显示表格"
+msgstr ""
 
 #: templates/forecast/forecast.html:44 templates/forecast/forecast.html:47
 #: templates/forecast/forecast.html:50
@@ -1093,49 +1080,42 @@ msgid "No"
 msgstr ""
 
 #: templates/inventoryplanning/drp.html:345
-#, fuzzy
 #| msgid "total orders"
 msgid "total orders 3 years ago"
-msgstr "全部订单"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:346
-#, fuzzy
 #| msgid "orders adjustment"
 msgid "orders adjustment 3 years ago"
-msgstr "订单调整"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:347
-#, fuzzy
 #| msgid "total orders"
 msgid "total orders 2 years ago"
-msgstr "全部订单"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:348
-#, fuzzy
 #| msgid "orders adjustment"
 msgid "orders adjustment 2 years ago"
-msgstr "订单调整"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:349
-#, fuzzy
 #| msgid "total orders"
 msgid "total orders 1 year ago"
-msgstr "全部订单"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:350
-#, fuzzy
 #| msgid "orders adjustment"
 msgid "orders adjustment 1 year ago"
-msgstr "订单调整"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:361
 #: templates/inventoryplanning/drp.html:531
 #: templates/inventoryplanning/drp.html:633
 #: templates/inventoryplanning/drp.html:1117
-#, fuzzy
 #| msgid "load quantity"
 msgid "reorder quantity"
-msgstr "负载量"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:362
 #: templates/inventoryplanning/drp.html:533
@@ -1146,29 +1126,25 @@ msgstr ""
 #: templates/inventoryplanning/drp.html:535
 #: templates/inventoryplanning/drp.html:634
 #: templates/inventoryplanning/drp.html:1118
-#, fuzzy
 #| msgid "Safety stock"
 msgid "safety stock"
-msgstr "安全库存"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:364
 #: templates/inventoryplanning/drp.html:537
-#, fuzzy
 #| msgid "Safety stock"
 msgid "safety stock override"
-msgstr "安全库存"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:365
-#, fuzzy
 #| msgid "start inventory"
 msgid "starting inventory"
-msgstr "初始库存"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:366
-#, fuzzy
 #| msgid "total demand"
 msgid "local demand"
-msgstr "总体需求"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:367
 msgid "dependent demand"
@@ -1191,10 +1167,9 @@ msgid "total supply"
 msgstr "总体供应"
 
 #: templates/inventoryplanning/drp.html:372
-#, fuzzy
 #| msgid "end inventory"
 msgid "ending inventory"
-msgstr "最终库存"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:539
 #: templates/inventoryplanning/drp.html:630 templates/output/buffer.html:141
@@ -1232,10 +1207,9 @@ msgstr "地点"
 
 #: templates/inventoryplanning/drp.html:891
 #: templates/inventoryplanning/drp.html:925
-#, fuzzy
 #| msgid "data field"
 msgid "fields"
-msgstr "数据域"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:959
 msgid "identifier"
@@ -1250,10 +1224,9 @@ msgid "type"
 msgstr "类型"
 
 #: templates/inventoryplanning/drp.html:962
-#, fuzzy
 #| msgid "Preferences"
 msgid "reference"
-msgstr "参数"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:965
 msgid "origin"
@@ -1282,10 +1255,9 @@ msgid "criticality"
 msgstr "危急程度"
 
 #: templates/inventoryplanning/drp.html:1082
-#, fuzzy
 #| msgid "location"
 msgid "Select action"
-msgstr "地点"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:1083
 msgid "proposed"
@@ -1299,16 +1271,14 @@ msgid "change status to %(status)s"
 msgstr ""
 
 #: templates/inventoryplanning/drp.html:1084
-#, fuzzy
 #| msgid "Confirm"
 msgid "confirmed"
-msgstr "确认"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:1085
-#, fuzzy
 #| msgid "Closed"
 msgid "closed"
-msgstr "关闭"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:1089
 msgid "forecast"
@@ -1316,10 +1286,9 @@ msgstr "预测"
 
 # Translation included with django
 #: templates/inventoryplanning/drp.html:1091
-#, fuzzy
 #| msgid "My actions"
 msgid "Transactions"
-msgstr "我的动作"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:1100
 #: templates/inventoryplanning/drp.html:1116
@@ -1331,16 +1300,14 @@ msgid "Forecast method"
 msgstr "预测方法"
 
 #: templates/inventoryplanning/drp.html:1110
-#, fuzzy
 #| msgid "Forecast Report"
 msgid "SMAPE Forecast error"
-msgstr "预测报告"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:1120
-#, fuzzy
 #| msgid "demand quantity"
 msgid "economic order quantity"
-msgstr "需求量"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:1120
 #: templates/inventoryplanning/drp.html:1121
@@ -1368,10 +1335,9 @@ msgid "statistical distribution"
 msgstr ""
 
 #: templates/inventoryplanning/drp.html:1128
-#, fuzzy
 #| msgid "Automatic"
 msgid "automatic"
-msgstr "自动"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:1129
 msgctxt "statistical distribution"
@@ -1387,26 +1353,23 @@ msgid "negative binomial"
 msgstr ""
 
 #: templates/inventoryplanning/drp.html:1133
-#, fuzzy
 #| msgid "Demand plan detail"
 msgid "demand standard deviation"
-msgstr "需求计划明细"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:1134
 msgid "lead time standard deviation"
 msgstr ""
 
 #: templates/inventoryplanning/drp.html:1139
-#, fuzzy
 #| msgid "Safety stock"
 msgid "don't stock"
-msgstr "安全库存"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:1146
-#, fuzzy
 #| msgid "comment"
 msgid "new item comment"
-msgstr "评论"
+msgstr ""
 
 #: templates/inventoryplanning/drp.html:1148
 msgid "new item-location comment"
@@ -1417,10 +1380,9 @@ msgid "new location comment"
 msgstr ""
 
 #: templates/inventoryplanning/drp.html:1153
-#, fuzzy
 #| msgid "comments"
 msgid "no comments yet"
-msgstr "评论"
+msgstr ""
 
 #: templates/locationcontext.html:4
 msgid "Edit availability"
@@ -1513,81 +1475,9 @@ msgid "Confirm"
 msgstr "确认"
 
 # Translation included with django
-#: templates/registration/password_change_done.html:8
-#: templates/registration/password_change_form.html:9
-#, fuzzy
-#| msgid "Password change"
-msgctxt "Translation included with django"
-msgid "Password change"
-msgstr "修改密码"
-
-# Translation included with django
-#: templates/registration/password_change_done.html:10
-#: templates/registration/password_change_done.html:14
-#, fuzzy
-#| msgid "Password change successful"
-msgctxt "Translation included with django"
-msgid "Password change successful"
-msgstr "密码修改成功"
-
-# Translation included with django
-#: templates/registration/password_change_done.html:16
-#, fuzzy
-#| msgid "Your password was changed."
-msgctxt "Translation included with django"
-msgid "Your password was changed."
-msgstr "你的密码已经被修改"
-
-# Translation included with django
 #: templates/registration/password_change_form.html:11
 #: templates/registration/password_change_form.html:15
 msgid "Password change"
-msgstr "修改密码"
-
-# Translation included with django
-#: templates/registration/password_change_form.html:17
-#, fuzzy
-#| msgid ""
-#| "Please enter your old password, for security's sake, and then enter your "
-#| "new password twice so we can verify you typed it in correctly."
-msgctxt "Translation included with django"
-msgid ""
-"Please enter your old password, for security's sake, and then enter your new "
-"password twice so we can verify you typed it in correctly."
-msgstr ""
-"为安全起见，请先输入你的旧密码，然后再输入你的新密码。为了核实你的输入，请输"
-"入两次新密码。"
-
-# Translation included with django
-#: templates/registration/password_change_form.html:22
-#, fuzzy
-#| msgid "Old password:"
-msgctxt "Translation included with django"
-msgid "Old password:"
-msgstr "旧密码："
-
-# Translation included with django
-#: templates/registration/password_change_form.html:24
-#, fuzzy
-#| msgid "New password:"
-msgctxt "Translation included with django"
-msgid "New password:"
-msgstr "新密码："
-
-# Translation included with django
-#: templates/registration/password_change_form.html:26
-#, fuzzy
-#| msgid "Confirm password:"
-msgctxt "Translation included with django"
-msgid "Confirm password:"
-msgstr "确认密码："
-
-# Translation included with django
-#: templates/registration/password_change_form.html:28
-#, fuzzy
-#| msgid "Change my password"
-msgctxt "Translation included with django"
-msgid "Change my password"
 msgstr "修改密码"
 
 #: templates/resourcecontext.html:7 templates/resourcetabs.html:8

@@ -179,6 +179,7 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
     'freppledb.boot',
     'freppledb.quoting',
     'freppledb.inventoryplanning',
@@ -190,7 +191,6 @@ INSTALLED_APPS = (
     'freppledb.output',
     'freppledb.execute',
     'freppledb.common',
-    'rest_framework',
 )
 
 
@@ -240,7 +240,11 @@ REST_FRAMEWORK = {
   'DEFAULT_RENDERER_CLASSES': (
     'rest_framework.renderers.JSONRenderer',
     'freppledb.common.api.renderers.freppleBrowsableAPI',
-  )
+  ),
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+#    'PAGE_SIZE': 100,                 # Default to 10
+    # Use Django's standard `django.contrib.auth` permissions,
+    # or allow read-only access for unauthenticated users.
 }
 
 LOCALE_PATHS = (
@@ -343,6 +347,9 @@ THEMES = [
   'grass', 'lemon', 'water', 'snow', 'strawberry', 'earth'
   ]
 
+# A default user-group to which new users are automatically added
+DEFAULT_USER_GROUP = None
+
 # The default user interface theme
 DEFAULT_THEME = 'grass'
 
@@ -372,9 +379,9 @@ DEFAULT_DASHBOARD = [
     ("delivery_performance",{"green": 90, "yellow": 80}),
     ("inventory_by_location",{"limit":5}),
     ("inventory_by_item",{"limit":10}),
+    ("forecast_error",{"history":12}),
   ]},
   ]
-
 # The following settings are for the 2 factor email registration on the cloud setup
 ACCOUNT_ACTIVATION_DAYS = 7 # One-week activation window; you may, of course, use a different value.
 site = { 'id':1, 'domain':'127.0.0.1:8000', 'name':'frePPLe Cloud',}
