@@ -374,6 +374,7 @@ DEFAULT_DASHBOARD = [
     ("delivery_performance",{"green": 90, "yellow": 80}),
     ("inventory_by_location",{"limit":5}),
     ("inventory_by_item",{"limit":10}),
+    ("forecast_error",{"history":12}),
   ]},
   ]
 # Port number for the CherryPy web server
