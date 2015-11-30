@@ -27,7 +27,7 @@ class DataLoadTest(TestCase):
 
   def test_demo_data(self):
     response = self.client.get('/data/input/customer/?format=json')
-    self.assertContains(response, '"records":2,')
+    self.assertContains(response, '"records":3,')  # Different between Enterprise Edition and Community Edition
     response = self.client.get('/data/input/flow/?format=json')
     self.assertContains(response, '"records":19,')
     response = self.client.get('/data/input/buffer/?format=json')
@@ -39,7 +39,7 @@ class DataLoadTest(TestCase):
     response = self.client.get('/data/input/demand/?format=json')
     self.assertContains(response, '"records":38,') # Different between Enterprise Edition and Community Edition
     response = self.client.get('/data/input/item/?format=json')
-    self.assertContains(response, '"records":5,')
+    self.assertContains(response, '"records":7,') # Different between Enterprise Edition and Community Edition
     response = self.client.get('/data/input/load/?format=json')
     self.assertContains(response, '"records":3,')
     response = self.client.get('/data/input/location/?format=json')
