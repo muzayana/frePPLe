@@ -34,7 +34,7 @@ SECRET_KEY = '%@mzit!i8b*$zc&6oev96=RANDOMSTRING'
 DATABASES = {
   'default': {
     'ENGINE': 'django.db.backends.postgresql_psycopg2',
-    'NAME': 'Enterprise',
+    'NAME': 'frepple',
     'USER': 'frepple',
     'PASSWORD': 'frepple',
     'HOST': '',     # Set to empty string for localhost.
@@ -46,15 +46,17 @@ DATABASES = {
     },
   'Tires': {
     'ENGINE': 'django.db.backends.postgresql_psycopg2',
-    'NAME': 'Tires',
+    'NAME': 'scenario1',
     'USER': 'frepple',
     'PASSWORD': 'frepple',
     'HOST': '',     # Set to empty string for localhost.
     'OPTIONS': {},  # Backend specific configuration parameters.
     'PORT': '',     # Set to empty string for default.
-    'TEST_NAME': 'tires'    # Database for running the test suite
+    'TEST': {
+      'NAME': 'test_scenario1' # Database name used when running the test suite.
+      }
     },
-  'Polchem': {
+  'scenario2': {
     'ENGINE': 'django.db.backends.postgresql_psycopg2',
     'NAME': 'Polchem',
     'USER': 'frepple',
@@ -66,7 +68,7 @@ DATABASES = {
       'NAME': 'test_scenario2' # Database name used when running the test suite.
       }
     },
-  'Escenario3': {
+  'scenario3': {
     'ENGINE': 'django.db.backends.postgresql_psycopg2',
     'NAME': 'Escenario3',
     'USER': 'frepple',
@@ -94,7 +96,7 @@ OODO_PASSWORDS = {
 # If passwords are set in this file they will be used instead of the ones set in the database parameters table
 OPENBRAVO_PASSWORDS = {
   'default': '',
-  'Tires': '',
+  'scenario1': '',
   'scenario2': '',
   'scenario3': ''
   }

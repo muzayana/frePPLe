@@ -247,6 +247,10 @@ class Command(BaseCommand):
         ).save(using=database)
       if has_forecast:
         Parameter.objects.using(database).create(
+          name='forecast.calendar', value='weeks',
+          description='Name of a calendar model to define the granularity of the time buckets for forecasting.'
+          ).save(using=database)
+        Parameter.objects.using(database).create(
           name='forecast.Croston_initialAlfa', value='0.1',
           description='Initial parameter for the Croston forecast method.'
           ).save(using=database)
@@ -596,7 +600,6 @@ class Command(BaseCommand):
           # Forecast
           fcst = Forecast.objects.using(database).create(
             name='Forecast item %05d' % i,
-            calendar=weeks,
             item=it,
             customer=random.choice(cust),
             maxlateness=60 * 86400,  # Forecast can only be planned 2 months late

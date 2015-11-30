@@ -767,6 +767,9 @@ def generate_plan():
 
   # Detect whether the forecast module is available
   with_forecasting = 'demand_forecast' in [ a[0] for a in inspect.getmembers(frepple) ]
+  if with_forecasting and not Parameter.getValue('forecast.calendar', db, None):
+    with_forecasting = False
+    print("Warning: parameter forecast.calendar not set. No forecast will be calculated.")
 
   # Detect whether the inventory planning module is available
   with_inventoryplanning = 'solver_inventoryplanning' in [ a[0] for a in inspect.getmembers(frepple) ]
