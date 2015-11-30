@@ -663,6 +663,15 @@ class WebServer : public CivetHandler
     /** Dispatcher for websocket data in the form: /unregister/ */
     static int websocket_unregister(struct mg_connection*, int, char*, size_t, WebClient*);
 
+    /** Rolling our own version of the standard to_string function, which seems
+      * have portability issues. */
+    template<class T> string toString(T val)
+    {
+      ostringstream os;
+      os << val;
+      return os.str();
+    }
+
     /** Handler for order quoting logic.
       * Second argument is 'true' for a quote and 'false' for an inquiry.
       */
