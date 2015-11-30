@@ -72,7 +72,9 @@ def getAttributeFields(model, related_name_prefix=None):
   for field_name, label, fieldtype in _register.get("%s.%s" % (model.__module__, model.__name__), []):
     if related_name_prefix:
       field_name = "%s__%s" % (related_name_prefix, field_name)
-    label = "%s - %s" % (related_name_prefix, label)
+      label = "%s - %s" % (related_name_prefix.split('__')[-1], label)
+    else:
+      label = "%s - %s" % (model.__name__, label)
     if fieldtype == 'string':
       result.append( GridFieldText(field_name, title=label) )
     elif fieldtype == 'boolean':

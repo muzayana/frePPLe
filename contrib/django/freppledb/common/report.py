@@ -661,8 +661,11 @@ class GridReport(View):
         return query
     if sort and reportclass.model:
       # Validate the field does exist.
+      # We only validate the first level field, and not the fields
+      # on related models.
+      sortfield = sort.split('__')[0]
       for name in reportclass.model._meta.get_all_field_names():
-        if name == sort:
+        if name == sortfield:
           return query.order_by(asc and sort or ('-%s' % sort))
     # Sorting by a non-existent field name: ignore the filter
     return query
