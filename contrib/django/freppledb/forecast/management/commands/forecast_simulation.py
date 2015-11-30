@@ -118,6 +118,8 @@ class Command(BaseCommand):
       cal = Parameter.getValue('forecast.calendar', database)
       bckt_list = [ i for i in CalendarBucket.objects.all().using(database).filter(calendar__name=cal, startdate__lt=curdate).order_by('startdate') ]
       bckt_list = bckt_list[-history:]
+      if not bckt_list:
+        raise Exception("No calendar buckets found")
       idx = 0
       for bckt in bckt_list:
         # Start message
