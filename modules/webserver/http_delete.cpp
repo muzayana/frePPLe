@@ -51,11 +51,73 @@ bool WebServer::handleDelete(CivetServer *server, struct mg_connection *conn)
     return true;
   }
 
-  // Delete the object 
+  // Delete the object
   try
   {
+    string persist;
+    CivetServer::getParam(conn, "persist", persist);
+    if (persist == "1")
+    {
+      // Erase from the database.  TODO make this method generic?
+      // The statements below only work cool if the database cascades the
+      // delete to all child records. This is currently NOT the case (Postgres
+      // supports it, but django doesn't support it when creating the schema).
+      if (categoryname == "demand")
+        DatabaseWriter::pushStatement(
+          "delete from demand where name = $1;",
+          static_cast<Demand*>(entity)->getName()
+          );
+      else if (categoryname == "item")
+        DatabaseWriter::pushStatement(
+          "delete from item where name = $1;",
+          static_cast<Item*>(entity)->getName()
+          );
+      else if (categoryname == "customer")
+        DatabaseWriter::pushStatement(
+          "delete from customer where name = $1;",
+          static_cast<Customer*>(entity)->getName()
+          );
+      else if (categoryname == "supplier")
+        DatabaseWriter::pushStatement(
+          "delete from supplier where name = $1;",
+          static_cast<Supplier*>(entity)->getName()
+          );
+      else if (categoryname == "resource")
+        DatabaseWriter::pushStatement(
+          "delete from resource where name = $1;",
+          static_cast<Resource*>(entity)->getName()
+          );
+      else if (categoryname == "buffer")
+        DatabaseWriter::pushStatement(
+          "delete from buffer where name = $1;",
+          static_cast<Buffer*>(entity)->getName()
+          );
+      else if (categoryname == "skill")
+        DatabaseWriter::pushStatement(
+          "delete from skill where name = $1;",
+          static_cast<Skill*>(entity)->getName()
+          );
+      else if (categoryname == "location")
+        DatabaseWriter::pushStatement(
+          "delete from location where name = $1;",
+          static_cast<Location*>(entity)->getName()
+          );
+      else if (categoryname == "calendar")
+        DatabaseWriter::pushStatement(
+          "delete from calendar where name = $1;",
+          static_cast<Calendar*>(entity)->getName()
+          );
+      else if (categoryname == "operation")
+        DatabaseWriter::pushStatement(
+          "delete from operation where name = $1;",
+          static_cast<Operation*>(entity)->getName()
+          );
+      else
+        throw DataException("DELETE method not implemented");
+    }
+
     delete entity;
-    mg_printf(conn, 
+    mg_printf(conn,
       "HTTP/1.1 200 OK\r\n"
       "Content-Length: 20\r\n\r\n"
       "Successfully deleted"

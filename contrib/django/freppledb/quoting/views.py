@@ -117,13 +117,13 @@ def InfoView(request, action):
     conn = http.client.HTTPConnection(url)
     if action == 'info':
       data = json.loads(request.body.decode('utf-8'))
-      conn.request("GET", '/demand/' + iri_to_uri(urlquote(data[0], '')) + '/?plan=P')
+      conn.request("GET", '/demand/' + iri_to_uri(urlquote(data[0], '')) + '?type=detail')
     elif action == 'cancel':
       data = request.GET['name']
-      conn.request("POST", '/demand/' + iri_to_uri(urlquote(data, '')) + '/?action=R&persist=1', "", {"content-length": 0})
+      conn.request("DELETE", '/demand/' + iri_to_uri(urlquote(data, '')) + "?persist=1", "", {"content-length": 0})
     elif action == 'confirm':
       data = request.GET['name']
-      conn.request("POST", '/demand/' + iri_to_uri(urlquote(data, '')) + '/?status=open&persist=1', "", {"content-length": 0})
+      conn.request("POST", '/demand/' + iri_to_uri(urlquote(data, '')) + "?status=open&persist=1", "", {"content-length": 0})
     elif action == 'inquiry' or action == 'quote':
       data = '\r\n'.join([
         '--' + BOUNDARY,

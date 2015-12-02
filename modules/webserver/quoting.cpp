@@ -146,7 +146,7 @@ bool WebServer::quote_or_inquiry(struct mg_connection* conn, bool keepreservatio
       (*dmd)->getLocation() ? (*dmd)->getLocation()->getName() : string(""),
       (*dmd)->getCustomer() ? (*dmd)->getCustomer()->getName() : string(""),
       toString((*dmd)->getMinShipment()),
-      toString((*dmd)->getMaxLateness()),
+      toString(static_cast<long>((*dmd)->getMaxLateness())),
       (*dmd)->getCategory(),
       toString((*dmd)->getDue())
       );
