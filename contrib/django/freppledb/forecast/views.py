@@ -23,6 +23,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.utils.text import capfirst
 from django.utils.encoding import force_text
 
+from freppledb.boot import getAttributeFields
 from freppledb.forecast.models import Forecast, ForecastDemand
 from freppledb.common.db import python_date
 from freppledb.common.models import BucketDetail
@@ -30,7 +31,7 @@ from freppledb.common.report import GridPivot, GridFieldText, GridFieldInteger, 
 from freppledb.common.report import EncodedCSVReader, GridReport, GridFieldBool, GridFieldLastModified
 from freppledb.common.report import GridFieldChoice, GridFieldNumber, GridFieldDateTime, GridFieldDuration
 from freppledb.input.views import PathReport
-from freppledb.input.models import Demand
+from freppledb.input.models import Demand, Item, Location, Customer
 from freppledb.output.models import Constraint
 from freppledb.output.views.constraint import BaseReport
 
@@ -124,6 +125,28 @@ class OverviewReport(GridPivot):
     )
 
   @classmethod
+  def initialize(reportclass, request):
+    if reportclass._attributes_added != 2:
+      reportclass._attributes_added = 2
+      reportclass.attr_sql = ''
+      # Adding custom forecast attributes
+      for f in getAttributeFields(Forecast):
+        reportclass.rows += (f,)
+        reportclass.attr_sql += 'forecast.%s, ' % f.name.split('__')[-1]
+      # Adding custom item attributes
+      for f in getAttributeFields(Item, related_name_prefix="item"):
+        reportclass.rows += (f,)
+        reportclass.attr_sql += 'item.%s, ' % f.name.split('__')[-1]
+      # Adding custom location attributes
+      for f in getAttributeFields(Location, related_name_prefix="location"):
+        reportclass.rows += (f,)
+        reportclass.attr_sql += 'location.%s, ' % f.name.split('__')[-1]
+      # Adding custom customer attributes
+      for f in getAttributeFields(Customer, related_name_prefix="customer"):
+        reportclass.rows += (f,)
+        reportclass.attr_sql += 'customer.%s, ' % f.name.split('__')[-1]
+
+  @classmethod
   def extra_context(reportclass, request, *args, **kwargs):
     if args and args[0]:
       return {
@@ -133,8 +156,8 @@ class OverviewReport(GridPivot):
     else:
       return {}
 
-  @staticmethod
-  def query(request, basequery, sortsql='1 asc'):
+  @classmethod
+  def query(reportclass, request, basequery, sortsql='1 asc'):
     basesql, baseparams = basequery.query.get_compiler(basequery.db).as_sql(with_col_aliases=False)
     # Execute the query
     cursor = connections[request.database].cursor()
@@ -153,67 +176,103 @@ class OverviewReport(GridPivot):
       suffix = ''
 
     query = '''
-        select fcst.name as row1, fcst.item_id as row2, fcst.customer_id as row3,
-           fcst.location_id as row4, fcst.out_method as row5, fcst.out_smape as row6,
-           d.bucket as col1, d.startdate as col2, d.enddate as col3,
-           coalesce(sum(forecastplan.orderstotal%s),0) as orderstotal,
-           coalesce(sum(forecastplan.ordersopen%s),0) as ordersopen,
-           sum(forecastplan.ordersadjustment%s) as ordersadjustment,
-           coalesce(sum(forecastplan.forecastbaseline%s),0) as forecastbaseline,
-           sum(forecastplan.forecastadjustment%s) as forecastadjustment,
-           coalesce(sum(forecastplan.forecasttotal%s),0) as forecasttotal,
-           coalesce(sum(forecastplan.forecastnet%s),0) as forecastnet,
-           coalesce(sum(forecastplan.forecastconsumed%s),0) as forecastconsumed,
-           coalesce(sum(forecastplan.ordersplanned%s),0) as ordersplanned,
-           coalesce(sum(forecastplan.forecastplanned%s),0) as forecastplanned
-        from (%s) fcst
-        -- Multiply with buckets
-        cross join (
-           select name as bucket, startdate, enddate
-           from common_bucketdetail
-           where bucket_id = '%s' and enddate > '%s' and startdate < '%s'
-           ) d
-        -- Forecast plan
-        left outer join forecastplan
-        on fcst.name = forecastplan.forecast_id
-        and forecastplan.startdate >= d.startdate
-        and forecastplan.startdate < d.enddate
-        -- Grouping
-        group by fcst.name, fcst.item_id, fcst.customer_id, fcst.location_id,
-          fcst.out_method, fcst.out_smape, d.bucket, d.startdate, d.enddate
-        order by %s, d.startdate
+        select
+          fcstplan.forecast_id,
+          forecast.item_id as item_id, forecast.customer_id as customer_id,
+          forecast.location_id as location_id, forecast.out_method as out_method,
+          forecast.out_smape as out_smape, %s
+          fcstplan.bucket as cross1, fcstplan.startdate as cross2, fcstplan.enddate as cross3,
+          fcstplan.orderstotal, fcstplan.ordersopen, fcstplan.ordersadjustment,
+          fcstplan.forecastbaseline, fcstplan.forecastadjustment, fcstplan.forecasttotal,
+          fcstplan.forecastnet, fcstplan.forecastconsumed, fcstplan.ordersplanned,
+          fcstplan.forecastplanned
+        from (
+          select
+            fcst.name as forecast_id,
+            d.bucket as bucket, d.startdate as startdate, d.enddate as enddate,
+            coalesce(sum(forecastplan.orderstotal%s),0) as orderstotal,
+            coalesce(sum(forecastplan.ordersopen%s),0) as ordersopen,
+            sum(forecastplan.ordersadjustment%s) as ordersadjustment,
+            coalesce(sum(forecastplan.forecastbaseline%s),0) as forecastbaseline,
+            sum(forecastplan.forecastadjustment%s) as forecastadjustment,
+            coalesce(sum(forecastplan.forecasttotal%s),0) as forecasttotal,
+            coalesce(sum(forecastplan.forecastnet%s),0) as forecastnet,
+            coalesce(sum(forecastplan.forecastconsumed%s),0) as forecastconsumed,
+            coalesce(sum(forecastplan.ordersplanned%s),0) as ordersplanned,
+            coalesce(sum(forecastplan.forecastplanned%s),0) as forecastplanned
+          from (%s) fcst
+          -- Multiply with buckets
+          cross join (
+             select name as bucket, startdate, enddate
+             from common_bucketdetail
+             where bucket_id = %%s and enddate > %%s and startdate < %%s
+             ) d
+          -- Forecast plan
+          left outer join forecastplan
+          on fcst.name = forecastplan.forecast_id
+          and forecastplan.startdate >= d.startdate
+          and forecastplan.startdate < d.enddate
+          -- Grouping
+          group by fcst.name,
+            d.bucket, d.startdate, d.enddate
+          ) fcstplan
+        left outer join forecast on
+          fcstplan.forecast_id = forecast.name
+        left outer join item on
+          forecast.item_id = item.name
+        left outer join location on
+          forecast.location_id = location.name
+        left outer join customer on
+          forecast.customer_id = customer.name
+        order by %s, fcstplan.startdate
         ''' % (
+          reportclass.attr_sql,
           suffix, suffix, suffix, suffix, suffix, suffix, suffix, suffix, suffix, suffix,
-          basesql, request.report_bucket, request.report_startdate, request.report_enddate,
-          sortsql
+          basesql, sortsql
           )
-    cursor.execute(query, baseparams)
+    cursor.execute(query, baseparams + (request.report_bucket, request.report_startdate, request.report_enddate) )
 
     # Build the python result
     for row in cursor.fetchall():
-      yield {
+      numfields = len(row)
+      res =  {
         'forecast': row[0],
         'item': row[1],
         'customer': row[2],
         'location': row[3],
         'out_method': row[4],
         'out_smape': row[5],
-        'bucket': row[6],
-        'startdate': python_date(row[7]),
-        'enddate': python_date(row[8]),
-        'past': python_date(row[7]) < currentdate and 1 or 0,
-        'future': python_date(row[8]) > currentdate and 1 or 0,
-        'orderstotal': row[9],
-        'ordersopen': row[10],
-        'ordersadjustment': row[11],
-        'forecastbaseline': row[12],
-        'forecastadjustment': row[13],
-        'forecasttotal': row[14],
-        'forecastnet': row[15],
-        'forecastconsumed': row[16],
-        'ordersplanned': row[17],
-        'forecastplanned': row[18]
+        'bucket': row[numfields-13],
+        'startdate': python_date(row[numfields-12]),
+        'enddate': python_date(row[numfields-11]),
+        'past': python_date(row[numfields-12]) < currentdate and 1 or 0,
+        'future': python_date(row[numfields-11]) > currentdate and 1 or 0,
+        'orderstotal': row[numfields-10],
+        'ordersopen': row[numfields-9],
+        'ordersadjustment': row[numfields-8],
+        'forecastbaseline': row[numfields-7],
+        'forecastadjustment': row[numfields-6],
+        'forecasttotal': row[numfields-5],
+        'forecastnet': row[numfields-4],
+        'forecastconsumed': row[numfields-3],
+        'ordersplanned': row[numfields-2],
+        'forecastplanned': row[numfields-1],
         }
+      # Add attribute fields
+      idx = 6
+      for f in getAttributeFields(Forecast):
+        res[f.field_name] = row[idx]
+        idx += 1
+      for f in getAttributeFields(Item, related_name_prefix="item"):
+        res[f.field_name] = row[idx]
+        idx += 1
+      for f in getAttributeFields(Location, related_name_prefix="location"):
+        res[f.field_name] = row[idx]
+        idx += 1
+      for f in getAttributeFields(Customer, related_name_prefix="customer"):
+        res[f.field_name] = row[idx]
+        idx += 1
+      yield res
 
 
   @classmethod
