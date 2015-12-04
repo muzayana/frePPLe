@@ -13,6 +13,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.utils.text import capfirst
 from django.utils.encoding import force_text
 
+from freppledb.boot import getAttributeFields
 from freppledb.input.models import Item
 from freppledb.output.models import Demand
 from freppledb.common.db import python_date
@@ -40,6 +41,15 @@ class OverviewReport(GridPivot):
     )
 
   @classmethod
+  def initialize(reportclass, request):
+    if reportclass._attributes_added != 2:
+      reportclass._attributes_added = 2
+      reportclass.attr_sql = ''
+      # Adding custom item attributes
+      for f in getAttributeFields(Item, initially_hidden=True):
+        reportclass.attr_sql += 'item.%s, ' % f.name.split('__')[-1]
+
+  @classmethod
   def extra_context(reportclass, request, *args, **kwargs):
     if args and args[0]:
       request.session['lasttab'] = 'plan'
@@ -50,8 +60,8 @@ class OverviewReport(GridPivot):
     else:
       return {}
 
-  @staticmethod
-  def query(request, basequery, sortsql='1 asc'):
+  @classmethod
+  def query(reportclass, request, basequery, sortsql='1 asc'):
     basesql, baseparams = basequery.query.get_compiler(basequery.db).as_sql(with_col_aliases=False)
     cursor = connections[request.database].cursor()
 
@@ -78,11 +88,11 @@ class OverviewReport(GridPivot):
 
     # Execute the query    TODO THIS QUERY ASSUMES FORECAST MODULE IS INSTALLED!
     query = '''
-        select y.name as row1,
-               y.bucket as col1, y.startdate as col2, y.enddate as col3,
+        select y.name, %s
+               y.bucket, y.startdate, y.enddate,
                min(y.orders),
                coalesce(sum(fcst.quantity),0),
-               min(y.planned), y.lft as lft, y.rght as rght
+               min(y.planned)
         from (
           select x.name as name, x.lft as lft, x.rght as rght,
                x.bucket as bucket, x.startdate as startdate, x.enddate as enddate,
@@ -114,14 +124,14 @@ class OverviewReport(GridPivot):
         ) x
         -- Requested quantity
         inner join item
-        on item.lft between x.lft and x.rght
+          on item.lft between x.lft and x.rght
         left join demand
-        on item.name = demand.item_id
-        and x.startdate <= demand.due
-        and x.enddate > demand.due
-        and demand.due >= '%s'
-        and demand.due < '%s'
-        and demand.status = 'open'
+          on item.name = demand.item_id
+          and x.startdate <= demand.due
+          and x.enddate > demand.due
+          and demand.due >= '%s'
+          and demand.due < '%s'
+          and demand.status = 'open'
         -- Grouping
         group by x.name, x.lft, x.rght, x.bucket, x.startdate, x.enddate
         ) y
@@ -137,32 +147,38 @@ class OverviewReport(GridPivot):
         and fcst.startdate >= y.startdate
         and fcst.startdate < y.enddate
         -- Ordering and grouping
-        group by y.name, y.lft, y.rght, y.bucket, y.startdate, y.enddate
+        group by %s y.name, y.lft, y.rght, y.bucket, y.startdate, y.enddate
         order by %s, y.startdate
-       ''' % (basesql, request.report_bucket, request.report_startdate,
+       ''' % (reportclass.attr_sql, basesql, request.report_bucket, request.report_startdate,
               request.report_enddate, request.report_startdate,
               request.report_enddate, request.report_startdate,
-              request.report_enddate, sortsql)
+              request.report_enddate, reportclass.attr_sql, sortsql)
     cursor.execute(query, baseparams)
 
     # Build the python result
     previtem = None
     for row in cursor.fetchall():
+      numfields = len(row)
       if row[0] != previtem:
         backlog = startbacklogdict.get(row[0], 0)
         previtem = row[0]
-      backlog += float(row[4]) + float(row[5]) - float(row[6])
-      yield {
+      backlog += float(row[numfields-3]) + float(row[numfields-2]) - float(row[numfields-1])
+      res = {
         'item': row[0],
-        'bucket': row[1],
-        'startdate': python_date(row[2]),
-        'enddate': python_date(row[3]),
-        'orders': round(row[4], 1),
-        'forecast': round(row[5], 1),
-        'demand': round(float(row[4]) + float(row[5]), 1),
-        'supply': round(row[6], 1),
+        'bucket': row[numfields-6],
+        'startdate': python_date(row[numfields-5]),
+        'enddate': python_date(row[numfields-4]),
+        'orders': round(row[numfields-3], 1),
+        'forecast': round(row[numfields-2], 1),
+        'demand': round(float(row[numfields-3]) + float(row[numfields-2]), 1),
+        'supply': round(row[numfields-1], 1),
         'backlog': round(backlog, 1),
         }
+      idx = 1
+      for f in getAttributeFields(Item):
+        res[f.field_name] = row[idx]
+        idx += 1
+      yield res
 
 
 class DetailReport(GridReport):

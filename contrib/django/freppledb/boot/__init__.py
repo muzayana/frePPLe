@@ -61,7 +61,7 @@ def getAttributes(model):
   return _register.get(model, [])
 
 
-def getAttributeFields(model, related_name_prefix=None):
+def getAttributeFields(model, related_name_prefix=None, initially_hidden=False):
   '''
   Return report fields for all attributes of a given model.
   '''
@@ -76,21 +76,21 @@ def getAttributeFields(model, related_name_prefix=None):
     else:
       label = "%s - %s" % (model.__name__, label)
     if fieldtype == 'string':
-      result.append( GridFieldText(field_name, title=label) )
+      result.append( GridFieldText(field_name, title=label, initially_hidden=initially_hidden) )
     elif fieldtype == 'boolean':
-      result.append( GridFieldBool(field_name, title=label) )
+      result.append( GridFieldBool(field_name, title=label, initially_hidden=initially_hidden) )
     elif fieldtype == 'number':
-      result.append( GridFieldNumber(field_name, title=label) )
+      result.append( GridFieldNumber(field_name, title=label, initially_hidden=initially_hidden) )
     elif fieldtype == 'integer':
-      result.append( GridFieldInteger(field_name, title=label) )
+      result.append( GridFieldInteger(field_name, title=label, initially_hidden=initially_hidden) )
     elif fieldtype == 'date':
-      result.append( GridFieldDate(field_name, title=label) )
+      result.append( GridFieldDate(field_name, title=label, initially_hidden=initially_hidden) )
     elif fieldtype == 'datetime':
-      result.append( GridFieldDateTime(field_name, title=label) )
+      result.append( GridFieldDateTime(field_name, title=label, initially_hidden=initially_hidden) )
     elif fieldtype == 'duration':
-      result.append( GridFieldDuration(field_name, title=label) )
+      result.append( GridFieldDuration(field_name, title=label, initially_hidden=initially_hidden) )
     elif fieldtype == 'time':
-      result.append( GridFieldTime(field_name, title=label) )
+      result.append( GridFieldTime(field_name, title=label, initially_hidden=initially_hidden) )
     else:
       raise Exception("Invalid attribute type '%s'." % fieldtype)
   return result

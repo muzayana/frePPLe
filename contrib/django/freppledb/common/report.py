@@ -131,7 +131,8 @@ class GridField(object):
   extra = None
   align = 'center'
   searchrules = None
-  hidden = False
+  hidden = False            # NEVER display this field
+  initially_hidden = False  # Hide the field by default, but allow the user to add it
 
 
 class GridFieldDateTime(GridField):
