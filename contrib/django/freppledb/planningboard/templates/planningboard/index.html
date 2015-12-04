@@ -80,7 +80,7 @@ $(function() {
 <span onclick="gantt.zoom(0.5,0)" class="fa fa-search-plus fa-lg" title="{% trans 'zoom in'|capfirst|force_escape %}"></span>&nbsp;&nbsp;
 <span onclick="gantt.zoom(1.5,0)" class="fa fa-search-minus fa-lg" title="{% trans 'zoom out'|capfirst|force_escape %}"></span>&nbsp;&nbsp;
 <span onclick="gantt.zoom(1,-86400000)" class="fa fa-backward fa-lg" title="{% filter capfirst|force_escape %}{% trans 'move in' context 'Gantt' %}{% endfilter %}"></span>&nbsp;&nbsp;
-<span onclick="gantt.zoom(1,86400000)" class="fa fa-forward fa-lg" title="{% filter capfirst|force_escape %}{% trans 'move out' context 'Gantt' %}{% endfilter% }"></span>&nbsp;&nbsp;
+<span onclick="gantt.zoom(1,86400000)" class="fa fa-forward fa-lg" title="{% filter capfirst|force_escape %}{% trans 'move out' context 'Gantt' %}{% endfilter %}"></span>&nbsp;&nbsp;
 <span onclick="resetBoard()" class="fa fa-square fa-lg" title="{% trans 'reset'|capfirst|force_escape %}"></span>&nbsp;&nbsp;
 <span onclick="grid.showBucket()" title="{% trans 'configure time buckets'|capfirst|force_escape %}" id="bucketconfig" class="fa fa-clock-o fa-lg"></span>
 </div>
@@ -127,7 +127,7 @@ $(function() {
   </div>
   <div id="supplier">
     <div style="float: right">
-    <span onclick="addSelected('supplier')" title="{% trans trans 'add to the graph'|capfirst|force_escape %}" class="fa fa-tasks fa-lg spacing"></span>
+    <span onclick="addSelected('supplier')" title="{% trans 'add to the graph'|capfirst|force_escape %}" class="fa fa-tasks fa-lg spacing"></span>
     </div>
     <div class="clear"><table id="supplierlist"></table></div>
   </div>
