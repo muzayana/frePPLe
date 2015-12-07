@@ -99,6 +99,8 @@ class MultiDBMiddleware(object):
             else:
               raise Http404('Access to this scenario is not allowed')
           return
+      except Http404:
+        raise
       except:
         pass
     request.prefix = ''

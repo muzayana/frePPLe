@@ -18,6 +18,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.admin.utils import unquote, quote
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.contenttypes.models import ContentType
+from django.core.urlresolvers import reverse, resolve
 from django.template import RequestContext, loader, TemplateDoesNotExist
 from django import forms
 from django.utils.encoding import force_text
@@ -274,41 +275,6 @@ class ParameterList(GridReport):
     )
 
 
-@staff_member_required
-@csrf_protect
-def Comments(request, app, model, object_id):  # TODO move this view completely into MultiDBModelAdmin
-  request.session['lasttab'] = 'comments'
-  try:
-    modeltype = ContentType.objects.using(request.database).get(app_label=app, model=model)
-    modeltype._state.db = request.database
-    object_id = unquote(object_id)
-    modelinstance = modeltype.get_object_for_this_type(pk=object_id)
-    comments = Comment.objects.using(request.database) \
-      .filter(content_type__pk=modeltype.id, object_pk=object_id) \
-      .order_by('-id')
-  except:
-    raise Http404('Object not found')
-  if request.method == 'POST':
-    if request.user.has_perm("common.add_comment"):
-      comment = request.POST['comment']
-      if comment:
-        Comment(
-             content_object=modelinstance,
-             user=request.user,
-             comment=comment
-             ).save(using=request.database)
-    return HttpResponseRedirect('%s/comments/%s/%s/%s/' % (request.prefix, app, model, object_id))
-  else:
-    return render_to_response('common/comments.html', {
-      'title': capfirst(force_text(modelinstance._meta.verbose_name) + " " + object_id),
-      'model': model,
-      'object_id': quote(object_id),
-      'active_tab': 'comments',
-      'comments': comments
-      },
-      context_instance=RequestContext(request))
-
-
 class CommentList(GridReport):
   '''
   A list report to display all comments.
@@ -325,9 +291,10 @@ class CommentList(GridReport):
     GridFieldInteger('id', title=_('identifier'), key=True),
     GridFieldLastModified('lastmodified'),
     GridFieldText('user', title=_('user'), field_name='user__username', editable=False, align='center', width=80),
-    GridFieldText('content_type', title=_('type'), field_name='content_type__model', editable=False, align='center'),
+    GridFieldText('model', title=_('model'), field_name='content_type__model', editable=False, align='center'),
     GridFieldText('object_pk', title=_('object ID'), field_name='object_pk', editable=False, align='center', extra='formatter:objectfmt'),
-    GridFieldText('comment', title=_('comment'), editable=False, align='center'),
+    GridFieldText('comment', title=_('comment'), width=400, editable=False, align='center'),
+    GridFieldText('app', title="app", hidden=True, field_name='content_type__app_label')
     )
 
 
@@ -399,12 +366,11 @@ def detail(request, app, model, object_id):
   if not newtab:
     newtab = admn.tabs[0]
 
-  # Convert a view class into a function when accessed the first time
-  if inspect.isclass(newtab['view']):
-    newtab['view'] = newtab['view'].as_view()
+  # Convert a view name into a function when accessed the first time
+  viewfunc = newtab.get('viewfunc', None)
+  if not viewfunc:
+    url = reverse(newtab['view'], args=("dummy",))
+    newtab['viewfunc'] = resolve(url).func
 
   # Open the tab
-  if newtab['view'].__name__ != newtab['view'].__qualname__:
-    return newtab['view'](admn, request, object_id)
-  else:
-    return newtab['view'](request, object_id)
+  return newtab['viewfunc'](request, object_id)
