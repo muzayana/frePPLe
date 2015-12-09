@@ -41,9 +41,28 @@ def search(request):
   # We are interested in models satisfying these criteria:
   #  - primary key is of type text
   #  - user has change permissions
+  #  - special case for inventory planning:
+  #      - add matches to the DRP screen
+  #      - exclude the automatically generated calendars
+  with_inv_planning = "freppledb.inventoryplanning" in settings.INSTALLED_APPS
+  if with_inv_planning:
+    from freppledb.inventoryplanning.models import InventoryPlanning
+    query = InventoryPlanning.objects.using(request.database).filter(buffer__name__icontains=term).order_by('buffer__name').values_list('buffer__name')
+    count = len(query)
+    if count > 0:
+      result.append( {'value': None, 'label': (ungettext(
+         '%(name)s - %(count)d match',
+         '%(name)s - %(count)d matches', count) % {'name': force_text(_("Distribution planning")), 'count': count}).capitalize()
+         })
+      result.extend([ {
+        'url': '/inventoryplanning/drp/',
+        'value': i[0]
+        } for i in query[:10] ])
   for cls, admn in data_site._registry.items():
     if request.user.has_perm("%s.view_%s" % (cls._meta.app_label, cls._meta.object_name.lower())) and isinstance(cls._meta.pk, CharField):
       query = cls.objects.using(request.database).filter(pk__icontains=term).order_by('pk').values_list('pk')
+      if with_inv_planning and cls == Calendar:
+        query = query.exclude(source='Inventory planning')
       count = len(query)
       if count > 0:
         result.append( {'value': None, 'label': (ungettext(
@@ -51,9 +70,8 @@ def search(request):
            '%(name)s - %(count)d matches', count) % {'name': force_text(cls._meta.verbose_name), 'count': count}).capitalize()
            })
         result.extend([ {
-          'label': cls._meta.object_name.lower(),
-          'value': i[0],
-          'app': cls._meta.app_label
+          'url': "/data/%s/%s/" % (cls._meta.app_label, cls._meta.object_name.lower()),
+          'value': i[0]
           } for i in query[:10] ])
 
   # Construct reply
