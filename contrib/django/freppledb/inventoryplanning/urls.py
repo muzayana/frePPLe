@@ -21,6 +21,8 @@ urlpatterns = patterns(
   # Model list reports, which override standard admin screens
   (r'^data/inventoryplanning/inventoryplanning/$', InventoryPlanningList.as_view()),
   (r'^inventoryplanning/drp/$', DRP.as_view()),
+  (r'^inventoryplanning/drp/([^/]+)/(.+)/$', DRP.as_view()),
+  (r'^inventoryplanning/drp/(.+)/$', DRP.as_view()),
   (r'^inventoryplanning/drpitemlocation/(.+)/$', DRPitemlocation.as_view()),
   (r'^inventoryplanning/drpitem/(.+)/$', DRPitem.as_view()),
   (r'^inventoryplanning/drplocation/(.+)/$', DRPlocation.as_view())

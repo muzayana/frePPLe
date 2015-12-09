@@ -36,7 +36,6 @@ from django.views.decorators.csrf import csrf_protect
 from django.utils.encoding import smart_text
 
 from freppledb.common.models import Comment
-from freppledb.common.views import Comments
 
 
 csrf_protect_m = method_decorator(csrf_protect)

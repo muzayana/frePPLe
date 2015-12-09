@@ -26,6 +26,3 @@ class ForecastAPI(frePPleListCreateAPIView):
 class ForecastdetailAPI(frePPleRetrieveUpdateDestroyAPIView):
     queryset = freppledb.forecast.models.Forecast.objects.all()#.using(request.database)
     serializer_class = ForecastSerializer
-
-
-

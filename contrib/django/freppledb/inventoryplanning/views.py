@@ -233,12 +233,19 @@ class DRP(GridReport):
   @classmethod
   def extra_context(reportclass, request, *args, **kwargs):
     return {
-      'openbravo': 'freppledb.openbravo' in settings.INSTALLED_APPS
+      'openbravo': 'freppledb.openbravo' in settings.INSTALLED_APPS,
+      'args': args
       }
 
   @ classmethod
   def basequeryset(reportclass, request, args, kwargs):
-    return InventoryPlanningOutput.objects.all().select_related("buffer", "buffer__inventoryplanning", "buffer__item", "buffer__location")
+    if args and args[0]:
+      return InventoryPlanningOutput.objects.all() \
+        .filter(buffer__item__name=args[0]) \
+        .select_related("buffer", "buffer__inventoryplanning", "buffer__item", "buffer__location")
+    else:
+      return InventoryPlanningOutput.objects.all() \
+        .select_related("buffer", "buffer__inventoryplanning", "buffer__item", "buffer__location")
 
   @staticmethod
   def query(request, basequery):
@@ -445,7 +452,7 @@ class DRPitemlocation(View):
     # Current date
     try:
       current_date = datetime.strptime(
-        Parameter.objects.using(db).get(name="currentdate").value,
+        Parameter.objects.using(request.database).get(name="currentdate").value,
         "%Y-%m-%d %H:%M:%S"
         )
     except:
@@ -1466,14 +1473,14 @@ class DRPitemlocation(View):
       )
     agg_buckets = [ i for i in agg_buckets_query ]
     agg_bucket_idx = 0
-    orderstotal = 0
-    ordersopen = 0
+    orderstotal = Decimal(0)
+    ordersopen = Decimal(0)
     ordersadjustment = None
-    forecastbaseline = 0
+    forecastbaseline = Decimal(0)
     forecastadjustment = None
-    forecasttotal = 0
-    forecastnet = 0
-    forecastconsumed = 0
+    forecasttotal = Decimal(0)
+    forecastnet = Decimal(0)
+    forecastconsumed = Decimal(0)
     for i in db_forecastplan:
       if i.startdate <= agg_buckets[agg_bucket_idx].startdate:
         if i.orderstotal:

@@ -47,7 +47,11 @@ def search(request):
   with_inv_planning = "freppledb.inventoryplanning" in settings.INSTALLED_APPS
   if with_inv_planning:
     from freppledb.inventoryplanning.models import InventoryPlanning
-    query = InventoryPlanning.objects.using(request.database).filter(buffer__name__icontains=term).order_by('buffer__name').values_list('buffer__name')
+    query = InventoryPlanning.objects.using(request.database) \
+      .filter(buffer__item__name__icontains=term) \
+      .order_by('buffer__item__name') \
+      .distinct('buffer__item__name') \
+      .values_list('buffer__item__name')
     count = len(query)
     if count > 0:
       result.append( {'value': None, 'label': (ungettext(
@@ -967,12 +971,14 @@ class DistributionOrderList(GridReport):
   A list report to show distribution orders.
   '''
   title = _("distribution orders")
+  if 'freppledb.inventoryplanning' in settings.INSTALLED_APPS:
+    template = 'input/distributionorder.html'
   basequeryset = DistributionOrder.objects.all()
   model = DistributionOrder
   frozenColumns = 1
 
   rows = (
-    GridFieldInteger('id', title=_('identifier'), key=True),
+    GridFieldInteger('id', title=_('identifier'), key=True, formatter='drp' if 'freppledb.inventoryplanning' in settings.INSTALLED_APPS else 'integer'),
     GridFieldText('reference', title=_('reference'),
       editable='freppledb.openbravo' not in settings.INSTALLED_APPS
       ),
@@ -1008,12 +1014,14 @@ class PurchaseOrderList(GridReport):
   A list report to show purchase orders.
   '''
   title = _("purchase orders")
+  if 'freppledb.inventoryplanning' in settings.INSTALLED_APPS:
+    template = 'input/purchaseorder.html'
   basequeryset = PurchaseOrder.objects.all()
   model = PurchaseOrder
   frozenColumns = 1
 
   rows = (
-    GridFieldInteger('id', title=_('identifier'), key=True),
+    GridFieldInteger('id', title=_('identifier'), key=True, formatter='drp' if 'freppledb.inventoryplanning' in settings.INSTALLED_APPS else 'integer'),
     GridFieldText('reference', title=_('reference'),
       editable='freppledb.openbravo' not in settings.INSTALLED_APPS
       ),

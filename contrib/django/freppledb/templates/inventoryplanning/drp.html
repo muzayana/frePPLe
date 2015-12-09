@@ -1236,7 +1236,7 @@ function displayResult(reset)
 	}
 
   // Show history tab
-  // Note that a recalculate doesn't send back the hsitory, and we don't change the existing content
+  // Note that a recalculate doesn't send back the history, and we don't change the existing content
   if ("history" in result)
 	{
 	  var history = $("#history");
@@ -1301,7 +1301,8 @@ function setCommentType(t)
 
 
 $(function() {
-  {% if preferences.name %}selectRow("{{ preferences.name|escapejs }}");{% endif %}
+  {% if preferences.name and not args %}selectRow("{{ preferences.name|escapejs }}");
+  {% elif args.1 %}selectRow("{{ args.0|escapejs }}@{{ args.1|escapejs }}");{% endif %}
   selectTab("{% if preferences.showtab %}{{ preferences.showtab }}{% else %}plan{% endif %}");
 
   $("#units").buttonset();
