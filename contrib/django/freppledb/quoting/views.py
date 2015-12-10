@@ -72,6 +72,7 @@ class QuoteReport(GridReport):
   height = 150
 
   rows = (
+    #. Translators: Translation included with Django
     GridFieldText('name', title=_('name'), key=True, formatter='detail', extra="role:'input/demand'"),
     GridFieldText('item', title=_('item'), field_name='item__name', formatter='detail', extra="role:'input/item'"),
     GridFieldText('customer', title=_('customer'), field_name='customer__name', formatter='detail', extra="role:'input/customer'"),

@@ -316,7 +316,8 @@ $(function() {
 </form>
 <input type="submit" class="quotebutton ui-button ui-widget ui-state-default ui-corner-all" id="form_inquiry" value="{% trans 'inquiry'|capfirst %}" onclick="inquireQuote(event)">
 <input type="submit" class="quotebutton ui-button ui-widget ui-state-default ui-corner-all" id="form_quote" value="{% trans 'quote'|capfirst %}" onclick="getQuote(event)">
-<input type="submit" class="quotebutton ui-button ui-widget ui-state-default ui-corner-all" id="form_cancel" value="{% filter capfirst|force_escape %}{% trans 'Cancel' context "Translation included with Django" %}{% endfilter %}" onclick="cancelQuote(event)">
+{% comment %}Translators: Translation included with Django {% endcomment %}
+<input type="submit" class="quotebutton ui-button ui-widget ui-state-default ui-corner-all" id="form_cancel" value="{% filter capfirst|force_escape %}{% trans 'Cancel' %}{% endfilter %}" onclick="cancelQuote(event)">
 <input type="submit" class="quotebutton ui-button ui-widget ui-state-default ui-corner-all" id="form_confirm" value="{% trans 'confirm'|capfirst %}" onclick="confirmQuote(event)">
 
 </div>
