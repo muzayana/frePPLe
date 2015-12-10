@@ -16,7 +16,6 @@ import freppledb.common.views
 from freppledb.common.models import User, Bucket, BucketDetail, Parameter, Comment
 from freppledb.menu import menu
 from freppledb import VERSION
-from django.utils.encoding import force_text
 
 
 # Settings menu

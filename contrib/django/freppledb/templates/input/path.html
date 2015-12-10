@@ -60,15 +60,9 @@ var width_level = 100;
 var minlevel = 0;
 var maxlevel = 0;
 
-function hideContext()
-{
-  $('#operationcontext, #buffercontext, #resourcecontext, #itemsupplier, #resourcecontext, #itemsupplier, #itemdistribution').css('display','none');
-}
 
 function clickedShaped(event)
 {
-  // Hide previous context menu
-  $('#operationcontext, #buffercontext, #resourcecontext, #itemsupplier, #resourcecontext, #itemsupplier, #itemdistribution').css('display','none');
 
   // Analyze where we have clicked
   var type = $(this).children("use").prop("href").baseVal;
@@ -326,8 +320,8 @@ function drawGraph(jsondata)
        }
        else
          return '';
-       })
-    .call(force.drag);
+       });
+    //.call(force.drag);
 
   // Show node IDs
   g.filter( function(d, i) {return d.type != 'operation' || d.suboperindex <= 0;} )
@@ -350,10 +344,9 @@ function drawGraph(jsondata)
 
 
 $(function(){
- if ($("#graph").height() > $("#content").height() - 200)
-   $("#graph").height($("#content").height() - 200);
-   $("#graph").resizable({handles: "s"});
-   $("body").click(hideContext)
+  if ($("#graph").height() > $(window).height() - 350)
+    $("#graph").height($(window).height() - 350);
+  $("#graph").resizable({handles: "s"});
 });
 
 $(window).resize(function() {
@@ -367,6 +360,15 @@ $("#content-main").resizable({handles: "s"});
 $(".ui-jqgrid").css({height: ($(".ui-jqgrid-view").height() + $(".ui-jqgrid-pager").height()) + "px"});
 console.log("resize windowheight:",$(window).height(),"px graphheight",$("#graph").height(),"px gridheight");
 });
+
+$(window).bind('resize', function() {
+   var width = $("#graph").width();
+   d3.select('#svggraph')
+   .attr('width', width)
+   .attr('viewBox','0 0 ' + width + ' 400');
+});
+
+
 
 </script>
 {% endblock %}

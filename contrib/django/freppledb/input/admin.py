@@ -317,7 +317,8 @@ class Resource_admin(MultiDBModelAdmin):
     {"name": 'constraint', "label": _("constrained demand"), "view": "output_constraint_resource"},
     {"name": 'comments', "label": _("comments"), "view": "admin:input_resource_comment"},
     #. Translators: Translation included with Django
-    {"name": 'history', "label": _("History"), "view": "admin:input_resource_history"},    ]
+    {"name": 'history', "label": _("History"), "view": "admin:input_resource_history"},
+    ]
 data_site.register(Resource, Resource_admin)
 
 
