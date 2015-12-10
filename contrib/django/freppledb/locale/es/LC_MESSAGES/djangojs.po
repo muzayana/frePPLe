@@ -15,7 +15,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 2.1.beta\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-12-07 13:43+0100\n"
+"POT-Creation-Date: 2015-12-10 14:43+0100\n"
 "PO-Revision-Date: 2015-12-07 13:53+0200\n"
 "Last-Translator: Joao Ranita <jranita@frepple.com>\n"
 "Language-Team: frepple\n"
@@ -46,7 +46,7 @@ msgstr "Guardar"
 #: common/static/js/frepple.js:611 common/static/js/frepple.js:672
 #: common/static/js/frepple.js:732 common/static/js/frepple.js:789
 #: common/static/js/frepple.js:1035 common/static/js/frepple.js:1207
-#: common/static/js/frepple.js:1451
+#: common/static/js/frepple.js:1450
 msgid "Cancel"
 msgstr "Cancelar"
 
@@ -139,12 +139,10 @@ msgid "Filtered where"
 msgstr "Filtra donde"
 
 #: common/static/js/frepple.js:988
-#| msgid "export selected records to openbravo"
 msgid "Export selected records to openbravo"
 msgstr "Exportar los registros seleccionados a openbravo"
 
 #: common/static/js/frepple.js:998
-#| msgid "connecting to openbravo..."
 msgid "Connecting to openbravo..."
 msgstr "Conectando a openbravo..."
 
@@ -153,7 +151,6 @@ msgid "Export successful"
 msgstr "Exportación exitosa"
 
 #: common/static/js/frepple.js:1016
-#| msgid "close"
 msgid "Close"
 msgstr "Cerrar"
 
@@ -162,7 +159,6 @@ msgid "Error during export"
 msgstr "Error en exportación"
 
 #: common/static/js/frepple.js:1029
-#| msgid "retry"
 msgid "Retry"
 msgstr "Volver a intentar"
 
@@ -170,53 +166,53 @@ msgstr "Volver a intentar"
 msgid "Add"
 msgstr "Añadir"
 
-#: common/static/js/frepple.js:1414
+#: common/static/js/frepple.js:1413
 msgid "Load an Excel file or a CSV-formatted text file."
 msgstr "Carga de un archivo de Excel o un archivo de texto con formato CSV."
 
-#: common/static/js/frepple.js:1415
+#: common/static/js/frepple.js:1414
 msgid "The first row should contain the field names."
 msgstr "La primera fila debe contener los nombres de los campos."
 
-#: common/static/js/frepple.js:1416
+#: common/static/js/frepple.js:1415
 msgid "First delete all existing records AND ALL RELATED TABLES"
 msgstr ""
 "En primer lugar, elimine todos los registros existentes Y TODAS LAS TABLAS "
 "RELACIONADAS"
 
-#: common/static/js/frepple.js:1417
+#: common/static/js/frepple.js:1416
 msgid "Data file"
 msgstr "Archivo de Datos"
 
-#: common/static/js/frepple.js:1420
+#: common/static/js/frepple.js:1419
 msgid "Import CSV or Excel file"
 msgstr "Importar archivo CSV o Excel"
 
-#: common/static/js/frepple.js:1424
+#: common/static/js/frepple.js:1423
 msgid "Import"
 msgstr "Importar"
 
-#: common/static/js/frepple.js:1894
+#: common/static/js/frepple.js:1893
 msgid "Guided tour"
 msgstr "Demostración guiada"
 
-#: common/static/js/frepple.js:1918
+#: common/static/js/frepple.js:1917
 msgid "Previous"
 msgstr "Anterior"
 
-#: common/static/js/frepple.js:1923 common/static/js/frepple.js:2056
+#: common/static/js/frepple.js:1922 common/static/js/frepple.js:2055
 msgid "Stop"
 msgstr "Detener"
 
-#: common/static/js/frepple.js:1923 common/static/js/frepple.js:2047
+#: common/static/js/frepple.js:1922 common/static/js/frepple.js:2046
 msgid "Play"
 msgstr "Reproducir"
 
-#: common/static/js/frepple.js:1929
+#: common/static/js/frepple.js:1928
 msgid "Next"
 msgstr "Siguiente"
 
-#: common/static/js/frepple.js:2022
+#: common/static/js/frepple.js:2021
 msgid "out of"
 msgstr "fuera de"
 
