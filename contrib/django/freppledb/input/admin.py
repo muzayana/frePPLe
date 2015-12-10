@@ -37,7 +37,8 @@ class CalendarBucket_admin(MultiDBModelAdmin):
   tabs = [
     {"name": 'edit', "label": _("edit"), "view":  "admin:input_calendarbucket_change", "permissions": "input.change_calendarbucket"},
     {"name": 'comments', "label": _("comments"), "view": "admin:input_calendarbucket_comment"},
-    {"name": 'history', "label": _("history"), "view": "admin:input_calendarbucket_history"},
+    #. Translators: Translation included with Django
+    {"name": 'history', "label": _("History"), "view": "admin:input_calendarbucket_history"},
     ]
 data_site.register(CalendarBucket, CalendarBucket_admin)
 
@@ -50,7 +51,8 @@ class Calendar_admin(MultiDBModelAdmin):
   tabs = [
     {"name": 'edit', "label": _("edit"), "view": "admin:input_calendar_change", "permissions": "input.change_calendar"},
     {"name": 'comments', "label": _("comments"), "view": "admin:input_calendar_comment"},
-    {"name": 'history', "label": _("history"), "view": "admin:input_calendar_history"},
+    #. Translators: Translation included with Django
+    {"name": 'history', "label": _("History"), "view": "admin:input_calendar_history"},
     ]
 data_site.register(Calendar, Calendar_admin)
 
@@ -63,7 +65,8 @@ class Location_admin(MultiDBModelAdmin):
   tabs = [
     {"name": 'edit', "label": _("edit"), "view": "admin:input_location_change", "permissions": "input.change_location"},
     {"name": 'comments', "label": _("comments"), "view": "admin:input_location_comment"},
-    {"name": 'history', "label": _("history"), "view": "admin:input_location_history"},
+    #. Translators: Translation included with Django
+    {"name": 'history', "label": _("History"), "view": "admin:input_location_history"},
     ]
 data_site.register(Location, Location_admin)
 
@@ -76,7 +79,8 @@ class Customer_admin(MultiDBModelAdmin):
   tabs = [
     {"name": 'edit', "label": _("edit"), "view": "admin:input_customer_change", "permissions": "input.change_customer"},
     {"name": 'comments', "label": _("comments"), "view": "admin:input_customer_comment"},
-    {"name": 'history', "label": _("history"), "view": "admin:input_customer_history"},
+    #. Translators: Translation included with Django
+    {"name": 'history', "label": _("History"), "view": "admin:input_customer_history"},
     ]
 data_site.register(Customer, Customer_admin)
 
@@ -98,7 +102,8 @@ class Supplier_admin(MultiDBModelAdmin):
   tabs = [
     {"name": 'edit', "label": _("edit"), "view": "admin:input_supplier_change", "permissions": "input.change_supplier"},
     {"name": 'comments', "label": _("comments"), "view": "admin:input_supplier_comment"},
-    {"name": 'history', "label": _("history"), "view": "admin:input_supplier_history"},
+    #. Translators: Translation included with Django
+    {"name": 'history', "label": _("History"), "view": "admin:input_supplier_history"},
     ]
 data_site.register(Supplier, Supplier_admin)
 
@@ -116,7 +121,8 @@ class Item_admin(MultiDBModelAdmin):
     {"name": 'plan', "label": _("plan"), "view": "output_demand_plandetail"},
     {"name": 'plandetail', "label": _("plan detail"), "view": "output_demandplan_plandetail"},
     {"name": 'comments', "label": _("comments"), "view": "admin:input_item_comment"},
-    {"name": 'history', "label": _("history"), "view": "admin:input_item_history"},
+    #. Translators: Translation included with Django
+    {"name": 'history', "label": _("History"), "view": "admin:input_item_history"},
     ]
 data_site.register(Item, Item_admin)
 
@@ -129,7 +135,8 @@ class ItemSupplier_admin(MultiDBModelAdmin):
   tabs = [
     {"name": 'edit', "label": _("edit"), "view": "admin:input_itemsupplier_change", "permissions": "input.change_itemsupplier"},
     {"name": 'comments', "label": _("comments"), "view": "admin:input_itemsupplier_comment"},
-    {"name": 'history', "label": _("history"), "view": "admin:input_itemsupplier_history"},
+    #. Translators: Translation included with Django
+    {"name": 'history', "label": _("History"), "view": "admin:input_itemsupplier_history"},
     ]
 data_site.register(ItemSupplier, ItemSupplier_admin)
 
@@ -142,7 +149,8 @@ class ItemDistribution_admin(MultiDBModelAdmin):
   tabs = [
     {"name": 'edit', "label": _("edit"), "view": "admin:input_itemdistribution_change", "permissions": "input.change_itemdistribution"},
     {"name": 'comments', "label": _("comments"), "view": "admin:input_itemdistribution_comment"},
-    {"name": 'history', "label": _("history"), "view": "admin:input_itemdistribution_history"},
+    #. Translators: Translation included with Django
+    {"name": 'history', "label": _("History"), "view": "admin:input_itemdistribution_history"},
   ]
 data_site.register(ItemDistribution, ItemDistribution_admin)
 
@@ -202,7 +210,8 @@ class Operation_admin(MultiDBModelAdmin):
     {"name": 'plandetail', "label": _("plan detail"), "view": "output_operationplan_plandetail"},
     {"name": 'constraint', "label": _("constrained demand"), "view": "output_constraint_operation"},
     {"name": 'comments', "label": _("comments"), "view": "admin:input_operation_comment"},
-    {"name": 'history', "label": _("history"), "view": "admin:input_operation_history"},
+    #. Translators: Translation included with Django
+    {"name": 'history', "label": _("History"), "view": "admin:input_operation_history"},
   ]
 data_site.register(Operation, Operation_admin)
 
@@ -239,7 +248,8 @@ class Buffer_admin(MultiDBModelAdmin):
     {"name": 'plandetail', "label": _("plan detail"), "view": "output_flowplan_plandetail"},
     {"name": 'constraint', "label": _("constrained demand"), "view": "output_constraint_buffer"},
     {"name": 'comments', "label": _("comments"), "view": "admin:input_buffer_comment"},
-    {"name": 'history', "label": _("history"), "view": "admin:input_buffer_history"},
+    #. Translators: Translation included with Django
+    {"name": 'history', "label": _("History"), "view": "admin:input_buffer_history"},
     ]
 data_site.register(Buffer, Buffer_admin)
 
@@ -258,7 +268,8 @@ class SetupMatrix_admin(MultiDBModelAdmin):
   tabs = [
     {"name": 'edit', "label": _("edit"), "view": "admin:input_setupmatrix_change", "permissions": "input.change_setupmatrix"},
     {"name": 'comments', "label": _("comments"), "view": "admin:input_setupmatrix_comment"},
-    {"name": 'history', "label": _("history"), "view": "admin:input_setupmatrix_history"},
+    #. Translators: Translation included with Django
+    {"name": 'history', "label": _("History"), "view": "admin:input_setupmatrix_history"},
     ]
 data_site.register(SetupMatrix, SetupMatrix_admin)
 
@@ -270,7 +281,8 @@ class Skill_admin(MultiDBModelAdmin):
   tabs = [
     {"name": 'edit', "label": _("edit"), "view": "admin:input_skill_change", "permissions": "input.change_skill"},
     {"name": 'comments', "label": _("comments"), "view": "admin:input_skill_comment"},
-    {"name": 'history', "label": _("history"), "view": "admin:input_skill_history"},
+    #. Translators: Translation included with Django
+    {"name": 'history', "label": _("History"), "view": "admin:input_skill_history"},
     ]
 data_site.register(Skill, Skill_admin)
 
@@ -283,7 +295,8 @@ class ResourceSkill_admin(MultiDBModelAdmin):
   tabs = [
     {"name": 'edit', "label": _("edit"), "view": "admin:input_resourceskill_change", "permissions": "input.change_resoureskill"},
     {"name": 'comments', "label": _("comments"), "view": "admin:input_resourceskill_comment"},
-    {"name": 'history', "label": _("history"), "view": "admin:input_resourceskill_history"},
+    #. Translators: Translation included with Django
+    {"name": 'history', "label": _("History"), "view": "admin:input_resourceskill_history"},
     ]
 data_site.register(ResourceSkill, ResourceSkill_admin)
 
@@ -303,7 +316,8 @@ class Resource_admin(MultiDBModelAdmin):
     {"name": 'plandetail', "label": _("plan detail"), "view": "output_loadplan_plandetail"},
     {"name": 'constraint', "label": _("constrained demand"), "view": "output_constraint_resource"},
     {"name": 'comments', "label": _("comments"), "view": "admin:input_resource_comment"},
-    {"name": 'history', "label": _("history"), "view": "admin:input_resource_history"},    ]
+    #. Translators: Translation included with Django
+    {"name": 'history', "label": _("History"), "view": "admin:input_resource_history"},    ]
 data_site.register(Resource, Resource_admin)
 
 
@@ -320,7 +334,8 @@ class Flow_admin(MultiDBModelAdmin):
   tabs = [
     {"name": 'edit', "label": _("edit"), "view": "admin:input_flow_change", "permissions": "input.change_flow"},
     {"name": 'comments', "label": _("comments"), "view": "admin:input_flow_comment"},
-    {"name": 'history', "label": _("history"), "view": "admin:input_flow_history"},
+    #. Translators: Translation included with Django
+    {"name": 'history', "label": _("History"), "view": "admin:input_flow_history"},
     ]
 data_site.register(Flow, Flow_admin)
 
@@ -338,7 +353,8 @@ class Load_admin(MultiDBModelAdmin):
   tabs = [
     {"name": 'edit', "label": _("edit"), "view": "admin:input_load_change", "permissions": "input.change_load"},
     {"name": 'comments', "label": _("comments"), "view": "admin:input_load_comment"},
-    {"name": 'history', "label": _("history"), "view": "admin:input_load_history"},
+    #. Translators: Translation included with Django
+    {"name": 'history', "label": _("History"), "view": "admin:input_load_history"},
     ]
 data_site.register(Load, Load_admin)
 
@@ -356,7 +372,8 @@ class OperationPlan_admin(MultiDBModelAdmin):
     {"name": 'plandetail', "label": _("plan detail"), "view": "output_operation_plandetail"},
     {"name": 'constraint', "label": _("constrained operation"), "view": "output_constraint_operationplan"},
     {"name": 'comments', "label": _("comments"), "view": "admin:input_operationplan_comment"},
-    {"name": 'history', "label": _("history"), "view": "admin:input_operationplan_history"},
+    #. Translators: Translation included with Django
+    {"name": 'history', "label": _("History"), "view": "admin:input_operationplan_history"},
     ]
 data_site.register(OperationPlan, OperationPlan_admin)
 
@@ -396,6 +413,7 @@ class Demand_admin(MultiDBModelAdmin):
     {"name": 'constraint', "label": _("why short or late?"),"view": "output_constraint_demand"},
     {"name": 'plan', "label": _("plan"), "view": "output_demand_pegging"},
     {"name": 'comments', "label": _("comments"), "view": "admin:input_demand_comment"},
-    {"name": 'history', "label": _("history"), "view": "admin:input_demand_history"},
+    #. Translators: Translation included with Django
+    {"name": 'history', "label": _("History"), "view": "admin:input_demand_history"},
     ]
 data_site.register(Demand, Demand_admin)
