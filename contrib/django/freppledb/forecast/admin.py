@@ -43,7 +43,8 @@ class Forecast_admin(MultiDBModelAdmin):
     {"name": 'plan', "label": _("plan"), "view": freppledb.forecast.views.OverviewReport},
     {"name": 'constraint', "label": _("why short or late?"), "view": freppledb.forecast.views.ConstraintReport},
     {"name": 'comments', "label": _("comments"), "view": MultiDBModelAdmin.comment_view},
-    {"name": 'history', "label": _("history"), "view": MultiDBModelAdmin.history_view},
+    #. Translators: Translation included with Django
+    {"name": 'history', "label": _("History"), "view": MultiDBModelAdmin.history_view},
     ]
   save_on_top = True
 data_site.register(Forecast, Forecast_admin)

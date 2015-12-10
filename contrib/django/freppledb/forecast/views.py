@@ -47,6 +47,7 @@ class ForecastList(GridReport):
   frozenColumns = 1
 
   rows = (
+    #. Translators: Translation included with Django
     GridFieldText('name', title=_('name'), key=True, formatter='detail', extra="role:'forecast/forecast'"),
     GridFieldText('item', title=_('item'), field_name='item__name', formatter='detail', extra="role:'input/item'"),
     GridFieldText('location', title=_('location'), field_name='location__name', formatter='detail', extra="role:'input/location'"),
@@ -376,7 +377,8 @@ class OverviewReport(GridPivot):
               colnum += 1
             errors = False
             if colindexes[0] < 0:
-              yield force_text(_('Missing primary key field %(key)s') % {'key': 'forecast'}) + '\n '
+              #. Translators: Translation included with Django
+              yield force_text(_('Some keys were missing: %(keys)s') % {'keys': 'forecast'}) + '\n '
               errors = True
             if colindexes[6] > 0:
               if not pivotbuckets:
@@ -678,6 +680,7 @@ class OrderReport(GridReport):
       )
 
   rows = (
+    #. Translators: Translation included with Django
     GridFieldText('name', title=_('name'), key=True, formatter='detail', extra="role:'input/demand'"),
     GridFieldText('item', title=_('item'), field_name='item__name', formatter='detail', extra="role:'input/item'"),
     GridFieldText('customer', title=_('customer'), field_name='customer__name', formatter='detail', extra="role:'input/customer'"),

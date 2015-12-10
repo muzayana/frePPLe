@@ -6,6 +6,7 @@
 <li{% ifequal active_tab 'plan' %} class="frepple-tabs-active"{% endifequal %} role="tab"><a class="ui-tabs-anchor" href="{{request.prefix}}/forecast/{{object_id}}/">{% trans 'plan'|capfirst %}</a></li>
 <li{% ifequal active_tab 'constraint' %} class="frepple-tabs-active"{% endifequal %} role="tab"><a class="ui-tabs-anchor" href="{{request.prefix}}/constraintforecast/{{object_id}}/">{% trans 'why short or late?'|capfirst %}</a></li>
 <li{% ifequal active_tab 'comments' %} class="frepple-tabs-active"{% endifequal %} role="tab"><a class="ui-tabs-anchor" href="{{request.prefix}}/comments/forecast/forecast/{{object_id}}/">{% trans 'comments'|capfirst %}</a></li>
-<li{% ifequal active_tab 'history' %} class="frepple-tabs-active"{% endifequal %} role="tab"><a class="ui-tabs-anchor" href="{{request.prefix}}/data/forecast/forecast/{{object_id}}/history/">{% trans 'history'|capfirst %}</a></li>
+{% comment %}Translators: Translation included with Django {% endcomment %}
+<li{% ifequal active_tab 'history' %} class="frepple-tabs-active"{% endifequal %} role="tab"><a class="ui-tabs-anchor" href="{{request.prefix}}/data/forecast/forecast/{{object_id}}/history/">{% trans 'History'|capfirst %}</a></li>
 </ul>
 </div>

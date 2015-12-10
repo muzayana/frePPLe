@@ -30,6 +30,7 @@ class Forecast(AuditModel):
   )
 
   # Database fields
+  #. Translators: Translation included with Django
   name = models.CharField(_('name'), max_length=300, primary_key=True)
   description = models.CharField(_('description'), max_length=500, null=True, blank=True)
   category = models.CharField(_('category'), max_length=300, null=True, blank=True, db_index=True)
