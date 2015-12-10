@@ -3,6 +3,20 @@ var socket = null;
 var curState = 'closed';    // Possible states: closed, connecting, open, disconnecting
 var timeAxis = null;
 
+function parseDate(val)
+{
+	return new Date();
+  var dt = new Date(
+	parseInt(val.substr(0,4)),  // YYYY
+	parseInt(val.substr(5,2)),  // MM
+	parseInt(val.substr(8,2)),  // DD
+	parseInt(val.substr(11,2)), // hh
+	parseInt(val.substr(13,2)), // mm
+	parseInt(val.substr(8,2))   // ss
+    );
+	console.log(val, dt);
+  return dt;
+}
 
 function connect(url, callback)
 {
@@ -221,8 +235,8 @@ function displayOperation()
   var layer = [];
   $(this.operationplans).each(function() {
     var row = 0;
-    var strt = new Date(Date.parse(this.start));
-    var nd = new Date(Date.parse(this.end))
+    var strt = parseDate(this.start);
+    var nd = parseDate(this.end);
     for (; row < layer.length; ++row)
     {
       if (strt >= layer[row])
@@ -313,8 +327,8 @@ function displayResource()
   $(this.loadplans).each(function() {
     if (this.quantity > 0) {
       var row = 0;
-      var strt = new Date(Date.parse(this.operationplan.start));
-      var nd = new Date(Date.parse(this.operationplan.end));
+      var strt = parseDate(this.operationplan.start);
+      var nd = parseDate(this.operationplan.end);
       for (; row < layer.length; ++row)
       {
         if (strt >= layer[row])
@@ -335,6 +349,7 @@ function displayResource()
         ]);
       }
     });
+  console.log("------", data);
 
   // Find existing svg row or create a new one
   if (ganttRows['resource/' + res].svg !== null)
@@ -407,7 +422,7 @@ function displayBuffer()
   $(this.flowplans).each(function() {
     var oh = this.onhand;
     data.push([
-      new Date(Date.parse(this.date)),
+      parseDate(this.date),
       this.quantity,
       oh,
       this.minimum,
@@ -524,8 +539,8 @@ function displayDemand()
   $(this.operationplans).each(function() {
     if (this.quantity > 0) {
       var row = 0;
-      var strt = new Date(Date.parse(this.start));
-      var nd = new Date(Date.parse(this.end));
+      var strt = parseDate(this.start);
+      var nd = parseDate(this.end);
       for (; row < layer.length; ++row)
       {
         if (nd <= layer[row])
