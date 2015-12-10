@@ -17,13 +17,10 @@ from freppledb.input.models import Buffer
 
 class InventoryPlanning(AuditModel):
   distributions = (
-    ('automatic', _('Automatic')),
-    # Translators: Normal statistical distribution, aka Gaussian distribution
-    ('normal', _('Normal')),
-    # Translators: Poisson statistical distribution
-    ('poisson', _('Poisson')),
-    # Translators: Negative binomial statistical distribution
-    ('negative binomial', _('Negative Binomial')),
+    ('automatic', _('Automatic' context "forecast method"))),
+    ('normal', _('Normal' context "forecast method")),
+    ('poisson', _('Poisson' context "forecast method")),
+    ('negative binomial', _('Negative Binomial' context "forecast method")),
   )
 
   # TODO combined method is currently disabled

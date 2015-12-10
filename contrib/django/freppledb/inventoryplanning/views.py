@@ -986,6 +986,7 @@ class DRPitemlocation(View):
                   object_id=obj.pk,
                   object_repr=force_text(obj),
                   action_flag=CHANGE,
+                  #. Translators: Translation included with Django
                   change_message=_('Changed %s.') % get_text_list(form.changed_data, _('and'))
                   ).save(using=request.database)
 
