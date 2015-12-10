@@ -245,6 +245,18 @@ var grid = {
    // popup is closed and the selected id is passed to the calling page.
    selected: undefined,
 
+   // Function used to summarize by returning the last value
+   summary_last: function(val, name, record)
+   {
+	 return record[name];
+   },
+
+   // Function used to summarize by returning the first value
+   summary_first: function(val, name, record)
+   {
+	 return val || record[name];
+   },
+
    setSelectedRow: function(id)
    {
      if (grid.selected != undefined)

@@ -202,18 +202,18 @@ class DRP(GridReport):
     GridFieldText('buffer', title=_('buffer'), field_name="buffer", key=True, formatter='detail', extra="role:'input/buffer'", hidden=True),
     GridFieldText('item', title=_('item'), field_name="buffer__item__name", formatter='detail', extra="role:'input/item'"),
     GridFieldText('location', title=_('location'), field_name="buffer__location__name", formatter='detail', extra="role:'input/location'"),
-    GridFieldInteger('leadtime', title=_('lead time'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldInteger('localforecast', title=_('local forecast'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldInteger('dependentdemand', title=_('dependent demand'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldInteger('safetystock', title=_('safety stock'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldInteger('reorderquantity', title=_('reorder quantity'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldInteger('onhand', title=_('on hand'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldInteger('overduesalesorders', title=_('overdue sales orders'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldInteger('opensalesorders', title=_('open sales orders'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldInteger('openpurchases', title=_('open purchases'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldInteger('opentransfers', title=_('open transfers'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldInteger('proposedpurchases', title=_('proposed purchases'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldInteger('proposedtransfers', title=_('proposed transfers'), extra="formatoptions:{defaultValue:''}"),
+    GridFieldInteger('leadtime', title=_('lead time'), extra="formatoptions:{defaultValue:''}, summaryType:'max'"),
+    GridFieldInteger('localforecast', title=_('local forecast'), extra="formatoptions:{defaultValue:''}, summaryType:'sum'"),
+    GridFieldInteger('dependentdemand', title=_('dependent demand'), extra="formatoptions:{defaultValue:''}, summaryType:'sum'"),
+    GridFieldInteger('safetystock', title=_('safety stock'), extra="formatoptions:{defaultValue:''}, summaryType:'sum'"),
+    GridFieldInteger('reorderquantity', title=_('reorder quantity'), extra="formatoptions:{defaultValue:''}, summaryType:'max'"),
+    GridFieldInteger('onhand', title=_('on hand'), extra="formatoptions:{defaultValue:''}, summaryType:'sum'"),
+    GridFieldInteger('overduesalesorders', title=_('overdue sales orders'), extra="formatoptions:{defaultValue:''}, summaryType:'sum'"),
+    GridFieldInteger('opensalesorders', title=_('open sales orders'), extra="formatoptions:{defaultValue:''}, summaryType:'sum'"),
+    GridFieldInteger('openpurchases', title=_('open purchases'), extra="formatoptions:{defaultValue:''}, summaryType:'sum'"),
+    GridFieldInteger('opentransfers', title=_('open transfers'), extra="formatoptions:{defaultValue:''}, summaryType:'sum'"),
+    GridFieldInteger('proposedpurchases', title=_('proposed purchases'), extra="formatoptions:{defaultValue:''}, summaryType:'sum'"),
+    GridFieldInteger('proposedtransfers', title=_('proposed transfers'), extra="formatoptions:{defaultValue:''}, summaryType:'sum'"),
     )
 
   @classmethod
@@ -222,12 +222,24 @@ class DRP(GridReport):
       reportclass._attributes_added = 2
       # Adding custom inventoryplanning attributes
       for f in getAttributeFields(InventoryPlanning, related_name_prefix="buffer__inventoryplanning"):
+        if hasattr(f, 'extra') and f.extra:
+          f.extra += ',summaryType:grid.summary_first'
+        else:
+          f.extra = 'summaryType:grid.summary_first'
         reportclass.rows += (f,)
       # Adding custom item attributes
       for f in getAttributeFields(Item, related_name_prefix="buffer__item"):
+        if hasattr(f, 'extra') and f.extra:
+          f.extra += ',summaryType:grid.summary_first'
+        else:
+          f.extra = 'summaryType:grid.summary_first'
         reportclass.rows += (f,)
       # Adding custom buffer attributes
       for f in getAttributeFields(Location, related_name_prefix="buffer__location"):
+        if hasattr(f, 'extra') and f.extra:
+          f.extra += ',summaryType:grid.summary_first'
+        else:
+          f.extra = 'summaryType:grid.summary_first'
         reportclass.rows += (f,)
 
   @classmethod
@@ -457,7 +469,7 @@ class DRPitemlocation(View):
         )
     except:
       current_date = datetime.now()
-      
+
     # This view retrieves all relevant data for a certain itemlocation.
     DRP.getBuckets(request)
     ip = InventoryPlanning.objects.using(request.database).get(pk=itemlocation)

@@ -1,7 +1,22 @@
 {% extends "admin/base_site_grid.html" %}
 {% load i18n %}
 
-{% block extra_grid %}onSelectRow: selectRow,{% endblock %}
+{% block extra_grid %}onSelectRow: selectRow,
+{% if preferences.grouping == 'item' or preferences.grouping == 'location' %}
+  grouping:true,
+  groupingView : {
+	  groupField : ['{{preferences.grouping}}'],
+	  groupSummary : [true],
+	  groupColumnShow : [true],
+	  groupSummaryPos: ['header'],
+	  groupDataSorted : true,
+	  groupText : ['<b>{0}</b>'],
+	  groupCollapse : {% if args %}false{% else %}true{% endif %},
+	  hideFirstGroupCol: true,
+	  showSummaryOnHide: true
+  },{% endif %}
+{% endblock %}
+
 
 {% block extrahead %}{{block.super}}
 <script type="text/javascript" src="{{STATIC_URL}}js/d3.min.js"></script>
@@ -146,8 +161,6 @@ function extraPreference()
 
 function select()
 {
-  //$('#filter').addClass("ui-state-disabled");
-  //$.jgrid.hideModal("#searchmodfbox_grid");
   $('#save').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
   $('#undo').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
   $(window).off('beforeunload', warnUnsavedChanges);
