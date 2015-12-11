@@ -20,6 +20,7 @@ from django.utils.translation import ungettext
 from django.utils.encoding import force_text
 from django.utils.text import capfirst
 
+from freppledb.boot import getAttributeFields
 from freppledb.input.models import Resource, Operation, Location, SetupMatrix
 from freppledb.input.models import Buffer, Customer, Demand, Item, Load, Flow, Skill
 from freppledb.input.models import Calendar, CalendarBucket, OperationPlan, SubOperation
@@ -1035,6 +1036,20 @@ class DistributionOrderList(GridReport):
       {"name": 'closed', "label": _("change status to %(status)s") % {'status': _("closed")}, "function": "grid.setStatus('closed')"},
       ]
 
+  @classmethod
+  def initialize(reportclass, request):
+    if reportclass._attributes_added != 2:
+      reportclass._attributes_added = 2
+      # Adding custom item attributes
+      for f in getAttributeFields(Item, related_name_prefix="item"):
+        reportclass.rows += (f,)
+      # Adding custom location attributes
+      for f in getAttributeFields(Location, related_name_prefix="origin"):
+        reportclass.rows += (f,)
+      # Adding custom location attributes
+      for f in getAttributeFields(Location, related_name_prefix="destination"):
+        reportclass.rows += (f,)
+
 
 class PurchaseOrderList(GridReport):
   '''
@@ -1076,3 +1091,17 @@ class PurchaseOrderList(GridReport):
       {"name": 'confirmed', "label": _("change status to %(status)s") % {'status': _("confirmed")}, "function": "grid.setStatus('confirmed')"},
       {"name": 'closed', "label": _("change status to %(status)s") % {'status': _("closed")}, "function": "grid.setStatus('closed')"},
       ]
+
+  @classmethod
+  def initialize(reportclass, request):
+    if reportclass._attributes_added != 2:
+      reportclass._attributes_added = 2
+      # Adding custom item attributes
+      for f in getAttributeFields(Item, related_name_prefix="item"):
+        reportclass.rows += (f,)
+      # Adding custom location attributes
+      for f in getAttributeFields(Location, related_name_prefix="location"):
+        reportclass.rows += (f,)
+      # Adding custom supplier attributes
+      for f in getAttributeFields(Location, related_name_prefix="supplier"):
+        reportclass.rows += (f,)
