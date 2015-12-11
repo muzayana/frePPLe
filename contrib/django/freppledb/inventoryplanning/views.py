@@ -162,7 +162,7 @@ class InventoryPlanningList(GridReport):
     #GridFieldNumber('roq_multiple_qty', title=_('ROQ multiple quantity'), extra="formatoptions:{defaultValue:''}"),
     GridFieldNumber('roq_min_poc', title=_('ROQ minimum period of cover'), extra="formatoptions:{defaultValue:''}"),
     #GridFieldNumber('roq_max_poc', title=_('ROQ maximum period of cover'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldChoice('ss_type', title=_('Safety stock type'),
+    GridFieldChoice('ss_type', title=_('safety stock type'),
       choices=InventoryPlanning.calculationtype, extra="formatoptions:{defaultValue:''}"),
     GridFieldNumber('ss_min_qty', title=_('safety stock minimum quantity'), extra="formatoptions:{defaultValue:''}"),
     #GridFieldNumber('ss_max_qty', title=_('safety stock maximum quantity'), extra="formatoptions:{defaultValue:''}"),
@@ -199,9 +199,9 @@ class DRP(GridReport):
   maxBucketLevel = 3
 
   rows = (
-    GridFieldText('buffer', title=_('buffer'), field_name="buffer", key=True, formatter='detail', extra="role:'input/buffer'", hidden=True),
     GridFieldText('item', title=_('item'), field_name="buffer__item__name", formatter='detail', extra="role:'input/item'"),
     GridFieldText('location', title=_('location'), field_name="buffer__location__name", formatter='detail', extra="role:'input/location'"),
+    GridFieldText('buffer', title=_('buffer'), field_name="buffer", key=True, formatter='detail', extra="role:'input/buffer'", hidden=True),
     GridFieldInteger('leadtime', title=_('lead time'), extra="formatoptions:{defaultValue:''}, summaryType:'max'"),
     GridFieldInteger('localforecast', title=_('local forecast'), extra="formatoptions:{defaultValue:''}, summaryType:'sum'"),
     GridFieldInteger('dependentdemand', title=_('dependent demand'), extra="formatoptions:{defaultValue:''}, summaryType:'sum'"),
@@ -256,8 +256,13 @@ class DRP(GridReport):
         .filter(buffer__item__name=args[0]) \
         .select_related("buffer", "buffer__inventoryplanning", "buffer__item", "buffer__location")
     else:
-      return InventoryPlanningOutput.objects.all() \
+      q = InventoryPlanningOutput.objects.all() \
         .select_related("buffer", "buffer__inventoryplanning", "buffer__item", "buffer__location")
+      if request.prefs and request.prefs.get("grouping", None) == 'item':
+        q = q.order_by('buffer__item__name')
+      elif request.prefs and request.prefs.get("grouping", None) == 'location':
+        q = q.order_by('buffer__location__name')
+      return q
 
   @staticmethod
   def query(request, basequery):
