@@ -723,6 +723,7 @@ class GridReport(View):
   @classmethod
   def _generate_json_data(reportclass, request, *args, **kwargs):
     page = 'page' in request.GET and int(request.GET['page']) or 1
+    request.prefs = request.user.getPreference(reportclass.getKey())
     if isinstance(reportclass.basequeryset, collections.Callable):
       query = reportclass.filter_items(request, reportclass.basequeryset(request, args, kwargs), False).using(request.database)
     else:
@@ -733,7 +734,6 @@ class GridReport(View):
       page = total_pages
     if page < 1:
       page = 1
-    request.prefs = request.user.getPreference(reportclass.getKey())
     query = reportclass._apply_sort(request, query, request.prefs)
 
     yield '{"total":%d,\n' % total_pages
