@@ -397,3 +397,7 @@ REGISTRATION_FORM =  'freppledb.registration.forms.RegistrationfrePPLeCloud' #'r
 
 # Port number for the CherryPy web server
 PORT = 8000
+
+# Google analytics code to report usage statistics to.
+# The default value of None disables this feature.
+GOOGLE_ANALYTICS = None
