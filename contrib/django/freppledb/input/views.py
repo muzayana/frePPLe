@@ -1040,12 +1040,15 @@ class DistributionOrderList(GridReport):
       reportclass._attributes_added = 2
       # Adding custom item attributes
       for f in getAttributeFields(Item, related_name_prefix="item"):
+        f.editable = False
         reportclass.rows += (f,)
       # Adding custom location attributes
       for f in getAttributeFields(Location, related_name_prefix="origin"):
+        f.editable = False
         reportclass.rows += (f,)
       # Adding custom location attributes
       for f in getAttributeFields(Location, related_name_prefix="destination"):
+        f.editable = False
         reportclass.rows += (f,)
 
 
@@ -1096,10 +1099,13 @@ class PurchaseOrderList(GridReport):
       reportclass._attributes_added = 2
       # Adding custom item attributes
       for f in getAttributeFields(Item, related_name_prefix="item"):
+        f.editable = False
         reportclass.rows += (f,)
       # Adding custom location attributes
       for f in getAttributeFields(Location, related_name_prefix="location"):
+        f.editable = False
         reportclass.rows += (f,)
       # Adding custom supplier attributes
       for f in getAttributeFields(Location, related_name_prefix="supplier"):
+        f.editable = False
         reportclass.rows += (f,)
