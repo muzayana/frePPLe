@@ -1102,8 +1102,8 @@ class GridReport(View):
                   ok = True
                   break
               if not ok:
-                errors = True
-                yield force_text(_('Incorrect field %(column)s') % {'column': col}) + '\n '
+                headers.append(False)
+                yield force_text(_('Skipping field %(column)s') % {'column': col}) + '\n '
               if col == reportclass.model._meta.pk.name.lower() or \
                  col == reportclass.model._meta.pk.verbose_name.lower():
                 has_pk_field = True
@@ -1265,8 +1265,8 @@ class GridReport(View):
                 ok = True
                 break
             if not ok:
-              errors = True
-              yield force_text(_('Incorrect field %(column)s') % {'column': col}) + '\n '
+              headers.append(False)
+              yield force_text(_('Skipping unknown field %(column)s') % {'column': col}) + '\n '
             if col == reportclass.model._meta.pk.name.lower() or \
                col == reportclass.model._meta.pk.verbose_name.lower():
               has_pk_field = True
@@ -2134,9 +2134,8 @@ def importWorkbook(request):
                   ok = True
                   break
               if not ok:
-                header_ok = False
                 yield force_text(string_concat(
-                  model._meta.verbose_name, ': ', _('Incorrect field %(column)s') % {'column': value}
+                  model._meta.verbose_name, ': ', _('Skipping unknown field %(column)s') % {'column': value}
                   )) + '\n'
                 numerrors += 1
               if value == model._meta.pk.name.lower() \
