@@ -247,6 +247,7 @@ REST_FRAMEWORK = {
     # or allow read-only access for unauthenticated users.
 }
 
+import django.contrib.admindocs
 LOCALE_PATHS = (
     os.path.normpath(os.path.join(FREPPLE_HOME,'locale','django')),
     os.path.normpath(os.path.join(FREPPLE_HOME,'locale','auth')),
@@ -255,6 +256,7 @@ LOCALE_PATHS = (
     os.path.normpath(os.path.join(FREPPLE_HOME,'locale','admin')),
     os.path.normpath(os.path.join(FREPPLE_HOME,'locale','messages')),
     os.path.normpath(os.path.join(FREPPLE_APP,'freppledb','locale')),
+    os.path.normpath(os.path.join(os.path.dirname(django.contrib.admindocs.__file__),'locale')),
 )
 
 TEMPLATE_DIRS = (

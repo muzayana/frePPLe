@@ -790,7 +790,6 @@ class LoadList(GridReport):
     GridFieldDateTime('effective_end', title=_('effective end')),
     #. Translators: Translation included with Django
     GridFieldText('name', title=_('name')),
-    GridFieldText('alternate', title=_('alternate')),
     GridFieldNumber('priority', title=_('priority')),
     GridFieldText('setup', title=_('setup')),
     GridFieldChoice('search', title=_('search mode'), choices=searchmode),
@@ -817,7 +816,6 @@ class FlowList(GridReport):
     GridFieldDateTime('effective_end', title=_('effective end')),
     #. Translators: Translation included with Django
     GridFieldText('name', title=_('name')),
-    GridFieldText('alternate', title=_('alternate')),
     GridFieldNumber('priority', title=_('priority')),
     GridFieldChoice('search', title=_('search mode'), choices=searchmode),
     GridFieldText('source', title=_('source')),

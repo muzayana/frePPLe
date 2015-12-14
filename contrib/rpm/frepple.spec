@@ -7,9 +7,6 @@
 # You are not allowed to distribute the software, either in the form of source code
 # or in the form of compiled binaries.
 #
-
-%{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
-
 Summary: Free Production PLanning
 Name: frepple
 Version: 3.0.beta
@@ -121,7 +118,8 @@ rm -rf /var/log/frepple
 %attr(0550,-,frepple) %{_libdir}/frepple/mod_webserver.so
 %{_datadir}/frepple
 %attr(0770,-,frepple) %dir %{_localstatedir}/log/frepple
-%{python_sitelib}/frepple*
+%{python3_sitelib}/*
+%{python3_sitearch}/*
 %{_mandir}/man1/frepple.1.*
 %{_mandir}/man1/frepplectl.1.*
 %doc COPYING
