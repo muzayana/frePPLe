@@ -38,13 +38,13 @@ class Forecast_admin(MultiDBModelAdmin):
     (_('Planning parameters'), {'fields': ('discrete', 'planned', 'operation', 'minshipment', 'maxlateness'), 'classes': ('collapse')}),
     )
   tabs = [
-    {"name": 'edit', "label": _("edit"), "view": MultiDBModelAdmin.change_view, "permissions": "input.change_forecast"},
-    {"name": 'supplypath', "label": _("supply path"), "view": freppledb.forecast.views.UpstreamForecastPath},
-    {"name": 'plan', "label": _("plan"), "view": freppledb.forecast.views.OverviewReport},
-    {"name": 'constraint', "label": _("why short or late?"), "view": freppledb.forecast.views.ConstraintReport},
-    {"name": 'comments', "label": _("comments"), "view": MultiDBModelAdmin.comment_view},
+    {"name": 'edit', "label": _("edit"), "view": "admin:forecast_forecast_change", "permissions": "input.change_forecast"},
+    {"name": 'supplypath', "label": _("supply path"), "view": "supplypath_forecast"},
+    {"name": 'plan', "label": _("plan"), "view": "forecast_plan"},
+    {"name": 'constraint', "label": _("why short or late?"), "view": "forecast_constraint"},
+    {"name": 'comments', "label": _("comments"), "view": "admin:forecast_forecast_comment"},
     #. Translators: Translation included with Django
-    {"name": 'history', "label": _("History"), "view": MultiDBModelAdmin.history_view},
+    {"name": 'history', "label": _("History"), "view": "admin:forecast_forecast_history"}
     ]
   save_on_top = True
 data_site.register(Forecast, Forecast_admin)
