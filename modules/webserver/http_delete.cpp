@@ -40,7 +40,13 @@ bool WebServer::handleDelete(CivetServer *server, struct mg_connection *conn)
 
   // Return a single object
   string entitykey = slash + 1;
-  Object* entity = cat->find(entitykey);
+  vector<XMLInput::fld> f;
+  f[0].name = "name";
+  f[0].hash = Tags::name.getHash();
+  f[0].value = entitykey;
+  f[0].field = NULL;
+  XMLDataValueDict dict(f, 0, 0);
+  Object* entity = cat->find(dict);
   if (!entity)
   {
     mg_printf(conn,

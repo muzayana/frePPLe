@@ -134,7 +134,13 @@ bool WebServer::handleGet(CivetServer *server, struct mg_connection *conn)
   {
     // CASE 3: Return a single object
     string entitykey = slash + 1;
-    const Object* entity = cat->find(entitykey);
+    vector<XMLInput::fld> f;
+    f[0].name = "name";
+    f[0].hash = Tags::name.getHash();
+    f[0].value = entitykey;
+    f[0].field = NULL;
+    XMLDataValueDict dict(f, 0, 0);
+    const Object* entity = cat->find(dict);
     if (!entity)
     {
       mg_printf(conn,
