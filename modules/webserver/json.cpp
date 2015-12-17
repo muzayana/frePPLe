@@ -68,6 +68,7 @@ PyObject* saveJSONfile(PyObject* self, PyObject* args)
         throw DataException("Invalid content type '" + string(content) + "'");
     }
     o.setMode(true);
+    o.pushCurrentObject(&Plan::instance());
     Plan::instance().writeElement(&o, Tags::plan);
   }
   catch (...)
