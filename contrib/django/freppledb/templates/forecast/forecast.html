@@ -48,10 +48,7 @@
 {% if mode == "graph" %}<div id="tooltip" role="tooltip" class="ui-tooltip ui-widget ui-corner-all ui-widget-content" style="display: none; position: absolute;"/>
 {% endif %}{% endblock %}
 
-{% block tools %}{% if args.0 %}
-{% include "forecasttabs.html" %}
-{% endif %}{{block.super}}
-{% endblock %}
+{% block tools %}{% if args.0 %}{% tabs "forecast.forecast" %}{% endif %}{{block.super}}{% endblock %}
 
 {% block before_table %}{% if args.0 %}
 <div id="graph" style="clear: both; height: 400px; padding: 10px; "></div>
