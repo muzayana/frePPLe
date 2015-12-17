@@ -166,9 +166,7 @@ PyObject* ItemSupplier::create(PyTypeObject* pytype, PyObject* args, PyObject* k
             // Update the attribute
             fmeta->setField(l, field);
           else
-            PyErr_Format(PyExc_AttributeError,
-                "attribute '%S' on '%s' can't be updated",
-                key, Py_TYPE(l)->tp_name);
+            l->setProperty(attr.getName(), value);
         }
       };
     }
@@ -500,6 +498,9 @@ extern "C" PyObject* OperationItemSupplier::createOrder(
     opplan->setIdentifier(id);
   if (status)
     opplan->setStatus(status);
+  // Reset quantity after the status update to assure that
+  // also non-valid quantities are getting accepted.
+  opplan->setQuantity(qty);
   if (ref)
     opplan->setReference(ref);
   opplan->activate();

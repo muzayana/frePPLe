@@ -1,21 +1,13 @@
 chardet >= 2.0.1
 CherryPy >= 3.2.2
-colorama >= 0.2.5
 djangorestframework >= 3.3.1
+djangorestframework-bulk >= 0.2.1
+djangorestframework-filters >= 0.6.0
 et-xmlfile >= 1.0.0
 html5lib >= 0.999
 jdcal >= 1.0
 Markdown >= 2.6.4
 openpyxl >= 2.3.0-b2
-packaging >= 15.0
-pip >= 1.5.4
-pycurl >= 7.19.3
-requests >= 2.2.1
-Routes >= 2.0
-setuptools >= 3.3
-six >= 1.5.2
-urllib3 >= 1.7.1
-pygobject >= 2.28.0
-psycopg2 >= 2.4.5
+https://github.com/frePPLe/django/tarball/frepple_3.0
 # Extra dependency for the cloud edition
 django-registration-redux >= 1.2

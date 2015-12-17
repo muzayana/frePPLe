@@ -9,13 +9,15 @@
 #
 
 from django.contrib.admin.views.decorators import staff_member_required
+from django.db import DEFAULT_DB_ALIAS
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.csrf import csrf_protect
 
 from rest_framework import generics
-
+from rest_framework_bulk import ListBulkCreateUpdateDestroyAPIView, ListBulkCreateAPIView
+from rest_framework import filters
 
 @staff_member_required
 @csrf_protect
@@ -26,15 +28,26 @@ def APIIndexView(request):
     context_instance=RequestContext(request))
 
 
-class frePPleListCreateAPIView(generics.ListCreateAPIView):
+class frePPleListCreateAPIView(ListBulkCreateUpdateDestroyAPIView):
   '''
   Customized API view for the REST framework.:
      - support for request-specific scenario database
      - add 'title' to the context of the html view
   '''
-  def get_queryset(self):
-    return super(frePPleListCreateAPIView, self).get_queryset().using(self.request.database)
+  filter_backends = (filters.DjangoFilterBackend,)
 
+  def get_queryset(self):
+
+      return super(frePPleListCreateAPIView, self).get_queryset().using(self.request.database)
+
+  def allow_bulk_destroy(self, qs, filtered):
+    # Safety check to prevent deleting all records in the database table
+    if qs.count() > filtered.count():
+      return True
+    # default checks if the qs was filtered
+    # qs comes from self.get_queryset()
+    # filtered comes from self.filter_queryset(qs)
+    return False
 
 class frePPleRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
   '''
@@ -43,4 +56,7 @@ class frePPleRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView)
      - add 'title' to the context of the html view
   '''
   def get_queryset(self):
-    return super(frePPleRetrieveUpdateDestroyAPIView, self).get_queryset().using(self.request.database)
+    if self.request.database == 'default':
+      return super(frePPleRetrieveUpdateDestroyAPIView,self).get_queryset()
+    else:
+      return super(frePPleRetrieveUpdateDestroyAPIView, self).get_queryset().using(self.request.database)

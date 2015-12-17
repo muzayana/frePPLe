@@ -33,4 +33,4 @@ call "%VC%\vcvarsall"
 set INCLUDE=%PYTHON%\include;%XERCES%\include;%OPENSSL%\include;%POSTGRESQL%\include;%INCLUDE%
 set LIB=%PYTHON%\libs;%XERCES%\lib;%OPENSSL%\lib;%POSTGRESQL%\lib;%LIB%
 
-"%DOTNET%\msbuild.exe" %build% /p:useenv=true /p:showenv=true frepple.sln "/p:Configuration=%conf%"
+"%DOTNET%\msbuild.exe" %build% /m /p:useenv=true /p:showenv=true frepple.sln "/p:Configuration=%conf%"

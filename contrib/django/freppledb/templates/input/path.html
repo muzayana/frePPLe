@@ -60,15 +60,9 @@ var width_level = 100;
 var minlevel = 0;
 var maxlevel = 0;
 
-function hideContext()
-{
-  $('#operationcontext, #buffercontext, #resourcecontext, #itemsupplier, #resourcecontext, #itemsupplier, #itemdistribution').css('display','none');
-}
 
 function clickedShaped(event)
 {
-  // Hide previous context menu
-  $('#operationcontext, #buffercontext, #resourcecontext, #itemsupplier, #resourcecontext, #itemsupplier, #itemdistribution').css('display','none');
 
   // Analyze where we have clicked
   var type = $(this).children("use").prop("href").baseVal;
@@ -157,7 +151,6 @@ function tick(e)
 
 function drawGraph(jsondata)
 {
-console.log(jsondata);
   var count = -1;
   for (var oper in jsondata['rows'])
   {
@@ -327,8 +320,8 @@ console.log(jsondata);
        }
        else
          return '';
-       })
-    .call(force.drag);
+       });
+    //.call(force.drag);
 
   // Show node IDs
   g.filter( function(d, i) {return d.type != 'operation' || d.suboperindex <= 0;} )
@@ -346,12 +339,35 @@ console.log(jsondata);
 }
 
 
+
+
+
+
 $(function(){
   if ($("#graph").height() > $(window).height() - 350)
     $("#graph").height($(window).height() - 350);
   $("#graph").resizable({handles: "s"});
-  $("body").click(hideContext);
 });
+
+$(window).resize(function() {
+  var parentheight = $("#content-main").height
+  setTimeout(function(){$(".ui-jqgrid").setGridHeight(parentheight)},300);
+
+if ($("#content-main").height() < 150) $(".ui-jqgrid").css({height:150});
+if ($("#graph").height() > $(window).height() - 350) $("#graph").height($(window).height() - 350);
+$("#graph").resizable({handles: "s"});
+$("#content-main").resizable({handles: "s"});
+$(".ui-jqgrid").css({height: ($(".ui-jqgrid-view").height() + $(".ui-jqgrid-pager").height()) + "px"});
+});
+
+$(window).bind('resize', function() {
+   var width = $("#graph").width();
+   d3.select('#svggraph')
+   .attr('width', width)
+   .attr('viewBox','0 0 ' + width + ' 400');
+});
+
+
 
 </script>
 {% endblock %}
@@ -375,9 +391,7 @@ treeReader: {
 ExpandColClick: true,
 {% endblock %}
 
-{% block tools %}
-{% tabs model %}
-{% endblock %}
+{% block tools %}{% tabs model %}{% endblock %}
 
 {% block before_table %}
 <div id="graph" style="clear: both; height: 400px; overflow: hidden;">

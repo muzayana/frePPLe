@@ -63,7 +63,7 @@ from django.contrib.admin.models import LogEntry, CHANGE, ADDITION, DELETION
 from django.contrib.contenttypes.models import ContentType
 from django.views.generic.base import View
 
-from freppledb.boot import getAttributes
+from freppledb.boot import getAttributeFields
 from freppledb.common.models import User, Comment, Parameter, BucketDetail, Bucket, HierarchyModel
 
 
@@ -131,7 +131,8 @@ class GridField(object):
   extra = None
   align = 'center'
   searchrules = None
-  hidden = False
+  hidden = False            # NEVER display this field
+  initially_hidden = False  # Hide the field by default, but allow the user to add it
 
 
 class GridFieldDateTime(GridField):
@@ -464,25 +465,10 @@ class GridReport(View):
     # Add attributes if not done already
     if not self._attributes_added and self.model:
       self.__class__._attributes_added = True
-      for field_name, label, fieldtype in getAttributes("%s.%s" % (self.model.__module__, self.model.__name__)):
-        if fieldtype == 'string':
-          self.__class__.rows += (GridFieldText(field_name, title=label),)
-        elif fieldtype == 'boolean':
-          self.__class__.rows += (GridFieldBool(field_name, title=label),)
-        elif fieldtype == 'number':
-          self.__class__.rows += (GridFieldNumber(field_name, title=label),)
-        elif fieldtype == 'integer':
-          self.__class__.rows += (GridFieldInteger(field_name, title=label),)
-        elif fieldtype == 'date':
-          self.__class__.rows += (GridFieldDate(field_name, title=label),)
-        elif fieldtype == 'datetime':
-          self.__class__.rows += (GridFieldDateTime(field_name, title=label),)
-        elif fieldtype == 'duration':
-          self.__class__.rows += (GridFieldDuration(field_name, title=label),)
-        elif fieldtype == 'time':
-          self.__class__.rows += (GridFieldTime(field_name, title=label),)
-        else:
-          raise Exception("Invalid attribute type '%s'." % fieldtype)
+      for f in getAttributeFields(self.model):
+        self.__class__.rows += (f,)
+    if hasattr(self.__class__, "initialize"):
+      self.__class__.initialize(request)
 
     # Dispatch to the correct method
     if request.method == 'GET':
@@ -503,6 +489,15 @@ class GridReport(View):
       rows = prefs.get('rows')
       if not rows:
         rows = [ (i, cls.rows[i].hidden, cls.rows[i].width) for i in range(len(cls.rows)) ]
+      elif len(rows) < len(cls.rows):
+        # Verify all fields are present in the list. When adding a new
+        # attribute, the stored preference would only have a partial list.
+        # When an attribute is removed, the preferences will go out of sync,
+        # but we have no way to correct that easily.
+        idx = len(rows)
+        for i in cls.rows[len(rows):]:
+          rows.append( (idx, True, cls.rows[idx].width) )
+          idx += 1
     result = []
     if is_popup:
       result.append("{name:'select',label:gettext('Select'),width:75,align:'center',sortable:false,search:false}")
@@ -667,8 +662,11 @@ class GridReport(View):
         return query
     if sort and reportclass.model:
       # Validate the field does exist.
+      # We only validate the first level field, and not the fields
+      # on related models.
+      sortfield = sort.split('__')[0]
       for name in reportclass.model._meta.get_all_field_names():
-        if name == sort:
+        if name == sortfield:
           return query.order_by(asc and sort or ('-%s' % sort))
     # Sorting by a non-existent field name: ignore the filter
     return query
@@ -725,6 +723,7 @@ class GridReport(View):
   @classmethod
   def _generate_json_data(reportclass, request, *args, **kwargs):
     page = 'page' in request.GET and int(request.GET['page']) or 1
+    request.prefs = request.user.getPreference(reportclass.getKey())
     if isinstance(reportclass.basequeryset, collections.Callable):
       query = reportclass.filter_items(request, reportclass.basequeryset(request, args, kwargs), False).using(request.database)
     else:
@@ -735,7 +734,6 @@ class GridReport(View):
       page = total_pages
     if page < 1:
       page = 1
-    request.prefs = request.user.getPreference(reportclass.getKey())
     query = reportclass._apply_sort(request, query, request.prefs)
 
     yield '{"total":%d,\n' % total_pages
@@ -956,6 +954,9 @@ class GridReport(View):
             with transaction.atomic(using=request.database, savepoint=False):
               obj = reportclass.model.objects.using(request.database).get(pk=rec['id'])
               del rec['id']
+              for i in rec:
+                if rec[i] == '\xa0':   # Workaround for Jqgrid issue: date field can't be set to blank
+                  rec[i] = None
               UploadForm = modelform_factory(
                 reportclass.model,
                 fields=tuple(rec.keys()),
@@ -971,6 +972,7 @@ class GridReport(View):
                   object_id=obj.pk,
                   object_repr=force_text(obj),
                   action_flag=CHANGE,
+                  #. Translators: Translation included with Django
                   change_message=_('Changed %s.') % get_text_list(form.changed_data, _('and'))
                 ).save(using=request.database)
           except reportclass.model.DoesNotExist:
@@ -1103,15 +1105,16 @@ class GridReport(View):
                   ok = True
                   break
               if not ok:
-                errors = True
-                yield force_text(_('Incorrect field %(column)s') % {'column': col}) + '\n '
+                headers.append(False)
+                yield force_text(_('Skipping field %(column)s') % {'column': col}) + '\n '
               if col == reportclass.model._meta.pk.name.lower() or \
                  col == reportclass.model._meta.pk.verbose_name.lower():
                 has_pk_field = True
             if not has_pk_field and not isinstance(reportclass.model._meta.pk, AutoField):
               # The primary key is not an auto-generated id and it is not mapped in the input...
               errors = True
-              yield force_text(_('Missing primary key field %(key)s') % {'key': reportclass.model._meta.pk.name}) + '\n '
+              # Translators: Translation included with Django
+              yield force_text(_('Some keys were missing: %(keys)s') % {'keys': reportclass.model._meta.pk.name}) + '\n '
             # Abort when there are errors
             if errors:
               break
@@ -1169,6 +1172,7 @@ class GridReport(View):
                       object_id=obj.pk,
                       object_repr=force_text(obj),
                       action_flag=it and CHANGE or ADDITION,
+                      #. Translators: Translation included with Django
                       change_message=_('Changed %s.') % get_text_list(form.changed_data, _('and'))
                     ).save(using=request.database)
                     if it:
@@ -1264,15 +1268,16 @@ class GridReport(View):
                 ok = True
                 break
             if not ok:
-              errors = True
-              yield force_text(_('Incorrect field %(column)s') % {'column': col}) + '\n '
+              headers.append(False)
+              yield force_text(_('Skipping unknown field %(column)s') % {'column': col}) + '\n '
             if col == reportclass.model._meta.pk.name.lower() or \
                col == reportclass.model._meta.pk.verbose_name.lower():
               has_pk_field = True
           if not has_pk_field and not isinstance(reportclass.model._meta.pk, AutoField):
             # The primary key is not an auto-generated id and it is not mapped in the input...
             errors = True
-            yield force_text(_('Missing primary key field %(key)s') % {'key': reportclass.model._meta.pk.name}) + '\n '
+            #. Translators: Translation included with Django
+            yield force_text(_('Some keys were missing: %(keys)s') % {'keys': reportclass.model._meta.pk.name}) + '\n '
           # Abort when there are errors
           if errors > 0:
             break
@@ -1334,6 +1339,7 @@ class GridReport(View):
                     object_id=obj.pk,
                     object_repr=force_text(obj),
                     action_flag=it and CHANGE or ADDITION,
+                    #. Translators: Translation included with Django
                     change_message=_('Changed %s.') % get_text_list(form.changed_data, _('and'))
                   ).save(using=request.database)
                   if it:
@@ -2131,9 +2137,8 @@ def importWorkbook(request):
                   ok = True
                   break
               if not ok:
-                header_ok = False
                 yield force_text(string_concat(
-                  model._meta.verbose_name, ': ', _('Incorrect field %(column)s') % {'column': value}
+                  model._meta.verbose_name, ': ', _('Skipping unknown field %(column)s') % {'column': value}
                   )) + '\n'
                 numerrors += 1
               if value == model._meta.pk.name.lower() \
@@ -2143,7 +2148,8 @@ def importWorkbook(request):
               # The primary key is not an auto-generated id and it is not mapped in the input...
               header_ok = False
               yield force_text(string_concat(
-                model._meta.verbose_name, ': ', _('Missing primary key field %(key)s') % {'key': model._meta.pk.name}
+                # Translators: Translation included with django
+                model._meta.verbose_name, ': ', _('Some keys were missing: %(keys)s') % {'keys': model._meta.pk.name}
                 )) + '\n'
               numerrors += 1
             if not header_ok:
@@ -2198,6 +2204,7 @@ def importWorkbook(request):
                     object_id=obj.pk,
                     object_repr=force_text(obj),
                     action_flag=it and CHANGE or ADDITION,
+                    #. Translators: Translation included with Django
                     change_message=_('Changed %s.') % get_text_list(form.changed_data, _('and'))
                   ).save(using=request.database)
                   if it:

@@ -31,6 +31,7 @@ from django.utils.encoding import force_text
 from django.utils.text import get_text_list
 from django.views.generic import View
 
+from freppledb.boot import getAttributeFields
 from freppledb.common.report import GridFieldText, GridReport
 from freppledb.common.report import GridFieldLastModified, GridFieldChoice
 from freppledb.common.report import GridFieldNumber, GridFieldBool, GridFieldInteger
@@ -161,7 +162,7 @@ class InventoryPlanningList(GridReport):
     #GridFieldNumber('roq_multiple_qty', title=_('ROQ multiple quantity'), extra="formatoptions:{defaultValue:''}"),
     GridFieldNumber('roq_min_poc', title=_('ROQ minimum period of cover'), extra="formatoptions:{defaultValue:''}"),
     #GridFieldNumber('roq_max_poc', title=_('ROQ maximum period of cover'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldChoice('ss_type', title=_('Safety stock type'),
+    GridFieldChoice('ss_type', title=_('safety stock type'),
       choices=InventoryPlanning.calculationtype, extra="formatoptions:{defaultValue:''}"),
     GridFieldNumber('ss_min_qty', title=_('safety stock minimum quantity'), extra="formatoptions:{defaultValue:''}"),
     #GridFieldNumber('ss_max_qty', title=_('safety stock maximum quantity'), extra="formatoptions:{defaultValue:''}"),
@@ -198,87 +199,97 @@ class DRP(GridReport):
   maxBucketLevel = 3
 
   rows = (
-    GridFieldText('buffer', title=_('buffer'), field_name="buffer", key=True, formatter='detail', extra="role:'input/buffer'", hidden=True),
     GridFieldText('item', title=_('item'), field_name="buffer__item__name", formatter='detail', extra="role:'input/item'"),
     GridFieldText('location', title=_('location'), field_name="buffer__location__name", formatter='detail', extra="role:'input/location'"),
-    GridFieldInteger('leadtime', title=_('lead time'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldInteger('localforecast', title=_('local forecast'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldInteger('dependentdemand', title=_('dependent demand'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldInteger('safetystock', title=_('safety stock'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldInteger('reorderquantity', title=_('reorder quantity'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldInteger('onhand', title=_('on hand'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldInteger('overduesalesorders', title=_('overdue sales orders'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldInteger('opensalesorders', title=_('open sales orders'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldInteger('openpurchases', title=_('open purchases'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldInteger('opentransfers', title=_('open transfers'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldInteger('proposedpurchases', title=_('proposed purchases'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldInteger('proposedtransfers', title=_('proposed transfers'), extra="formatoptions:{defaultValue:''}"),
+    GridFieldText('buffer', title=_('buffer'), field_name="buffer", key=True, formatter='detail', extra="role:'input/buffer'", hidden=True),
+    GridFieldInteger('leadtime', title=_('lead time'), extra="formatoptions:{defaultValue:''}, summaryType:'max'"),
+    GridFieldInteger('localforecast', title=_('local forecast'), extra="formatoptions:{defaultValue:''}, summaryType:'sum'"),
+    GridFieldInteger('dependentdemand', title=_('dependent demand'), extra="formatoptions:{defaultValue:''}, summaryType:'sum'"),
+    GridFieldInteger('safetystock', title=_('safety stock'), extra="formatoptions:{defaultValue:''}, summaryType:'sum'"),
+    GridFieldInteger('reorderquantity', title=_('reorder quantity'), extra="formatoptions:{defaultValue:''}, summaryType:'max'"),
+    GridFieldInteger('onhand', title=_('on hand'), extra="formatoptions:{defaultValue:''}, summaryType:'sum'"),
+    GridFieldInteger('overduesalesorders', title=_('overdue sales orders'), extra="formatoptions:{defaultValue:''}, summaryType:'sum'"),
+    GridFieldInteger('opensalesorders', title=_('open sales orders'), extra="formatoptions:{defaultValue:''}, summaryType:'sum'"),
+    GridFieldInteger('openpurchases', title=_('open purchases'), extra="formatoptions:{defaultValue:''}, summaryType:'sum'"),
+    GridFieldInteger('opentransfers', title=_('open transfers'), extra="formatoptions:{defaultValue:''}, summaryType:'sum'"),
+    GridFieldInteger('proposedpurchases', title=_('proposed purchases'), extra="formatoptions:{defaultValue:''}, summaryType:'sum'"),
+    GridFieldInteger('proposedtransfers', title=_('proposed transfers'), extra="formatoptions:{defaultValue:''}, summaryType:'sum'"),
     )
 
+  @classmethod
+  def initialize(reportclass, request):
+    if reportclass._attributes_added != 2:
+      reportclass._attributes_added = 2
+      # Adding custom inventoryplanning attributes
+      for f in getAttributeFields(InventoryPlanning, related_name_prefix="buffer__inventoryplanning"):
+        if hasattr(f, 'extra') and f.extra:
+          f.extra += ',summaryType:grid.summary_first'
+        else:
+          f.extra = 'summaryType:grid.summary_first'
+        reportclass.rows += (f,)
+      # Adding custom item attributes
+      for f in getAttributeFields(Item, related_name_prefix="buffer__item"):
+        if hasattr(f, 'extra') and f.extra:
+          f.extra += ',summaryType:grid.summary_first'
+        else:
+          f.extra = 'summaryType:grid.summary_first'
+        reportclass.rows += (f,)
+      # Adding custom buffer attributes
+      for f in getAttributeFields(Location, related_name_prefix="buffer__location"):
+        if hasattr(f, 'extra') and f.extra:
+          f.extra += ',summaryType:grid.summary_first'
+        else:
+          f.extra = 'summaryType:grid.summary_first'
+        reportclass.rows += (f,)
 
   @classmethod
   def extra_context(reportclass, request, *args, **kwargs):
     return {
-      'openbravo': 'freppledb.openbravo' in settings.INSTALLED_APPS
+      'openbravo': 'freppledb.openbravo' in settings.INSTALLED_APPS,
+      'args': args
       }
 
   @ classmethod
   def basequeryset(reportclass, request, args, kwargs):
-    return InventoryPlanningOutput.objects.all()
+    if args and args[0]:
+      return InventoryPlanningOutput.objects.all() \
+        .filter(buffer__item__name=args[0]) \
+        .select_related("buffer", "buffer__inventoryplanning", "buffer__item", "buffer__location")
+    else:
+      q = InventoryPlanningOutput.objects.all() \
+        .select_related("buffer", "buffer__inventoryplanning", "buffer__item", "buffer__location")
+      if request.prefs and request.prefs.get("grouping", None) == 'item':
+        q = q.order_by('buffer__item__name')
+      elif request.prefs and request.prefs.get("grouping", None) == 'location':
+        q = q.order_by('buffer__location__name')
+      return q
 
   @staticmethod
   def query(request, basequery):
-
-    cursor = connections[request.database].cursor()
-    basesql, baseparams = basequery.query.get_compiler(basequery.db).as_sql(with_col_aliases=False)
-    sortsql = DRP._apply_sort_index(request, prefs=request.prefs)
-
     # Value or units
     if request.prefs and request.prefs.get('units', 'unit') == 'value':
       suffix = 'value'
     else:
       suffix = ''
 
-    # Execute the query
-    # TODO don't display buffers, but items and locations, and aggregate stuff
-    # TODO add location and item attributes
-    query = '''
-      select
-        buffer_id, item_id, location_id,
-        extract(epoch from results.leadtime)/86400, localforecast%s,
-        dependentdemand%s, safetystock%s, reorderquantity%s, results.onhand%s,
-        overduesalesorders%s, opensalesorders%s, openpurchases%s, opentransfers%s,
-        proposedpurchases%s, proposedtransfers%s
-      from (%s) results
-      inner join buffer
-        on buffer.name = results.buffer_id
-      order by %s
-      ''' % (
-        suffix, suffix, suffix, suffix, suffix,
-        suffix, suffix, suffix, suffix, suffix,
-        suffix, basesql, sortsql
-        )
-    cursor.execute(query, baseparams)
-
-    # Build the python result
-    for row in cursor.fetchall():
-      yield {
-        'buffer': row[0],
-        'buffer__item__name': row[1],
-        'buffer__location__name': row[2],
-        'leadtime': row[3],
-        'localforecast': row[4],
-        'dependentdemand': row[5],
-        'safetystock': row[6],
-        'reorderquantity': row[7],
-        'onhand': row[8],
-        'overduesalesorders': row[9],
-        'opensalesorders': row[10],
-        'openpurchases': row[11],
-        'opentransfers': row[12],
-        'proposedpurchases': row[13],
-        'proposedtransfers': row[14]
-        }
+    for rec in basequery:
+      res = {}
+      for f in DRP.rows:
+        if f.field_name in ["localforecast", "dependentdemand", "safetystock", "reorderquantity", "onhand",
+          "overduesalesorders", "opensalesorders", "openpurchases", "opentransfers",
+          "proposedpurchases", "proposedtransfers"]:
+          if suffix:
+            res[f.field_name] = getattr(rec, "%s%s" % (f.field_name, suffix) )
+          else:
+            res[f.field_name] = getattr(rec, f.field_name)
+        elif f.field_name == 'leadtime':
+          res['leadtime'] = rec.leadtime.total_seconds() / 86400
+        else:
+          val = rec
+          for j in f.field_name.split("__"):
+            val = getattr(val, j)
+          res[f.field_name] = val
+      yield (res)
 
 
 class DRPitemlocation(View):
@@ -417,15 +428,15 @@ class DRPitemlocation(View):
        coalesce(sum(forecastplan.orderstotal%s),0) as orderstotal,
        coalesce(sum(forecastplan.ordersopen%s),0) as ordersopen,
        sum(forecastplan.ordersadjustment%s) as ordersadjustment,
-       coalesce(sum(forecastplan.forecastbaseline%s),0) as forecastbaseline,
-       sum(forecastplan.forecastadjustment%s) as forecastadjustment,
-       coalesce(sum(forecastplan.forecasttotal%s),0) as forecasttotal,
-       coalesce(sum(forecastplan.forecastnet%s),0) as forecastnet,
-       coalesce(sum(forecastplan.forecastconsumed%s),0) as forecastconsumed
+       coalesce(sum(case when d.future then forecastplan.forecastbaseline%s end),0) as forecastbaseline,
+       sum(case when d.future then forecastplan.forecastadjustment%s end) as forecastadjustment,
+       coalesce(sum(case when d.future then forecastplan.forecasttotal%s end),0) as forecasttotal,
+       coalesce(sum(case when d.future then forecastplan.forecastnet%s end),0) as forecastnet,
+       coalesce(sum(case when d.future then forecastplan.forecastconsumed%s end),0) as forecastconsumed
     from forecast
     -- Join buckets
     cross join (
-       select name as bucket, startdate, enddate
+       select name as bucket, startdate, enddate, enddate > %%s as future
        from common_bucketdetail
        where bucket_id = %%s
        and startdate between (select min(startdate) from forecastplan)
@@ -455,6 +466,15 @@ class DRPitemlocation(View):
     """
 
   def getData(self, request, itemlocation):
+    # Current date
+    try:
+      current_date = datetime.strptime(
+        Parameter.objects.using(request.database).get(name="currentdate").value,
+        "%Y-%m-%d %H:%M:%S"
+        )
+    except:
+      current_date = datetime.now()
+
     # This view retrieves all relevant data for a certain itemlocation.
     DRP.getBuckets(request)
     ip = InventoryPlanning.objects.using(request.database).get(pk=itemlocation)
@@ -511,7 +531,7 @@ class DRPitemlocation(View):
       extra = ''
     cursor.execute(
       self.sql_forecast % (extra, extra, extra, extra, extra, extra, extra, extra),
-      (request.report_bucket, location_name, item_name)
+      (current_date, request.report_bucket, location_name, item_name)
       )
     for rec in cursor.fetchall():
       if not first:
@@ -983,6 +1003,7 @@ class DRPitemlocation(View):
                   object_id=obj.pk,
                   object_repr=force_text(obj),
                   action_flag=CHANGE,
+                  #. Translators: Translation included with Django
                   change_message=_('Changed %s.') % get_text_list(form.changed_data, _('and'))
                   ).save(using=request.database)
 
@@ -1470,14 +1491,14 @@ class DRPitemlocation(View):
       )
     agg_buckets = [ i for i in agg_buckets_query ]
     agg_bucket_idx = 0
-    orderstotal = 0
-    ordersopen = 0
+    orderstotal = Decimal(0)
+    ordersopen = Decimal(0)
     ordersadjustment = None
-    forecastbaseline = 0
+    forecastbaseline = Decimal(0)
     forecastadjustment = None
-    forecasttotal = 0
-    forecastnet = 0
-    forecastconsumed = 0
+    forecasttotal = Decimal(0)
+    forecastnet = Decimal(0)
+    forecastconsumed = Decimal(0)
     for i in db_forecastplan:
       if i.startdate <= agg_buckets[agg_bucket_idx].startdate:
         if i.orderstotal:

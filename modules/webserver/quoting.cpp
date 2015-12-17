@@ -138,17 +138,17 @@ bool WebServer::quote_or_inquiry(struct mg_connection* conn, bool keepreservatio
         "customer_id, minshipment, maxlateness, category, due, lastmodified) "
         "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, now())",
       (*dmd)->getName(),
-      to_string(static_cast<long double>((*dmd)->getQuantity())),
-      to_string(static_cast<long long>((*dmd)->getPriority())),
+      toString((*dmd)->getQuantity()),
+      toString((*dmd)->getPriority()),
       (*dmd)->getDescription(),
       string("quote"),
       (*dmd)->getItem()->getName(),
       (*dmd)->getLocation() ? (*dmd)->getLocation()->getName() : string(""),
       (*dmd)->getCustomer() ? (*dmd)->getCustomer()->getName() : string(""),
-      to_string(static_cast<long double>((*dmd)->getMinShipment())),
-      to_string(static_cast<long double>((*dmd)->getMaxLateness())),
+      toString((*dmd)->getMinShipment()),
+      toString(static_cast<long>((*dmd)->getMaxLateness())),
       (*dmd)->getCategory(),
-      static_cast<string>((*dmd)->getDue())
+      toString((*dmd)->getDue())
       );
   }
 

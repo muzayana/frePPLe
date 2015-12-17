@@ -331,11 +331,11 @@ def loadForecastValues(cursor):
      left outer join forecastplan
        on forecastplan.forecast_id = forecast.name
        and calendarbucket.startdate = forecastplan.startdate
-     where calendarbucket.enddate >= '%s'
-       and calendarbucket.startdate < '%s'
+     where calendarbucket.enddate >= %s
+       and calendarbucket.startdate < %s
        and forecastplan.forecasttotal > 0
        and forecast.planned = 't'
-     order by forecast.name, calendarbucket.startdate''' % (
+     order by forecast.name, calendarbucket.startdate''', (
     fcst_calendar, frepple.settings.current,
     frepple.settings.current + timedelta(days=horizon_future)
     ))
@@ -383,9 +383,14 @@ def exportForecastFull(cursor):
   starttime = time()
   cursor.execute('''update forecastplan
     set forecasttotal=0, forecastnet=0, forecastconsumed=0, ordersplanned=0, forecastplanned=0
-    where startdate >= '%s'
+    where startdate >= %s
       and (forecasttotal<>0 or forecastnet<>0 or forecastconsumed<>0 or ordersplanned <> 0 or forecastplanned <> 0)
-    ''' % frepple.settings.current)
+    ''', (frepple.settings.current,))
+  cursor.execute('''update forecastplan
+    set forecastnet=0, forecastconsumed=0, ordersplanned=0, forecastplanned=0
+    where startdate < %s
+      and (forecastnet<>0 or forecastconsumed<>0 or ordersplanned <> 0 or forecastplanned <> 0)
+    ''', (frepple.settings.current,))
   print('Export set to 0 in %.2f seconds' % (time() - starttime))
   starttime = time()
   cursor.executemany(
@@ -526,9 +531,14 @@ def exportForecastPlanned(cursor):
   starttime = time()
   cursor.execute('''update forecastplan
     set forecastnet=0, forecastconsumed=0, ordersplanned = 0, forecastplanned = 0
-    where startdate >= '%s'
+    where startdate >= %s
       and (forecastnet<>0 or forecastconsumed<>0 or ordersplanned <> 0 or forecastplanned <> 0)
-    ''' % frepple.settings.current)
+    ''', (frepple.settings.current,) )
+  cursor.execute('''update forecastplan
+    set forecastnet=0, forecastconsumed=0, ordersplanned=0, forecastplanned=0
+    where startdate < %s
+      and (forecastnet<>0 or forecastconsumed<>0 or ordersplanned <> 0 or forecastplanned <> 0)
+    ''', (frepple.settings.current,) )
   print('Export set to 0 in %.2f seconds' % (time() - starttime))
   starttime = time()
   cursor.executemany(
@@ -648,9 +658,9 @@ def exportForecastValues(cursor):
   starttime = time()
   cursor.execute('''update forecastplan
     set forecasttotal=0
-    where startdate >= '%s'
+    where startdate >= %s
       and forecasttotal<>0
-    ''' % frepple.settings.current)
+    ''', (frepple.settings.current,))
   print('Export set to 0 in %.2f seconds' % (time() - starttime))
   starttime = time()
   cursor.executemany(
@@ -757,6 +767,9 @@ def generate_plan():
 
   # Detect whether the forecast module is available
   with_forecasting = 'demand_forecast' in [ a[0] for a in inspect.getmembers(frepple) ]
+  if with_forecasting and not Parameter.getValue('forecast.calendar', db, None):
+    with_forecasting = False
+    print("Warning: parameter forecast.calendar not set. No forecast will be calculated.")
 
   # Detect whether the inventory planning module is available
   with_inventoryplanning = 'solver_inventoryplanning' in [ a[0] for a in inspect.getmembers(frepple) ]

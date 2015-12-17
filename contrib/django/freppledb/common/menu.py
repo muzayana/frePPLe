@@ -15,6 +15,7 @@ from django.contrib.auth.models import Group
 import freppledb.common.views
 from freppledb.common.models import User, Bucket, BucketDetail, Parameter, Comment
 from freppledb.menu import menu
+from freppledb import VERSION
 
 
 # Settings menu
@@ -48,6 +49,10 @@ menu.addItem(
 
 # Help menu
 menu.addItem("help", "tour", javascript="tour.start('0,0,0')", label=_('Guided tour'), index=100)
-menu.addItem("help", "documentation", url="%sdoc/index.html" % settings.STATIC_URL, label=_('documentation'), window=True, prefix=False, index=200)
-menu.addItem("help", "API", url="/api/", label=_('API help'), window=True, prefix=False, index=300)
+
+versionnumber=VERSION.split('.', 2)
+docurl="http://frepple.com/docs/"+versionnumber[0]+"."+versionnumber[1]+"/"
+#. Translators: Translation included with Django
+menu.addItem("help", "documentation", url=docurl, label=_('View documentation'), window=True, prefix=False, index=200)
+menu.addItem("help", "API", url="/api/", label=_('REST API help'), window=True, prefix=False, index=300)
 menu.addItem("help", "website", url="http://frepple.com", window=True, label=_('frePPLe website'), prefix=False, index=400)

@@ -10,6 +10,7 @@
 
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import pgettext_lazy
 
 from freppledb.common.models import AuditModel
 from freppledb.input.models import Buffer
@@ -17,13 +18,10 @@ from freppledb.input.models import Buffer
 
 class InventoryPlanning(AuditModel):
   distributions = (
-    ('automatic', _('Automatic')),
-    # Translators: Normal statistical distribution, aka Gaussian distribution
-    ('normal', _('Normal')),
-    # Translators: Poisson statistical distribution
-    ('poisson', _('Poisson')),
-    # Translators: Negative binomial statistical distribution
-    ('negative binomial', _('Negative Binomial')),
+    ('automatic', pgettext_lazy("forecast method", 'Automatic')),
+    ('normal', pgettext_lazy("forecast method", 'Normal')),
+    ('poisson', pgettext_lazy("forecast method", 'Poisson')),
+    ('negative binomial', pgettext_lazy("forecast method", 'Negative Binomial')),
   )
 
   # TODO combined method is currently disabled

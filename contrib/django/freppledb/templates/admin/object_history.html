@@ -2,7 +2,7 @@
 {% load i18n %}
 
 {% block content_title %}<div>{% block tools %}{% endblock %}<h1 style="float:left">{{title|capfirst|force_escape}}: {% trans 'change history'|capfirst|force_escape %}</h1>
-{% tabs model %}
+{% tabs opts %}
 </div>{% endblock %}
 
 {% block content %}
@@ -13,8 +13,11 @@
     <table id="change-history">
         <thead>
         <tr>
-            <th scope="col">{% trans 'date/time'|capfirst %}</th>
+            {% comment %}Translators: Translation included with Django {% endcomment %}
+            <th scope="col">{% trans 'Date/time'|capfirst %}</th>
+            {% comment %}Translators: Translation included with Django {% endcomment %}
             <th scope="col">{% trans 'user'|capfirst %}</th>
+            {% comment %}Translators: Translation included with Django {% endcomment %}
             <th scope="col">{% trans 'action'|capfirst %}</th>
         </tr>
         </thead>
@@ -29,6 +32,7 @@
         </tbody>
     </table>
 {% else %}
+{% comment %}Translators: Translation included with Django {% endcomment %}
     <p>{% trans "This object doesn't have a change history. It probably wasn't added via this admin site." %}</p>
 {% endif %}
 </div>

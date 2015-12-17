@@ -11,15 +11,16 @@
 import json
 
 from django.conf import settings
-from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
-from django.http import HttpResponse, HttpResponseRedirect, Http404
+from django.db.models import Q
+from django.http import HttpResponse, Http404
 from django.db.models.fields import CharField
 from django.utils.translation import ugettext_lazy as _
 from django.utils.translation import ungettext
-from django.utils.encoding import iri_to_uri, force_text
+from django.utils.encoding import force_text
 from django.utils.text import capfirst
 
+from freppledb.boot import getAttributeFields
 from freppledb.input.models import Resource, Operation, Location, SetupMatrix
 from freppledb.input.models import Buffer, Customer, Demand, Item, Load, Flow, Skill
 from freppledb.input.models import Calendar, CalendarBucket, OperationPlan, SubOperation
@@ -41,9 +42,32 @@ def search(request):
   # We are interested in models satisfying these criteria:
   #  - primary key is of type text
   #  - user has change permissions
+  #  - special case for inventory planning:
+  #      - add matches to the DRP screen
+  #      - exclude the automatically generated calendars
+  with_inv_planning = "freppledb.inventoryplanning" in settings.INSTALLED_APPS
+  if with_inv_planning:
+    from freppledb.inventoryplanning.models import InventoryPlanning
+    query = InventoryPlanning.objects.using(request.database) \
+      .filter(buffer__item__name__icontains=term) \
+      .order_by('buffer__item__name') \
+      .distinct('buffer__item__name') \
+      .values_list('buffer__item__name')
+    count = len(query)
+    if count > 0:
+      result.append( {'value': None, 'label': (ungettext(
+         '%(name)s - %(count)d match',
+         '%(name)s - %(count)d matches', count) % {'name': force_text(_("Distribution planning")), 'count': count}).capitalize()
+         })
+      result.extend([ {
+        'url': '/inventoryplanning/drp/',
+        'value': i[0]
+        } for i in query[:10] ])
   for cls, admn in data_site._registry.items():
     if request.user.has_perm("%s.view_%s" % (cls._meta.app_label, cls._meta.object_name.lower())) and isinstance(cls._meta.pk, CharField):
       query = cls.objects.using(request.database).filter(pk__icontains=term).order_by('pk').values_list('pk')
+      if with_inv_planning and cls == Calendar:
+        query = query.exclude(source='Inventory planning')
       count = len(query)
       if count > 0:
         result.append( {'value': None, 'label': (ungettext(
@@ -51,9 +75,8 @@ def search(request):
            '%(name)s - %(count)d matches', count) % {'name': force_text(cls._meta.verbose_name), 'count': count}).capitalize()
            })
         result.extend([ {
-          'label': cls._meta.object_name.lower(),
-          'value': i[0],
-          'app': cls._meta.app_label
+          'url': "/data/%s/%s/" % (cls._meta.app_label, cls._meta.object_name.lower()),
+          'value': i[0]
           } for i in query[:10] ])
 
   # Construct reply
@@ -122,7 +145,7 @@ class PathReport(GridReport):
         ),
       'downstream': reportclass.downstream,
       'active_tab': reportclass.downstream and 'whereused' or 'supplypath',
-      'model': reportclass.objecttype.__name__.lower
+      'model': reportclass.objecttype._meta
       }
 
 
@@ -165,11 +188,11 @@ class PathReport(GridReport):
   @classmethod
   def findUsage(reportclass, buffer, db, level, curqty, realdepth, pushsuper):
     result = [
-      (level + 1, None, i.operation, curqty, 0, None, realdepth, pushsuper)
+      (level + 1, None, i.operation, curqty, 0, None, realdepth, pushsuper, buffer.location.name if buffer.location else None)
       for i in buffer.flows.filter(quantity__lt=0).only('operation').using(db)
       ]
     result.extend([
-      (level + 1, None, i, curqty, 0, None, realdepth, pushsuper)
+      (level + 1, None, i, curqty, 0, None, realdepth, pushsuper, i.location.name if i.location else None)
       for i in ItemDistribution.objects.using(db).filter(
         item__lft__lte=buffer.item.lft, item__rght__gt=buffer.item.lft,
         origin__lft__lte=buffer.location.lft, origin__rght__gt=buffer.location.lft
@@ -187,20 +210,20 @@ class PathReport(GridReport):
     # case in case only a single location exists in the model, a match on the
     # item is sufficient).
     if buffer.producing:
-      return [ (level, None, buffer.producing, curqty, 0, None, realdepth, pushsuper) ]
+      return [ (level, None, buffer.producing, curqty, 0, None, realdepth, pushsuper, buffer.producing.location.name if buffer.producing.location else None) ]
     result = []
     if Location.objects.using(db).count() > 1:
       # Multiple locations
       result.extend([
-        (level, None, i, curqty, 0, None, realdepth, pushsuper)
+        (level, None, i, curqty, 0, None, realdepth, pushsuper, buffer.location.name if buffer.location else None)
         for i in ItemSupplier.objects.using(db).filter(
-          item__lft__lte=buffer.item.lft, item__rght__gt=buffer.item.lft,
-          location__lft__lte=buffer.location.lft, location__rght__gt=buffer.location.lft
+          Q(location__isnull=True) | (Q(location__lft__lte=buffer.location.lft) & Q(location__rght__gt=buffer.location.lft)),
+          item__lft__lte=buffer.item.lft, item__rght__gt=buffer.item.lft
           )
         ])
       # TODO if the itemdistribution is at an aggregate location level, we should loop over all child locations
       result.extend([
-        (level, None, i, curqty, 0, None, realdepth, pushsuper)
+        (level, None, i, curqty, 0, None, realdepth, pushsuper, i.origin.name if i.origin else None)
         for i in ItemDistribution.objects.using(db).filter(
           item__lft__lte=buffer.item.lft, item__rght__gt=buffer.item.lft,
           location__lft__lte=buffer.location.lft, location__rght__gt=buffer.location.lft
@@ -209,7 +232,7 @@ class PathReport(GridReport):
     else:
       # Single location, and itemdistributions obviously aren't defined here
       result.extend([
-        (level, None, i, curqty, 0, None, realdepth, pushsuper)
+        (level, None, i, curqty, 0, None, realdepth, pushsuper, buffer.location.name if buffer.location else None)
         for i in ItemSupplier.objects.using(db).filter(
           item__lft__lte=buffer.item.lft, item__rght__gt=buffer.item.rght
           )
@@ -234,11 +257,12 @@ class PathReport(GridReport):
     # TODO the current logic isn't generic enough. A lot of buffers may not be explicitly
     # defined, and are created on the fly by deliveries, itemsuppliers or itemdistributions.
     # Currently we don't account for such situations.
+    # TODO usage search doesn't find item distributions from that location
     counter = 1
     #operations = set()
     while len(root) > 0:
       # Pop the current node from the stack
-      level, parent, curoperation, curqty, issuboperation, parentoper, realdepth, pushsuper = root.pop()
+      level, parent, curoperation, curqty, issuboperation, parentoper, realdepth, pushsuper, location = root.pop()
       curnode = counter
       counter += 1
 
@@ -247,7 +271,7 @@ class PathReport(GridReport):
       if pushsuper and not isinstance(curoperation, (ItemSupplier, ItemDistribution)):
         hasParents = False
         for x in curoperation.superoperations.using(request.database).only('operation').order_by("-priority"):
-          root.append( (level, parent, x.operation, curqty, issuboperation, parentoper, realdepth, False) )
+          root.append( (level, parent, x.operation, curqty, issuboperation, parentoper, realdepth, False, location) )
           hasParents = True
         if hasParents:
           continue
@@ -266,15 +290,15 @@ class PathReport(GridReport):
       if reportclass.downstream:
         # Downstream recursion
         if isinstance(curoperation, ItemSupplier):
-          name = 'Purchase %s from %s' % (curoperation.item.name, curoperation.supplier.name)
+          name = 'Purchase %s @ %s from %s' % (curoperation.item.name, location, curoperation.supplier.name)
           optype = "purchase"
           duration = curoperation.leadtime
           duration_per = None
-          buffers = [ ("%s@%s" % (curoperation.item.name, curoperation.location.name), 1), ]
+          buffers = [ ("%s @ %s" % (curoperation.item.name, curoperation.location.name), 1), ]
           resources = None
           try:
-            downstr = Buffer.objects.using(request.database).get(name="%s@%s" % (curoperation.item.name, curoperation.location.name))
-            root.extend( reportclass.findUsage(downstr, request.database, level, curqty, realdepth + 1, False) )
+            downstr = Buffer.objects.using(request.database).get(name="%s @ %s" % (curoperation.item.name, curoperation.location.name))
+            root.extend( reportclass.findUsage(downstr, request.database, level, curqty, realdepth + 1, False, location) )
           except Buffer.DoesNotExist:
             pass
         elif isinstance(curoperation, ItemDistribution):
@@ -283,8 +307,8 @@ class PathReport(GridReport):
           duration = curoperation.leadtime
           duration_per = None
           buffers = [
-            ("%s@%s" % (curoperation.item.name, curoperation.origin.name), -1),
-            ("%s@%s" % (curoperation.item.name, curoperation.location.name), 1)
+            ("%s @ %s" % (curoperation.item.name, curoperation.origin.name), -1),
+            ("%s @ %s" % (curoperation.item.name, curoperation.location.name), 1)
             ]
           resources = None
         else:
@@ -298,32 +322,32 @@ class PathReport(GridReport):
             curflows = x.thebuffer.flows.filter(quantity__lt=0).only('operation', 'quantity').using(request.database)
             for y in curflows:
               hasChildren = True
-              root.append( (level - 1, curnode, y.operation, - curqty * y.quantity, subcount, None, realdepth - 1, pushsuper) )
+              root.append( (level - 1, curnode, y.operation, - curqty * y.quantity, subcount, None, realdepth - 1, pushsuper, x.thebuffer.location.name if x.thebuffer.location else None) )
           for x in curoperation.suboperations.using(request.database).only('suboperation').order_by("-priority"):
             subcount += curoperation.type == "routing" and 1 or -1
-            root.append( (level - 1, curnode, x.suboperation, curqty, subcount, curoperation, realdepth, False) )
+            root.append( (level - 1, curnode, x.suboperation, curqty, subcount, curoperation, realdepth, False, location) )
             hasChildren = True
       else:
         # Upstream recursion
         if isinstance(curoperation, ItemSupplier):
-          name = 'Purchase %s @ %s from %s' % (curoperation.item.name, curoperation.location.name, curoperation.supplier.name)
+          name = 'Purchase %s @ %s from %s' % (curoperation.item.name, location, curoperation.supplier.name)
           optype = "purchase"
           duration = curoperation.leadtime
           duration_per = None
-          buffers = [ ("%s@%s" % (curoperation.item.name, curoperation.location.name), 1), ]
+          buffers = [ ("%s @ %s" % (curoperation.item.name, location), 1), ]
           resources = None
         elif isinstance(curoperation, ItemDistribution):
-          name = 'Ship %s from %s to %s' % (curoperation.item.name, curoperation.origin.name, curoperation.location.name)
+          name = 'Ship %s from %s to %s' % (curoperation.item.name, curoperation.origin.name, location)
           optype = "distribution"
           duration = curoperation.leadtime
           duration_per = None
           buffers = [
-            ("%s@%s" % (curoperation.item.name, curoperation.origin.name), -1),
-            ("%s@%s" % (curoperation.item.name, curoperation.location.name), 1)
+            ("%s @ %s" % (curoperation.item.name, curoperation.origin.name), -1),
+            ("%s @ %s" % (curoperation.item.name, curoperation.location.name), 1)
             ]
           resources = None
           try:
-            upstr = Buffer.objects.using(request.database).get(name="%s@%s" % (curoperation.item.name, curoperation.origin.name))
+            upstr = Buffer.objects.using(request.database).get(name="%s @ %s" % (curoperation.item.name, curoperation.origin.name))
             root.extend( reportclass.findReplenishment(upstr, request.database, level + 2, curqty, realdepth + 1, False) )
           except Buffer.DoesNotExist:
             pass
@@ -344,11 +368,13 @@ class PathReport(GridReport):
               root.append( (
                 level + 1, curnode, y.thebuffer.producing,
                 curprodflow and (-curqty * y.quantity) / curprodflow.quantity or (-curqty * y.quantity),
-                subcount, None, realdepth + 1, True
+                subcount, None, realdepth + 1, True, y.thebuffer.location
                 ) )
+            else:
+              root.extend( reportclass.findReplenishment(y.thebuffer, request.database, level + 2, curqty, realdepth + 1, False) )
           for x in curoperation.suboperations.using(request.database).only('suboperation').order_by("-priority"):
             subcount += curoperation.type == "routing" and 1 or -1
-            root.append( (level + 1, curnode, x.suboperation, curqty, subcount, curoperation, realdepth, False) )
+            root.append( (level + 1, curnode, x.suboperation, curqty, subcount, curoperation, realdepth, False, location) )
             hasChildren = True
 
       # Process the current node
@@ -388,10 +414,10 @@ class UpstreamDemandPath(PathReport):
 
     if dmd.operation:
       # Delivery operation on the demand
-      return [ (0, None, dmd.operation, 1, 0, None, 0, False) ]
+      return [ (0, None, dmd.operation, 1, 0, None, 0, False, None) ]
     elif dmd.item.operation:
       # Delivery operation on the item
-      return [ (0, None, dmd.item.operation, 1, 0, None, 0, False) ]
+      return [ (0, None, dmd.item.operation, 1, 0, None, 0, False, None) ]
     else:
       # Autogenerated delivery operation
       try:
@@ -418,7 +444,7 @@ class UpstreamItemPath(PathReport):
       else:
         if it.operation:
           # Delivery operation on the item
-          return [ (0, None, it.operation, 1, 0, None, 0, False) ]
+          return [ (0, None, it.operation, 1, 0, None, 0, False, None) ]
         else:
           # Find the supply path of all buffers of this item
           result = []
@@ -457,7 +483,10 @@ class UpstreamResourcePath(PathReport):
       root = Resource.objects.using(request.database).get(name=entity)
     except ObjectDoesNotExist:
       raise Http404("resource %s doesn't exist" % entity)
-    return [ (0, None, i.operation, 1, 0, None, 0, True) for i in root.loads.using(request.database).all() ]
+    return [
+      (0, None, i.operation, 1, 0, None, 0, True, i.operation.location.name if i.operation.location else None)
+      for i in root.loads.using(request.database).all()
+      ]
 
 
 class UpstreamOperationPath(PathReport):
@@ -468,7 +497,8 @@ class UpstreamOperationPath(PathReport):
   def getRoot(reportclass, request, entity):
     from django.core.exceptions import ObjectDoesNotExist
     try:
-      return [ (0, None, Operation.objects.using(request.database).get(name=entity), 1, 0, None, 0, True) ]
+      oper = Operation.objects.using(request.database).get(name=entity)
+      return [ (0, None, oper, 1, 0, None, 0, True, oper.location.name if oper.location else None) ]
     except ObjectDoesNotExist:
       raise Http404("operation %s doesn't exist" % entity)
 
@@ -509,6 +539,7 @@ class BufferList(GridReport):
   frozenColumns = 1
 
   rows = (
+    #. Translators: Translation included with Django
     GridFieldText('name', title=_('name'), key=True, formatter='detail', extra="role:'input/buffer'"),
     GridFieldText('description', title=_('description')),
     GridFieldText('category', title=_('category')),
@@ -535,6 +566,7 @@ class SetupMatrixList(GridReport):
   frozenColumns = 1
 
   rows = (
+    #. Translators: Translation included with Django
     GridFieldText('name', title=_('name'), key=True, formatter='detail', extra="role:'input/setupmatrix'"),
     GridFieldText('source', title=_('source')),
     GridFieldLastModified('lastmodified'),
@@ -551,6 +583,7 @@ class ResourceList(GridReport):
   frozenColumns = 1
 
   rows = (
+    #. Translators: Translation included with Django
     GridFieldText('name', title=_('name'), key=True, formatter='detail', extra="role:'input/resource'"),
     GridFieldText('description', title=_('description')),
     GridFieldText('category', title=_('category')),
@@ -578,6 +611,7 @@ class LocationList(GridReport):
   frozenColumns = 1
 
   rows = (
+    #. Translators: Translation included with Django
     GridFieldText('name', title=_('name'), key=True, formatter='detail', extra="role:'input/location'"),
     GridFieldText('description', title=_('description')),
     GridFieldText('category', title=_('category')),
@@ -598,6 +632,7 @@ class CustomerList(GridReport):
   frozenColumns = 1
 
   rows = (
+    #. Translators: Translation included with Django
     GridFieldText('name', title=_('name'), key=True, formatter='detail', extra="role:'input/customer'"),
     GridFieldText('description', title=_('description')),
     GridFieldText('category', title=_('category')),
@@ -617,6 +652,7 @@ class SupplierList(GridReport):
   frozenColumns = 1
 
   rows = (
+    #. Translators: Translation included with Django
     GridFieldText('name', title=_('name'), key=True, formatter='detail', extra="role:'input/supplier'"),
     GridFieldText('description', title=_('description')),
     GridFieldText('category', title=_('category')),
@@ -687,6 +723,7 @@ class ItemList(GridReport):
   editable = True
 
   rows = (
+    #. Translators: Translation included with Django
     GridFieldText('name', title=_('name'), key=True, formatter='detail', extra="role:'input/item'"),
     GridFieldText('description', title=_('description')),
     GridFieldText('category', title=_('category')),
@@ -708,6 +745,7 @@ class SkillList(GridReport):
   frozenColumns = 1
 
   rows = (
+    #. Translators: Translation included with Django
     GridFieldText('name', title=_('name'), key=True, formatter='detail', extra="role:'input/skill'"),
     GridFieldText('source', title=_('source')),
     GridFieldLastModified('lastmodified'),
@@ -750,8 +788,8 @@ class LoadList(GridReport):
     GridFieldNumber('quantity', title=_('quantity')),
     GridFieldDateTime('effective_start', title=_('effective start')),
     GridFieldDateTime('effective_end', title=_('effective end')),
+    #. Translators: Translation included with Django
     GridFieldText('name', title=_('name')),
-    GridFieldText('alternate', title=_('alternate')),
     GridFieldNumber('priority', title=_('priority')),
     GridFieldText('setup', title=_('setup')),
     GridFieldChoice('search', title=_('search mode'), choices=searchmode),
@@ -776,8 +814,8 @@ class FlowList(GridReport):
     GridFieldNumber('quantity', title=_('quantity')),
     GridFieldDateTime('effective_start', title=_('effective start')),
     GridFieldDateTime('effective_end', title=_('effective end')),
+    #. Translators: Translation included with Django
     GridFieldText('name', title=_('name')),
-    GridFieldText('alternate', title=_('alternate')),
     GridFieldNumber('priority', title=_('priority')),
     GridFieldChoice('search', title=_('search mode'), choices=searchmode),
     GridFieldText('source', title=_('source')),
@@ -794,6 +832,7 @@ class DemandList(GridReport):
   frozenColumns = 1
 
   rows = (
+    #. Translators: Translation included with Django
     GridFieldText('name', title=_('name'), key=True, formatter='detail', extra="role:'input/demand'"),
     GridFieldText('item', title=_('item'), field_name='item__name', formatter='detail', extra="role:'input/item'"),
     GridFieldText('location', title=_('location'), field_name='location__name', formatter='detail', extra="role:'input/location'"),
@@ -814,11 +853,11 @@ class DemandList(GridReport):
     )
 
   actions = [
-    {"name": 'inquiry', "label": _("change status to %(status)s") % {'status': _("Inquiry")}, "function": "grid.setStatus('inquiry')"},
-    {"name": 'quote', "label": _("change status to %(status)s") % {'status': _("Quote")}, "function": "grid.setStatus('quote')"},
-    {"name": 'open', "label": _("change status to %(status)s") % {'status': _("Open")}, "function": "grid.setStatus('open')"},
-    {"name": 'closed', "label": _("change status to %(status)s") % {'status': _("Closed")}, "function": "grid.setStatus('closed')"},
-    {"name": 'canceled', "label": _("change status to %(status)s") % {'status': _("Canceled")}, "function": "grid.setStatus('canceled')"},
+    {"name": 'inquiry', "label": _("change status to %(status)s") % {'status': _("inquiry")}, "function": "grid.setStatus('inquiry')"},
+    {"name": 'quote', "label": _("change status to %(status)s") % {'status': _("quote")}, "function": "grid.setStatus('quote')"},
+    {"name": 'open', "label": _("change status to %(status)s") % {'status': _("open")}, "function": "grid.setStatus('open')"},
+    {"name": 'closed', "label": _("change status to %(status)s") % {'status': _("closed")}, "function": "grid.setStatus('closed')"},
+    {"name": 'canceled', "label": _("change status to %(status)s") % {'status': _("canceled")}, "function": "grid.setStatus('canceled')"},
     ]
 
 class CalendarList(GridReport):
@@ -830,6 +869,7 @@ class CalendarList(GridReport):
   model = Calendar
   frozenColumns = 1
   rows = (
+    #. Translators: Translation included with Django
     GridFieldText('name', title=_('name'), key=True, formatter='detail', extra="role:'input/calendar'"),
     GridFieldText('description', title=_('description')),
     GridFieldText('category', title=_('category')),
@@ -854,12 +894,19 @@ class CalendarBucketList(GridReport):
     GridFieldDateTime('enddate', title=_('end date'), editable=False),
     GridFieldNumber('value', title=_('value')),
     GridFieldInteger('priority', title=_('priority')),
+    #. Translators: Translation included with Django
     GridFieldBool('monday', title=_('Monday')),
+    #. Translators: Translation included with Django
     GridFieldBool('tuesday', title=_('Tuesday')),
+    #. Translators: Translation included with Django
     GridFieldBool('wednesday', title=_('Wednesday')),
+    #. Translators: Translation included with Django
     GridFieldBool('thursday', title=_('Thursday')),
+    #. Translators: Translation included with Django
     GridFieldBool('friday', title=_('Friday')),
+    #. Translators: Translation included with Django
     GridFieldBool('saturday', title=_('Saturday')),
+    #. Translators: Translation included with Django
     GridFieldBool('sunday', title=_('Sunday')),
     GridFieldTime('starttime', title=_('start time')),
     GridFieldTime('endtime', title=_('end time')),
@@ -877,6 +924,7 @@ class OperationList(GridReport):
   frozenColumns = 1
 
   rows = (
+    #. Translators: Translation included with Django
     GridFieldText('name', title=_('name'), key=True, formatter='detail', extra="role:'input/operation'"),
     GridFieldText('description', title=_('description')),
     GridFieldText('category', title=_('category')),
@@ -938,9 +986,9 @@ class OperationPlanList(GridReport):
     )
 
   actions = [
-    {"name": 'proposed', "label": _("change status to %(status)s") % {'status': _("Proposed")}, "function": "grid.setStatus('proposed')"},
-    {"name": 'confirmed', "label": _("change status to %(status)s") % {'status': _("Confirmed")}, "function": "grid.setStatus('confirmed')"},
-    {"name": 'closed', "label": _("change status to %(status)s") % {'status': _("Closed")}, "function": "grid.setStatus('closed')"},
+    {"name": 'proposed', "label": _("change status to %(status)s") % {'status': _("proposed")}, "function": "grid.setStatus('proposed')"},
+    {"name": 'confirmed', "label": _("change status to %(status)s") % {'status': _("confirmed")}, "function": "grid.setStatus('confirmed')"},
+    {"name": 'closed', "label": _("change status to %(status)s") % {'status': _("closed")}, "function": "grid.setStatus('closed')"},
     ]
 
 
@@ -949,12 +997,14 @@ class DistributionOrderList(GridReport):
   A list report to show distribution orders.
   '''
   title = _("distribution orders")
+  if 'freppledb.inventoryplanning' in settings.INSTALLED_APPS:
+    template = 'input/distributionorder.html'
   basequeryset = DistributionOrder.objects.all()
   model = DistributionOrder
   frozenColumns = 1
 
   rows = (
-    GridFieldInteger('id', title=_('identifier'), key=True),
+    GridFieldInteger('id', title=_('identifier'), key=True, formatter='drp' if 'freppledb.inventoryplanning' in settings.INSTALLED_APPS else 'integer'),
     GridFieldText('reference', title=_('reference'),
       editable='freppledb.openbravo' not in settings.INSTALLED_APPS
       ),
@@ -979,10 +1029,27 @@ class DistributionOrderList(GridReport):
     ]
   else:
     actions = [
-      {"name": 'proposed', "label": _("change status to %(status)s") % {'status': _("Proposed")}, "function": "grid.setStatus('proposed')"},
-      {"name": 'confirmed', "label": _("change status to %(status)s") % {'status': _("Confirmed")}, "function": "grid.setStatus('confirmed')"},
-      {"name": 'closed', "label": _("change status to %(status)s") % {'status': _("Closed")}, "function": "grid.setStatus('closed')"},
+      {"name": 'proposed', "label": _("change status to %(status)s") % {'status': _("proposed")}, "function": "grid.setStatus('proposed')"},
+      {"name": 'confirmed', "label": _("change status to %(status)s") % {'status': _("confirmed")}, "function": "grid.setStatus('confirmed')"},
+      {"name": 'closed', "label": _("change status to %(status)s") % {'status': _("closed")}, "function": "grid.setStatus('closed')"},
       ]
+
+  @classmethod
+  def initialize(reportclass, request):
+    if reportclass._attributes_added != 2:
+      reportclass._attributes_added = 2
+      # Adding custom item attributes
+      for f in getAttributeFields(Item, related_name_prefix="item"):
+        f.editable = False
+        reportclass.rows += (f,)
+      # Adding custom location attributes
+      for f in getAttributeFields(Location, related_name_prefix="origin"):
+        f.editable = False
+        reportclass.rows += (f,)
+      # Adding custom location attributes
+      for f in getAttributeFields(Location, related_name_prefix="destination"):
+        f.editable = False
+        reportclass.rows += (f,)
 
 
 class PurchaseOrderList(GridReport):
@@ -990,12 +1057,14 @@ class PurchaseOrderList(GridReport):
   A list report to show purchase orders.
   '''
   title = _("purchase orders")
+  if 'freppledb.inventoryplanning' in settings.INSTALLED_APPS:
+    template = 'input/purchaseorder.html'
   basequeryset = PurchaseOrder.objects.all()
   model = PurchaseOrder
   frozenColumns = 1
 
   rows = (
-    GridFieldInteger('id', title=_('identifier'), key=True),
+    GridFieldInteger('id', title=_('identifier'), key=True, formatter='drp' if 'freppledb.inventoryplanning' in settings.INSTALLED_APPS else 'integer'),
     GridFieldText('reference', title=_('reference'),
       editable='freppledb.openbravo' not in settings.INSTALLED_APPS
       ),
@@ -1019,7 +1088,24 @@ class PurchaseOrderList(GridReport):
     ]
   else:
     actions = [
-      {"name": 'proposed', "label": _("change status to %(status)s") % {'status': _("Proposed")}, "function": "grid.setStatus('proposed')"},
-      {"name": 'confirmed', "label": _("change status to %(status)s") % {'status': _("Confirmed")}, "function": "grid.setStatus('confirmed')"},
-      {"name": 'closed', "label": _("change status to %(status)s") % {'status': _("Closed")}, "function": "grid.setStatus('closed')"},
+      {"name": 'proposed', "label": _("change status to %(status)s") % {'status': _("proposed")}, "function": "grid.setStatus('proposed')"},
+      {"name": 'confirmed', "label": _("change status to %(status)s") % {'status': _("confirmed")}, "function": "grid.setStatus('confirmed')"},
+      {"name": 'closed', "label": _("change status to %(status)s") % {'status': _("closed")}, "function": "grid.setStatus('closed')"},
       ]
+
+  @classmethod
+  def initialize(reportclass, request):
+    if reportclass._attributes_added != 2:
+      reportclass._attributes_added = 2
+      # Adding custom item attributes
+      for f in getAttributeFields(Item, related_name_prefix="item"):
+        f.editable = False
+        reportclass.rows += (f,)
+      # Adding custom location attributes
+      for f in getAttributeFields(Location, related_name_prefix="location"):
+        f.editable = False
+        reportclass.rows += (f,)
+      # Adding custom supplier attributes
+      for f in getAttributeFields(Location, related_name_prefix="supplier"):
+        f.editable = False
+        reportclass.rows += (f,)

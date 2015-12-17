@@ -8,7 +8,7 @@
 # or in the form of compiled binaries.
 #
 
-from django.conf.urls import patterns
+from django.conf.urls import patterns, url
 
 import freppledb.execute.views
 
@@ -17,9 +17,8 @@ autodiscover = True
 
 urlpatterns = patterns(
   '',   # Prefix
-  (r'^execute/$', freppledb.execute.views.TaskReport.as_view()),
-  (r'^execute/logfrepple/$', freppledb.execute.views.logfile),
-  (r'^execute/launch/(.+)/$', freppledb.execute.views.LaunchTask),
-  (r'^execute/cancel/(.+)/$', freppledb.execute.views.CancelTask),
-  (r'^execute/api/(.+)/$', freppledb.execute.views.APITask),
+  url(r'^execute/$', freppledb.execute.views.TaskReport.as_view(), name="execute"),
+  url(r'^execute/logfrepple/$', freppledb.execute.views.logfile, name="execute_log"),
+  url(r'^execute/launch/(.+)/$', freppledb.execute.views.LaunchTask, name="execute_launch"),
+  url(r'^execute/cancel/(.+)/$', freppledb.execute.views.CancelTask, name="execute_cancel"),
 )

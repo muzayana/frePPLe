@@ -485,15 +485,15 @@ DECLARE_EXPORT Date PythonData::getDate() const
         PyDateTime_GET_MONTH(obj),
         PyDateTime_GET_DAY(obj)
         );
-  else if (!PyUnicode_Check(obj))
+  else if (obj == Py_None)
+    return Date();
+  else if (PyUnicode_Check(obj))
   {
-    if (PyUnicode_Check(obj))
-    {
-      // Replace the unicode object with a string encoded in UTF-8.
-      const_cast<PyObject*&>(obj) =
-        PyUnicode_AsEncodedString(obj, "UTF-8", "ignore");
-    }
-    return Date(PyBytes_AsString(PyObject_Str(obj)));
+    // Replace the unicode object with a string encoded in UTF-8.
+    PyObject* tmp = obj;
+    const_cast<PyObject*&>(obj) = PyUnicode_AsEncodedString(obj, "UTF-8", "ignore");
+    Py_DECREF(tmp);
+    return Date(PyBytes_AsString(obj));
   }
   else
     throw DataException(
@@ -638,6 +638,23 @@ DECLARE_EXPORT void Object::setProperty(const string& name, const DataValue& val
 }
 
 
+DECLARE_EXPORT void Object::setProperty(
+  const string& name, PyObject* value
+  )
+{
+  PyGILState_STATE pythonstate = PyGILState_Ensure();
+  if (!dict)
+  {
+    dict = PyDict_New();
+    Py_INCREF(dict);
+  }
+  // Adding the new key-value pair to the dictionary.
+  // The reference count of the referenced object is increased.
+  PyDict_SetItemString(dict, name.c_str(), value);
+  PyGILState_Release(pythonstate);
+}
+
+
 DECLARE_EXPORT bool Object::getBoolProperty(const string& name, bool def) const
 {
   if (!dict)
@@ -695,6 +712,24 @@ DECLARE_EXPORT double Object::getDoubleProperty(const string& name, double def) 
   double result = val.getDouble();
   PyGILState_Release(pythonstate);
   return result;
+}
+
+
+DECLARE_EXPORT PyObject* Object::getPyObjectProperty(const string& name) const
+{
+  if (!dict)
+    // Not a single property has been defined
+    return NULL;
+  PyGILState_STATE pythonstate = PyGILState_Ensure();
+  PyObject* lkp = PyDict_GetItemString(dict, name.c_str());
+  if (!lkp)
+  {
+    // Value not found in the dictionary
+    PyGILState_Release(pythonstate);
+    return NULL;
+  }
+  PyGILState_Release(pythonstate);
+  return lkp;
 }
 
 

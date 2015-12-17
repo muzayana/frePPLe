@@ -1696,11 +1696,11 @@ class OperationPlan
 
     /** Returns an iterator pointing to the first flowplan. */
     inline FlowPlanIterator beginFlowPlans() const;
-    inline flowplanlist::const_iterator getFlowPlans() const;
+    inline FlowPlanIterator getFlowPlans() const;
 
     /** Returns an iterator pointing beyond the last flowplan. */
     inline FlowPlanIterator endFlowPlans() const;
-    inline loadplanlist::const_iterator getLoadPlans() const;
+    inline LoadPlanIterator getLoadPlans() const;
 
     /** Returns how many flowplans are created on an operationplan. */
     int sizeFlowPlans() const;
@@ -2233,8 +2233,8 @@ class OperationPlan
       m->addPointerField<Cls, OperationPlan>(Tags::owner, &Cls::getOwner, &Cls::setOwner);
       m->addBoolField<Cls>(Tags::hidden, &Cls::getHidden, &Cls::setHidden, BOOL_FALSE, DONT_SERIALIZE);
       m->addDurationField<Cls>(Tags::unavailable, &Cls::getUnavailable, NULL, 0L, DONT_SERIALIZE);
-      m->addIteratorField<Cls, flowplanlist::const_iterator, FlowPlan>(Tags::flowplans, Tags::flowplan, &Cls::getFlowPlans, DONT_SERIALIZE);
-      m->addIteratorField<Cls, loadplanlist::const_iterator, LoadPlan>(Tags::loadplans, Tags::loadplan, &Cls::getLoadPlans, DONT_SERIALIZE);
+      m->addIteratorField<Cls, OperationPlan::FlowPlanIterator, FlowPlan>(Tags::flowplans, Tags::flowplan, &Cls::getFlowPlans, DONT_SERIALIZE);
+      m->addIteratorField<Cls, OperationPlan::LoadPlanIterator, LoadPlan>(Tags::loadplans, Tags::loadplan, &Cls::getLoadPlans, DONT_SERIALIZE);
       m->addIteratorField<Cls, PeggingIterator, PeggingIterator>(Tags::pegging_downstream, Tags::pegging, &Cls::getPeggingDownstream, DONT_SERIALIZE);
       m->addIteratorField<Cls, PeggingIterator, PeggingIterator>(Tags::pegging_upstream, Tags::pegging, &Cls::getPeggingUpstream, DONT_SERIALIZE);
       m->addIteratorField<Cls, OperationPlan::iterator, OperationPlan>(Tags::operationplans, Tags::operationplan, &Cls::getSubOperationPlans, DONT_SERIALIZE);
@@ -4469,7 +4469,7 @@ class Buffer : public HasHierarchy<Buffer>, public HasLevel,
       m->addDurationField<Cls>(Tags::maxinterval, &Cls::getMaximumInterval, &Cls::setMaximumInterval);
       m->addIteratorField<Cls, flowlist::const_iterator, Flow>(Tags::flows, Tags::flow, &Cls::getFlowIterator, DETAIL);
       m->addBoolField<Cls>(Tags::tool, &Cls::getTool, &Cls::setTool, BOOL_FALSE);
-      m->addIteratorField<Cls, flowplanlist::const_iterator, FlowPlan>(Tags::flowplans, Tags::flowplan, &Cls::getFlowPlanIterator, PLAN);
+      m->addIteratorField<Cls, flowplanlist::const_iterator, FlowPlan>(Tags::flowplans, Tags::flowplan, &Cls::getFlowPlanIterator, PLAN + WRITE_FULL);
       m->addBoolField<Cls>(Tags::hidden, &Cls::getHidden, &Cls::setHidden, BOOL_FALSE, DONT_SERIALIZE);
       HasLevel::registerFields<Cls>(m);
     }
@@ -4917,7 +4917,7 @@ class Flow : public Object, public Association<Operation,Buffer,Flow>::Node,
 
     /** Constructor. */
     explicit Flow(Operation* o, Buffer* b, double q)
-      : quantity(q), hasAlts(false), altFlow(NULL), search(PRIORITY)
+      : quantity(q), search(PRIORITY)
     {
       setOperation(o);
       setBuffer(b);
@@ -4934,7 +4934,7 @@ class Flow : public Object, public Association<Operation,Buffer,Flow>::Node,
 
     /** Constructor. */
     explicit Flow(Operation* o, Buffer* b, double q, DateRange e)
-      : quantity(q), hasAlts(false), altFlow(NULL), search(PRIORITY)
+      : quantity(q), search(PRIORITY)
     {
       setOperation(o);
       setBuffer(b);
@@ -5008,33 +5008,32 @@ class Flow : public Object, public Association<Operation,Buffer,Flow>::Node,
       if (b) setPtrB(b,b->getFlows());
     }
 
-    /** Returns true if there are alternates for this flow. */
-    bool hasAlternates() const
-    {
-      return hasAlts;
-    }
-
-    /** Returns the flow of which this one is an alternate.<br>
-      * NULL is return where there is none.
+    /** Return the leading flow of this group.
+      * When the flow has no alternate or if the flow is itself leading
+      * then NULL is returned.
       */
     Flow* getAlternate() const
     {
-      return altFlow;
+      if (getName().empty() || !getOperation())
+        return NULL;
+      for (Operation::flowlist::const_iterator h=getOperation()->getFlows().begin();
+        h!=getOperation()->getFlows().end() && this != &*h; ++h)
+        if (getName() == h->getName())
+          return const_cast<Flow*>(&*h);
+      return NULL;
     }
 
-    /** Define the flow of which this one is an alternate. */
-    DECLARE_EXPORT void setAlternate(Flow *);
-
-    /** Returns the load of which this one is an alternate.<br>
-      * NULL is return where there is none.
-      */
-    string getAlternateName() const
+    /** Return whether the flow has alternates. */
+    bool hasAlternates() const
     {
-      return altFlow ? altFlow->getName() : "";
+      if (getName().empty() || !getOperation())
+        return false;
+      for (Operation::flowlist::const_iterator h=getOperation()->getFlows().begin();
+        h!=getOperation()->getFlows().end(); ++h)
+        if (getName() == h->getName() && this != &*h)
+          return true;
+      return false;
     }
-
-    /** Define the flow of which this one is an alternate. */
-    DECLARE_EXPORT void setAlternateName(const string&);
 
     /** Return the search mode. */
     SearchMode getSearch() const
@@ -5081,8 +5080,6 @@ class Flow : public Object, public Association<Operation,Buffer,Flow>::Node,
       m->addDoubleField<Cls>(Tags::quantity, &Cls::getQuantity, &Cls::setQuantity);
       m->addIntField<Cls>(Tags::priority, &Cls::getPriority, &Cls::setPriority, 1);
       m->addStringField<Cls>(Tags::name, &Cls::getName, &Cls::setName);
-      m->addPointerField<Cls, Flow>(Tags::alternate, &Cls::getAlternate, &Cls::setAlternate, DONT_SERIALIZE);
-      m->addStringField<Cls>(Tags::alternate_name, &Cls::getAlternateName, &Cls::setAlternateName);
       m->addEnumField<Cls, SearchMode>(Tags::search, &Cls::getSearch, &Cls::setSearch, PRIORITY);
       m->addDateField<Cls>(Tags::effective_start, &Cls::getEffectiveStart, &Cls::setEffectiveStart);
       m->addDateField<Cls>(Tags::effective_end, &Cls::getEffectiveEnd, &Cls::setEffectiveEnd, Date::infiniteFuture);
@@ -5095,8 +5092,7 @@ class Flow : public Object, public Association<Operation,Buffer,Flow>::Node,
 
   protected:
     /** Default constructor. */
-    explicit DECLARE_EXPORT Flow() : quantity(0.0), hasAlts(false),
-      altFlow(NULL), search(PRIORITY)
+    explicit DECLARE_EXPORT Flow() : quantity(0.0), search(PRIORITY)
     {
       initType(metadata);
       HasLevel::triggerLazyRecomputation();
@@ -5110,12 +5106,6 @@ class Flow : public Object, public Association<Operation,Buffer,Flow>::Node,
 
     /** Quantity of the flow. */
     double quantity;
-
-    /** Flag that is set to true when a flow has alternates. */
-    bool hasAlts;
-
-    /** A flow representing the main flow of a set of alternate flows. */
-    Flow* altFlow;
 
     /** Mode to select the preferred alternates. */
     SearchMode search;
@@ -5953,8 +5943,8 @@ class Resource : public HasHierarchy<Resource>,
       m->addPointerField<Cls, SetupMatrix>(Tags::setupmatrix, &Cls::getSetupMatrix, &Cls::setSetupMatrix);
       Plannable::registerFields<Cls>(m);
       m->addIteratorField<Cls, loadlist::const_iterator, Load>(Tags::loads, Tags::load, &Cls::getLoadIterator, DETAIL);
-      m->addIteratorField<Cls, skilllist::const_iterator, ResourceSkill>(Tags::resourceskills, Tags::resourceskill, &Cls::getSkills, DETAIL);
-      m->addIteratorField<Cls, loadplanlist::const_iterator, LoadPlan>(Tags::loadplans, Tags::loadplan, &Cls::getLoadPlanIterator, DETAIL);
+      m->addIteratorField<Cls, skilllist::const_iterator, ResourceSkill>(Tags::resourceskills, Tags::resourceskill, &Cls::getSkills, DETAIL + WRITE_FULL);
+      m->addIteratorField<Cls, loadplanlist::const_iterator, LoadPlan>(Tags::loadplans, Tags::loadplan, &Cls::getLoadPlanIterator, PLAN + WRITE_FULL);
       m->addIteratorField<Cls, OperationPlanIterator, OperationPlan>(Tags::operationplans, Tags::operationplan, &Cls::getOperationPlans, PLAN);
       m->addBoolField<Cls>(Tags::hidden, &Cls::getHidden, &Cls::setHidden, BOOL_FALSE, DONT_SERIALIZE);
       HasLevel::registerFields<Cls>(m);
@@ -6213,7 +6203,7 @@ class Load
   public:
     /** Constructor. */
     explicit Load(Operation* o, Resource* r, double u)
-      : hasAlts(false), altLoad(NULL), search(PRIORITY), skill(NULL)
+      : search(PRIORITY), skill(NULL)
     {
       setOperation(o);
       setResource(r);
@@ -6231,7 +6221,7 @@ class Load
 
     /** Constructor. */
     explicit Load(Operation* o, Resource* r, double u, DateRange e)
-      : hasAlts(false), altLoad(NULL), search(PRIORITY), skill(NULL)
+      : search(PRIORITY), skill(NULL)
     {
       setOperation(o);
       setResource(r);
@@ -6290,33 +6280,32 @@ class Load
       qty = f;
     }
 
-    /** Returns true if there are alternates for this load. */
-    bool hasAlternates() const
-    {
-      return hasAlts;
-    }
-
-    /** Returns the load of which this one is an alternate.<br>
-      * NULL is return where there is none.
+    /** Return the leading load of this group.
+      * When the load has no alternate or if the flow is itself leading
+      * then NULL is returned.
       */
     Load* getAlternate() const
     {
-      return altLoad;
+      if (getName().empty() || !getOperation())
+        return NULL;
+      for (Operation::loadlist::const_iterator h=getOperation()->getLoads().begin();
+        h!=getOperation()->getLoads().end() && this != &*h; ++h)
+        if (getName() == h->getName())
+          return const_cast<Load*>(&*h);
+      return NULL;
     }
 
-    /** Define the load of which this one is an alternate. */
-    DECLARE_EXPORT void setAlternate(Load *);
-
-    /** Returns the load of which this one is an alternate.<br>
-      * NULL is return where there is none.
-      */
-    string getAlternateName() const
+    /** Return whether the load has alternates. */
+    bool hasAlternates() const
     {
-      return altLoad ? altLoad->getName() : "";
+      if (getName().empty() || !getOperation())
+        return false;
+      for (Operation::loadlist::const_iterator h=getOperation()->getLoads().begin();
+        h!=getOperation()->getLoads().end(); ++h)
+        if (getName() == h->getName() && this != &*h)
+          return true;
+      return false;
     }
-
-    /** Define the load of which this one is an alternate. */
-    DECLARE_EXPORT void setAlternateName(const string&);
 
     /** Update the required resource setup. */
     DECLARE_EXPORT void setSetup(const string&);
@@ -6358,8 +6347,7 @@ class Load
     static DECLARE_EXPORT const MetaCategory* metadata;
 
     /** Default constructor. */
-    Load() : qty(1.0), hasAlts(false), altLoad(NULL),
-      search(PRIORITY), skill(NULL)
+    Load() : qty(1.0), search(PRIORITY), skill(NULL)
     {
       initType(metadata);
       HasLevel::triggerLazyRecomputation();
@@ -6384,8 +6372,6 @@ class Load
       m->addDoubleField<Cls>(Tags::quantity, &Cls::getQuantity, &Cls::setQuantity, 1.0);
       m->addIntField<Cls>(Tags::priority, &Cls::getPriority, &Cls::setPriority, 1);
       m->addStringField<Cls>(Tags::name, &Cls::getName, &Cls::setName);
-      m->addPointerField<Cls, Load>(Tags::alternate, &Cls::getAlternate, &Cls::setAlternate, DONT_SERIALIZE);
-      m->addStringField<Cls>(Tags::alternate_name, &Cls::getAlternateName, &Cls::setAlternateName);
       m->addEnumField<Cls, SearchMode>(Tags::search, &Cls::getSearch, &Cls::setSearch, PRIORITY);
       m->addDateField<Cls>(Tags::effective_start, &Cls::getEffectiveStart, &Cls::setEffectiveStart);
       m->addDateField<Cls>(Tags::effective_end, &Cls::getEffectiveEnd, &Cls::setEffectiveEnd, Date::infiniteFuture);
@@ -6404,12 +6390,6 @@ class Load
     /** Stores how much capacity is consumed during the duration of an
       * operationplan. */
     double qty;
-
-    /** Flag that is set to true when a load has alternates. */
-    bool hasAlts;
-
-    /** A load representing the main load of a set of alternates. */
-    Load* altLoad;
 
     /** Required setup. */
     string setup;
@@ -7103,7 +7083,7 @@ class HasProblems::EntityIterator
 
     /** Used to create an iterator pointing beyond the last HasProblems
       * object. */
-    explicit EntityIterator(unsigned short i) : type(i), bufIter(NULL) {}
+    explicit EntityIterator(unsigned short i) : bufIter(NULL), type(i) {}
 
     /** Copy constructor. */
     DECLARE_EXPORT EntityIterator(const EntityIterator&);
@@ -7183,6 +7163,15 @@ class Problem::iterator
         ++(*eiter);
       // Found a first problem, or no problem at all
       iter = (*eiter != HasProblems::endEntity()) ? (*eiter)->firstProblem : NULL;
+    }
+
+    /** Copy constructor. */
+    DECLARE_EXPORT iterator(const iterator& i) : iter(i.iter), owner(i.owner)
+    {
+      if (i.eiter)
+        eiter = new HasProblems::EntityIterator(*(i.eiter));
+      else
+        eiter = NULL;
     }
 
     /** Destructor. */
@@ -8720,6 +8709,14 @@ class OperationPlan::FlowPlanIterator
       curflowplan = curflowplan->nextFlowPlan;
       delete tmp;
     }
+
+    FlowPlan* next()
+    {
+      prevflowplan = curflowplan;
+      if (curflowplan)
+        curflowplan = curflowplan->nextFlowPlan;
+      return prevflowplan;
+    }
 };
 
 
@@ -8735,15 +8732,9 @@ inline OperationPlan::FlowPlanIterator OperationPlan::endFlowPlans() const
 }
 
 
-inline OperationPlan::flowplanlist::const_iterator OperationPlan::getFlowPlans() const
+inline OperationPlan::FlowPlanIterator OperationPlan::getFlowPlans() const
 {
-  return OperationPlan::flowplanlist::const_iterator(firstflowplan);
-}
-
-
-inline OperationPlan::loadplanlist::const_iterator OperationPlan::getLoadPlans() const
-{
-  return OperationPlan::loadplanlist::const_iterator(firstloadplan);
+  return OperationPlan::FlowPlanIterator(firstflowplan);
 }
 
 
@@ -8817,6 +8808,14 @@ class OperationPlan::LoadPlanIterator
       curloadplan = curloadplan->nextLoadPlan;
       delete tmp;
     }
+
+    LoadPlan* next()
+    {
+      prevloadplan = curloadplan;
+      if (curloadplan)
+        curloadplan = curloadplan->nextLoadPlan;
+      return prevloadplan;
+    }
 };
 
 
@@ -8829,6 +8828,12 @@ inline OperationPlan::LoadPlanIterator OperationPlan::beginLoadPlans() const
 inline OperationPlan::LoadPlanIterator OperationPlan::endLoadPlans() const
 {
   return OperationPlan::LoadPlanIterator(NULL);
+}
+
+
+inline OperationPlan::LoadPlanIterator OperationPlan::getLoadPlans() const
+{
+  return OperationPlan::LoadPlanIterator(firstloadplan);
 }
 
 

@@ -38,13 +38,40 @@ function extraPreference() {
      };
 }
 
+function displayXMLdata(xmldata)
+{
+  $("#id_name").val($(xmldata).find('demands > demand > name').text());
+  $("#id_description").val($(xmldata).find('demands > demand > description').text());
+  $("#id_item").val($(xmldata).find('demands > demand > item > name').text());
+  $("#id_customer").val($(xmldata).find('demands > demand > customer > name').text());
+  $("#id_location").val($(xmldata).find('demands > demand > location > name').text());
+  $("#id_quantity").val($(xmldata).find('demands > demand > quantity').text());
+  var due = $(xmldata).find('demands > demand > due').text();
+  $("#id_due_0").val(due.substring(0,10));
+  $("#id_due_1").val(due.substring(11,19));
+  $("#id_minshipment").val($(xmldata).find('demands > demand > minshipment').text());
+  status = '<h1>{% trans "deliveries"|capfirst %}</h1>';
+  $(xmldata).find('demands > demand > operationplans > operationplan').each(function() {
+    status += '&nbsp;&nbsp;' + $(this).find('quantity').text() + '&nbsp;&nbsp;' + $(this).find('end').text() + '<br/>';
+    })
+  status += '<h1>{% trans "problems"|capfirst %}</h1>';
+  $(xmldata).find('demands > demand > problems > problem').each(function() {
+    status += '&nbsp;&nbsp;' + $(this).find('description').text() + '<br/>';
+    })
+  status += '<h1>{% trans "why short or late?"|capfirst %}</h1>';
+  $(xmldata).find('demands > demand > constraints > problem').each(function() {
+    status += '&nbsp;&nbsp;' + $(this).find('name').text() + '&nbsp;&nbsp;' + $(this).find('description').text() + '&nbsp;&nbsp;' + $(this).find('start').text() + '&nbsp;&nbsp;' + $(this).find('end').text() + '<br/>';
+    })
+  $('#status').html(status);
+}
+
 function getQuote(event)
 {
   var demand = $('<demand/>');
   demand.attr("name",$("#id_name").val())
     .append( $('<quantity/>').text($("#id_quantity").val()) )
     .append( $('<item/>').attr("name", $("#id_item").val()) )
-    .append( $('<due/>').text($("#id_due_0").val() + 'T' + $("#id_due_1").val()) )    
+    .append( $('<due/>').text($("#id_due_0").val() + 'T' + $("#id_due_1").val()) )
     .append( $('<priority>1000000</priority>') );
   var v = $("#id_description").val();
   if (v!=null && v!='')
@@ -73,31 +100,10 @@ function getQuote(event)
     data: root.html(),
     dataType: 'xml',
     success: function (xmldata, status, jqXHR) {
-    	console.log(xmldata);
-      $("#id_name").val($(xmldata).find('demands > demand > name').text());
-      $("#id_description").val($(xmldata).find('demands > demand > description').text());
-      $("#id_item").val($(xmldata).find('demands > demand > item > name').text());
-      $("#id_customer").val($(xmldata).find('demands > demand > customer > name').text());
-      $("#id_location").val($(xmldata).find('demands > demand > location > name').text());
-      $("#id_quantity").val($(xmldata).find('demands > demand > quantity').text());
-      var due = $(xmldata).find('demands > demand > due').text();
-      $("#id_due_0").val(due.substring(0,10));
-      $("#id_due_1").val(due.substring(11,19));
-      $("#id_minshipment").val($(xmldata).find('demands > demand > minshipment').text());
-      status = '<h1>{% trans "deliveries"|capfirst %}</h1>';
-      $(xmldata).find('demands > demand > operationplans > operationplan').each(function() {
-        status += '&nbsp;&nbsp;' + $(this).find('quantity').text() + '&nbsp;&nbsp;' + $(this).find('end').text() + '<br/>';
-        })
-      status += '<h1>{% trans "problems"|capfirst %}</h1>';
-      $(xmldata).find('demands > demand > problems > problem').each(function() {
-        status += '&nbsp;&nbsp;' + $(this).find('description').text() + '<br/>';
-        })
-      status += '<h1>{% trans "why short or late?"|capfirst %}</h1>';
-      $(xmldata).find('demands > demand > constraints > problem').each(function() {
-        status += '&nbsp;&nbsp;' + $(this).find('name').text() + '&nbsp;&nbsp;' + $(this).find('description').text() + '&nbsp;&nbsp;' + $(this).find('start').text() + '&nbsp;&nbsp;' + $(this).find('end').text() + '<br/>';
-        })
-      $('#status').html(status);
-      jQuery("#grid").trigger('reloadGrid', [{current:true}])
+      displayXMLdata(xmldata);
+      setTimeout(function(){
+        jQuery("#grid").trigger('reloadGrid', [{current:true}])
+        }, 1000);
     },
     error: function (result, stat, errorThrown) {
       $('#popup').html(result.responseText)
@@ -149,31 +155,10 @@ function inquireQuote(event)
     data: root.html(),
     dataType: 'xml',
     success: function (xmldata, status, jqXHR) {
-      $("#id_name").val($(xmldata).find('demands > demand').attr('name'));
-      $("#id_description").val($(xmldata).find('demands > demand > description').text());
-      $("#id_item").val($(xmldata).find('demands > demand > item').attr('name'));
-      $("#id_location").val($(xmldata).find('demands > demand > location').attr('name'));
-      $("#id_customer").val($(xmldata).find('demands > demand > customer').attr('name'));
-      $("#id_quantity").val($(xmldata).find('demands > demand > quantity').text());
-      var due = $(xmldata).find('demands > demand > due').text();
-      $("#id_due_0").val(due.substring(0,10));
-      $("#id_due_1").val(due.substring(11,19));
-      $("#id_minshipment").val($(xmldata).find('demands > demand > minshipment').text());
-      $("#id_maxlateness").val($(xmldata).find('demands > demand > maxlateness').text());
-      status = '<h1>{% trans "deliveries"|capfirst %}</h1>';
-      $(xmldata).find('demands > demand > operationplans > operationplan').each(function() {
-        status += '&nbsp;&nbsp;' + $(this).find('quantity').text() + '&nbsp;&nbsp;' + $(this).find('end').text() + '<br/>';
-        })
-      status += '<h1>{% trans "problems"|capfirst %}</h1>';
-      $(xmldata).find('demands > demand > problems > problem').each(function() {
-        status += '&nbsp;&nbsp;' + $(this).find('description').text() + '<br/>';
-        })
-      status += '<h1>{% trans "why short or late?"|capfirst %}</h1>';
-      $(xmldata).find('demands > demand > constraints > problem').each(function() {
-        status += '&nbsp;&nbsp;' + $(this).find('name').text() + '&nbsp;&nbsp;' + $(this).find('description').text() + '&nbsp;&nbsp;' + $(this).find('start').text() + '&nbsp;&nbsp;' + $(this).find('end').text() + '<br/>';
-        })
-      $('#status').html(status);
-      jQuery("#grid").trigger('reloadGrid', [{current:true}])
+      displayXMLdata(xmldata);
+      setTimeout(function(){
+        jQuery("#grid").trigger('reloadGrid', [{current:true}])
+        }, 1000);
     },
     error: function (result, stat, errorThrown) {
       $('#popup').html(result.responseText)
@@ -198,12 +183,14 @@ function cancelQuote(event)
     url: '{{request.prefix}}/quote/cancel/?name=' + encodeURIComponent(name),
     dataType: 'html',
     success: function (xmldata, status, jqXHR) {
-      jQuery("#grid").trigger('reloadGrid', [{current:true}]);
+      setTimeout(function(){
+        jQuery("#grid").trigger('reloadGrid', [{current:true}]);
+        }, 1000);
       $("#id_name").val('');
       $("#id_description").val('');
       $("#id_item").val('');
       $("#id_customer").val('');
-      $("#id_location").val('');      
+      $("#id_location").val('');
       $("#id_quantity").val('1');
       var today = new Date();
       $("#id_due_0").val('' + today.getFullYear() + '-' + (today.getMonth()+1) + '-' + today.getDate());
@@ -235,12 +222,14 @@ function confirmQuote(event)
     url: '{{request.prefix}}/quote/confirm/?name=' + encodeURIComponent(name),
     dataType: 'html',
     success: function (xmldata, status, jqXHR) {
-      jQuery("#grid").trigger('reloadGrid', [{current:true}]);
+      setTimeout(function(){
+        jQuery("#grid").trigger('reloadGrid', [{current:true}]);
+        }, 1000);
       $("#id_name").val('');
       $("#id_description").val('');
       $("#id_item").val('');
       $("#id_customer").val('');
-      $("#id_location").val('');   
+      $("#id_location").val('');
       $("#id_quantity").val('1');
       var today = new Date();
       $("#id_due_0").val('' + today.getFullYear() + '-' + (today.getMonth()+1) + '-' + today.getDate());
@@ -272,30 +261,7 @@ function displayInfo(rowid) {
     data: JSON.stringify([rowid]),
     dataType: 'xml',
     success: function (xmldata, status, jqXHR) {
-      $("#id_name").val($(xmldata).find('demands > demand').attr('name'));
-      $("#id_description").val($(xmldata).find('demands > demand > description').text());
-      $("#id_item").val($(xmldata).find('demands > demand > item').attr('name'));
-      $("#id_customer").val($(xmldata).find('demands > demand > customer').attr('name'));
-      $("#id_location").val($(xmldata).find('demands > demand > location').attr('name'));
-      $("#id_quantity").val($(xmldata).find('demands > demand > quantity').text());
-      var due = $(xmldata).find('demands > demand > due').text();
-      $("#id_due_0").val(due.substring(0,10));
-      $("#id_due_1").val(due.substring(11,19));
-      $("#id_minshipment").val($(xmldata).find('demands > demand > minshipment').text());
-      $("#id_maxlateness").val($(xmldata).find('demands > demand > maxlateness').text());
-      status = '<h1>{% trans "deliveries"|capfirst %}</h1>';
-      $(xmldata).find('demands > demand > operationplans > operationplan').each(function() {
-        status += '&nbsp;&nbsp;' + $(this).find('quantity').text() + '&nbsp;&nbsp;' + $(this).find('end').text() + '<br/>';
-        })
-      status += '<h1>{% trans "problems"|capfirst %}</h1>';
-      $(xmldata).find('demands > demand > problems > problem').each(function() {
-        status += '&nbsp;&nbsp;' + $(this).find('description').text() + '<br/>';
-        })
-      status += '<h1>{% trans "why short or late?"|capfirst %}</h1>';
-      $(xmldata).find('demands > demand > constraints > problem').each(function() {
-        status += '&nbsp;&nbsp;' + $(this).find('name').text() + '&nbsp;&nbsp;' + $(this).find('description').text() + '&nbsp;&nbsp;' + $(this).find('start').text() + '&nbsp;&nbsp;' + $(this).find('end').text() + '<br/>';
-        })
-      $('#status').html(status);
+    	displayXMLdata(xmldata);
     },
     error: function (result, stat, errorThrown) {
       $('#popup').html(result.responseText)
@@ -317,7 +283,7 @@ $(function() {
       changeYear:true, yearRange: "c-1:c+5"
       });
   var today = new Date();
-  $("#id_due_0").val('' + today.getFullYear() + '-' + (today.getMonth()+1) + '-' + today.getDate());  
+  $("#id_due_0").val('' + today.getFullYear() + '-' + (today.getMonth()+1) + '-' + today.getDate());
   $("#id_due_1").val('00:00:00');
   $("#id_quantity").val('1');
   $("#fields").resizable({
@@ -350,7 +316,8 @@ $(function() {
 </form>
 <input type="submit" class="quotebutton ui-button ui-widget ui-state-default ui-corner-all" id="form_inquiry" value="{% trans 'inquiry'|capfirst %}" onclick="inquireQuote(event)">
 <input type="submit" class="quotebutton ui-button ui-widget ui-state-default ui-corner-all" id="form_quote" value="{% trans 'quote'|capfirst %}" onclick="getQuote(event)">
-<input type="submit" class="quotebutton ui-button ui-widget ui-state-default ui-corner-all" id="form_cancel" value="{% filter capfirst|force_escape %}{% trans 'Cancel' context "Translation included with Django" %}{% endfilter %}" onclick="cancelQuote(event)">
+{% comment %}Translators: Translation included with Django {% endcomment %}
+<input type="submit" class="quotebutton ui-button ui-widget ui-state-default ui-corner-all" id="form_cancel" value="{% filter capfirst|force_escape %}{% trans 'Cancel' %}{% endfilter %}" onclick="cancelQuote(event)">
 <input type="submit" class="quotebutton ui-button ui-widget ui-state-default ui-corner-all" id="form_confirm" value="{% trans 'confirm'|capfirst %}" onclick="confirmQuote(event)">
 
 </div>

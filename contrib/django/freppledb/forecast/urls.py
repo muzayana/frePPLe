@@ -8,7 +8,7 @@
 # or in the form of compiled binaries.
 #
 
-from django.conf.urls import patterns
+from django.conf.urls import patterns, url
 
 import freppledb.forecast.views
 import freppledb.forecast.serializers
@@ -18,21 +18,17 @@ autodiscover = True
 
 urlpatterns = patterns(
   '',  # Prefix
-  (r'^data/forecast/forecastdemand/$', freppledb.forecast.views.ForecastDemandList.as_view()),
-  (r'^data/forecast/forecast/$', freppledb.forecast.views.ForecastList.as_view()),
-  (r'^forecast/demand/$', freppledb.forecast.views.OrderReport.as_view()),
-  (r'^forecast/(.+)/$', freppledb.forecast.views.OverviewReport.as_view()),
-  (r'^forecast/$', freppledb.forecast.views.OverviewReport.as_view()),
-  (r'^constraintforecast/(.+)/$', freppledb.forecast.views.ConstraintReport.as_view()),
-  (r'^supplypath/forecast/(.+)/$', freppledb.forecast.views.UpstreamForecastPath.as_view()),
+  url(r'^data/forecast/forecastdemand/$', freppledb.forecast.views.ForecastDemandList.as_view()),
+  url(r'^data/forecast/forecast/$', freppledb.forecast.views.ForecastList.as_view()),
+  url(r'^forecast/demand/$', freppledb.forecast.views.OrderReport.as_view()),
+  url(r'^forecast/(.+)/$', freppledb.forecast.views.OverviewReport.as_view(), name="forecast_plan"),
+  url(r'^forecast/$', freppledb.forecast.views.OverviewReport.as_view()),
+  url(r'^constraintforecast/(.+)/$', freppledb.forecast.views.ConstraintReport.as_view(), name="forecast_constraint"),
+  url(r'^supplypath/forecast/(.+)/$', freppledb.forecast.views.UpstreamForecastPath.as_view(), name="supplypath_forecast"),
 
   # REST API framework
-  (r'^api/forecast/forecastdemand/$', freppledb.forecast.serializers.ForecastDemandAPI.as_view()),
-  (r'^api/forecast/forecast/$', freppledb.forecast.serializers.ForecastAPI.as_view()),
-  (r'^api/forecast/forecastplan/$', freppledb.forecast.serializers.ForecastPlanAPI.as_view()),
+  url(r'^api/forecast/forecast/$', freppledb.forecast.serializers.ForecastAPI.as_view()),
 
-  (r'^api/forecast/forecastdemand/(?P<pk>(.+))/$', freppledb.forecast.serializers.ForecastDemanddetailAPI.as_view()),
-  (r'^api/forecast/forecast/(?P<pk>(.+))/$', freppledb.forecast.serializers.ForecastdetailAPI.as_view()),
-  (r'^api/forecast/forecastplan/(?P<pk>(.+))/$', freppledb.forecast.serializers.ForecastPlandetailAPI.as_view()),
-
+  url(r'^api/forecast/forecast/(?P<pk>(.+))/$', freppledb.forecast.serializers.ForecastdetailAPI.as_view()),
+  
   )

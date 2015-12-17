@@ -26,11 +26,16 @@ The changes are:
     background: #838d11;
     color: #fff;
     padding: 10px 20px 10px 20px;
+    margin: 0px auto;
+    display:block;
+    margin-top: 13px;
   }
 </style>
 {% endblock %}
 
-{% block extrahead %}{{block.super}}
+{% block extrahead %}
+<script type="text/javascript" src="{{STATIC_URL}}js/jquery-2.1.4.min.js"></script>
+<script type="text/javascript" src="{{STATIC_URL}}js/jquery-ui-1.10.4.min.js"></script>
 <script type="text/javascript">
 $(function() {
   $('#id_username').focus();
@@ -60,7 +65,10 @@ $(function() {
 {% block content %}
 {% if form.errors and not form.non_field_errors and not form.this_is_the_login_form.errors %}
 <p class="errornote">
-{% if form.errors.items|length == 1 %}{% trans "Please correct the error below." %}{% else %}{% trans "Please correct the errors below." %}{% endif %}
+{% comment %}Translators: Translation included with Django {% endcomment %}
+{% if form.errors.items|length == 1 %}{% trans "Please correct the error below." %}{% else %}
+{% comment %}Translators: Translation included with Django {% endcomment %}
+{% trans "Please correct the errors below." %}{% endif %}
 </p>
 {% endif %}
 
@@ -76,16 +84,16 @@ $(function() {
 <form action="{{request.prefix}}{{app_path}}" method="post" id="login-form">{% csrf_token %}
   <div class="form-row">
     {% if not form.this_is_the_login_form.errors %}{{ form.username.errors }}{% endif %}
-    <label for="id_username" class="required">{{ form.username.label }}:</label> {{ form.username }}
+    <label for="id_username" class="required">{{ form.username.label }}</label> {{ form.username }}
   </div>
   <div class="form-row">
     {% if not form.this_is_the_login_form.errors %}{{ form.password.errors }}{% endif %}
-    <label for="id_password" class="required">{% trans 'password:'|capfirst %}</label> {{ form.password }}
+    {% comment %}Translators: Translation included with Django {% endcomment %}
+    <label for="id_password" class="required">{% trans 'Password'|capfirst %}</label> {{ form.password }}
     <input type="hidden" name="this_is_the_login_form" value="1" />
     <input type="hidden" name="next" value="{{ request.prefix }}{{ next }}" />
-  </div>
-  <div class="submit-row">
-    <label>&nbsp;</label><input type="submit" value="{% trans 'Log in' context "Translation included with Django" %}"/>
+    {% comment %}Translators: Translation included with Django {% endcomment %}
+    <input type="submit" value="{% trans 'Log in' %}"/>
   </div>
 </form>
 <br>
@@ -107,7 +115,3 @@ document.getElementById('id_username').focus()
 {% blocktrans %}The user "admin" has password "admin".<br/>
 We suggest changing this password.{% endblocktrans %}</div>{% endif %}
 {% endblock %}
-
-
-
-

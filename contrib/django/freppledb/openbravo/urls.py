@@ -8,7 +8,7 @@
 # or in the form of compiled binaries.
 #
 
-from django.conf.urls import patterns
+from django.conf.urls import patterns, url
 
 from freppledb.openbravo.views import Upload
 
@@ -18,5 +18,5 @@ autodiscover = True
 urlpatterns = patterns(
   '',  # Prefix
   # Model list reports, which override standard admin screens
-  (r'^openbravo/upload/$', Upload),
+  url(r'^openbravo/upload/$', Upload, name="openbravo_upload"),
   )

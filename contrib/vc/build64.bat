@@ -29,8 +29,8 @@ if "%1"=="-r" (set build="/t:rebuild") & shift & goto CheckOpts
 if "%1"=="-d" (set conf=Debug) & shift & goto CheckOpts
 
 rem BUILD THE PROJECT
-call "%VC%\bin\amd64\vcvarsamd64"
+call "%VC%\vcvarsall" x86_amd64
 set INCLUDE=%PYTHON%\include;%XERCES%\include;%OPENSSL%\include;%POSTGRESQL%\include;%INCLUDE%
 set LIB=%PYTHON%\libs;%XERCES%\lib;%OPENSSL%\lib64;%POSTGRESQL%\lib;%LIB%
 
-"%DOTNET%\msbuild.exe" %build%  /p:useenv=true /p:showenv=true frepple.sln "/p:Configuration=%conf%" /p:Platform="x64"
+"%DOTNET%\msbuild.exe" %build% /m /p:useenv=true /p:showenv=true frepple.sln "/p:Configuration=%conf%" /p:Platform=x64

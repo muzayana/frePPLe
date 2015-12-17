@@ -72,6 +72,7 @@ var upload = {
 
     // Pick up all changed cells. If a function "getData" is defined on the
     // page we use that, otherwise we use the standard functionality of jqgrid.
+    $("#grid").saveCell(editrow, editcol);
     if (typeof getDirtyData == 'function')
       var rows = getDirtyData();
     else
@@ -139,13 +140,8 @@ var upload = {
 
 
 //----------------------------------------------------------------------------
-// Custom formatter functions for the grid cells. Most of the custom handlers
-// just add an appropriate context menu.
+// Custom formatter functions for the grid cells.
 //----------------------------------------------------------------------------
-
-function linkunformat (cellvalue, options, cell) {
-  return cellvalue;
-}
 
 function opendetail(event) {
   var database = $('#database').val();
@@ -234,72 +230,6 @@ jQuery.extend($.fn.fmatter.percentage, {
       return cellvalue;
       }
 });
-jQuery.extend($.fn.fmatter.item, {
-    unformat : linkunformat
-});
-jQuery.extend($.fn.fmatter.buffer, {
-    unformat : linkunformat
-});
-jQuery.extend($.fn.fmatter.resource, {
-    unformat : linkunformat
-});
-jQuery.extend($.fn.fmatter.forecast, {
-    unformat : linkunformat
-});
-jQuery.extend($.fn.fmatter.detail, {
-	  unformat : linkunformat
-	});
-jQuery.extend($.fn.fmatter.customer, {
-	  unformat : linkunformat
-	});
-jQuery.extend($.fn.fmatter.supplier, {
-  unformat : linkunformat
-});
-jQuery.extend($.fn.fmatter.operation, {
-    unformat : linkunformat
-});
-jQuery.extend($.fn.fmatter.demand, {
-  unformat : linkunformat
-});
-jQuery.extend($.fn.fmatter.location, {
-  unformat : linkunformat
-});
-jQuery.extend($.fn.fmatter.calendar, {
-  unformat : linkunformat
-});
-jQuery.extend($.fn.fmatter.setupmatrix, {
-  unformat : linkunformat
-});
-jQuery.extend($.fn.fmatter.user, {
-  unformat : linkunformat
-});
-jQuery.extend($.fn.fmatter.group, {
-  unformat : linkunformat
-});
-jQuery.extend($.fn.fmatter.flow, {
-  unformat : linkunformat
-});
-jQuery.extend($.fn.fmatter.load, {
-  unformat : linkunformat
-});
-jQuery.extend($.fn.fmatter.bucket, {
-  unformat : linkunformat
-});
-jQuery.extend($.fn.fmatter.parameter, {
-  unformat : linkunformat
-});
-jQuery.extend($.fn.fmatter.skill, {
-  unformat : linkunformat
-});
-jQuery.extend($.fn.fmatter.resourceskill, {
-  unformat : linkunformat
-});
-jQuery.extend($.fn.fmatter.itemsupplier, {
-  unformat : linkunformat
-});
-jQuery.extend($.fn.fmatter.itemdistribution, {
-  unformat : linkunformat
-});
 
 
 //
@@ -313,6 +243,18 @@ var grid = {
    // select it and a "select" button appears. When this button is clicked the
    // popup is closed and the selected id is passed to the calling page.
    selected: undefined,
+
+   // Function used to summarize by returning the last value
+   summary_last: function(val, name, record)
+   {
+	 return record[name];
+   },
+
+   // Function used to summarize by returning the first value
+   summary_first: function(val, name, record)
+   {
+	 return val || record[name];
+   },
 
    setSelectedRow: function(id)
    {
@@ -1371,8 +1313,7 @@ $(function() {
     source: database + "/search/",
     minLength: 2,
     select: function( event, ui ) {
-      window.location.href = database + "/data/" + encodeURIComponent(ui.item.app)
-         + '/' + encodeURIComponent(ui.item.label) + "/" + admin_escape(ui.item.value) + "/";
+      window.location.href = database + ui.item.url + admin_escape(ui.item.value) + "/";
     }
   });
 
@@ -1388,7 +1329,7 @@ $(document).mousedown(function (event) {
     contextMenu.css('display', 'none');
     contextMenu = null;
   }
-  
+
   // We clicked on a context menu. Display that now.
   if ($(event.target).hasClass('context'))
   {

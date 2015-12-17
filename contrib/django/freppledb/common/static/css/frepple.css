@@ -469,7 +469,7 @@ nav {
 }
 
 nav ul {
-  padding: 0 20px;
+  padding: 0 0 0 20px;
   margin: 0;
   list-style: none;
   position: relative;
@@ -478,7 +478,7 @@ nav ul {
 }
 
 nav ul li input {
-  margin-left: 20px;
+  margin-left: 10px;
 }
 
 nav ul ul {
@@ -828,4 +828,53 @@ div.calendarbox
   .ui-tabs .ui-tabs-hide {
     display: block !important;
   }
+}
+
+/* DJANGO STANDARD FORMS OVERRIDE - SUBMIT ROW */
+.submit-row, div.submit-row {
+    padding: 5px 7px;
+    text-align: right;
+    background: none;
+    border: none;
+    margin: 5px 0;
+    overflow: hidden;
+}
+
+body.popup .submit-row {
+    overflow: auto;
+}
+
+.save_undo_button_active {
+    padding-bottom: 4px;
+    padding-left: 6px;
+    padding-right: 6px;
+    padding-top: 4px;
+    font-size: 10px;
+    font-weight: bold;
+    color: white;
+}
+
+.submit-row input.default, .submit-row input[type=submit],  a.deletelink:link, a.deletelink:visited {
+	  margin-left: 5px;
+    padding-bottom: 4px;
+    padding-left: 6px;
+    padding-right: 6px;
+    padding-top: 4px;
+    font-size: 10px;
+    font-weight: bold;
+    color: white;
+    float: left;
+}
+
+p.deletelink-box {
+	  line-height: normal;
+    padding-bottom: 0px;
+    padding-left: 0px;
+    padding-right: 0px;
+    padding-top: 0px;
+}
+
+ .submit-row p {
+ margin: 0px;
+-webkit-appearance:none;
 }

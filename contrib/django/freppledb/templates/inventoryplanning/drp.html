@@ -1,7 +1,22 @@
 {% extends "admin/base_site_grid.html" %}
 {% load i18n %}
 
-{% block extra_grid %}onSelectRow: selectRow,{% endblock %}
+{% block extra_grid %}onSelectRow: selectRow,
+{% if preferences.grouping == 'item' or preferences.grouping == 'location' %}
+  grouping:true,
+  groupingView : {
+	  groupField : ['{{preferences.grouping}}'],
+	  groupSummary : [true],
+	  groupColumnShow : [true],
+	  groupSummaryPos: ['header'],
+	  groupDataSorted : true,
+	  groupText : ['<b>{0}</b>'],
+	  groupCollapse : {% if args %}false{% else %}true{% endif %},
+	  hideFirstGroupCol: false,
+	  showSummaryOnHide: true
+  },{% endif %}
+{% endblock %}
+
 
 {% block extrahead %}{{block.super}}
 <script type="text/javascript" src="{{STATIC_URL}}js/d3.min.js"></script>
@@ -34,12 +49,14 @@ function selectRow(id)
         width: 'auto',
         height: 'auto',
         buttons : {
-            "{% filter escapejs %}{% trans "Save" context "Included in Django translations" %}{% endfilter %}" : function() {
+            {% comment %}Translators: Translation included with Django {% endcomment %}
+            "{% filter escapejs %}{% trans "Save" %}{% endfilter %}" : function() {
               $(this).dialog("close");
               save(false);
               selectRow(id);
             },
-            "{% trans "no"|capfirst|escapejs %}" : function() {
+            {% comment %}Translators: Translation included with Django {% endcomment %}
+            "{% trans "No"|capfirst|escapejs %}" : function() {
               $('#undo, #recalculate, #save').addClass("save_undo_button_inactive").removeClass("save_undo_button_active");
               selectRow(id);
               $(this).dialog("close");
@@ -144,8 +161,6 @@ function extraPreference()
 
 function select()
 {
-  //$('#filter').addClass("ui-state-disabled");
-  //$.jgrid.hideModal("#searchmodfbox_grid");
   $('#save').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
   $('#undo').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
   $(window).off('beforeunload', warnUnsavedChanges);
@@ -1236,7 +1251,7 @@ function displayResult(reset)
 	}
 
   // Show history tab
-  // Note that a recalculate doesn't send back the hsitory, and we don't change the existing content
+  // Note that a recalculate doesn't send back the history, and we don't change the existing content
   if ("history" in result)
 	{
 	  var history = $("#history");
@@ -1301,7 +1316,8 @@ function setCommentType(t)
 
 
 $(function() {
-  {% if preferences.name %}selectRow("{{ preferences.name|escapejs }}");{% endif %}
+  {% if preferences.name and not args %}selectRow("{{ preferences.name|escapejs }}");
+  {% elif args.1 %}selectRow("{{ args.0|escapejs }}@{{ args.1|escapejs }}");{% endif %}
   selectTab("{% if preferences.showtab %}{{ preferences.showtab }}{% else %}plan{% endif %}");
 
   $("#units").buttonset();
@@ -1338,8 +1354,9 @@ $(function() {
 <br/>
 <div id="detail"><h1 id="detailtitle">{% trans "detail"|capfirst %}</h1>
 {% if perms.input.change_purchaseorder or perms.input.change_distributionorder or perms.forecast.change_forecastdemand or perms.input.change_calendarbucket or perms.forecast.change_forecast or perms.inventoryplanning.change_inventoryplanning %}
-&nbsp;&nbsp;<input type="submit" value="{% filter upper|force_escape %}{% trans 'Save' context 'Translation included with Django' %}{% endfilter %}" id="save" class="button ui-corner-all save_undo_button_inactive" role="button" onclick="save(false)" title="{% trans 'save changes'|capfirst|force_escape %}">
-&nbsp;&nbsp;<input type="submit" value="{% filter upper|force_escape %}{% trans 'Undo' context 'Translation included with Django' %}{% endfilter %}" id="undo" class="button ui-corner-all save_undo_button_inactive" role="button" onclick="undo()" title="{% trans 'undo changes'|capfirst|force_escape %}">
+{% comment %}Translators: Translation included with Django {% endcomment %}
+&nbsp;&nbsp;<input type="submit" value="{% filter upper|force_escape %}{% trans 'Save' %}{% endfilter %}" id="save" class="button ui-corner-all save_undo_button_inactive" role="button" onclick="save(false)" title="{% trans 'save changes'|capfirst|force_escape %}">
+&nbsp;&nbsp;<input type="submit" value="{% filter upper|force_escape %}{% trans 'Undo' %}{% endfilter %}" id="undo" class="button ui-corner-all save_undo_button_inactive" role="button" onclick="undo()" title="{% trans 'undo changes'|capfirst|force_escape %}">
 &nbsp;&nbsp;<input type="submit" value="{% filter upper|force_escape %}{% trans 'Recalculate' %}{% endfilter %}" id="recalculate" class="button ui-corner-all save_undo_button_inactive" role="button" onclick="save(true)" title="{% trans 'simulate changes without saving'|capfirst|force_escape %}">
 {% endif %}
 {% if perms.input.change_purchaseorder or perms.input.change_distributionorder %}
@@ -1360,7 +1377,8 @@ $(function() {
 <li id="plantab" role="tab"><a class="ui-tabs-anchor" onclick="return selectTab('plan')">{% trans 'plan'|capfirst %}</a></li>
 <li id="transactionstab" role="tab"><a class="ui-tabs-anchor" onclick="return selectTab('transactions')">{% trans 'transactions'|capfirst %}</a></li>
 <li id="commentstab" role="tab"><a class="ui-tabs-anchor" onclick="return selectTab('comments')">{% trans 'comments'|capfirst %}</a></li>
-<li id="historytab" role="tab"><a class="ui-tabs-anchor" onclick="return selectTab('history')">{% trans 'history'|capfirst %}</a></li>
+{% comment %}Translators: Translation included with Django {% endcomment %}
+<li id="historytab" role="tab"><a class="ui-tabs-anchor" onclick="return selectTab('history')">{% trans 'History'|capfirst %}</a></li>
 </ul>
 </div>
 
@@ -1369,13 +1387,13 @@ $(function() {
 <table id="forecastgrid"></table><br/>
 <h2>{% trans "parameters"|capfirst %}</h2>
 <table><tr><td>{% trans "forecast method"|capfirst %}</td><td>&nbsp;&nbsp;{% if perms.forecast.change_forecast %}<select id="forecastmethod" onchange="setForecastMethod($(this).val())">
-<option value="automatic">{% trans "automatic"|capfirst %}</option>
-<option value="constant">{% filter capfirst %}{% trans "constant" context "forecast method" %}{% endfilter %}</option>
-<option value="trend">{% filter capfirst %}{% trans "trend" context "forecast method" %}{% endfilter %}</option>
-<option value="seasonal">{% filter capfirst %}{% trans "seasonal" context "forecast method" %}{% endfilter %}</option>
-<option value="intermittent">{% filter capfirst %}{% trans "intermittent" context "forecast method" %}{% endfilter %}</option>
-<option value="moving average">{% filter capfirst %}{% trans "moving average" context "forecast method" %}{% endfilter %}</option>
-<option value="manual" selected="selected">{% filter capfirst %}{% trans "manual" context "forecast method" %}{% endfilter %}</option>
+<option value="Automatic">{% trans "automatic" context "forecast method"%}</option>
+<option value="Constant">{% trans "constant" context "forecast method" %}</option>
+<option value="Trend">{% trans "trend" context "forecast method" %}</option>
+<option value="Seasonal">{% trans "seasonal" context "forecast method" %}</option>
+<option value="Intermittent">{% trans "intermittent" context "forecast method" %}</option>
+<option value="Moving average">{% trans "moving average" context "forecast method" %}</option>
+<option value="Manual" selected="selected">{% trans "manual" context "forecast method" %}</option>
 </select>{% else %}<span id="forecastmethod"></span>{% endif %}</td></tr>
 <tr><td>{% trans "selected forecast method"|capfirst %}</td><td>&nbsp;&nbsp;<span id="forecast_out_method"></span></td></tr>
 <tr><td>{% trans "estimated forecast error"|capfirst %}</td><td>&nbsp;&nbsp;<span id="forecast_out_smape"></span>&nbsp;%</td></tr></table>

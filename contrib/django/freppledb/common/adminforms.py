@@ -8,6 +8,9 @@
 # or in the form of compiled binaries.
 #
 
+from functools import update_wrapper
+
+from django.conf.urls import url
 from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse
 from django.contrib import admin
@@ -33,7 +36,6 @@ from django.views.decorators.csrf import csrf_protect
 from django.utils.encoding import smart_text
 
 from freppledb.common.models import Comment
-from freppledb.common.views import Comments
 
 
 csrf_protect_m = method_decorator(csrf_protect)
@@ -54,6 +56,19 @@ class MultiDBModelAdmin(admin.ModelAdmin):
   The level of customization is relatively high, and this code is a bit of a
   concern for future upgrades of Django...
   '''
+
+  def get_urls(self):
+    def wrap(view):
+      def wrapper(*args, **kwargs):
+        return self.admin_site.admin_view(view)(*args, **kwargs)
+      return update_wrapper(wrapper, view)
+
+    urls = super(MultiDBModelAdmin, self).get_urls()
+    my_urls = [
+      url(r'^(.+)/comment/$', wrap(self.comment_view), name='%s_%s_comment' % (self.model._meta.app_label, self.model._meta.model_name)),
+      ]
+    return my_urls + urls
+
 
   def save_form(self, request, form, change):
     # Execute the standard behavior
@@ -161,6 +176,7 @@ class MultiDBModelAdmin(admin.ModelAdmin):
     model = self.model
     obj = self.get_object(request, unquote(object_id))
     if obj is None:
+      # Translators: Translation included with Django
       raise Http404(_('%(name)s object with primary key %(key)r does not exist.') % {
         'name': force_text(model._meta.verbose_name),
         'key': escape(object_id),
@@ -221,6 +237,7 @@ class MultiDBModelAdmin(admin.ModelAdmin):
         })
 
     elif "_continue" in request.POST:
+      # Translators: Translation included with Django
       msg = _('The %(name)s "%(obj)s" was added successfully. You may edit it again below.') % msg_dict
       self.message_user(request, msg, messages.SUCCESS)
       if post_url_continue is None:
@@ -236,6 +253,7 @@ class MultiDBModelAdmin(admin.ModelAdmin):
       return HttpResponseRedirect(post_url_continue)
 
     elif "_addanother" in request.POST:
+      # Translators: Translation included with Django
       msg = _('The %(name)s "%(obj)s" was added successfully. You may add another %(name)s below.') % msg_dict
       self.message_user(request, msg, messages.SUCCESS)
       redirect_url = request.prefix + request.path
@@ -243,6 +261,7 @@ class MultiDBModelAdmin(admin.ModelAdmin):
       return HttpResponseRedirect(redirect_url)
 
     else:
+      # Translators: Translation included with Django
       msg = _('The %(name)s "%(obj)s" was added successfully.') % msg_dict
       self.message_user(request, msg, messages.SUCCESS)
       # Redirect to previous url
@@ -272,6 +291,7 @@ class MultiDBModelAdmin(admin.ModelAdmin):
 
     msg_dict = {'name': force_text(opts.verbose_name), 'obj': force_text(obj)}
     if "_continue" in request.POST:
+      # Translators: Translation included with Django
       msg = _('The %(name)s "%(obj)s" was changed successfully. You may edit it again below.') % msg_dict
       self.message_user(request, msg, messages.SUCCESS)
       redirect_url = request.prefix + request.path
@@ -279,6 +299,7 @@ class MultiDBModelAdmin(admin.ModelAdmin):
       return HttpResponseRedirect(redirect_url)
 
     elif "_saveasnew" in request.POST:
+      # Translators: Translation included with Django
       msg = _('The %(name)s "%(obj)s" was added successfully. You may edit it again below.') % msg_dict
       self.message_user(request, msg, messages.SUCCESS)
       redirect_url = request.prefix + reverse(
@@ -290,7 +311,8 @@ class MultiDBModelAdmin(admin.ModelAdmin):
       return HttpResponseRedirect(redirect_url)
 
     elif "_addanother" in request.POST:
-      msg = _('The %(name)s "%(obj)s" was changed successfully. You may add another %(name)s below.') % msg_dict
+      # Translators: Translation included with Django
+      msg = _('The %(name)s "%(obj)s" was added successfully. You may add another %(name)s below.') % msg_dict
       self.message_user(request, msg, messages.SUCCESS)
       redirect_url = request.prefix + reverse(
         'admin:%s_%s_add' % (opts.app_label, opts.model_name),
@@ -300,6 +322,7 @@ class MultiDBModelAdmin(admin.ModelAdmin):
       return HttpResponseRedirect(redirect_url)
 
     else:
+      # Translators: Translation included with Django
       msg = _('The %(name)s "%(obj)s" was changed successfully.') % msg_dict
       self.message_user(request, msg, messages.SUCCESS)
       # Redirect to previous url
@@ -342,13 +365,14 @@ class MultiDBModelAdmin(admin.ModelAdmin):
                user=request.user,
                comment=comment
                ).save(using=request.database)
-      return HttpResponseRedirect('%s/comments/%s/%s/%s/' % (
-        request.prefix, self.model._meta.app_label, self.model._meta.model_name, object_id
+      return HttpResponseRedirect('%s%s' % (
+        request.prefix, request.path
         ))
     else:
       return render_to_response('common/comments.html', {
         'title': capfirst(force_text(modelinstance._meta.verbose_name) + " " + object_id),
         'model': self.model._meta.model_name,
+        'opts': self.model._meta,
         'object_id': quote(object_id),
         'active_tab': 'comments',
         'comments': comments
@@ -370,6 +394,7 @@ class MultiDBModelAdmin(admin.ModelAdmin):
       })
 
     self.message_user(request,
+      # Translators: Translation included with Django
       _('The %(name)s "%(obj)s" was deleted successfully.') % {
           'name': force_text(opts.verbose_name),
           'obj': force_text(obj_display),
@@ -401,6 +426,7 @@ class MultiDBModelAdmin(admin.ModelAdmin):
       raise PermissionDenied
 
     if obj is None:
+      # Translators: Translation included with Django
       raise Http404(_('%(name)s object with primary key %(key)r does not exist.') % {'name': force_text(opts.verbose_name), 'key': escape(object_id)})
 
     # frePPLe specific selection of the database

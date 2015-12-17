@@ -46,18 +46,40 @@ bool WebServer::handlePost(CivetServer *server, struct mg_connection *conn)
        return quote_or_inquiry(conn, true);
     else if (!strcmp(request_info->uri, "/inquiry"))
        return quote_or_inquiry(conn, false);
+    else if (!strncmp(request_info->uri, "/demand/", 8))
+    {
+      // Special hack for the order quoting form.
+      // TODO updating any field with a post should be allowed...
+      string persist;
+      CivetServer::getParam(conn, "persist", persist);
+      if (persist == "1")
+      {
+        string name = request_info->uri + 8;
+        string status;
+        CivetServer::getParam(conn, "status", status);
+        /*
+        Demand* dmd = Demand::find(name);
+        if (dmd)
+          dmd->setStatus(status);
+        */
+        DatabaseWriter::pushStatement(
+          "update demand set status=$1 where name = $2",
+          status, name
+          );
+      }
+    }
     else
     {
       mg_printf(conn,
         "HTTP/1.1 404 Not found\r\n"
-        "Content-Length: 24\r\n\r\n"
+        "Content-Length: 23\r\n\r\n"
         "Cannot post to this URL"
         );
       return true;
     }
     mg_printf(conn,
       "HTTP/1.1 200 OK\r\n"
-      "Content-Length: 20\r\n\r\n"
+      "Content-Length: 21\r\n\r\n"
       "Successfully uploaded"
       );
     return true;
