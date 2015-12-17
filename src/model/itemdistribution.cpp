@@ -187,9 +187,7 @@ PyObject* ItemDistribution::create(PyTypeObject* pytype, PyObject* args, PyObjec
             // Update the attribute
             fmeta->setField(l, field);
           else
-            PyErr_Format(PyExc_AttributeError,
-                "attribute '%S' on '%s' can't be updated",
-                key, Py_TYPE(l)->tp_name);
+            l->setProperty(attr.getName(), value);
         }
       };
     }
@@ -531,6 +529,9 @@ extern "C" PyObject* OperationItemDistribution::createOrder(
     opplan->setStatus(status);
   if (ref)
     opplan->setReference(ref);
+  // Reset quantity after the status update to assure that
+  // also non-valid quantities are getting accepted.
+  opplan->setQuantity(qty);
   if (!consume)
     opplan->setConsumeMaterial(false);
   opplan->activate();
