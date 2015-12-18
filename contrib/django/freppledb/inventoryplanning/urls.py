@@ -10,7 +10,7 @@
 
 from django.conf.urls import patterns
 
-from freppledb.inventoryplanning.views import InventoryPlanningList, DRP, DRPitemlocation, DRPitem, DRPlocation
+from freppledb.inventoryplanning.views import InventoryPlanningList, DRP, DRPitemlocation
 
 
 # Automatically add these URLs when the application is installed
@@ -23,7 +23,5 @@ urlpatterns = patterns(
   (r'^inventoryplanning/drp/$', DRP.as_view()),
   (r'^inventoryplanning/drp/([^/]+)/(.+)/$', DRP.as_view()),
   (r'^inventoryplanning/drp/(.+)/$', DRP.as_view()),
-  (r'^inventoryplanning/drpitemlocation/(.+)/$', DRPitemlocation.as_view()),
-  (r'^inventoryplanning/drpitem/(.+)/$', DRPitem.as_view()),
-  (r'^inventoryplanning/drplocation/(.+)/$', DRPlocation.as_view())
+  (r'^inventoryplanning/drpitemlocation/(.+)/$', DRPitemlocation.as_view())
   )
