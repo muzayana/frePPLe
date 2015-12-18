@@ -5,5 +5,5 @@
 {"pk": "inventoryplanning.holding_cost", "model": "common.parameter", "fields": {"value": "0.05", "description": "Fixed order cost to compute the economic reorder quantity. Default value: 0.05"}},
 {"pk": "inventoryplanning.fixed_order_cost", "model": "common.parameter", "fields": {"value": "20", "description": "Holding cost percentage to compute economic reorder quantity. Default value: 20"}},
 {"pk": "inventoryplanning.loglevel", "model": "common.parameter", "fields": {"value": "0", "description": "Controls the verbosity of the inventory planning solver. Accepted values are 0(silent - default), 1 and 2 (verbose)"}},
-{"pk": "inventoryplanning.service_level_on_average_inventory", "model": "common.parameter", "fields": {"value": "true", "description": "Flag whether the service level is computed based on the expected average inventory. When set to false the service level estimation is based only on the safety stock. Default value: true"}}
+{"pk": "inventoryplanning.service_level_on_average_inventory", "model": "common.parameter", "fields": {"value": "false", "description": "Flag whether the service level is computed based on the expected average inventory. When set to false the service level estimation is based only on the safety stock. Default value: false"}}
 ]

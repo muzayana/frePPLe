@@ -422,10 +422,19 @@ class GridReport(View):
       end = pref.horizonend
       if end:
         if end < start:
-          # Swap start and end to assure the start is before the end
-          tmp = start
-          start = end
-          end = tmp
+          if reportclass.showOnlyFutureTimeBuckets and end < current:
+            # Special case to assure a minimum number of future buckets
+            if pref.horizonunit == 'day':
+              end = start + timedelta(days=pref.horizonlength or 60)
+            elif pref.horizonunit == 'week':
+              end = start + timedelta(weeks=pref.horizonlength or 8)
+            else:
+              end = start + timedelta(weeks=pref.horizonlength or 8)
+          else:
+            # Swap start and end to assure the start is before the end
+            tmp = start
+            start = end
+            end = tmp
       else:
         if pref.horizonunit == 'day':
           end = start + timedelta(days=pref.horizonlength or 60)
@@ -701,10 +710,16 @@ class GridReport(View):
   def get_sort(reportclass, request):
     try:
       if 'sidx' in request.GET:
+        # Special case when views have grouping.
+        # The group-by column is then added automatically.
+        column = request.GET['sidx']
+        comma = column.find(",")
+        if comma > 0:
+          column = column[comma+2:]
         sort = 1
         ok = False
         for r in reportclass.rows:
-          if r.name == request.GET['sidx']:
+          if r.name == column:
             ok = True
             break
           sort += 1
@@ -714,10 +729,10 @@ class GridReport(View):
         sort = reportclass.default_sort[0]
     except:
       sort = reportclass.default_sort[0]
-    if ('sord' in request.GET and request.GET['sord'] == 'desc') or reportclass.default_sort[1] == 'desc':
-      return "%s asc" % sort
-    else:
+    if request.GET.get('sord', None) == 'desc' or reportclass.default_sort[1] == 'desc':
       return "%s desc" % sort
+    else:
+      return "%s asc" % sort
 
 
   @classmethod
@@ -1608,7 +1623,7 @@ class GridPivot(GridReport):
         if i.name == sort and i.search:
           return query.order_by(asc and i.field_name or ('-%s' % i.field_name))
     # Sorting by a non-existent field name: ignore the filter
-      return query
+    return query
 
 
   @classmethod

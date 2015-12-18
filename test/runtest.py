@@ -122,7 +122,7 @@ def runTestSuite():
           "jobshop", "multithreading", "setup_1", "setup_2", "setup_3"
           ]
         # Extra excluded in the Enterprise Edition
-        excluded.append("forecast_6")
+        excluded += ["forecast_6", "json"]
         break
     for o, a in opts:
       if o in ("-d", "--debug"):
