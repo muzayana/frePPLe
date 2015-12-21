@@ -846,7 +846,7 @@ class DRPitemlocation(View):
 
       # Edits by value or by units?
       if editvalue:
-        factor = ip.buffer.item.price
+        factor = float(ip.buffer.item.price)
         if not factor:
           factor = 1.0
       else:
