@@ -14,6 +14,8 @@
 var reportkey = '{{reportkey|safe}}';
 var initialfilter{% if filters %} = {{filters|safe}}{% endif %};
 var resizing;
+var editrow;
+var editcol;
 {% if reportclass.hasTimeBuckets %}var numbuckets = {{request.report_bucketlist|length}};
 var timebuckets = [ {% for f in request.report_bucketlist %}{% if not forloop.first %},{% endif %}{'name':'{{f.name}}','startdate':'{{f.startdate|date:"Y-m-d"}}','enddate':'{{f.enddate|date:"Y-m-d"}}'}{% endfor %} ];
 {% endif %}var cross_idx = [{{cross_idx}}];
@@ -40,6 +42,11 @@ $(function() {
     editurl: location.pathname,
     beforeSaveCell: upload.select,{% else %}
     onSelectRow: function() {$(this).resetSelection();},
+    formatCell: function(rowid, cellname, value, iRow, iCol) {
+      editrow = iRow;
+      editcol = iCol;
+      return value;
+      },
     {% endif %}rowNum: {{request.pagesize}},
    	pager: '#gridpager',
     viewrecords: true,
