@@ -6993,6 +6993,8 @@ template <class Cls, class Iter, class PyIter, class Ptr> class MetaFieldIterato
           if (!getFlag(PLAN))
             return;
           break;
+        default:
+          break;
       }
       if (getFlag(DONT_SERIALIZE) || !getf)
         return;
