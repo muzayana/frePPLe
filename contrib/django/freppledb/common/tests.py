@@ -22,9 +22,7 @@ import freppledb.common as common
 import freppledb.input as input
 
 from rest_framework.test import APIClient, APITestCase, APIRequestFactory
-from rest_framework import status, renderers, parsers
-from django.core.urlresolvers import reverse
-from django.utils.six import BytesIO
+
 
 @override_settings(INSTALLED_APPS=settings.INSTALLED_APPS + ('django.contrib.sessions',))
 class DataLoadTest(TestCase):
@@ -38,7 +36,7 @@ class DataLoadTest(TestCase):
     if not isinstance(response, StreamingHttpResponse):
       raise Exception("expected a streaming response")
     for i in response.streaming_content:
-      if b'"records":60,' in i:   # Different between Enterprise Edition and Community Edition
+      if b'"records":69,' in i:   # Different between Enterprise Edition and Community Edition
         return
     self.fail("Didn't find expected number of parameters")
 
@@ -322,7 +320,7 @@ class freppleREST(APITestCase):
     }
     response = self.client.put('/api/input/demand/Order UFO 25/', data, format='json')
     self.assertEqual(response.status_code, 200)
-    self.assertEqual(input.models.Demand.objects.count(), 18)
+    self.assertEqual(input.models.Demand.objects.count(), 42) # Different between Enterprise Edition and Community Edition
     self.assertEqual(input.models.Demand.objects.filter(description = 'Put multipart').count(), 1)
     #Demand PUT JSON tests
     data = {
@@ -342,7 +340,7 @@ class freppleREST(APITestCase):
     }
     response = self.client.put('/api/input/demand/Order UFO 26/', data, format='json')
     self.assertEqual(response.status_code, 200)
-    self.assertEqual(input.models.Demand.objects.count(), 18)
+    self.assertEqual(input.models.Demand.objects.count(), 42) # Different between Enterprise Edition and Community Edition
     self.assertEqual(input.models.Demand.objects.filter(description = 'Put json').count(), 1)
     #Demand PUT FORM tests
     data = {
@@ -362,7 +360,7 @@ class freppleREST(APITestCase):
     }
     response = self.client.put('/api/input/demand/Order UFO 26/', data, format='json')
     self.assertEqual(response.status_code, 200)
-    self.assertEqual(input.models.Demand.objects.count(), 18)
+    self.assertEqual(input.models.Demand.objects.count(), 42) # Different between Enterprise Edition and Community Edition
     self.assertEqual(input.models.Demand.objects.filter(description = 'Put form').count(), 1)
 
     #Demand DELETE tests
@@ -379,7 +377,7 @@ class freppleREST(APITestCase):
   def test_api_customer(self):
     response = self.client.get('/api/input/customer/')
     self.assertEqual(response.status_code, 200)
-    self.assertEqual(input.models.Customer.objects.count(), 2)
+    self.assertEqual(input.models.Customer.objects.count(), 3) # Different between Enterprise Edition and Community Edition
     response = self.client.options('/api/input/customer/')
     self.assertEqual(response.status_code, 200)
     data = {
@@ -387,14 +385,14 @@ class freppleREST(APITestCase):
     }
     response = self.client.post('/api/input/customer/', data)
     self.assertEqual(response.status_code, 201)
-    self.assertEqual(input.models.Customer.objects.count(), 3)
+    self.assertEqual(input.models.Customer.objects.count(), 4) # Different between Enterprise Edition and Community Edition
     self.assertEqual(input.models.Customer.objects.filter(name = 'Customer near Area 51').count(), 1)
     data = {
     "name": "Customer near Area 52"
     }
     response = self.client.post('/api/input/customer/', data, format='json')
     self.assertEqual(response.status_code, 201)
-    self.assertEqual(input.models.Customer.objects.count(), 4)
+    self.assertEqual(input.models.Customer.objects.count(), 5) # Different between Enterprise Edition and Community Edition
     self.assertEqual(input.models.Customer.objects.filter(name = 'Customer near Area 52').count(), 1)
     data = [{
     "name": "Customer near Area 99",
@@ -405,7 +403,7 @@ class freppleREST(APITestCase):
     }]
     response = self.client.post('/api/input/customer/', data, format='json')
     self.assertEqual(response.status_code, 201)
-    self.assertEqual(input.models.Customer.objects.count(), 6)
+    self.assertEqual(input.models.Customer.objects.count(), 7) # Different between Enterprise Edition and Community Edition
     self.assertEqual(input.models.Customer.objects.filter(source = 'TEST DELETE').count(), 2)
 
 
@@ -427,7 +425,7 @@ class freppleREST(APITestCase):
     }
     response = self.client.patch('/api/input/customer/Customer near Area 51/', data)
     self.assertEqual(response.status_code, 200)
-    self.assertEqual(input.models.Customer.objects.count(), 6)
+    self.assertEqual(input.models.Customer.objects.count(), 7) # Different between Enterprise Edition and Community Edition
     self.assertEqual(input.models.Customer.objects.filter(description = 'Patch multipart').count(), 1)
     #Customer PUT JSON tests
     data = {
@@ -436,7 +434,7 @@ class freppleREST(APITestCase):
     }
     response = self.client.patch('/api/input/customer/Customer near Area 52/', data, format='json')
     self.assertEqual(response.status_code, 200)
-    self.assertEqual(input.models.Customer.objects.count(), 6)
+    self.assertEqual(input.models.Customer.objects.count(), 7) # Different between Enterprise Edition and Community Edition
     self.assertEqual(input.models.Customer.objects.filter(description = 'Patch json').count(), 1)
 
     #Customer PUT FORM tests
@@ -451,7 +449,7 @@ class freppleREST(APITestCase):
 
     response = self.client.patch('/api/input/customer/Customer near Area 52/', data, format='json')
     self.assertEqual(response.status_code, 200)
-    self.assertEqual(input.models.Customer.objects.count(), 6)
+    self.assertEqual(input.models.Customer.objects.count(), 7) # Different between Enterprise Edition and Community Edition
     self.assertEqual(input.models.Customer.objects.filter(source = 'Put json').count(), 1)
 
     #Customer DELETE tests
