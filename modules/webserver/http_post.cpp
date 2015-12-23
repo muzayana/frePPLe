@@ -42,9 +42,9 @@ bool WebServer::handlePost(CivetServer *server, struct mg_connection *conn)
         mg_upload
         */
     }
-    else if (!strcmp(request_info->uri, "/quote"))
+    else if (!strcmp(request_info->uri, "/quote/") || !strcmp(request_info->uri, "/quote"))
        return quote_or_inquiry(conn, true);
-    else if (!strcmp(request_info->uri, "/inquiry"))
+    else if (!strcmp(request_info->uri, "/inquiry/") || !strcmp(request_info->uri, "/inquiry"))
        return quote_or_inquiry(conn, false);
     else if (!strncmp(request_info->uri, "/demand/", 8))
     {
@@ -71,15 +71,13 @@ bool WebServer::handlePost(CivetServer *server, struct mg_connection *conn)
     else
     {
       mg_printf(conn,
-        "HTTP/1.1 404 Not found\r\n"
-        "Content-Length: 23\r\n\r\n"
+        "HTTP/1.1 404 Not Found\r\n\r\n"
         "Cannot post to this URL"
         );
       return true;
     }
     mg_printf(conn,
-      "HTTP/1.1 200 OK\r\n"
-      "Content-Length: 21\r\n\r\n"
+      "HTTP/1.1 200 OK\r\n\r\n"
       "Successfully uploaded"
       );
     return true;
@@ -87,7 +85,7 @@ bool WebServer::handlePost(CivetServer *server, struct mg_connection *conn)
   catch(exception& e)
   {
     mg_printf(conn,
-      "HTTP/1.1 500 Server error\r\n"
+      "HTTP/1.1 500 Internal Server Error\r\n"
       "Content-Length: %d\r\n\r\n"
       "%s",
       static_cast<int>(strlen(e.what())), e.what()
@@ -96,8 +94,7 @@ bool WebServer::handlePost(CivetServer *server, struct mg_connection *conn)
   catch(...)
   {
     mg_printf(conn,
-      "HTTP/1.1 500 Server error\r\n"
-      "Content-Length: 17\r\n\r\n"
+      "HTTP/1.1 500 Internal Server Error\r\n\r\n"
       "Unknown exception"
       );
   }

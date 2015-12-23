@@ -30,10 +30,6 @@ class Command(BaseCommand):
       '--database', action='store', dest='database',
       default=DEFAULT_DB_ALIAS, help='Nominates a specific database to backup'
       ),
-    make_option(
-      '--force', action="store_true", dest='force',
-      default=False, help='Force an immediate shutdown, rather than a graceful stop'
-      ),
     )
 
   requires_model_validation = False
@@ -44,10 +40,6 @@ class Command(BaseCommand):
   def handle(self, **options):
 
     # Pick up the options
-    if 'force' in options:
-      force = options['force']
-    else:
-      force = False
     if 'database' in options:
       global database
       database = options['database'] or DEFAULT_DB_ALIAS
@@ -58,10 +50,7 @@ class Command(BaseCommand):
     url = Parameter.getValue('quoting.service_location', database=database, default="localhost:8001")
     try:
       conn = http.client.HTTPConnection(url)
-      if force:
-        conn.request("GET", '/stop/?hard=1')
-      else:
-        conn.request("GET", '/stop/')
+      conn.request("GET", '/stop/')
     except Exception:
       # The service wasn't up
-      print("Web service for database '%s' wasn't running" % database )
+      print("Web service for database '%s' wasn't running" % database)

@@ -136,7 +136,7 @@ bool WebServer::quote_or_inquiry(struct mg_connection* conn, bool keepreservatio
       "insert into demand "
         "(name, quantity, priority, description, status, item_id, location_id, "
         "customer_id, minshipment, maxlateness, category, due, lastmodified) "
-        "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, now())",
+        "values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, now())",
       (*dmd)->getName(),
       toString((*dmd)->getQuantity()),
       toString((*dmd)->getPriority()),
@@ -153,13 +153,8 @@ bool WebServer::quote_or_inquiry(struct mg_connection* conn, bool keepreservatio
   }
 
   // Collect the replanning results
-  mg_printf(conn,
-    "HTTP/1.1 200 OK\r\n"
-    "Content-Length: %d\r\n\r\n"
-    "%s",
-    static_cast<int>(response.str().size()),
-    response.str().c_str()
-    );
+  mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/xml\r\n\r\n");
+  mg_printf(conn, "%s", response.str().c_str());
   return true;
 }
 
