@@ -84,9 +84,11 @@ def aggregateDemand(cursor):
         coalesce(sum(case when demand.status is null or demand.status = 'open' then (demand.quantity*ditem.price) else 0 end), 0) as ordersopenvalue
       from demand
       inner join item as ditem on demand.item_id = ditem.name
-      inner join customer as dcustomer on demand.customer_id = dcustomer.name
+      left outer join customer as dcustomer on demand.customer_id = dcustomer.name
+      left outer join location as dlocation on demand.location_id = dlocation.name
       inner join item as fitem on ditem.lft between fitem.lft and fitem.rght
-      inner join customer as fcustomer on dcustomer.lft between fcustomer.lft and fcustomer.rght
+      left outer join customer as fcustomer on dcustomer.lft between fcustomer.lft and fcustomer.rght
+      left outer join location as flocation on dlocation.lft between flocation.lft and flocation.rght
       inner join forecast on fitem.name = forecast.item_id and fcustomer.name = forecast.customer_id
       inner join common_parameter on common_parameter.name = 'forecast.calendar'
       inner join calendarbucket
@@ -156,8 +158,6 @@ def aggregateDemand(cursor):
         forecast.name, calendarbucket.startdate, calendarbucket.enddate,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
       from forecast
-      inner join item on forecast.item_id = item.name
-      inner join customer on forecast.customer_id = customer.name
       inner join calendarbucket
         on calendarbucket.calendar_id = %s
         and calendarbucket.startdate >= %s
@@ -166,8 +166,7 @@ def aggregateDemand(cursor):
         on forecastplan.startdate = calendarbucket.startdate
         and forecastplan.forecast_id = forecast.name
       where forecastplan.forecast_id is null
-      group by forecast.name, customer.lft, item.lft,
-        calendarbucket.startdate, calendarbucket.enddate
+      group by forecast.name, calendarbucket.startdate, calendarbucket.enddate
     ''', (
       fcst_calendar,
       frepple.settings.current - timedelta(days=horizon_history),
@@ -230,16 +229,16 @@ def generateBaseline(solver_fcst, cursor):
   # Read history data and generate forecast
   cursor.execute('''SELECT forecast.name, calendarbucket.startdate,
      coalesce(forecastplan.orderstotal, 0) + coalesce(forecastplan.ordersadjustment, 0) as r
-     FROM forecast
-     INNER JOIN calendarbucket
-       ON calendarbucket.calendar_id = %s
-     LEFT OUTER JOIN forecastplan
-       ON forecastplan.forecast_id = forecast.name
-       AND calendarbucket.startdate = forecastplan.startdate
-     WHERE calendarbucket.startdate >= %s
-      AND calendarbucket.startdate < %s
-      AND forecast.planned = true
-     ORDER BY forecast.name, calendarbucket.startdate
+     from forecast
+     inner join calendarbucket
+       on calendarbucket.calendar_id = %s
+     left outer join forecastplan
+       on forecastplan.forecast_id = forecast.name
+       and calendarbucket.startdate = forecastplan.startdate
+     where calendarbucket.startdate >= %s
+      and calendarbucket.startdate < %s
+      and forecast.planned = true
+     order by forecast.name, calendarbucket.startdate
      ''', (
        fcst_calendar, frepple.settings.current - timedelta(days=horizon_history),
        frepple.settings.current
@@ -266,10 +265,9 @@ def generateBaseline(solver_fcst, cursor):
   cursor.execute('''
     update forecastplan
     set forecastbaseline=0, forecastbaselinevalue=0
-    where startdate >= %s
-      and (forecastbaseline<>0 or forecastbaselinevalue<>0)
-      and exists (select 1 from forecast where name = forecastplan.forecast_id and forecast.planned = 't')
-    ''', (frepple.settings.current,) )
+    where forecastbaseline<>0 or forecastbaselinevalue<>0
+    ''')
+  cursor.execute('vacuum analyze forecastplan')
   cursor.executemany('''
     update forecastplan
     set forecastbaseline=%s, forecastbaselinevalue=%s
@@ -381,20 +379,27 @@ def exportForecastFull(cursor):
 
   print("Exporting complete forecast...")
   starttime = time()
+  # Reset all forecast fields in the future.
   cursor.execute('''update forecastplan
-    set forecasttotal=0, forecastnet=0, forecastconsumed=0, ordersplanned=0, forecastplanned=0
+    set forecasttotal=0, forecastnet=0, forecastconsumed=0, ordersplanned=0, forecastplanned=0,
+      forecasttotalvalue=0, forecastnetvalue=0, forecastconsumedvalue=0, ordersplannedvalue=0, forecastplannedvalue=0
     where startdate >= %s
-      and (forecasttotal<>0 or forecastnet<>0 or forecastconsumed<>0 or ordersplanned <> 0 or forecastplanned <> 0)
+      and (forecasttotal<>0 or forecastnet<>0 or forecastconsumed<>0 or ordersplanned <> 0 or forecastplanned <> 0
+        or forecasttotalvalue<>0 or forecastnetvalue<>0 or forecastconsumedvalue<>0 or ordersplannedvalue <> 0 or forecastplannedvalue <> 0)
     ''', (frepple.settings.current,))
+  # Reset forecast fields in the past.
+  # Note that the total forecast field is not reset in the past. This allows
+  # us to track the historical forecast accuracy.
   cursor.execute('''update forecastplan
-    set forecastnet=0, forecastconsumed=0, ordersplanned=0, forecastplanned=0
+    set forecastnet=0, forecastconsumed=0, ordersplanned=0, forecastplanned=0,
+      forecastbaselinevalue=0, forecastnetvalue=0, forecastconsumedvalue=0, ordersplannedvalue=0, forecastplannedvalue=0
     where startdate < %s
-      and (forecastnet<>0 or forecastconsumed<>0 or ordersplanned <> 0 or forecastplanned <> 0)
+      and (forecastnet<>0 or forecastconsumed<>0 or ordersplanned <> 0 or forecastplanned <> 0
+        or forecastnetvalue<>0 or forecastconsumedvalue<>0 or ordersplannedvalue <> 0 or forecastplannedvalue <> 0)
     ''', (frepple.settings.current,))
   print('Export set to 0 in %.2f seconds' % (time() - starttime))
   starttime = time()
-  cursor.executemany(
-    '''update forecastplan
+  cursor.executemany('''update forecastplan
      set forecasttotal=%s, forecastnet=%s, forecastconsumed=%s,
        forecasttotalvalue=%s, forecastnetvalue=%s, forecastconsumedvalue=%s
      where forecast_id=%s and startdate=%s''', [
@@ -411,6 +416,7 @@ def exportForecastFull(cursor):
     ])
   transaction.commit(using=cursor.db.alias)
   fcst_calendar = Parameter.getValue('forecast.calendar', cursor.db.alias, None)
+  # TODO LOCATION NOT CONSIDERED
   cursor.execute('''
     update forecastplan
       set ordersplanned=coalesce(plannedquantities.planneddemand,0),
@@ -427,13 +433,13 @@ def exportForecastFull(cursor):
         from out_demand
         inner join item
           on out_demand.item = item.name
-        inner join customer
+        left outer join customer
           on out_demand.customer = customer.name
         left outer join demand
           on out_demand.demand = demand.name
         inner join item as fitem
           on item.lft between fitem.lft and fitem.rght
-        inner join customer as fcustomer
+        left outer join customer as fcustomer
           on customer.lft between fcustomer.lft and fcustomer.rght
         inner join forecast
           on fitem.name = forecast.item_id
@@ -477,17 +483,23 @@ def exportForecastFull(cursor):
         on forecast_id = name
       inner join item
         on item.name = forecast.item_id
-      inner join customer
+      left outer join customer
         on customer.name = forecast.customer_id
+      left outer join location
+        on location.name = forecast.location_id
       cross join forecast as forecastparent
       inner join item as itemparent
         on forecastparent.item_id = itemparent.name
         and item.lft >= itemparent.lft
         and item.lft < itemparent.rght
-      inner join customer as customerparent
+      left outer join customer as customerparent
         on forecastparent.customer_id = customerparent.name
         and customer.lft >= customerparent.lft
         and customer.lft < customerparent.rght
+      left outer join location as locationparent
+        on forecastparent.location_id = locationparent.name
+        and location.lft >= locationparent.lft
+        and location.lft < locationparent.rght
       where forecast.planned = 't'
         and forecastparent.planned = 'f'
       group by forecastparent.name, startdate
@@ -530,15 +542,11 @@ def exportForecastPlanned(cursor):
   print("Exporting forecast plan...")
   starttime = time()
   cursor.execute('''update forecastplan
-    set forecastnet=0, forecastconsumed=0, ordersplanned = 0, forecastplanned = 0
-    where startdate >= %s
-      and (forecastnet<>0 or forecastconsumed<>0 or ordersplanned <> 0 or forecastplanned <> 0)
-    ''', (frepple.settings.current,) )
-  cursor.execute('''update forecastplan
-    set forecastnet=0, forecastconsumed=0, ordersplanned=0, forecastplanned=0
-    where startdate < %s
-      and (forecastnet<>0 or forecastconsumed<>0 or ordersplanned <> 0 or forecastplanned <> 0)
-    ''', (frepple.settings.current,) )
+    set forecastnet=0, forecastconsumed=0, ordersplanned=0, forecastplanned=0,
+      forecastnetvalue=0, forecastconsumedvalue=0, ordersplannedvalue=0, forecastplannedvalue=0
+    where forecastnet<>0 or forecastconsumed<>0 or ordersplanned <> 0 or forecastplanned <> 0
+      or forecastnetvalue<>0 or forecastconsumedvalue<>0 or ordersplannedvalue<>0 or forecastplannedvalue=0
+    ''')
   print('Export set to 0 in %.2f seconds' % (time() - starttime))
   starttime = time()
   cursor.executemany(
@@ -557,6 +565,7 @@ def exportForecastPlanned(cursor):
     ])
   transaction.commit(using=cursor.db.alias)
   fcst_calendar = Parameter.getValue('forecast.calendar', cursor.db.alias, None)
+  # TODO location match not considered
   cursor.execute('''
     update forecastplan
       set ordersplanned=coalesce(plannedquantities.planneddemand,0),
@@ -632,6 +641,7 @@ def exportForecastPlanned(cursor):
     set
       forecastconsumed = aggfcst.forecastconsumed,
       forecastnet = aggfcst.forecastnet,
+      forecastnetvalue = aggfcst.forecastnetvalue,
       forecastconsumedvalue = aggfcst.forecastconsumedvalue
     from aggfcst
     where exists (
@@ -657,9 +667,9 @@ def exportForecastValues(cursor):
   print("Exporting forecast values...")
   starttime = time()
   cursor.execute('''update forecastplan
-    set forecasttotal=0
+    set forecasttotal=0, forecasttotalvalue=0
     where startdate >= %s
-      and forecasttotal<>0
+      and (forecasttotal<>0 or forecasttotalvalue<>0)
     ''', (frepple.settings.current,))
   print('Export set to 0 in %.2f seconds' % (time() - starttime))
   starttime = time()
@@ -684,29 +694,41 @@ def exportForecastValues(cursor):
       select
         forecastparent.name forecast_id, startdate,
         sum(forecasttotal) forecasttotal,
-        sum(forecasttotalvalue) forecasttotalvalue
+        sum(forecastbaseline) forecastbaseline,
+        sum(forecasttotalvalue) forecasttotalvalue,
+        sum(forecastbaselinevalue) forecastbaselinevalue
       from forecastplan
       inner join forecast
-        on forecast_id = name and forecast.planned = 't'
+        on forecast_id = name
       inner join item
-        on forecast.item_id = item.name
-      inner join customer
-        on forecast.customer_id = customer.name
+        on item.name = forecast.item_id
+      left outer join customer
+        on customer.name = forecast.customer_id
+      left outer join location
+        on location.name = forecast.location_id
       cross join forecast as forecastparent
       inner join item as itemparent
-        on forecastparent.item_id = item.name
+        on forecastparent.item_id = itemparent.name
         and item.lft >= itemparent.lft
         and item.lft < itemparent.rght
-      inner join customer as customerparent
+      left outer join customer as customerparent
         on forecastparent.customer_id = customerparent.name
         and customer.lft >= customerparent.lft
         and customer.lft < customerparent.rght
+      left outer join location as locationparent
+        on forecastparent.location_id = locationparent.name
+        and location.lft >= locationparent.lft
+        and location.lft < locationparent.rght
+      where forecast.planned = 't'
+        and forecastparent.planned = 'f'
       group by forecastparent.name, startdate
       )
     update forecastplan
     set
       forecasttotal = aggfcst.forecasttotal,
-      forecasttotalvalue = aggfcst.forecasttotalvalue
+      forecastbaseline = aggfcst.forecastbaseline,
+      forecasttotalvalue = aggfcst.forecasttotalvalue,
+      forecastbaselinevalue = aggfcst.forecastbaselinevalue
     from aggfcst
     where exists (
       select 1

@@ -139,7 +139,7 @@ class ForecastAccuracyWidget(Widget):
         (
         select
           startdate,
-          greatest(coalesce(forecastadjustment,forecastbaseline),0) fcst,
+          greatest(forecasttotal,0) fcst,
           greatest(orderstotal + coalesce(ordersadjustment,0),0) orders
         from forecastplan
         where startdate < %s and startdate > %s - interval '%s month'
