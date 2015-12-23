@@ -9,7 +9,7 @@
 #
 Summary: Free Production PLanning
 Name: frepple
-Version: 3.0.beta
+Version: 3.0
 Release: 1%{?dist}
 License: Proprietary
 Group: Applications/Productivity
