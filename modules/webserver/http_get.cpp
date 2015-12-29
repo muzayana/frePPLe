@@ -19,7 +19,7 @@ namespace module_webserver
 
 bool WebServer::handleGet(CivetServer *server, struct mg_connection *conn)
 {
-  struct mg_request_info *request_info = mg_get_request_info(conn);
+  const struct mg_request_info *request_info = mg_get_request_info(conn);
 
   // Return the index page
   if (!strcmp(request_info->uri, "/index.html"))

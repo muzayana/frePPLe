@@ -96,13 +96,13 @@ void WebClient::addClient(struct mg_connection* conn)
 }
 
 
-void WebClient::removeClient(struct mg_connection* conn)
+void WebClient::removeClient(const struct mg_connection* conn)
 {
   // Exclusive access
   ScopeMutexLock only_me(lck);
 
   // Look up in the map, and remove
-  clientmap::iterator it = clients.find(conn);
+  clientmap::iterator it = clients.find(const_cast<struct mg_connection*>(conn));
   if (it != clients.end())
     clients.erase(it);
 }
@@ -119,7 +119,7 @@ void WebClient::printStatusAll()
 void WebClient::printStatus() const
 {
   // Common info
-  struct mg_request_info *rq = mg_get_request_info(conn);
+  const struct mg_request_info *rq = mg_get_request_info(conn);
   logger << "Connection with " << rq->remote_ip << " " << username << " subscribed to :" << endl;
 
   // List of subscriptions

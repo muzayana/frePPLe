@@ -18,7 +18,7 @@ namespace module_webserver
 
 bool WebServer::handlePost(CivetServer *server, struct mg_connection *conn)
 {
-  struct mg_request_info *request_info = mg_get_request_info(conn);
+  const struct mg_request_info *request_info = mg_get_request_info(conn);
 
   // TODO Assure single user access from this point onwards
 

@@ -18,7 +18,7 @@ namespace module_webserver
 
 bool WebServer::handleDelete(CivetServer *server, struct mg_connection *conn)
 {
-  struct mg_request_info *request_info = mg_get_request_info(conn);
+  const struct mg_request_info *request_info = mg_get_request_info(conn);
 
   // Check if the first section of the URL is a category name
   const char* slash = strchr(request_info->uri + 1, '/');

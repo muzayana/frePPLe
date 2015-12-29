@@ -31,7 +31,7 @@ void parsingCallback(Object* obj)
 
 bool WebServer::quote_or_inquiry(struct mg_connection* conn, bool keepreservation)
 {
-  struct mg_request_info *request_info = mg_get_request_info(conn);
+  const struct mg_request_info *request_info = mg_get_request_info(conn);
   char post_data[100 * 1024]; // A fixed buffer of 100K bytes
 
   /* TODO POST encoded as application/x-www-form-urlencoded
