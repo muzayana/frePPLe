@@ -43,10 +43,16 @@ class JSONSerializer : public Serializer
 {
   public:
     /** Constructor with a given stream. */
-    JSONSerializer(ostream& os) : Serializer(os), first(true) {}
+    JSONSerializer(ostream& os) : Serializer(os), formatted(false), first(true), m_nIndent(0)
+    {
+      indentstring[0] = '\0';
+    }
 
     /** Default constructor. */
-    JSONSerializer() : first(true) {}
+    JSONSerializer() : formatted(false), first(true), m_nIndent(0)
+    {
+      indentstring[0] = '\0';
+    }
 
     /** Tweak to toggle between the dictionary and array modes. */
     void setMode(bool f)
@@ -57,12 +63,28 @@ class JSONSerializer : public Serializer
         mode.top() = f;
     }
 
+    void setFormatted(bool b)
+    {
+      formatted = b;
+    }
+
+    bool getFormatted() const
+    {
+      return formatted;
+    }
+
     /** Start writing a new object. This method will open a new tag.<br>
       * Output: "TAG" : {
       */
     void BeginList(const Keyword& t)
     {
-      if (!first)
+      if (formatted)
+      {
+        if (!first)
+          *m_fp << ",\n" << indentstring;
+        incIndent();
+      }
+      else if (!first)
         *m_fp << ",";
       *m_fp << t.getQuoted() << "[";
       first = true;
@@ -74,12 +96,20 @@ class JSONSerializer : public Serializer
       */
     void BeginObject(const Keyword& t)
     {
-      if (!first)
+      if (formatted)
+      {
+        if (!first)
+          *m_fp << ",\n" << indentstring;
+        incIndent();
+      }
+      else if (!first)
         *m_fp << ",";
-      if (mode.empty() || mode.top())
-        *m_fp << "{";
+      if (!mode.empty() && !mode.top())
+        *m_fp << t.getQuoted();
+      if (formatted)
+        *m_fp << "{\n" << indentstring;
       else
-        *m_fp << t.getQuoted() << "{";
+        *m_fp << "{";
       first = true;
       mode.push(false);
     }
@@ -89,11 +119,20 @@ class JSONSerializer : public Serializer
       */
     void BeginObject(const Keyword& t, const string& atts)
     {
-      if (!first)
+      if (formatted)
+      {
+        incIndent();
+        if (first)
+          *m_fp << "\n" << indentstring;
+        else
+          *m_fp << ",\n" << indentstring;
+      }
+      else if (!first)
         *m_fp << ",";
       *m_fp << t.getQuoted() << "{";
       first = true;
       mode.push(false);
+      logger << "IMPLEMENTATION INCOMPLETE" << endl; // TODO not using atts
     }
 
     /** Start writing a new object. This method will open a new tag.<br>
@@ -102,7 +141,15 @@ class JSONSerializer : public Serializer
       */
     void BeginObject(const Keyword& t, const Keyword& attr1, const string& val1)
     {
-      if (!first)
+      if (formatted)
+      {
+        incIndent();
+        if (first)
+          *m_fp << "\n" << indentstring;
+        else
+          *m_fp << ",\n" << indentstring;
+      }
+      else if (!first)
         *m_fp << ",";
       if (!mode.top())
         *m_fp << t.getQuoted();
@@ -118,7 +165,15 @@ class JSONSerializer : public Serializer
       */
     void BeginObject(const Keyword& t, const Keyword& attr1, const int val1)
     {
-      if (!first)
+      if (formatted)
+      {
+        incIndent();
+        if (first)
+          *m_fp << "\n" << indentstring;
+        else
+          *m_fp << ",\n" << indentstring;
+      }
+      else if (!first)
         *m_fp << ",";
       if (!mode.top())
         *m_fp << t.getQuoted();
@@ -133,7 +188,15 @@ class JSONSerializer : public Serializer
       */
     void BeginObject(const Keyword& t, const Keyword& attr1, const Date val1)
     {
-      if (!first)
+      if (formatted)
+      {
+        incIndent();
+        if (first)
+          *m_fp << "\n" << indentstring;
+        else
+          *m_fp << ",\n" << indentstring;
+      }
+      else if (!first)
         *m_fp << ",";
       if (!mode.top())
         *m_fp << t.getQuoted();
@@ -149,7 +212,15 @@ class JSONSerializer : public Serializer
     void BeginObject(const Keyword& t, const Keyword& attr1, const string& val1,
       const Keyword& attr2, const string& val2)
     {
-      if (!first)
+      if (formatted)
+      {
+        incIndent();
+        if (first)
+          *m_fp << "\n" << indentstring;
+        else
+          *m_fp << ",\n" << indentstring;
+      }
+      else if (!first)
         *m_fp << ",";
       if (!mode.top())
         *m_fp << t.getQuoted();
@@ -168,7 +239,15 @@ class JSONSerializer : public Serializer
     void BeginObject(const Keyword& t, const Keyword& attr1, const unsigned long& val1,
       const Keyword& attr2, const string& val2)
     {
-      if (!first)
+      if (formatted)
+      {
+        incIndent();
+        if (first)
+          *m_fp << "\n" << indentstring;
+        else
+          *m_fp << ",\n" << indentstring;
+      }
+      else if (!first)
         *m_fp << ",";
       if (!mode.top())
         *m_fp << t.getQuoted();
@@ -187,7 +266,15 @@ class JSONSerializer : public Serializer
       const Keyword& attr2, const Date val2,
       const Keyword& attr3, const Date val3)
     {
-      if (!first)
+      if (formatted)
+      {
+        incIndent();
+        if (first)
+          *m_fp << "\n" << indentstring;
+        else
+          *m_fp << ",\n" << indentstring;
+      }
+      else if (!first)
         *m_fp << ",";
       if (!mode.top())
         *m_fp << t.getQuoted();
@@ -204,7 +291,13 @@ class JSONSerializer : public Serializer
       */
     void EndObject(const Keyword& t)
     {
-      *m_fp << "}";
+      if (formatted)
+      {
+        decIndent();
+        *m_fp << "\n" << indentstring << "}";
+      }
+      else
+        *m_fp << "}";
       first = false;
       mode.pop();
     }
@@ -214,6 +307,8 @@ class JSONSerializer : public Serializer
       */
     void EndList(const Keyword& t)
     {
+      if (formatted)
+        decIndent();
       *m_fp << "]";
       first = false;
       mode.pop();
@@ -234,6 +329,8 @@ class JSONSerializer : public Serializer
     {
       if (first)
         first = false;
+      else if (formatted)
+        *m_fp << ",\n" << indentstring;
       else
         *m_fp << ",";
       *m_fp << t.getQuoted() << val;
@@ -246,6 +343,8 @@ class JSONSerializer : public Serializer
     {
       if (first)
         first = false;
+      else if (formatted)
+        *m_fp << ",\n" << indentstring;
       else
         *m_fp << ",";
       *m_fp << t.getQuoted() << val;
@@ -258,6 +357,8 @@ class JSONSerializer : public Serializer
     {
       if (first)
         first = false;
+      else if (formatted)
+        *m_fp << ",\n" << indentstring;
       else
         *m_fp << ",";
       *m_fp << t.getQuoted() << val;
@@ -271,6 +372,8 @@ class JSONSerializer : public Serializer
     {
       if (first)
         first = false;
+      else if (formatted)
+        *m_fp << ",\n" << indentstring;
       else
         *m_fp << ",";
       *m_fp << t.getQuoted() << (val ? "true" : "false");
@@ -284,6 +387,8 @@ class JSONSerializer : public Serializer
       if (val.empty()) return;
       if (first)
         first = false;
+      else if (formatted)
+        *m_fp << ",\n" << indentstring;
       else
         *m_fp << ",";
       *m_fp << t.getQuoted();
@@ -303,6 +408,8 @@ class JSONSerializer : public Serializer
         {
           if (first)
             first = false;
+          else if (formatted)
+            *m_fp << ",\n" << indentstring;
           else
             *m_fp << ",";
           *m_fp << u.getQuoted() << "{}";
@@ -312,6 +419,8 @@ class JSONSerializer : public Serializer
       {
         if (first)
           first = false;
+        else if (formatted)
+          *m_fp << ",\n" << indentstring;
         else
           *m_fp << ",";
         if (!mode.top())
@@ -329,6 +438,8 @@ class JSONSerializer : public Serializer
     {
       if (first)
         first = false;
+      else if (formatted)
+        *m_fp << ",\n" << indentstring;
       else
         *m_fp << ",";
       if (!mode.top())
@@ -343,6 +454,8 @@ class JSONSerializer : public Serializer
     {
       if (first)
         first = false;
+      else if (formatted)
+        *m_fp << ",\n" << indentstring;
       else
         *m_fp << ",";
       if (!mode.top())
@@ -362,6 +475,8 @@ class JSONSerializer : public Serializer
         {
           if (first)
             first = false;
+          else if (formatted)
+            *m_fp << ",\n" << indentstring;
           else
             *m_fp << ",";
           *m_fp << u.getQuoted() << "{}";
@@ -371,6 +486,8 @@ class JSONSerializer : public Serializer
       {
         if (first)
           first = false;
+        else if (formatted)
+          *m_fp << ",\n" << indentstring;
         else
           *m_fp << ",";
         if (!mode.top())
@@ -391,6 +508,8 @@ class JSONSerializer : public Serializer
     {
       if (first)
         first = false;
+      else if (formatted)
+        *m_fp << ",\n" << indentstring;
       else
         *m_fp << ",";
       if (!mode.top())
@@ -409,6 +528,8 @@ class JSONSerializer : public Serializer
     {
       if (first)
         first = false;
+      else if (formatted)
+        *m_fp << ",\n" << indentstring;
       else
         *m_fp << ",";
       if (!mode.top())
@@ -427,6 +548,8 @@ class JSONSerializer : public Serializer
       if (!val) return;
       if (first)
         first = false;
+      else if (formatted)
+        *m_fp << ",\n" << indentstring;
       else
         *m_fp << ",";
       *m_fp << t.getQuoted();
@@ -440,6 +563,8 @@ class JSONSerializer : public Serializer
     {
       if (first)
         first = false;
+      else if (formatted)
+        *m_fp << ",\n" << indentstring;
       else
         *m_fp << ",";
       *m_fp << t.getQuoted() << "\"" << d << "\"";
@@ -451,6 +576,8 @@ class JSONSerializer : public Serializer
     {
       if (first)
         first = false;
+      else if (formatted)
+        *m_fp << ",\n" << indentstring;
       else
         *m_fp << ",";
       *m_fp << t.getQuoted() << "\"" << d << "\"";
@@ -462,6 +589,8 @@ class JSONSerializer : public Serializer
     {
       if (first)
         first = false;
+      else if (formatted)
+        *m_fp << ",\n" << indentstring;
       else
         *m_fp << ",";
       *m_fp << t.getQuoted() << "\"" << d << "\"";
@@ -483,6 +612,10 @@ class JSONSerializer : public Serializer
       */
     void escape(const string&);
 
+    /** Generated nicely formatted text or a smaller file without the
+      * extra whitespace. */
+    bool formatted;
+
     /** Flag to mark if an object has already one or more fields saved. */
     bool first;
 
@@ -490,6 +623,30 @@ class JSONSerializer : public Serializer
       * or array (true).
       */
     stack<bool> mode;
+
+    /** This string is a null terminated string containing as many spaces as
+      * indicated by the m_nIndent.
+      * @see incIndent, decIndent
+      */
+    char indentstring[41];
+
+    /** This variable keeps track of the indentation level.
+      * @see incIndent, decIndent
+      */
+    short int m_nIndent;
+
+    void incIndent()
+    {
+      indentstring[m_nIndent++] = '\t';
+      if (m_nIndent > 40) m_nIndent = 40;
+      indentstring[m_nIndent] = '\0';
+    }
+
+    void decIndent()
+    {
+      if (--m_nIndent < 0) m_nIndent = 0;
+      indentstring[m_nIndent] = '\0';
+    }
 };
 
 

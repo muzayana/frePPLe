@@ -48,7 +48,8 @@ PyObject* saveJSONfile(PyObject* self, PyObject* args)
   // Pick up arguments
   char *filename;
   char *content = NULL;
-  int ok = PyArg_ParseTuple(args, "s|s:save", &filename, &content);
+  int formatted = 0;
+  int ok = PyArg_ParseTuple(args, "s|sp:saveJSONfile", &filename, &content, &formatted);
   if (!ok) return NULL;
 
   // Execute and catch exceptions
@@ -67,8 +68,11 @@ PyObject* saveJSONfile(PyObject* self, PyObject* args)
       else
         throw DataException("Invalid content type '" + string(content) + "'");
     }
+    if (formatted)
+      o.setFormatted(true);
     o.setMode(true);
     o.pushCurrentObject(&Plan::instance());
+    o.incParents();
     Plan::instance().writeElement(&o, Tags::plan);
   }
   catch (...)
@@ -277,11 +281,11 @@ double JSONInput::string2double(char *s, char **endptr)
     result = result * 10 + (*s++ - '0');
 
   // Decimal and after
-  if (*s == '.') 
+  if (*s == '.')
   {
     ++s;
     double fraction = 1;
-    while (isdigit(*s)) 
+    while (isdigit(*s))
     {
       fraction *= 0.1;
       result += (*s++ - '0') * fraction;
@@ -289,14 +293,14 @@ double JSONInput::string2double(char *s, char **endptr)
   }
 
   // Exponent
-  if (*s == 'e' || *s == 'E') 
+  if (*s == 'e' || *s == 'E')
   {
     ++s;
 
     double base = 10;
     if (*s == '+')
       ++s;
-    else if (*s == '-') 
+    else if (*s == '-')
     {
       ++s;
       base = 0.1;
@@ -331,16 +335,16 @@ void JSONInput::parse(char *s, JSONInput::JsonValue *value, JSONInput::JsonAlloc
   int pos = -1;
   bool separator = true;
 
-  while (*s) 
+  while (*s)
   {
     // Skip leading whitespace
     while (isspace(*s)) ++s;
     endptr = s++;
 
-    switch (*endptr) 
+    switch (*endptr)
     {
       case '-':
-        if (!isdigit(*s) && *s != '.') 
+        if (!isdigit(*s) && *s != '.')
           throw DataException("Invalid JSON data: bad number at position " + (s - firstChar));
       case '0':
       case '1':
@@ -353,18 +357,18 @@ void JSONInput::parse(char *s, JSONInput::JsonValue *value, JSONInput::JsonAlloc
       case '8':
       case '9':
         o = JsonValue(string2double(endptr, &s));
-        if (!isdelim(*s)) 
+        if (!isdelim(*s))
           throw DataException("Invalid JSON data: bad number at position " + (s - firstChar));
         break;
       case '"':
         o = JsonValue(JSON_STRING, s);
-        for (char *it = s; *s; ++it, ++s) 
+        for (char *it = s; *s; ++it, ++s)
         {
           int c = *it = *s;
-          if (c == '\\') 
+          if (c == '\\')
           {
             c = *++s;
-            switch (c) 
+            switch (c)
             {
               case '\\':
               case '"':
@@ -388,21 +392,21 @@ void JSONInput::parse(char *s, JSONInput::JsonValue *value, JSONInput::JsonAlloc
                 break;
               case 'u':
                 c = 0;
-                for (int i = 0; i < 4; ++i) 
+                for (int i = 0; i < 4; ++i)
                 {
                   if (isxdigit(*++s))
                     c = c * 16 + char2int(*s);
-                  else 
+                  else
                     throw DataException("Invalid JSON data: bad string at position " + (s - firstChar));
                 }
-                if (c < 0x80) 
+                if (c < 0x80)
                   *it = c;
-                else if (c < 0x800) 
+                else if (c < 0x800)
                 {
                   *it++ = 0xC0 | (c >> 6);
                   *it = 0x80 | (c & 0x3F);
-                } 
-                else 
+                }
+                else
                 {
                   *it++ = 0xE0 | (c >> 12);
                   *it++ = 0x80 | ((c >> 6) & 0x3F);
@@ -412,17 +416,17 @@ void JSONInput::parse(char *s, JSONInput::JsonValue *value, JSONInput::JsonAlloc
               default:
                 throw DataException("Invalid JSON data: bad string at position " + (s - firstChar));
               }
-            } 
-          else if ((unsigned int)c < ' ' || c == '\x7F') 
+            }
+          else if ((unsigned int)c < ' ' || c == '\x7F')
               throw DataException("Invalid JSON data: bad string at position " + (s - firstChar));
-          else if (c == '"') 
+          else if (c == '"')
           {
             *it = 0;
             ++s;
             break;
           }
         }
-        if (!isdelim(*s)) 
+        if (!isdelim(*s))
           throw DataException("Invalid JSON data: bad string at position " + (s - firstChar));
         break;
       case 't':
@@ -492,7 +496,7 @@ void JSONInput::parse(char *s, JSONInput::JsonValue *value, JSONInput::JsonAlloc
       }
 
       separator = false;
-      if (pos == -1) 
+      if (pos == -1)
       {
         endptr = s;
         *value = o;
@@ -500,9 +504,9 @@ void JSONInput::parse(char *s, JSONInput::JsonValue *value, JSONInput::JsonAlloc
       }
 
       /** TODO The parser builds a DOM-like structure in memory here. We'ld like to send SAX-like events instead, or even better DOM-with-flush. */
-      if (tags[pos] == JSON_OBJECT) 
+      if (tags[pos] == JSON_OBJECT)
       {
-        if (!keys[pos]) 
+        if (!keys[pos])
         {
           if (o.getTag() != JSON_STRING)
             throw DataException("Invalid JSON data: unquoted key at position " + (endptr - firstChar));
@@ -512,8 +516,8 @@ void JSONInput::parse(char *s, JSONInput::JsonValue *value, JSONInput::JsonAlloc
         tails[pos] = insertAfter(tails[pos], (JsonNode *)allocator.allocate(sizeof(JsonNode)));
         tails[pos]->key = keys[pos];
         keys[pos] = NULL;
-      } 
-      else 
+      }
+      else
         tails[pos] = insertAfter(tails[pos], (JsonNode *)allocator.allocate(sizeof(JsonNode) - sizeof(char *)));
       tails[pos]->value = o;
     }
