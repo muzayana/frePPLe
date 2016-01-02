@@ -30,6 +30,8 @@ typedef unsigned __int64 uint64_t;
 typedef __int64   int64_t;
 #endif
 
+#include "rapidjson/reader.h"
+
 namespace module_webserver
 {
 
@@ -612,8 +614,10 @@ class JSONSerializer : public Serializer
       */
     void escape(const string&);
 
-    /** Generated nicely formatted text or a smaller file without the
-      * extra whitespace. */
+    /** Generated nicely formatted text.
+      * This is false by default, because it generates a smaller file
+      * without the extra whitespace.
+      */
     bool formatted;
 
     /** Flag to mark if an object has already one or more fields saved. */
@@ -635,26 +639,38 @@ class JSONSerializer : public Serializer
       */
     short int m_nIndent;
 
-    void incIndent()
+    /** Increment indentation level in the formatted output. */
+    inline void incIndent()
     {
       indentstring[m_nIndent++] = '\t';
       if (m_nIndent > 40) m_nIndent = 40;
       indentstring[m_nIndent] = '\0';
     }
 
-    void decIndent()
+    /** Decrement indentation level in the formatted output. */
+    inline void decIndent()
     {
       if (--m_nIndent < 0) m_nIndent = 0;
       indentstring[m_nIndent] = '\0';
     }
+
+    /** Stack of objects and their data fields. */
+    struct obj
+    {
+      const MetaClass* cls;
+      Object* object;
+      int start;
+      hashtype hash;
+    };
+    vector<obj> objects;
 };
 
 
 /** @brief This class writes JSON data to a flat file.
   *
   * Note that an object of this class can write only to a single file. If
-  * multiple files are required multiple JSONSerializerFile objects will be
-  * required too.
+  * you need to write multiple files then multiple JSONSerializerFile objects
+  * will be required.
   */
 class JSONSerializerFile : public JSONSerializer
 {
@@ -664,12 +680,16 @@ class JSONSerializerFile : public JSONSerializer
     JSONSerializerFile(const string& chFilename)
     {
       of.open(chFilename.c_str(), ios::out);
-      if(!of) throw RuntimeException("Could not open output file");
+      if(!of)
+        throw RuntimeException("Could not open output file");
       setOutput(of);
     }
 
     /** Destructor. */
-    ~JSONSerializerFile() {of.close();}
+    ~JSONSerializerFile()
+    {
+      of.close();
+    }
 
   private:
     ofstream of;
@@ -718,204 +738,45 @@ class JSONSerializerString : public JSONSerializer
 PyObject* saveJSONfile(PyObject* self, PyObject* args);
 
 
-/** @brief A fast JSON parser.
+/** @brief A JSON parser, using the rapidjson library.
   *
-  * The parser only supports UTF-8 data.
-  *
-  * The code is inspired on gason https://github.com/vivkin/gason, which
-  * is released under the MIT license.
+  * See https://github.com/miloyip/rapidjson for information on rapidjson,
+  * which is released under the MIT license.
   */
 class JSONInput : public NonCopyable
 {
-  public:
-    struct JsonNode;
+  friend rapidjson::Reader;
   private:
-    enum JsonTag
-    {
-      JSON_NUMBER = 0,
-      JSON_STRING,
-      JSON_ARRAY,
-      JSON_OBJECT,
-      JSON_TRUE,
-      JSON_FALSE,
-      JSON_NULL = 0xF
-    };
-
-    #define JSON_VALUE_PAYLOAD_MASK 0x00007FFFFFFFFFFFULL
-    #define JSON_VALUE_NAN_MASK 0x7FF8000000000000ULL
-    #define JSON_VALUE_TAG_MASK 0xF
-    #define JSON_VALUE_TAG_SHIFT 47
-
-    union JsonValue
-    {
-      uint64_t ival;
-      double fval;
-
-      JsonValue(double x) : fval(x) { }
-
-      JsonValue(JsonTag tag = JSON_NULL, void *payload = NULL)
-      {
-        assert((uint64_t)payload <= JSON_VALUE_PAYLOAD_MASK);
-        ival = JSON_VALUE_NAN_MASK | ((uint64_t)tag << JSON_VALUE_TAG_SHIFT) | (uint64_t)payload;
-      }
-
-      bool isDouble() const
-      {
-        return (int64_t)ival <= (int64_t)JSON_VALUE_NAN_MASK;
-      }
-
-      JsonTag getTag() const
-      {
-        return isDouble() ? JSON_NUMBER : JsonTag((ival >> JSON_VALUE_TAG_SHIFT) & JSON_VALUE_TAG_MASK);
-      }
-
-      uint64_t getPayload() const
-      {
-        assert(!isDouble());
-        return ival & JSON_VALUE_PAYLOAD_MASK;
-      }
-
-      double toNumber() const
-      {
-          assert(getTag() == JSON_NUMBER);
-          return fval;
-      }
-
-      char *toString() const
-      {
-          assert(getTag() == JSON_STRING);
-          return (char*)getPayload();
-      }
-
-      JsonNode *toNode() const
-      {
-          assert(getTag() == JSON_ARRAY || getTag() == JSON_OBJECT);
-          return (JsonNode*)getPayload();
-      }
-    };
-
-  public:
-    /** Node in the document. */
-    struct JsonNode
-    {
-      JsonValue value;
-      JsonNode *next;
-      char *key;
-    };
-
-    /** Iterator. */
-    class JsonIterator
-    {
-      public:
-        JsonNode *p;
-
-        JsonIterator(JsonNode* o) : p(o) {}
-
-        void operator++() { p = p->next; }
-
-        bool operator!=(const JsonIterator &x) const { return p != x.p; }
-
-        JsonNode *operator*() const { return p; }
-
-        JsonNode *operator->() const { return p; }
-    };
-
-    inline JsonIterator begin(JsonValue o) { return o.toNode(); }
-
-    inline JsonIterator end() { return NULL; }
-
-  private:
-    class JsonAllocator
-    {
-      private:
-        struct Zone
-        {
-          Zone *next;
-          size_t used;
-        } *head;
-
-      public:
-        JsonAllocator() : head(NULL) {}
-        /* TODO
-        JsonAllocator(const JsonAllocator &) = delete;
-        JsonAllocator &operator=(const JsonAllocator &) = delete;
-        JsonAllocator(JsonAllocator &&x) : head(x.head) {
-            x.head = NULL;
-        }
-        JsonAllocator &operator=(JsonAllocator &&x) {
-            head = x.head;
-            x.head = NULL;
-            return *this;
-        }
-        */
-        ~JsonAllocator() { deallocate(); }
-        void *allocate(size_t size);
-        void deallocate();
-    };
-
-    static inline bool isspace(char c)
-    {
-        return c == ' ' || (c >= '\t' && c <= '\r');
-    }
-
-    static inline bool isdelim(char c)
-    {
-        return c == ',' || c == ':' || c == ']' || c == '}' || isspace(c) || !c;
-    }
-
-    static inline bool isdigit(char c)
-    {
-        return c >= '0' && c <= '9';
-    }
-
-    static inline bool isxdigit(char c)
-    {
-        return (c >= '0' && c <= '9') || ((c & ~' ') >= 'A' && (c & ~' ') <= 'F');
-    }
-
-    static inline int char2int(char c)
-    {
-        if (c <= '9')
-            return c - '0';
-        return (c & ~' ') - 'A' + 10;
-    }
-
-    static double string2double(char *s, char **endptr);
-
-    static inline JsonNode *insertAfter(JsonNode *tail, JsonNode *node)
-    {
-      if (!tail) return node->next = node;
-      node->next = tail->next;
-      tail->next = node;
-      return node;
-    }
-
-    static inline JsonValue listToValue(JsonTag tag, JsonNode *tail)
-    {
-      if (tail)
-      {
-          JsonNode *head = tail->next;
-          tail->next = NULL;
-          return JsonValue(tag, head);
-      }
-      return JsonValue(tag, NULL);
-    }
-
-    /** Parsing routine. */
-    void parse(char *str, JsonValue *value, JsonAllocator &allocator);
-
-    /** Visitor function. */
-    void visit(Object*, JsonValue);
+    // Handler callback functions
+    bool Null();
+    bool Bool(bool b);
+    bool Int(int i);
+    bool Uint(unsigned u);
+    bool Int64(int64_t i);
+    bool Uint64(uint64_t u);
+    bool Double(double d);
+    bool String(const char* str, rapidjson::SizeType length, bool copy);
+    bool StartObject();
+    bool Key(const char* str, rapidjson::SizeType length, bool copy);
+    bool EndObject(rapidjson::SizeType memberCount);
+    bool StartArray();
+    bool EndArray(rapidjson::SizeType elementCount);
 
   protected:
-    void parse(Object*, char*);
+    /** Parser function. */
+    void parse(Object* pRoot, char* buffer)
+    {
+      rapidjson::Reader reader;
+      rapidjson::StringStream ss(buffer);
+      reader.Parse(ss, *this);
+    }
 };
 
 
 class JSONAttributeList : public DataValueDict
 {
   private:
-    JSONInput::JsonNode *node;
+    //JSONInput::JsonNode *node;
   public:
     virtual const DataValue* get(const Keyword&) const;
 };
