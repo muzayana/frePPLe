@@ -738,57 +738,32 @@ class JSONSerializerString : public JSONSerializer
 PyObject* saveJSONfile(PyObject* self, PyObject* args);
 
 
-/** @brief A JSON parser, using the rapidjson library.
-  *
-  * See https://github.com/miloyip/rapidjson for information on rapidjson,
-  * which is released under the MIT license.
-  */
-class JSONInput : public NonCopyable
+class JSONData : public DataValue
 {
-  friend rapidjson::Reader;
-  private:
-    // Handler callback functions
-    bool Null();
-    bool Bool(bool b);
-    bool Int(int i);
-    bool Uint(unsigned u);
-    bool Int64(int64_t i);
-    bool Uint64(uint64_t u);
-    bool Double(double d);
-    bool String(const char* str, rapidjson::SizeType length, bool copy);
-    bool StartObject();
-    bool Key(const char* str, rapidjson::SizeType length, bool copy);
-    bool EndObject(rapidjson::SizeType memberCount);
-    bool StartArray();
-    bool EndArray(rapidjson::SizeType elementCount);
-
-  protected:
-    /** Parser function. */
-    void parse(Object* pRoot, char* buffer)
+  public:
+    /** Field types recognized by the parser. */
+    enum JsonType
     {
-      rapidjson::Reader reader;
-      rapidjson::StringStream ss(buffer);
-      reader.Parse(ss, *this);
-    }
-};
+      JSON_NULL,
+      JSON_BOOL,
+      JSON_INT,
+      JSON_LONG,
+      JSON_UNSIGNEDLONG,
+      JSON_DOUBLE,
+      JSON_STRING,
+      JSON_OBJECT
+    };
 
-
-class JSONAttributeList : public DataValueDict
-{
-  private:
-    //JSONInput::JsonNode *node;
-  public:
-    virtual const DataValue* get(const Keyword&) const;
-};
-
-
-class JSONElement : public DataValue
-{
-  public:
-    virtual operator bool() const;
+    /** Constructor. */
+    JSONData() : data_type(JSON_NULL) {}
 
     /** Destructor. */
-    virtual ~JSONElement() {}
+    virtual ~JSONData() {}
+
+    virtual operator bool() const
+    {
+      return getBool();
+    }
 
     virtual long getLong() const;
 
@@ -805,6 +780,167 @@ class JSONElement : public DataValue
     virtual const string& getString() const;
 
     virtual bool getBool() const;
+
+    virtual Object* getObject() const;
+
+    void setNull()
+    {
+      data_type = JSON_NULL;
+    }
+
+    virtual void setLong(const long l)
+    {
+      data_type = JSON_LONG;
+      data_long = l;
+    }
+
+    virtual void setUnsignedLong(const unsigned long ul)
+    {
+      data_type = JSON_UNSIGNEDLONG;
+      data_long = ul;
+    }
+
+    virtual void setDuration(const Duration d)
+    {
+      data_type = JSON_LONG;
+      data_long = static_cast<long>(d);
+    }
+
+    virtual void setInt(const int i)
+    {
+      data_type = JSON_INT;
+      data_int = i;
+    }
+
+    virtual void setDouble(const double d)
+    {
+      data_type = JSON_DOUBLE;
+      data_double = d;
+    }
+
+    virtual void setDate(const Date d)
+    {
+      data_type = JSON_LONG;
+      data_long = d.getTicks();
+    }
+
+    virtual void setString(const string& s)
+    {
+      data_type = JSON_STRING;
+      data_string = s;
+    }
+
+    virtual void setBool(const bool b)
+    {
+      data_type = JSON_BOOL;
+      data_bool = b;
+    }
+
+    virtual void setObject(Object* o)
+    {
+      data_type = JSON_OBJECT;
+      data_object = o;
+    }
+
+    JsonType getDataType() const
+    {
+      return data_type;
+    }
+
+  private:
+    /** Stores the type of data we're storing. */
+    JsonType data_type;
+
+    /** Data content. */
+    union
+    {
+      bool data_bool;
+      int data_int;
+      long data_long;
+      unsigned long data_unsignedlong;
+      double data_double;
+      Object* data_object;
+    };
+    string data_string;
+};
+
+
+/** @brief A JSON parser, using the rapidjson library.
+  *
+  * The parser only supports UTF-8 encodings. RapidJSON also supports
+  * UTF-16 and UTF-32, but we don't use them for now.
+  *
+  * See https://github.com/miloyip/rapidjson for information on rapidjson,
+  * which is released under the MIT license.
+  */
+class JSONInput : public NonCopyable
+{
+  friend rapidjson::Reader;
+  private:
+    /** This variable defines the maximum depth of the object creation stack.
+      * This maximum is intended to protect us from malicious malformed
+      * documents, and also for allocating efficient data structures for
+      * the parser.
+      */
+    static const int maxobjects = 30;
+    static const int maxdata = 200;
+
+    /** Stack of fields already read. */
+    struct fld
+    {
+      const MetaFieldBase* field;
+      hashtype hash;
+      JSONData value;
+      string name;
+    };
+    vector<fld> data;
+
+    /** Stack of objects and their data fields. */
+    struct obj
+    {
+      const MetaClass* cls;
+      Object* object;
+      int start;
+      hashtype hash;
+    };
+    vector<obj> objects;
+
+    /** Index into the objects stack. */
+    int objectindex;
+
+    /** Index into the data field stack. */
+    int dataindex;
+
+    // Handler callback functions for rapidjson
+    bool Null();
+    bool Bool(bool b);
+    bool Int(int i);
+    bool Uint(unsigned u);
+    bool Int64(int64_t i);
+    bool Uint64(uint64_t u);
+    bool Double(double d);
+    bool String(const char* str, rapidjson::SizeType length, bool copy);
+    bool StartObject();
+    bool Key(const char* str, rapidjson::SizeType length, bool copy);
+    bool EndObject(rapidjson::SizeType memberCount);
+    bool StartArray();
+    bool EndArray(rapidjson::SizeType elementCount);
+
+  protected:
+    /** Constructor. */
+    JSONInput() : data(maxdata), objects(maxobjects) {}
+
+    /** Main parser function. */
+    void parse(Object* pRoot, char* buffer);
+};
+
+
+class JSONAttributeList : public DataValueDict
+{
+  private:
+    //JSONInput::JsonNode *node;
+  public:
+    virtual const DataValue* get(const Keyword&) const;
 };
 
 

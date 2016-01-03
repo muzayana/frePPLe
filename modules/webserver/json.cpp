@@ -14,6 +14,10 @@
 #include "json.h"
 #include <iomanip>
 
+/* Uncomment the next line to create a lot of debugging messages during
+ * the parsing of the data. */
+#define PARSE_DEBUG
+
 // With VC++ we use the Win32 functions to browse a directory
 #ifdef _MSC_VER
 #define WIN32_LEAN_AND_MEAN
@@ -163,6 +167,7 @@ void JSONInputFile::parse(Object *pRoot)
   {
     // Normal file
     // Read the complete file in a memory buffer
+    // TODO parse directly by passing the rapidjson parser a filestream
     ifstream t;
     t.open(filename.c_str());
     t.seekg(0, ios::end);
@@ -246,83 +251,395 @@ PyObject* readJSONdata(PyObject *self, PyObject *args)
 }
 
 
+void JSONInput::parse(Object* pRoot, char* buffer)
+{
+  if (!objectindex)
+    throw DataException("JSON parser not empty");
+  if (!pRoot)
+    throw DataException("Can't parse JSON data into NULL root object");
+
+  // Initialize the parser to read data into the object pRoot.
+  objectindex = 0;
+  dataindex = -1;
+  objects[0].start = 0;
+  objects[0].object = pRoot;
+  objects[0].cls = &pRoot->getType();
+  objects[0].hash = pRoot->getType().typetag->getHash();
+
+  // Call rapidjson
+  // TODO Extra setting for in-site parsing
+  rapidjson::Reader reader;
+  rapidjson::StringStream buf(buffer);
+  reader.Parse(buf, *this);
+}
+
+
 bool JSONInput::Null()
 {
-  cout << "Null()" << endl; return true;
+  if (dataindex >= 0)
+    data[dataindex].value.setNull();
+  return true;
 }
 
 
 bool JSONInput::Bool(bool b)
 {
-  cout << "Bool(" << boolalpha << b << ")" << endl; return true;
+  if (dataindex >= 0)
+    data[dataindex].value.setBool(b);
+  return true;
 }
 
 
 bool JSONInput::Int(int i)
 {
-  cout << "Int(" << i << ")" << endl; return true;
+  if (dataindex >= 0)
+    data[dataindex].value.setInt(i);
+  return true;
 }
 
 
 bool JSONInput::Uint(unsigned u)
 {
-  cout << "Uint(" << u << ")" << endl; return true;
+  if (dataindex >= 0)
+    data[dataindex].value.setLong(u);
+  return true;
 }
 
 
 bool JSONInput::Int64(int64_t i)
 {
-  cout << "Int64(" << i << ")" << endl; return true;
+  if (dataindex >= 0)
+    data[dataindex].value.setLong(i);
+  return true;
 }
 
 
 bool JSONInput::Uint64(uint64_t u)
 {
-  cout << "Uint64(" << u << ")" << endl; return true;
+  if (dataindex >= 0)
+    data[dataindex].value.setUnsignedLong(u);
+  return true;
 }
 
 
 bool JSONInput::Double(double d)
 {
-  cout << "Double(" << d << ")" << endl; return true;
+  if (dataindex >= 0)
+    data[dataindex].value.setDouble(d);
+  return true;
 }
 
 
 bool JSONInput::String(const char* str, rapidjson::SizeType length, bool copy)
 {
-    cout << "String(" << str << ", " << length << ", " << boolalpha << copy << ")" << endl;
-    return true;
+  if (dataindex >= 0)
+    data[dataindex].value.setString(str);
+  return true;
 }
 
 
 bool JSONInput::StartObject()
 {
-  cout << "StartObject()" << endl; return true;
+  if (++objectindex >= maxobjects)
+    // You're joking?
+    throw DataException("JSON-document nested excessively deep");
+
+  // Debugging message
+  #ifdef PARSE_DEBUG
+  logger << "Starting object #" << objectindex << endl;
+  #endif
+  return true;
 }
 
 
 bool JSONInput::Key(const char* str, rapidjson::SizeType length, bool copy)
 {
-    cout << "Key(" << str << ", " << length << ", " << boolalpha << copy << ")" << endl;
-    return true;
+  // Look up the field
+  data[++dataindex].value.setNull();
+  data[dataindex].hash = Keyword::hash(str);
+  data[dataindex].name = str;
+
+  /* XXX TODO
+  data[dataindex].field = objects[objectindex].cls->findField(data[dataindex].hash);
+  if (!data[dataindex].field && objects[objectindex].cls->category)
+    data[dataindex].field = objects[objectindex].cls->category->findField(data[dataindex].hash);
+  if (!data[dataindex].field)
+    throw DataException("Field '" + string(str) + "' not defined");
+  */
+  // Debugging message
+  #ifdef PARSE_DEBUG
+  logger << "Reading field #" << dataindex << " '" << str
+    << "' for object #" << objectindex << " ("
+    << ((objectindex >= 0 && objects[objectindex].cls) ? objects[objectindex].cls->type : "none")
+    << ")" << endl;
+  #endif
+
+  return true;
 }
 
 
 bool JSONInput::EndObject(rapidjson::SizeType memberCount)
 {
-  cout << "EndObject(" << memberCount << ")" << endl; return true;
+  // Debugging
+  #ifdef PARSE_DEBUG
+  cout << "Ending Object #" << objectindex << " (" << memberCount << ")" << endl;
+  for (int i = 0; i <= static_cast<int>(memberCount); ++i)
+  {
+    if (dataindex - i < 0)
+      break;
+    logger << "   " << (dataindex - i)
+      << " " << data[dataindex - i].name
+      << " (" << data[dataindex - i].value.getDataType()
+      << "): " << data[dataindex - i].value.getString()  << endl;
+  }
+  #endif
+
+  // Update stack
+  dataindex -= memberCount;
+  --objectindex;
+  return true;
 }
 
 
 bool JSONInput::StartArray()
 {
-  cout << "StartArray()" << endl; return true;
+  #ifdef PARSE_DEBUG
+  logger << "Starting array" << endl;
+  #endif
+  return true;
 }
 
 
 bool JSONInput::EndArray(rapidjson::SizeType elementCount)
 {
-  cout << "EndArray(" << elementCount << ")" << endl; return true;
+  #ifdef PARSE_DEBUG
+  logger << "Ending array" << endl;
+  #endif
+  return true;
 }
+
+
+long JSONData::getLong() const
+{
+  switch (data_type)
+  {
+    case JSON_NULL:
+      return 0;
+    case JSON_INT:
+      return data_int;
+    case JSON_LONG:
+      return data_long;
+    case JSON_UNSIGNEDLONG:
+      return data_unsignedlong;
+    case JSON_DOUBLE:
+      return data_double;
+    case JSON_STRING:
+      return atol(data_string.c_str());
+    case JSON_OBJECT:
+      throw DataException("Invalid JSON data");
+  }
+  throw DataException("Unknown JSON type");
+}
+
+
+unsigned long JSONData::getUnsignedLong() const
+{
+  switch (data_type)
+  {
+    case JSON_NULL:
+      return 0;
+    case JSON_INT:
+      return data_int;
+    case JSON_LONG:
+      return data_long;
+    case JSON_UNSIGNEDLONG:
+      return data_unsignedlong;
+    case JSON_DOUBLE:
+      return data_double;
+    case JSON_STRING:
+      return atol(data_string.c_str());
+    case JSON_OBJECT:
+      throw DataException("Invalid JSON data");
+  }
+  throw DataException("Unknown JSON type");
+}
+
+
+Duration JSONData::getDuration() const
+{
+  switch (data_type)
+  {
+    case JSON_NULL:
+      return Duration(0L);
+    case JSON_INT:
+      return data_int;
+    case JSON_LONG:
+      return data_long;
+    case JSON_UNSIGNEDLONG:
+      return data_unsignedlong;
+    case JSON_DOUBLE:
+      return data_double;
+    case JSON_STRING:
+      return atol(data_string.c_str());
+    case JSON_OBJECT:
+      throw DataException("Invalid JSON data");
+  }
+  throw DataException("Unknown JSON type");
+}
+
+
+int JSONData::getInt() const
+{
+  switch (data_type)
+  {
+    case JSON_NULL:
+      return 0;
+    case JSON_INT:
+      return data_int;
+    case JSON_LONG:
+      return data_long;
+    case JSON_UNSIGNEDLONG:
+      return data_unsignedlong;
+    case JSON_DOUBLE:
+      return data_double;
+    case JSON_STRING:
+      return atol(data_string.c_str());
+    case JSON_OBJECT:
+      throw DataException("Invalid JSON data");
+  }
+  throw DataException("Unknown JSON type");
+}
+
+
+double JSONData::getDouble() const
+{
+  switch (data_type)
+  {
+    case JSON_NULL:
+      return 0;
+    case JSON_INT:
+      return data_int;
+    case JSON_LONG:
+      return data_long;
+    case JSON_UNSIGNEDLONG:
+      return data_unsignedlong;
+    case JSON_DOUBLE:
+      return data_double;
+    case JSON_STRING:
+      return atol(data_string.c_str());
+    case JSON_OBJECT:
+      throw DataException("Invalid JSON data");
+  }
+  throw DataException("Unknown JSON type");
+}
+
+
+Date JSONData::getDate() const
+{
+  switch (data_type)
+  {
+    case JSON_NULL:
+      return Date();
+    case JSON_INT:
+      return Date(data_int);
+    case JSON_LONG:
+      return Date(data_long);
+    case JSON_UNSIGNEDLONG:
+      return Date(data_unsignedlong);
+    case JSON_DOUBLE:
+      return Date(data_double);
+    case JSON_STRING:
+      return Date(data_string.c_str());
+    case JSON_OBJECT:
+      throw DataException("Invalid JSON data");
+  }
+  throw DataException("Unknown JSON type");
+}
+
+
+const string& JSONData::getString() const
+{
+  switch (data_type)
+  {
+    case JSON_NULL:
+      const_cast<JSONData*>(this)->data_string = "NULL";
+      return data_string;
+    case JSON_INT:
+      {
+      ostringstream convert;
+      convert << data_int;
+      const_cast<JSONData*>(this)->data_string = convert.str();
+      return data_string;
+      }
+    case JSON_LONG:
+      {
+      ostringstream convert;
+      convert << data_long;
+      const_cast<JSONData*>(this)->data_string = convert.str();
+      return data_string;
+      }
+    case JSON_UNSIGNEDLONG:
+      {
+      ostringstream convert;
+      convert << data_unsignedlong;
+      const_cast<JSONData*>(this)->data_string = convert.str();
+      return data_string;
+      }
+    case JSON_DOUBLE:
+      {
+      ostringstream convert;
+      convert << data_double;
+      const_cast<JSONData*>(this)->data_string = convert.str();
+      return data_string;
+      }
+    case JSON_STRING:
+      return data_string;
+    case JSON_OBJECT:
+      throw DataException("Invalid JSON data");
+  }
+  throw DataException("Unknown JSON type");
+}
+
+
+bool JSONData::getBool() const
+{
+  switch (data_type)
+  {
+    case JSON_NULL:
+      return false;
+    case JSON_INT:
+      return data_int != 0;
+    case JSON_LONG:
+      return data_long != 0;
+    case JSON_UNSIGNEDLONG:
+      return data_unsignedlong != 0;
+    case JSON_DOUBLE:
+      return data_double != 0;
+    case JSON_STRING:
+      return !data_string.empty();
+    case JSON_OBJECT:
+      return data_object != NULL;
+  }
+  throw DataException("Unknown JSON type");
+}
+
+
+Object* JSONData::getObject() const
+{
+  switch (data_type)
+  {
+    case JSON_NULL:
+    case JSON_INT:
+    case JSON_LONG:
+    case JSON_UNSIGNEDLONG:
+    case JSON_DOUBLE:
+    case JSON_STRING:
+      throw DataException("Invalid JSON data");
+    case JSON_OBJECT:
+      return data_object;
+  }
+  throw DataException("Unknown JSON type");
+}
+
 
 }       // end namespace
