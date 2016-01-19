@@ -398,8 +398,6 @@ function collectChanges() {
 		result.parameters['roq_min_poc'] = prmtr["roq_min_poc"] = $("#roq_min_poc").val();
 	if ($("#service_level").hasClass('dirty-cell'))
 		result.parameters['service_level'] = prmtr["service_level"] = $("#service_level").val();
-	if ($("#demand_distribution").hasClass('red'))
-		result.parameters['demand_distribution'] = prmtr["demand_distribution"] = $("#demand_distribution").val();
 	if ($("#demand_deviation").hasClass('dirty-cell'))
 		result.parameters['demand_deviation'] = prmtr["demand_deviation"] = $("#demand_deviation").val();
 	if ($("#leadtime_deviation").hasClass('dirty-cell'))
@@ -1083,8 +1081,6 @@ function displayResult(reset)
 	  $("#roq_min_poc").val(result.parameters.roq_min_poc);
   if ("service_level" in result.parameters)
 	  $("#service_level").val(result.parameters.service_level);
-  if ("demand_distribution" in result.parameters)
-	  $("#demand_distribution").val(result.parameters.demand_distribution);
   if ("demand_deviation" in result.parameters)
 	  $("#demand_deviation").val(result.parameters.demand_deviation);
   if ("leadtime_deviation" in result.parameters)
@@ -1101,7 +1097,6 @@ function displayResult(reset)
     $("#roq_min_qty").removeClass('dirty-cell');
     $("#roq_min_poc").removeClass('dirty-cell');
     $("#service_level").removeClass('dirty-cell');
-    $("#demand_distribution").removeClass('red');
     $("#demand_deviation").removeClass('dirty-cell');
     $("#leadtime_deviation").removeClass('dirty-cell');
     $("#ss_min_qty").removeClass('dirty-cell');
@@ -1412,13 +1407,6 @@ $(function() {
 </td><td valign="top">
 <input type="radio" id="ss_type_calculated" name="ss_type" value="calculated" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="clickSStype()"{% else %}disabled="disabled"{% endif %}><label for="ss_type_calculated">&nbsp;{% trans "service level"|capfirst %}: <span id="ss_calculated">&nbsp;&nbsp;&nbsp;&nbsp;</span> {% trans "units" %}<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{% trans "minimum"|capfirst %} <input type="number" id="service_level"{% if perms.inventoryplanning.change_inventoryplanning %} oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" {% else %} readonly="true" {% endif %}min="0" max="100" size="7"> %<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{% trans "statistical distribution"|capfirst %}
-<select name="actions" id="demand_distribution"{% if perms.inventoryplanning.change_inventoryplanning %} onchange="activateSaveUndo(); $(this).addClass('dirty-cell red')" {% else %} disabled="disabled" {% endif %}style="display: initial" class="ui-corner-all ui-selectmenu-default ui-state-enabled">
-  <option value="automatic">{% filter capfirst %}{% trans "automatic" %}{% endfilter %}</option>
-  <option value="normal">{% filter capfirst %}{% trans "normal" context "statistical distribution" %}{% endfilter %}</option>
-  <option value="poisson">{% filter capfirst %}{% trans "poisson" context "statistical distribution" %}{% endfilter %}</option>
-  <option value="negbinomial">{% filter capfirst %}{% trans "negative binomial" context "statistical distribution" %}{% endfilter %}</option>
-</select><br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{% trans "demand standard deviation"|capfirst %} <input style="width:80px" type="number" id="demand_deviation"{% if perms.inventoryplanning.change_inventoryplanning %} oninput="activateSaveUndo(); $(this).addClass('dirty-cell');" {% else %} readonly="true" {% endif %}size="7"> {% trans "units" %}<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{% trans "lead time standard deviation"|capfirst %} <input style="width:80px" type="number" id="leadtime_deviation"{% if perms.inventoryplanning.change_inventoryplanning %} oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" {% else %} readonly="true" {% endif %}size="7"> {% trans "days" %}</label><br/>
 <input type="radio" id="ss_type_quantity" name="ss_type" value="quantity" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="clickSStype()"{% else %}disabled="disabled"{% endif %}><label for="ss_type_quantity">&nbsp;{% trans "quantity"|capfirst %}<input style="width:80px" type="number" id="ss_min_qty"{% if perms.change_inventoryplanning %}  oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" {% else %} readonly="true" {% endif %}min="1"> {% trans "units"|capfirst %}</label><br/>
