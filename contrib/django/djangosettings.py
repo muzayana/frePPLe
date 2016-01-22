@@ -179,18 +179,18 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'rest_framework',
     'freppledb.boot',
     'freppledb.quoting',
     'freppledb.inventoryplanning',
     'freppledb.forecast',
-    'freppledb.odoo',
-    'freppledb.openbravo',
+    #'freppledb.odoo',
+    #'freppledb.openbravo',
     'freppledb.planningboard',
     'freppledb.input',
     'freppledb.output',
     'freppledb.execute',
     'freppledb.common',
+    'rest_framework',
 )
 
 # Custom attribute fields in the database
@@ -362,6 +362,9 @@ DEFAULT_PAGESIZE = 100
 DEFAULT_DASHBOARD = [
   {'width':'50%', 'widgets':[
     ("welcome",{}),
+    ("purchase_orders", {"fence1": 7, "fence2": 30}),
+    ("distribution_orders", {"fence1": 7, "fence2": 30}),
+    ("manufacturing_orders", {"fence1": 7, "fence2": 30}),
     ("resource_queue",{"limit":20}),
     ("purchase_queue",{"limit":20}),
     ("shipping_queue",{"limit":20}),
