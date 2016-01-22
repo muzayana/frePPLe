@@ -113,7 +113,7 @@ using namespace std;
 #include <config.h>
 #else
 // Define the version for (windows) compilers that don't use autoconf
-#define PACKAGE_VERSION "3.0.beta"
+#define PACKAGE_VERSION "3.1.beta"
 #endif
 
 // Header for multithreading
@@ -6992,6 +6992,8 @@ template <class Cls, class Iter, class PyIter, class Ptr> class MetaFieldIterato
         case PLAN:
           if (!getFlag(PLAN))
             return;
+          break;
+        default:
           break;
       }
       if (getFlag(DONT_SERIALIZE) || !getf)

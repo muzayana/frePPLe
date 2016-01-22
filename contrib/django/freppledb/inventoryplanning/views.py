@@ -173,8 +173,6 @@ class InventoryPlanningList(GridReport):
     GridFieldNumber('service_level', title=_('service level'), extra="formatoptions:{defaultValue:''}"),
     GridFieldNumber('leadtime_deviation', title=_('lead time deviation'), extra="formatoptions:{defaultValue:''}"),
     GridFieldNumber('demand_deviation', title=_('demand deviation'), extra="formatoptions:{defaultValue:''}"),
-    GridFieldChoice('demand_distribution', title=_('demand distribution'),
-      choices=InventoryPlanning.distributions, extra="formatoptions:{defaultValue:''}"),
     GridFieldBool('nostock', title=_("Do not stock")),
     GridFieldText('source', title=_('source')),
     GridFieldLastModified('lastmodified')
@@ -616,7 +614,6 @@ class DRPitemlocation(View):
         "roq_min_poc": int(ip.roq_min_poc) if ip.roq_min_poc is not None else None,
         "ss_min_poc": int(ip.ss_min_poc) if ip.ss_min_poc is not None else None,
         "roq_min_qty": str(ip.roq_min_qty) if ip.roq_min_qty is not None else None,
-        "demand_distribution": ip.demand_distribution if ip.demand_distribution else 'automatic',
         "ss_max_qty": int(ip.ss_max_qty) if ip.ss_max_qty is not None else None,
         "leadtime_deviation": str(ip.leadtime_deviation) if ip.leadtime_deviation is not None else None,
         "roq_max_qty": int(ip.roq_max_qty) if ip.roq_max_qty is not None else None,
@@ -846,7 +843,7 @@ class DRPitemlocation(View):
 
       # Edits by value or by units?
       if editvalue:
-        factor = ip.buffer.item.price
+        factor = float(ip.buffer.item.price)
         if not factor:
           factor = 1.0
       else:
@@ -1044,9 +1041,6 @@ class DRPitemlocation(View):
                   ip.nostock = True
                 else:
                   ip.nostock = False
-              val = param.get('demand_distribution', None)
-              if val is not None:
-                ip.demand_distribution = val
               ip.save(using=request.database)
 
           # Save transactions
@@ -1434,8 +1428,6 @@ class DRPitemlocation(View):
       frepple_buf.leadtime_deviation = db_ip.leadtime_deviation
     if db_ip.demand_deviation:
       frepple_buf.demand_deviation = db_ip.demand_deviation
-    if db_ip.demand_distribution:
-      frepple_buf.demand_distribution = db_ip.demand_distribution
     if db_ip.service_level:
       frepple_buf.service_level = db_ip.service_level
     if db_ip.ss_min_qty:
@@ -1484,9 +1476,6 @@ class DRPitemlocation(View):
       val = changes['parameters'].get('demand_deviation', None)
       if val:
         frepple_buf.demand_deviation = val
-      val = changes['parameters'].get('demand_distribution', None)
-      if val:
-        frepple_buf.demand_distribution = val
       val = changes['parameters'].get('service_level', None)
       if val:
         frepple_buf.service_level = val

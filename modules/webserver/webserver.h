@@ -374,7 +374,7 @@ class WebClient : public Association<PublisherBase,WebClient,Subscription>::List
     static void addClient(struct mg_connection* conn);
 
     /** Unregister a client. */
-    static void removeClient(struct mg_connection* conn);
+    static void removeClient(const struct mg_connection* conn);
 
     /** Verify whether the client limit is reached or not. */
     static bool authenticate(const struct mg_connection* conn);
@@ -631,7 +631,7 @@ class WebServer : public CivetHandler
     static void ready_callback(struct mg_connection*);
 
     /** Callback function when a websocket client is disconnecting. */
-    static void close_callback(struct mg_connection*);
+    static void close_callback(const struct mg_connection*);
 
     /** Load the recent chat history from the database into a memory buffer. */
     static void loadChatHistory(const string&);

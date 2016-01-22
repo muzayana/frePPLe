@@ -18,7 +18,7 @@ namespace module_webserver
 
 bool WebServer::handleDelete(CivetServer *server, struct mg_connection *conn)
 {
-  struct mg_request_info *request_info = mg_get_request_info(conn);
+  const struct mg_request_info *request_info = mg_get_request_info(conn);
 
   // Check if the first section of the URL is a category name
   const char* slash = strchr(request_info->uri + 1, '/');
@@ -31,8 +31,7 @@ bool WebServer::handleDelete(CivetServer *server, struct mg_connection *conn)
   if (!cat)
   {
     mg_printf(conn,
-      "HTTP/1.1 404 Not found\r\n"
-      "Content-Length: 112\r\n\r\n"
+      "HTTP/1.1 404 Not Found\r\n\r\n"
       "<html><head><title>Category not found</title></head><body>Sorry, the entity category doesn't exist.</body></html>"
       );
     return true;
@@ -40,7 +39,7 @@ bool WebServer::handleDelete(CivetServer *server, struct mg_connection *conn)
 
   // Return a single object
   string entitykey = slash + 1;
-  vector<XMLInput::fld> f;
+  vector<XMLInput::fld> f(1);
   f[0].name = "name";
   f[0].hash = Tags::name.getHash();
   f[0].value = entitykey;
@@ -50,8 +49,7 @@ bool WebServer::handleDelete(CivetServer *server, struct mg_connection *conn)
   if (!entity)
   {
     mg_printf(conn,
-      "HTTP/1.1 404 Not found\r\n"
-      "Content-Length: 112\r\n\r\n"
+      "HTTP/1.1 404 Not Found\r\n\r\n"
       "<html><head><title>Entity not found</title></head><body>Sorry, the requested object doesn't exist.</body></html>"
       );
     return true;
@@ -123,17 +121,16 @@ bool WebServer::handleDelete(CivetServer *server, struct mg_connection *conn)
     }
 
     delete entity;
+
     mg_printf(conn,
-      "HTTP/1.1 200 OK\r\n"
-      "Content-Length: 20\r\n\r\n"
+      "HTTP/1.1 200 OK\r\n\r\n"
       "Successfully deleted"
       );
   }
   catch (...)
   {
     mg_printf(conn,
-      "HTTP/1.1 500 Server error\r\n"
-      "Content-Length: 105\r\n\r\n"
+      "HTTP/1.1 500 Internal Server Error\r\n\r\n"
       "<html><head><title>Server error</title></head><body>Exception occurred when deleting object</body></html>"
       );
   }

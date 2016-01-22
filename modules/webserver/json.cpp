@@ -14,6 +14,10 @@
 #include "json.h"
 #include <iomanip>
 
+/* Uncomment the next line to create a lot of debugging messages during
+ * the parsing of the data. */
+#define PARSE_DEBUG
+
 // With VC++ we use the Win32 functions to browse a directory
 #ifdef _MSC_VER
 #define WIN32_LEAN_AND_MEAN
@@ -48,7 +52,8 @@ PyObject* saveJSONfile(PyObject* self, PyObject* args)
   // Pick up arguments
   char *filename;
   char *content = NULL;
-  int ok = PyArg_ParseTuple(args, "s|s:save", &filename, &content);
+  int formatted = 0;
+  int ok = PyArg_ParseTuple(args, "s|sp:saveJSONfile", &filename, &content, &formatted);
   if (!ok) return NULL;
 
   // Execute and catch exceptions
@@ -67,8 +72,11 @@ PyObject* saveJSONfile(PyObject* self, PyObject* args)
       else
         throw DataException("Invalid content type '" + string(content) + "'");
     }
+    if (formatted)
+      o.setFormatted(true);
     o.setMode(true);
     o.pushCurrentObject(&Plan::instance());
+    o.incParents();
     Plan::instance().writeElement(&o, Tags::plan);
   }
   catch (...)
@@ -106,52 +114,6 @@ void JSONSerializer::escape(const string& x)
     }
   }
   *m_fp << "\"";
-}
-
-
-void JSONInput::visit(Object *pRoot, JSONInput::JsonValue o)
-{
-  switch (o.getTag())
-  {
-    case JSON_NUMBER:
-        logger << "NUMBER: " << o.toNumber() << endl;
-        break;
-    case JSON_STRING:
-        logger << "STRING: " << o.toString() << endl;
-        break;
-    case JSON_ARRAY:
-        logger << "ARRAY starting" << endl;
-        for (JsonIterator i = begin(o); i != end(); ++i)
-          visit(pRoot, i->value);
-        logger << "ARRAY ending" << endl;
-        break;
-    case JSON_OBJECT:
-        for (JsonIterator i = begin(o); i != end(); ++i)
-        {
-          logger << "OBJECT starting "  << i->key << endl;
-          visit(pRoot, i->value);
-        logger << "OBJECT ending" << endl;
-        }
-        break;
-    case JSON_TRUE:
-        logger << "TRUE" << endl;
-        break;
-    case JSON_FALSE:
-        logger << "FALSE" << endl;
-        break;
-    case JSON_NULL:
-        logger << "NULL" << endl;
-        break;
-    }
-}
-
-
-void JSONInput::parse(Object *pRoot, char* buf)
-{
-  JSONInput::JsonValue value;
-  JSONInput::JsonAllocator allocator;
-  JSONInput::parse(buf, &value, allocator);
-  visit(pRoot, value);
 }
 
 
@@ -205,6 +167,7 @@ void JSONInputFile::parse(Object *pRoot)
   {
     // Normal file
     // Read the complete file in a memory buffer
+    // TODO parse directly by passing the rapidjson parser a filestream
     ifstream t;
     t.open(filename.c_str());
     t.seekg(0, ios::end);
@@ -219,305 +182,6 @@ void JSONInputFile::parse(Object *pRoot)
     // Parse the data
     JSONInput::parse(pRoot, buffer);
   }
-}
-
-
-#define JSON_ZONE_SIZE 4096
-#define JSON_STACK_SIZE 32
-
-
-void *JSONInput::JsonAllocator::allocate(size_t size)
-{
-  size = (size + 7) & ~7;
-
-  if (head && head->used + size <= JSON_ZONE_SIZE)
-  {
-    char *p = (char *)head + head->used;
-    head->used += size;
-    return p;
-  }
-
-  size_t allocSize = sizeof(Zone) + size;
-  Zone *zone = (Zone *)malloc(allocSize <= JSON_ZONE_SIZE ? JSON_ZONE_SIZE : allocSize);
-  zone->used = allocSize;
-  if (allocSize <= JSON_ZONE_SIZE || head == NULL)
-  {
-    zone->next = head;
-    head = zone;
-  }
-  else
-  {
-    zone->next = head->next;
-    head->next = zone;
-  }
-  return (char *)zone + sizeof(Zone);
-}
-
-
-void JSONInput::JsonAllocator::deallocate()
-{
-  while (head)
-  {
-    Zone *next = head->next;
-    free(head);
-    head = next;
-  }
-}
-
-
-double JSONInput::string2double(char *s, char **endptr)
-{
-  // Skip sign
-  char ch = *s;
-  if (ch == '-') ++s;
-
-  // Before the decimal
-  double result = 0;
-  while (isdigit(*s))
-    result = result * 10 + (*s++ - '0');
-
-  // Decimal and after
-  if (*s == '.') 
-  {
-    ++s;
-    double fraction = 1;
-    while (isdigit(*s)) 
-    {
-      fraction *= 0.1;
-      result += (*s++ - '0') * fraction;
-    }
-  }
-
-  // Exponent
-  if (*s == 'e' || *s == 'E') 
-  {
-    ++s;
-
-    double base = 10;
-    if (*s == '+')
-      ++s;
-    else if (*s == '-') 
-    {
-      ++s;
-      base = 0.1;
-    }
-
-    int exponent = 0;
-    while (isdigit(*s))
-      exponent = (exponent * 10) + (*s++ - '0');
-
-    double power = 1;
-    for (; exponent; exponent >>= 1, base *= base)
-      if (exponent & 1)
-        power *= base;
-
-    result *= power;
-  }
-
-  // Final result
-  *endptr = s;
-  return ch == '-' ? -result : result;
-}
-
-
-void JSONInput::parse(char *s, JSONInput::JsonValue *value, JSONInput::JsonAllocator &allocator)
-{
-  char *firstChar = s;
-  char *endptr = s;
-  JsonNode *tails[JSON_STACK_SIZE];
-  JsonTag tags[JSON_STACK_SIZE];
-  char *keys[JSON_STACK_SIZE];
-  JsonValue o;
-  int pos = -1;
-  bool separator = true;
-
-  while (*s) 
-  {
-    // Skip leading whitespace
-    while (isspace(*s)) ++s;
-    endptr = s++;
-
-    switch (*endptr) 
-    {
-      case '-':
-        if (!isdigit(*s) && *s != '.') 
-          throw DataException("Invalid JSON data: bad number at position " + (s - firstChar));
-      case '0':
-      case '1':
-      case '2':
-      case '3':
-      case '4':
-      case '5':
-      case '6':
-      case '7':
-      case '8':
-      case '9':
-        o = JsonValue(string2double(endptr, &s));
-        if (!isdelim(*s)) 
-          throw DataException("Invalid JSON data: bad number at position " + (s - firstChar));
-        break;
-      case '"':
-        o = JsonValue(JSON_STRING, s);
-        for (char *it = s; *s; ++it, ++s) 
-        {
-          int c = *it = *s;
-          if (c == '\\') 
-          {
-            c = *++s;
-            switch (c) 
-            {
-              case '\\':
-              case '"':
-              case '/':
-                *it = c;
-                break;
-              case 'b':
-                *it = '\b';
-                break;
-              case 'f':
-                *it = '\f';
-                break;
-              case 'n':
-                *it = '\n';
-                break;
-              case 'r':
-                *it = '\r';
-                break;
-              case 't':
-                *it = '\t';
-                break;
-              case 'u':
-                c = 0;
-                for (int i = 0; i < 4; ++i) 
-                {
-                  if (isxdigit(*++s))
-                    c = c * 16 + char2int(*s);
-                  else 
-                    throw DataException("Invalid JSON data: bad string at position " + (s - firstChar));
-                }
-                if (c < 0x80) 
-                  *it = c;
-                else if (c < 0x800) 
-                {
-                  *it++ = 0xC0 | (c >> 6);
-                  *it = 0x80 | (c & 0x3F);
-                } 
-                else 
-                {
-                  *it++ = 0xE0 | (c >> 12);
-                  *it++ = 0x80 | ((c >> 6) & 0x3F);
-                  *it = 0x80 | (c & 0x3F);
-                }
-                break;
-              default:
-                throw DataException("Invalid JSON data: bad string at position " + (s - firstChar));
-              }
-            } 
-          else if ((unsigned int)c < ' ' || c == '\x7F') 
-              throw DataException("Invalid JSON data: bad string at position " + (s - firstChar));
-          else if (c == '"') 
-          {
-            *it = 0;
-            ++s;
-            break;
-          }
-        }
-        if (!isdelim(*s)) 
-          throw DataException("Invalid JSON data: bad string at position " + (s - firstChar));
-        break;
-      case 't':
-        if (!(s[0] == 'r' && s[1] == 'u' && s[2] == 'e' && isdelim(s[3])))
-          throw DataException("Invalid JSON data: bad identifier at position " + (s - firstChar));
-        o = JsonValue(JSON_TRUE);
-        s += 3;
-        break;
-      case 'f':
-        if (!(s[0] == 'a' && s[1] == 'l' && s[2] == 's' && s[3] == 'e' && isdelim(s[4])))
-          throw DataException("Invalid JSON data: bad identifier at position " + (s - firstChar));
-        o = JsonValue(JSON_FALSE);
-        s += 4;
-        break;
-      case 'n':
-        if (!(s[0] == 'u' && s[1] == 'l' && s[2] == 'l' && isdelim(s[3])))
-          throw DataException("Invalid JSON data: bad identifier at position " + (s - firstChar));
-        o = JsonValue(JSON_NULL);
-        s += 3;
-        break;
-      case ']':
-        if (pos == -1)
-          throw DataException("Invalid JSON data: stack underflow at position " + (s - firstChar));
-        if (tags[pos] != JSON_ARRAY)
-          throw DataException("Invalid JSON data: bracket mismatch at position " + (s - firstChar));
-        o = listToValue(JSON_ARRAY, tails[pos--]);
-        break;
-      case '}':
-        if (pos == -1)
-          throw DataException("Invalid JSON data: stack underflow at position " + (s - firstChar));
-        if (tags[pos] != JSON_OBJECT)
-          throw DataException("Invalid JSON data: bracket mismatch at position " + (s - firstChar));
-        if (keys[pos] != NULL)
-          throw DataException("Invalid JSON data: unexpected character at position " + (s - firstChar));
-        o = listToValue(JSON_OBJECT, tails[pos--]);
-        break;
-      case '[':
-        if (++pos == JSON_STACK_SIZE)
-          throw DataException("Invalid JSON data: stack overflow at position " + (s - firstChar));
-        tails[pos] = NULL;
-        tags[pos] = JSON_ARRAY;
-        keys[pos] = NULL;
-        separator = true;
-        continue;
-      case '{':
-        if (++pos == JSON_STACK_SIZE)
-          throw DataException("Invalid JSON data: stack overflow at position " + (s - firstChar));
-        tails[pos] = NULL;
-        tags[pos] = JSON_OBJECT;
-        keys[pos] = NULL;
-        separator = true;
-        continue;
-      case ':':
-        if (separator || keys[pos] == NULL)
-          throw DataException("Invalid JSON data: unexpected character at position " + (s - firstChar));
-        separator = true;
-        continue;
-      case ',':
-        if (separator || keys[pos] != NULL)
-          throw DataException("Invalid JSON data: unexpected character at position " + (s - firstChar));
-        separator = true;
-        continue;
-      case '\0':
-        continue;
-      default:
-        throw DataException("Invalid JSON data: unexpected character at position " + (s - firstChar));
-      }
-
-      separator = false;
-      if (pos == -1) 
-      {
-        endptr = s;
-        *value = o;
-        return;
-      }
-
-      /** TODO The parser builds a DOM-like structure in memory here. We'ld like to send SAX-like events instead, or even better DOM-with-flush. */
-      if (tags[pos] == JSON_OBJECT) 
-      {
-        if (!keys[pos]) 
-        {
-          if (o.getTag() != JSON_STRING)
-            throw DataException("Invalid JSON data: unquoted key at position " + (endptr - firstChar));
-          keys[pos] = o.toString();
-          continue;
-        }
-        tails[pos] = insertAfter(tails[pos], (JsonNode *)allocator.allocate(sizeof(JsonNode)));
-        tails[pos]->key = keys[pos];
-        keys[pos] = NULL;
-      } 
-      else 
-        tails[pos] = insertAfter(tails[pos], (JsonNode *)allocator.allocate(sizeof(JsonNode) - sizeof(char *)));
-      tails[pos]->value = o;
-    }
-    throw LogicException("Unreachable code reached in JSON parser");
 }
 
 
@@ -584,6 +248,397 @@ PyObject* readJSONdata(PyObject *self, PyObject *args)
   }
   Py_END_ALLOW_THREADS   // Reclaim Python interpreter
   return Py_BuildValue("");  // Safer than using Py_None, which is not portable across compilers
+}
+
+
+void JSONInput::parse(Object* pRoot, char* buffer)
+{
+  if (!objectindex)
+    throw DataException("JSON parser not empty");
+  if (!pRoot)
+    throw DataException("Can't parse JSON data into NULL root object");
+
+  // Initialize the parser to read data into the object pRoot.
+  objectindex = 0;
+  dataindex = -1;
+  objects[0].start = 0;
+  objects[0].object = pRoot;
+  objects[0].cls = &pRoot->getType();
+  objects[0].hash = pRoot->getType().typetag->getHash();
+
+  // Call rapidjson
+  // TODO Extra setting for in-site parsing
+  rapidjson::Reader reader;
+  rapidjson::StringStream buf(buffer);
+  reader.Parse(buf, *this);
+}
+
+
+bool JSONInput::Null()
+{
+  if (dataindex >= 0)
+    data[dataindex].value.setNull();
+  return true;
+}
+
+
+bool JSONInput::Bool(bool b)
+{
+  if (dataindex >= 0)
+    data[dataindex].value.setBool(b);
+  return true;
+}
+
+
+bool JSONInput::Int(int i)
+{
+  if (dataindex >= 0)
+    data[dataindex].value.setInt(i);
+  return true;
+}
+
+
+bool JSONInput::Uint(unsigned u)
+{
+  if (dataindex >= 0)
+    data[dataindex].value.setLong(u);
+  return true;
+}
+
+
+bool JSONInput::Int64(int64_t i)
+{
+  if (dataindex >= 0)
+    data[dataindex].value.setLong(i);
+  return true;
+}
+
+
+bool JSONInput::Uint64(uint64_t u)
+{
+  if (dataindex >= 0)
+    data[dataindex].value.setUnsignedLong(u);
+  return true;
+}
+
+
+bool JSONInput::Double(double d)
+{
+  if (dataindex >= 0)
+    data[dataindex].value.setDouble(d);
+  return true;
+}
+
+
+bool JSONInput::String(const char* str, rapidjson::SizeType length, bool copy)
+{
+  if (dataindex >= 0)
+    data[dataindex].value.setString(str);
+  return true;
+}
+
+
+bool JSONInput::StartObject()
+{
+  if (++objectindex >= maxobjects)
+    // You're joking?
+    throw DataException("JSON-document nested excessively deep");
+
+  // Debugging message
+  #ifdef PARSE_DEBUG
+  logger << "Starting object #" << objectindex << endl;
+  #endif
+  return true;
+}
+
+
+bool JSONInput::Key(const char* str, rapidjson::SizeType length, bool copy)
+{
+  // Look up the field
+  data[++dataindex].value.setNull();
+  data[dataindex].hash = Keyword::hash(str);
+  data[dataindex].name = str;
+
+  /* XXX TODO
+  data[dataindex].field = objects[objectindex].cls->findField(data[dataindex].hash);
+  if (!data[dataindex].field && objects[objectindex].cls->category)
+    data[dataindex].field = objects[objectindex].cls->category->findField(data[dataindex].hash);
+  if (!data[dataindex].field)
+    throw DataException("Field '" + string(str) + "' not defined");
+  */
+  // Debugging message
+  #ifdef PARSE_DEBUG
+  logger << "Reading field #" << dataindex << " '" << str
+    << "' for object #" << objectindex << " ("
+    << ((objectindex >= 0 && objects[objectindex].cls) ? objects[objectindex].cls->type : "none")
+    << ")" << endl;
+  #endif
+
+  return true;
+}
+
+
+bool JSONInput::EndObject(rapidjson::SizeType memberCount)
+{
+  // Debugging
+  #ifdef PARSE_DEBUG
+  cout << "Ending Object #" << objectindex << " (" << memberCount << ")" << endl;
+  for (int i = 0; i <= static_cast<int>(memberCount); ++i)
+  {
+    if (dataindex - i < 0)
+      break;
+    logger << "   " << (dataindex - i)
+      << " " << data[dataindex - i].name
+      << " (" << data[dataindex - i].value.getDataType()
+      << "): " << data[dataindex - i].value.getString()  << endl;
+  }
+  #endif
+
+  // Update stack
+  dataindex -= memberCount;
+  --objectindex;
+  return true;
+}
+
+
+bool JSONInput::StartArray()
+{
+  #ifdef PARSE_DEBUG
+  logger << "Starting array" << endl;
+  #endif
+  return true;
+}
+
+
+bool JSONInput::EndArray(rapidjson::SizeType elementCount)
+{
+  #ifdef PARSE_DEBUG
+  logger << "Ending array" << endl;
+  #endif
+  return true;
+}
+
+
+long JSONData::getLong() const
+{
+  switch (data_type)
+  {
+    case JSON_NULL:
+      return 0;
+    case JSON_INT:
+      return data_int;
+    case JSON_LONG:
+      return data_long;
+    case JSON_UNSIGNEDLONG:
+      return data_unsignedlong;
+    case JSON_DOUBLE:
+      return data_double;
+    case JSON_STRING:
+      return atol(data_string.c_str());
+    case JSON_OBJECT:
+      throw DataException("Invalid JSON data");
+  }
+  throw DataException("Unknown JSON type");
+}
+
+
+unsigned long JSONData::getUnsignedLong() const
+{
+  switch (data_type)
+  {
+    case JSON_NULL:
+      return 0;
+    case JSON_INT:
+      return data_int;
+    case JSON_LONG:
+      return data_long;
+    case JSON_UNSIGNEDLONG:
+      return data_unsignedlong;
+    case JSON_DOUBLE:
+      return data_double;
+    case JSON_STRING:
+      return atol(data_string.c_str());
+    case JSON_OBJECT:
+      throw DataException("Invalid JSON data");
+  }
+  throw DataException("Unknown JSON type");
+}
+
+
+Duration JSONData::getDuration() const
+{
+  switch (data_type)
+  {
+    case JSON_NULL:
+      return Duration(0L);
+    case JSON_INT:
+      return data_int;
+    case JSON_LONG:
+      return data_long;
+    case JSON_UNSIGNEDLONG:
+      return data_unsignedlong;
+    case JSON_DOUBLE:
+      return data_double;
+    case JSON_STRING:
+      return atol(data_string.c_str());
+    case JSON_OBJECT:
+      throw DataException("Invalid JSON data");
+  }
+  throw DataException("Unknown JSON type");
+}
+
+
+int JSONData::getInt() const
+{
+  switch (data_type)
+  {
+    case JSON_NULL:
+      return 0;
+    case JSON_INT:
+      return data_int;
+    case JSON_LONG:
+      return data_long;
+    case JSON_UNSIGNEDLONG:
+      return data_unsignedlong;
+    case JSON_DOUBLE:
+      return data_double;
+    case JSON_STRING:
+      return atol(data_string.c_str());
+    case JSON_OBJECT:
+      throw DataException("Invalid JSON data");
+  }
+  throw DataException("Unknown JSON type");
+}
+
+
+double JSONData::getDouble() const
+{
+  switch (data_type)
+  {
+    case JSON_NULL:
+      return 0;
+    case JSON_INT:
+      return data_int;
+    case JSON_LONG:
+      return data_long;
+    case JSON_UNSIGNEDLONG:
+      return data_unsignedlong;
+    case JSON_DOUBLE:
+      return data_double;
+    case JSON_STRING:
+      return atol(data_string.c_str());
+    case JSON_OBJECT:
+      throw DataException("Invalid JSON data");
+  }
+  throw DataException("Unknown JSON type");
+}
+
+
+Date JSONData::getDate() const
+{
+  switch (data_type)
+  {
+    case JSON_NULL:
+      return Date();
+    case JSON_INT:
+      return Date(data_int);
+    case JSON_LONG:
+      return Date(data_long);
+    case JSON_UNSIGNEDLONG:
+      return Date(data_unsignedlong);
+    case JSON_DOUBLE:
+      return Date(data_double);
+    case JSON_STRING:
+      return Date(data_string.c_str());
+    case JSON_OBJECT:
+      throw DataException("Invalid JSON data");
+  }
+  throw DataException("Unknown JSON type");
+}
+
+
+const string& JSONData::getString() const
+{
+  switch (data_type)
+  {
+    case JSON_NULL:
+      const_cast<JSONData*>(this)->data_string = "NULL";
+      return data_string;
+    case JSON_INT:
+      {
+      ostringstream convert;
+      convert << data_int;
+      const_cast<JSONData*>(this)->data_string = convert.str();
+      return data_string;
+      }
+    case JSON_LONG:
+      {
+      ostringstream convert;
+      convert << data_long;
+      const_cast<JSONData*>(this)->data_string = convert.str();
+      return data_string;
+      }
+    case JSON_UNSIGNEDLONG:
+      {
+      ostringstream convert;
+      convert << data_unsignedlong;
+      const_cast<JSONData*>(this)->data_string = convert.str();
+      return data_string;
+      }
+    case JSON_DOUBLE:
+      {
+      ostringstream convert;
+      convert << data_double;
+      const_cast<JSONData*>(this)->data_string = convert.str();
+      return data_string;
+      }
+    case JSON_STRING:
+      return data_string;
+    case JSON_OBJECT:
+      throw DataException("Invalid JSON data");
+  }
+  throw DataException("Unknown JSON type");
+}
+
+
+bool JSONData::getBool() const
+{
+  switch (data_type)
+  {
+    case JSON_NULL:
+      return false;
+    case JSON_INT:
+      return data_int != 0;
+    case JSON_LONG:
+      return data_long != 0;
+    case JSON_UNSIGNEDLONG:
+      return data_unsignedlong != 0;
+    case JSON_DOUBLE:
+      return data_double != 0;
+    case JSON_STRING:
+      return !data_string.empty();
+    case JSON_OBJECT:
+      return data_object != NULL;
+  }
+  throw DataException("Unknown JSON type");
+}
+
+
+Object* JSONData::getObject() const
+{
+  switch (data_type)
+  {
+    case JSON_NULL:
+    case JSON_INT:
+    case JSON_LONG:
+    case JSON_UNSIGNEDLONG:
+    case JSON_DOUBLE:
+    case JSON_STRING:
+      throw DataException("Invalid JSON data");
+    case JSON_OBJECT:
+      return data_object;
+  }
+  throw DataException("Unknown JSON type");
 }
 
 

@@ -19,7 +19,7 @@ namespace module_webserver
 
 bool WebServer::handleGet(CivetServer *server, struct mg_connection *conn)
 {
-  struct mg_request_info *request_info = mg_get_request_info(conn);
+  const struct mg_request_info *request_info = mg_get_request_info(conn);
 
   // Return the index page
   if (!strcmp(request_info->uri, "/index.html"))
@@ -98,7 +98,7 @@ bool WebServer::handleGet(CivetServer *server, struct mg_connection *conn)
   // Find the matching field
   const MetaFieldBase *fld = Plan::metadata->findField(*(cat->grouptag));
 
-  if (fld && (!slash || strncmp(request_info->uri + 1, cat->type.c_str(), slash - request_info->uri - 1)))
+  if (fld && (!slash || !*(slash+1)))
   {
     // CASE 2: Return all objects of a single category
     if (format == "json")
@@ -134,7 +134,7 @@ bool WebServer::handleGet(CivetServer *server, struct mg_connection *conn)
   {
     // CASE 3: Return a single object
     string entitykey = slash + 1;
-    vector<XMLInput::fld> f;
+    vector<XMLInput::fld> f(1);
     f[0].name = "name";
     f[0].hash = Tags::name.getHash();
     f[0].value = entitykey;
@@ -144,8 +144,7 @@ bool WebServer::handleGet(CivetServer *server, struct mg_connection *conn)
     if (!entity)
     {
       mg_printf(conn,
-        "HTTP/1.1 404 Not found\r\n"
-        "Content-Length: 112\r\n\r\n"
+        "HTTP/1.1 404 Not Found\r\n\r\n"
         "<html><head><title>Entity not found</title></head><body>Sorry, the requested object doesn't exist.</body></html>"
         );
       return true;

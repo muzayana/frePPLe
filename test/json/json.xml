@@ -2438,12 +2438,12 @@ frepple.readJSONdata('''
   {"name":"Extra order","quantity":5000,"item":{"name":"product 05"},"due":"2012-01-01T00:00:00","priority":1,"minshipment":500}
   ]}
   ''')
-frepple.saveJSONfile("output.3.xml")
+frepple.saveJSONfile("output.3.xml", "BASE", True)
 
-print("READING JSON FILE AND REPLANNING")
+print("RELOADING ENTIRE MODEL FROM JSON FILE")
 frepple.erase(True)
 frepple.readJSONfile("output.1.xml")
-frepple.saveJSONfile("output.4.xml")
+frepple.saveJSONfile("output.4.xml", "BASE", True)
 ?>
 
 </plan>

@@ -740,7 +740,7 @@ class XMLSerializer : public Serializer
     short int m_nIndent;
 
     /** This string is a null terminated string containing as many spaces as
-      * indicated by the m_indent.
+      * indicated by the m_nIndent.
       * @see incIndent, decIndent
       */
     char indentstring[41];

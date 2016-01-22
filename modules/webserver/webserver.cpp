@@ -176,7 +176,7 @@ void WebServer::ready_callback(struct mg_connection *conn)
 }
 
 
-void WebServer::close_callback(struct mg_connection *conn)
+void WebServer::close_callback(const struct mg_connection *conn)
 {
   // This handler is not specific to websockets, and is also called for
   // HTTP connections.

@@ -30,6 +30,8 @@ typedef unsigned __int64 uint64_t;
 typedef __int64   int64_t;
 #endif
 
+#include "rapidjson/reader.h"
+
 namespace module_webserver
 {
 
@@ -43,10 +45,16 @@ class JSONSerializer : public Serializer
 {
   public:
     /** Constructor with a given stream. */
-    JSONSerializer(ostream& os) : Serializer(os), first(true) {}
+    JSONSerializer(ostream& os) : Serializer(os), formatted(false), first(true), m_nIndent(0)
+    {
+      indentstring[0] = '\0';
+    }
 
     /** Default constructor. */
-    JSONSerializer() : first(true) {}
+    JSONSerializer() : formatted(false), first(true), m_nIndent(0)
+    {
+      indentstring[0] = '\0';
+    }
 
     /** Tweak to toggle between the dictionary and array modes. */
     void setMode(bool f)
@@ -57,12 +65,28 @@ class JSONSerializer : public Serializer
         mode.top() = f;
     }
 
+    void setFormatted(bool b)
+    {
+      formatted = b;
+    }
+
+    bool getFormatted() const
+    {
+      return formatted;
+    }
+
     /** Start writing a new object. This method will open a new tag.<br>
       * Output: "TAG" : {
       */
     void BeginList(const Keyword& t)
     {
-      if (!first)
+      if (formatted)
+      {
+        if (!first)
+          *m_fp << ",\n" << indentstring;
+        incIndent();
+      }
+      else if (!first)
         *m_fp << ",";
       *m_fp << t.getQuoted() << "[";
       first = true;
@@ -74,12 +98,20 @@ class JSONSerializer : public Serializer
       */
     void BeginObject(const Keyword& t)
     {
-      if (!first)
+      if (formatted)
+      {
+        if (!first)
+          *m_fp << ",\n" << indentstring;
+        incIndent();
+      }
+      else if (!first)
         *m_fp << ",";
-      if (mode.empty() || mode.top())
-        *m_fp << "{";
+      if (!mode.empty() && !mode.top())
+        *m_fp << t.getQuoted();
+      if (formatted)
+        *m_fp << "{\n" << indentstring;
       else
-        *m_fp << t.getQuoted() << "{";
+        *m_fp << "{";
       first = true;
       mode.push(false);
     }
@@ -89,11 +121,20 @@ class JSONSerializer : public Serializer
       */
     void BeginObject(const Keyword& t, const string& atts)
     {
-      if (!first)
+      if (formatted)
+      {
+        incIndent();
+        if (first)
+          *m_fp << "\n" << indentstring;
+        else
+          *m_fp << ",\n" << indentstring;
+      }
+      else if (!first)
         *m_fp << ",";
       *m_fp << t.getQuoted() << "{";
       first = true;
       mode.push(false);
+      logger << "IMPLEMENTATION INCOMPLETE" << endl; // TODO not using atts
     }
 
     /** Start writing a new object. This method will open a new tag.<br>
@@ -102,7 +143,15 @@ class JSONSerializer : public Serializer
       */
     void BeginObject(const Keyword& t, const Keyword& attr1, const string& val1)
     {
-      if (!first)
+      if (formatted)
+      {
+        incIndent();
+        if (first)
+          *m_fp << "\n" << indentstring;
+        else
+          *m_fp << ",\n" << indentstring;
+      }
+      else if (!first)
         *m_fp << ",";
       if (!mode.top())
         *m_fp << t.getQuoted();
@@ -118,7 +167,15 @@ class JSONSerializer : public Serializer
       */
     void BeginObject(const Keyword& t, const Keyword& attr1, const int val1)
     {
-      if (!first)
+      if (formatted)
+      {
+        incIndent();
+        if (first)
+          *m_fp << "\n" << indentstring;
+        else
+          *m_fp << ",\n" << indentstring;
+      }
+      else if (!first)
         *m_fp << ",";
       if (!mode.top())
         *m_fp << t.getQuoted();
@@ -133,7 +190,15 @@ class JSONSerializer : public Serializer
       */
     void BeginObject(const Keyword& t, const Keyword& attr1, const Date val1)
     {
-      if (!first)
+      if (formatted)
+      {
+        incIndent();
+        if (first)
+          *m_fp << "\n" << indentstring;
+        else
+          *m_fp << ",\n" << indentstring;
+      }
+      else if (!first)
         *m_fp << ",";
       if (!mode.top())
         *m_fp << t.getQuoted();
@@ -149,7 +214,15 @@ class JSONSerializer : public Serializer
     void BeginObject(const Keyword& t, const Keyword& attr1, const string& val1,
       const Keyword& attr2, const string& val2)
     {
-      if (!first)
+      if (formatted)
+      {
+        incIndent();
+        if (first)
+          *m_fp << "\n" << indentstring;
+        else
+          *m_fp << ",\n" << indentstring;
+      }
+      else if (!first)
         *m_fp << ",";
       if (!mode.top())
         *m_fp << t.getQuoted();
@@ -168,7 +241,15 @@ class JSONSerializer : public Serializer
     void BeginObject(const Keyword& t, const Keyword& attr1, const unsigned long& val1,
       const Keyword& attr2, const string& val2)
     {
-      if (!first)
+      if (formatted)
+      {
+        incIndent();
+        if (first)
+          *m_fp << "\n" << indentstring;
+        else
+          *m_fp << ",\n" << indentstring;
+      }
+      else if (!first)
         *m_fp << ",";
       if (!mode.top())
         *m_fp << t.getQuoted();
@@ -187,7 +268,15 @@ class JSONSerializer : public Serializer
       const Keyword& attr2, const Date val2,
       const Keyword& attr3, const Date val3)
     {
-      if (!first)
+      if (formatted)
+      {
+        incIndent();
+        if (first)
+          *m_fp << "\n" << indentstring;
+        else
+          *m_fp << ",\n" << indentstring;
+      }
+      else if (!first)
         *m_fp << ",";
       if (!mode.top())
         *m_fp << t.getQuoted();
@@ -204,7 +293,13 @@ class JSONSerializer : public Serializer
       */
     void EndObject(const Keyword& t)
     {
-      *m_fp << "}";
+      if (formatted)
+      {
+        decIndent();
+        *m_fp << "\n" << indentstring << "}";
+      }
+      else
+        *m_fp << "}";
       first = false;
       mode.pop();
     }
@@ -214,6 +309,8 @@ class JSONSerializer : public Serializer
       */
     void EndList(const Keyword& t)
     {
+      if (formatted)
+        decIndent();
       *m_fp << "]";
       first = false;
       mode.pop();
@@ -234,6 +331,8 @@ class JSONSerializer : public Serializer
     {
       if (first)
         first = false;
+      else if (formatted)
+        *m_fp << ",\n" << indentstring;
       else
         *m_fp << ",";
       *m_fp << t.getQuoted() << val;
@@ -246,6 +345,8 @@ class JSONSerializer : public Serializer
     {
       if (first)
         first = false;
+      else if (formatted)
+        *m_fp << ",\n" << indentstring;
       else
         *m_fp << ",";
       *m_fp << t.getQuoted() << val;
@@ -258,6 +359,8 @@ class JSONSerializer : public Serializer
     {
       if (first)
         first = false;
+      else if (formatted)
+        *m_fp << ",\n" << indentstring;
       else
         *m_fp << ",";
       *m_fp << t.getQuoted() << val;
@@ -271,6 +374,8 @@ class JSONSerializer : public Serializer
     {
       if (first)
         first = false;
+      else if (formatted)
+        *m_fp << ",\n" << indentstring;
       else
         *m_fp << ",";
       *m_fp << t.getQuoted() << (val ? "true" : "false");
@@ -284,6 +389,8 @@ class JSONSerializer : public Serializer
       if (val.empty()) return;
       if (first)
         first = false;
+      else if (formatted)
+        *m_fp << ",\n" << indentstring;
       else
         *m_fp << ",";
       *m_fp << t.getQuoted();
@@ -303,6 +410,8 @@ class JSONSerializer : public Serializer
         {
           if (first)
             first = false;
+          else if (formatted)
+            *m_fp << ",\n" << indentstring;
           else
             *m_fp << ",";
           *m_fp << u.getQuoted() << "{}";
@@ -312,6 +421,8 @@ class JSONSerializer : public Serializer
       {
         if (first)
           first = false;
+        else if (formatted)
+          *m_fp << ",\n" << indentstring;
         else
           *m_fp << ",";
         if (!mode.top())
@@ -329,6 +440,8 @@ class JSONSerializer : public Serializer
     {
       if (first)
         first = false;
+      else if (formatted)
+        *m_fp << ",\n" << indentstring;
       else
         *m_fp << ",";
       if (!mode.top())
@@ -343,6 +456,8 @@ class JSONSerializer : public Serializer
     {
       if (first)
         first = false;
+      else if (formatted)
+        *m_fp << ",\n" << indentstring;
       else
         *m_fp << ",";
       if (!mode.top())
@@ -362,6 +477,8 @@ class JSONSerializer : public Serializer
         {
           if (first)
             first = false;
+          else if (formatted)
+            *m_fp << ",\n" << indentstring;
           else
             *m_fp << ",";
           *m_fp << u.getQuoted() << "{}";
@@ -371,6 +488,8 @@ class JSONSerializer : public Serializer
       {
         if (first)
           first = false;
+        else if (formatted)
+          *m_fp << ",\n" << indentstring;
         else
           *m_fp << ",";
         if (!mode.top())
@@ -391,6 +510,8 @@ class JSONSerializer : public Serializer
     {
       if (first)
         first = false;
+      else if (formatted)
+        *m_fp << ",\n" << indentstring;
       else
         *m_fp << ",";
       if (!mode.top())
@@ -409,6 +530,8 @@ class JSONSerializer : public Serializer
     {
       if (first)
         first = false;
+      else if (formatted)
+        *m_fp << ",\n" << indentstring;
       else
         *m_fp << ",";
       if (!mode.top())
@@ -427,6 +550,8 @@ class JSONSerializer : public Serializer
       if (!val) return;
       if (first)
         first = false;
+      else if (formatted)
+        *m_fp << ",\n" << indentstring;
       else
         *m_fp << ",";
       *m_fp << t.getQuoted();
@@ -440,6 +565,8 @@ class JSONSerializer : public Serializer
     {
       if (first)
         first = false;
+      else if (formatted)
+        *m_fp << ",\n" << indentstring;
       else
         *m_fp << ",";
       *m_fp << t.getQuoted() << "\"" << d << "\"";
@@ -451,6 +578,8 @@ class JSONSerializer : public Serializer
     {
       if (first)
         first = false;
+      else if (formatted)
+        *m_fp << ",\n" << indentstring;
       else
         *m_fp << ",";
       *m_fp << t.getQuoted() << "\"" << d << "\"";
@@ -462,6 +591,8 @@ class JSONSerializer : public Serializer
     {
       if (first)
         first = false;
+      else if (formatted)
+        *m_fp << ",\n" << indentstring;
       else
         *m_fp << ",";
       *m_fp << t.getQuoted() << "\"" << d << "\"";
@@ -483,6 +614,12 @@ class JSONSerializer : public Serializer
       */
     void escape(const string&);
 
+    /** Generated nicely formatted text.
+      * This is false by default, because it generates a smaller file
+      * without the extra whitespace.
+      */
+    bool formatted;
+
     /** Flag to mark if an object has already one or more fields saved. */
     bool first;
 
@@ -490,14 +627,50 @@ class JSONSerializer : public Serializer
       * or array (true).
       */
     stack<bool> mode;
+
+    /** This string is a null terminated string containing as many spaces as
+      * indicated by the m_nIndent.
+      * @see incIndent, decIndent
+      */
+    char indentstring[41];
+
+    /** This variable keeps track of the indentation level.
+      * @see incIndent, decIndent
+      */
+    short int m_nIndent;
+
+    /** Increment indentation level in the formatted output. */
+    inline void incIndent()
+    {
+      indentstring[m_nIndent++] = '\t';
+      if (m_nIndent > 40) m_nIndent = 40;
+      indentstring[m_nIndent] = '\0';
+    }
+
+    /** Decrement indentation level in the formatted output. */
+    inline void decIndent()
+    {
+      if (--m_nIndent < 0) m_nIndent = 0;
+      indentstring[m_nIndent] = '\0';
+    }
+
+    /** Stack of objects and their data fields. */
+    struct obj
+    {
+      const MetaClass* cls;
+      Object* object;
+      int start;
+      hashtype hash;
+    };
+    vector<obj> objects;
 };
 
 
 /** @brief This class writes JSON data to a flat file.
   *
   * Note that an object of this class can write only to a single file. If
-  * multiple files are required multiple JSONSerializerFile objects will be
-  * required too.
+  * you need to write multiple files then multiple JSONSerializerFile objects
+  * will be required.
   */
 class JSONSerializerFile : public JSONSerializer
 {
@@ -507,12 +680,16 @@ class JSONSerializerFile : public JSONSerializer
     JSONSerializerFile(const string& chFilename)
     {
       of.open(chFilename.c_str(), ios::out);
-      if(!of) throw RuntimeException("Could not open output file");
+      if(!of)
+        throw RuntimeException("Could not open output file");
       setOutput(of);
     }
 
     /** Destructor. */
-    ~JSONSerializerFile() {of.close();}
+    ~JSONSerializerFile()
+    {
+      of.close();
+    }
 
   private:
     ofstream of;
@@ -561,216 +738,32 @@ class JSONSerializerString : public JSONSerializer
 PyObject* saveJSONfile(PyObject* self, PyObject* args);
 
 
-/** @brief A fast JSON parser.
-  *
-  * The parser only supports UTF-8 data.
-  *
-  * The code is inspired on gason https://github.com/vivkin/gason, which
-  * is released under the MIT license.
-  */
-class JSONInput : public NonCopyable
+class JSONData : public DataValue
 {
   public:
-    struct JsonNode;
-  private:
-    enum JsonTag
+    /** Field types recognized by the parser. */
+    enum JsonType
     {
-      JSON_NUMBER = 0,
+      JSON_NULL,
+      JSON_BOOL,
+      JSON_INT,
+      JSON_LONG,
+      JSON_UNSIGNEDLONG,
+      JSON_DOUBLE,
       JSON_STRING,
-      JSON_ARRAY,
-      JSON_OBJECT,
-      JSON_TRUE,
-      JSON_FALSE,
-      JSON_NULL = 0xF
+      JSON_OBJECT
     };
 
-    #define JSON_VALUE_PAYLOAD_MASK 0x00007FFFFFFFFFFFULL
-    #define JSON_VALUE_NAN_MASK 0x7FF8000000000000ULL
-    #define JSON_VALUE_TAG_MASK 0xF
-    #define JSON_VALUE_TAG_SHIFT 47
-
-    union JsonValue
-    {
-      uint64_t ival;
-      double fval;
-
-      JsonValue(double x) : fval(x) { }
-
-      JsonValue(JsonTag tag = JSON_NULL, void *payload = NULL)
-      {
-        assert((uint64_t)payload <= JSON_VALUE_PAYLOAD_MASK);
-        ival = JSON_VALUE_NAN_MASK | ((uint64_t)tag << JSON_VALUE_TAG_SHIFT) | (uint64_t)payload;
-      }
-
-      bool isDouble() const
-      {
-        return (int64_t)ival <= (int64_t)JSON_VALUE_NAN_MASK;
-      }
-
-      JsonTag getTag() const
-      {
-        return isDouble() ? JSON_NUMBER : JsonTag((ival >> JSON_VALUE_TAG_SHIFT) & JSON_VALUE_TAG_MASK);
-      }
-
-      uint64_t getPayload() const
-      {
-        assert(!isDouble());
-        return ival & JSON_VALUE_PAYLOAD_MASK;
-      }
-
-      double toNumber() const
-      {
-          assert(getTag() == JSON_NUMBER);
-          return fval;
-      }
-
-      char *toString() const
-      {
-          assert(getTag() == JSON_STRING);
-          return (char*)getPayload();
-      }
-
-      JsonNode *toNode() const
-      {
-          assert(getTag() == JSON_ARRAY || getTag() == JSON_OBJECT);
-          return (JsonNode*)getPayload();
-      }
-    };
-
-  public:
-    /** Node in the document. */
-    struct JsonNode
-    {
-      JsonValue value;
-      JsonNode *next;
-      char *key;
-    };
-
-    /** Iterator. */
-    class JsonIterator
-    {
-      public:
-        JsonNode *p;
-
-        JsonIterator(JsonNode* o) : p(o) {}
-
-        void operator++() { p = p->next; }
-
-        bool operator!=(const JsonIterator &x) const { return p != x.p; }
-
-        JsonNode *operator*() const { return p; }
-
-        JsonNode *operator->() const { return p; }
-    };
-
-    inline JsonIterator begin(JsonValue o) { return o.toNode(); }
-
-    inline JsonIterator end() { return NULL; }
-
-  private:
-    class JsonAllocator
-    {
-      private:
-        struct Zone
-        {
-          Zone *next;
-          size_t used;
-        } *head;
-
-      public:
-        JsonAllocator() : head(NULL) {}
-        /* TODO
-        JsonAllocator(const JsonAllocator &) = delete;
-        JsonAllocator &operator=(const JsonAllocator &) = delete;
-        JsonAllocator(JsonAllocator &&x) : head(x.head) {
-            x.head = NULL;
-        }
-        JsonAllocator &operator=(JsonAllocator &&x) {
-            head = x.head;
-            x.head = NULL;
-            return *this;
-        }
-        */
-        ~JsonAllocator() { deallocate(); }
-        void *allocate(size_t size);
-        void deallocate();
-    };
-
-    static inline bool isspace(char c)
-    {
-        return c == ' ' || (c >= '\t' && c <= '\r');
-    }
-
-    static inline bool isdelim(char c)
-    {
-        return c == ',' || c == ':' || c == ']' || c == '}' || isspace(c) || !c;
-    }
-
-    static inline bool isdigit(char c)
-    {
-        return c >= '0' && c <= '9';
-    }
-
-    static inline bool isxdigit(char c)
-    {
-        return (c >= '0' && c <= '9') || ((c & ~' ') >= 'A' && (c & ~' ') <= 'F');
-    }
-
-    static inline int char2int(char c)
-    {
-        if (c <= '9')
-            return c - '0';
-        return (c & ~' ') - 'A' + 10;
-    }
-
-    static double string2double(char *s, char **endptr);
-
-    static inline JsonNode *insertAfter(JsonNode *tail, JsonNode *node)
-    {
-      if (!tail) return node->next = node;
-      node->next = tail->next;
-      tail->next = node;
-      return node;
-    }
-
-    static inline JsonValue listToValue(JsonTag tag, JsonNode *tail)
-    {
-      if (tail)
-      {
-          JsonNode *head = tail->next;
-          tail->next = NULL;
-          return JsonValue(tag, head);
-      }
-      return JsonValue(tag, NULL);
-    }
-
-    /** Parsing routine. */
-    void parse(char *str, JsonValue *value, JsonAllocator &allocator);
-
-    /** Visitor function. */
-    void visit(Object*, JsonValue);
-
-  protected:
-    void parse(Object*, char*);
-};
-
-
-class JSONAttributeList : public DataValueDict
-{
-  private:
-    JSONInput::JsonNode *node;
-  public:
-    virtual const DataValue* get(const Keyword&) const;
-};
-
-
-class JSONElement : public DataValue
-{
-  public:
-    virtual operator bool() const;
+    /** Constructor. */
+    JSONData() : data_type(JSON_NULL) {}
 
     /** Destructor. */
-    virtual ~JSONElement() {}
+    virtual ~JSONData() {}
+
+    virtual operator bool() const
+    {
+      return getBool();
+    }
 
     virtual long getLong() const;
 
@@ -787,6 +780,167 @@ class JSONElement : public DataValue
     virtual const string& getString() const;
 
     virtual bool getBool() const;
+
+    virtual Object* getObject() const;
+
+    void setNull()
+    {
+      data_type = JSON_NULL;
+    }
+
+    virtual void setLong(const long l)
+    {
+      data_type = JSON_LONG;
+      data_long = l;
+    }
+
+    virtual void setUnsignedLong(const unsigned long ul)
+    {
+      data_type = JSON_UNSIGNEDLONG;
+      data_long = ul;
+    }
+
+    virtual void setDuration(const Duration d)
+    {
+      data_type = JSON_LONG;
+      data_long = static_cast<long>(d);
+    }
+
+    virtual void setInt(const int i)
+    {
+      data_type = JSON_INT;
+      data_int = i;
+    }
+
+    virtual void setDouble(const double d)
+    {
+      data_type = JSON_DOUBLE;
+      data_double = d;
+    }
+
+    virtual void setDate(const Date d)
+    {
+      data_type = JSON_LONG;
+      data_long = d.getTicks();
+    }
+
+    virtual void setString(const string& s)
+    {
+      data_type = JSON_STRING;
+      data_string = s;
+    }
+
+    virtual void setBool(const bool b)
+    {
+      data_type = JSON_BOOL;
+      data_bool = b;
+    }
+
+    virtual void setObject(Object* o)
+    {
+      data_type = JSON_OBJECT;
+      data_object = o;
+    }
+
+    JsonType getDataType() const
+    {
+      return data_type;
+    }
+
+  private:
+    /** Stores the type of data we're storing. */
+    JsonType data_type;
+
+    /** Data content. */
+    union
+    {
+      bool data_bool;
+      int data_int;
+      long data_long;
+      unsigned long data_unsignedlong;
+      double data_double;
+      Object* data_object;
+    };
+    string data_string;
+};
+
+
+/** @brief A JSON parser, using the rapidjson library.
+  *
+  * The parser only supports UTF-8 encodings. RapidJSON also supports
+  * UTF-16 and UTF-32, but we don't use them for now.
+  *
+  * See https://github.com/miloyip/rapidjson for information on rapidjson,
+  * which is released under the MIT license.
+  */
+class JSONInput : public NonCopyable
+{
+  friend rapidjson::Reader;
+  private:
+    /** This variable defines the maximum depth of the object creation stack.
+      * This maximum is intended to protect us from malicious malformed
+      * documents, and also for allocating efficient data structures for
+      * the parser.
+      */
+    static const int maxobjects = 30;
+    static const int maxdata = 200;
+
+    /** Stack of fields already read. */
+    struct fld
+    {
+      const MetaFieldBase* field;
+      hashtype hash;
+      JSONData value;
+      string name;
+    };
+    vector<fld> data;
+
+    /** Stack of objects and their data fields. */
+    struct obj
+    {
+      const MetaClass* cls;
+      Object* object;
+      int start;
+      hashtype hash;
+    };
+    vector<obj> objects;
+
+    /** Index into the objects stack. */
+    int objectindex;
+
+    /** Index into the data field stack. */
+    int dataindex;
+
+    // Handler callback functions for rapidjson
+    bool Null();
+    bool Bool(bool b);
+    bool Int(int i);
+    bool Uint(unsigned u);
+    bool Int64(int64_t i);
+    bool Uint64(uint64_t u);
+    bool Double(double d);
+    bool String(const char* str, rapidjson::SizeType length, bool copy);
+    bool StartObject();
+    bool Key(const char* str, rapidjson::SizeType length, bool copy);
+    bool EndObject(rapidjson::SizeType memberCount);
+    bool StartArray();
+    bool EndArray(rapidjson::SizeType elementCount);
+
+  protected:
+    /** Constructor. */
+    JSONInput() : data(maxdata), objects(maxobjects) {}
+
+    /** Main parser function. */
+    void parse(Object* pRoot, char* buffer);
+};
+
+
+class JSONAttributeList : public DataValueDict
+{
+  private:
+    //JSONInput::JsonNode *node;
+  public:
+    virtual const DataValue* get(const Keyword&) const;
 };
 
 

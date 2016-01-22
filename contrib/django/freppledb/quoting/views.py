@@ -121,10 +121,10 @@ def InfoView(request, action):
       conn.request("GET", '/demand/' + iri_to_uri(urlquote(data[0], '')) + '?type=detail')
     elif action == 'cancel':
       data = request.GET['name']
-      conn.request("DELETE", '/demand/' + iri_to_uri(urlquote(data, '')) + "?persist=1", "", {"content-length": 0})
+      conn.request("DELETE", '/demand/' + iri_to_uri(urlquote(data, '')) + "?persist=1")
     elif action == 'confirm':
       data = request.GET['name']
-      conn.request("POST", '/demand/' + iri_to_uri(urlquote(data, '')) + "?status=open&persist=1", "", {"content-length": 0})
+      conn.request("POST", '/demand/' + iri_to_uri(urlquote(data, '')) + "?status=open&persist=1")
     elif action == 'inquiry' or action == 'quote':
       data = '\r\n'.join([
         '--' + BOUNDARY,
