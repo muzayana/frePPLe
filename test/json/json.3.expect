@@ -3467,7 +3467,7 @@
 			"priority":1,
 			"minshipment":500
 		},
-    {
+		{
 			"name":"Order 001 01",
 			"quantity":5000,
 			"item":{

@@ -16,7 +16,7 @@
 
 /* Uncomment the next line to create a lot of debugging messages during
  * the parsing of the data. */
-#define PARSE_DEBUG
+//#define PARSE_DEBUG
 
 // With VC++ we use the Win32 functions to browse a directory
 #ifdef _MSC_VER
@@ -185,20 +185,6 @@ void JSONInputFile::parse(Object *pRoot)
 }
 
 
-const DataValue* JSONAttributeList::get(const Keyword& kw) const // TODO XXX
-{
-  /*
-  for (JSONInput::JsonIterator i(node); i != JSONInput::JsonIterator(NULL); ++i)
-  {
-    if (Keyword::hash(i->key) == kw.getHash())
-      return i->value;
-  }
-  return NULL;
-  */
-  return NULL;
-}
-
-
 PyObject* readJSONfile(PyObject* self, PyObject* args)
 {
   // Pick up arguments
@@ -259,7 +245,7 @@ void JSONInput::parse(Object* pRoot, char* buffer)
     throw DataException("Can't parse JSON data into NULL root object");
 
   // Initialize the parser to read data into the object pRoot.
-  objectindex = 0;
+  objectindex = -1;
   dataindex = -1;
   objects[0].start = 0;
   objects[0].object = pRoot;
@@ -276,64 +262,154 @@ void JSONInput::parse(Object* pRoot, char* buffer)
 
 bool JSONInput::Null()
 {
-  if (dataindex >= 0)
-    data[dataindex].value.setNull();
+  if (dataindex < 0)
+    return true;
+
+  data[dataindex].value.setNull();
+
+  if (objectindex == 0 && objects[objectindex].object
+    && data[dataindex].field && !data[dataindex].field->isGroup())
+  {
+    // Immediately process updates to the root object
+    data[dataindex].field->setField(objects[objectindex].object, data[dataindex].value);
+    --dataindex;
+  }
   return true;
 }
 
 
 bool JSONInput::Bool(bool b)
 {
-  if (dataindex >= 0)
-    data[dataindex].value.setBool(b);
+  if (dataindex < 0)
+    return true;
+
+  data[dataindex].value.setBool(b);
+
+  if (objectindex == 0 && objects[objectindex].object
+    && data[dataindex].field && !data[dataindex].field->isGroup())
+  {
+    // Immediately process updates to the root object
+    data[dataindex].field->setField(objects[objectindex].object, data[dataindex].value);
+    --dataindex;
+  }
   return true;
 }
 
 
 bool JSONInput::Int(int i)
 {
-  if (dataindex >= 0)
-    data[dataindex].value.setInt(i);
+  if (dataindex < 0)
+    return true;
+
+  data[dataindex].value.setInt(i);
+
+  if (objectindex == 0 && objects[objectindex].object
+    && data[dataindex].field && !data[dataindex].field->isGroup())
+  {
+    // Immediately process updates to the root object
+    data[dataindex].field->setField(objects[objectindex].object, data[dataindex].value);
+    --dataindex;
+  }
   return true;
 }
 
 
 bool JSONInput::Uint(unsigned u)
 {
-  if (dataindex >= 0)
-    data[dataindex].value.setLong(u);
+  if (dataindex < 0)
+    return true;
+
+  data[dataindex].value.setLong(u);
+
+  if (objectindex == 0 && objects[objectindex].object
+    && data[dataindex].field && !data[dataindex].field->isGroup())
+  {
+    // Immediately process updates to the root object
+    data[dataindex].field->setField(objects[objectindex].object, data[dataindex].value);
+    --dataindex;
+  }
   return true;
 }
 
 
 bool JSONInput::Int64(int64_t i)
 {
-  if (dataindex >= 0)
-    data[dataindex].value.setLong(i);
+  if (dataindex < 0)
+    return true;
+
+  data[dataindex].value.setLong(i);
+
+  if (objectindex == 0 && objects[objectindex].object
+    && data[dataindex].field && !data[dataindex].field->isGroup())
+  {
+    // Immediately process updates to the root object
+    data[dataindex].field->setField(objects[objectindex].object, data[dataindex].value);
+    --dataindex;
+  }
   return true;
 }
 
 
 bool JSONInput::Uint64(uint64_t u)
 {
-  if (dataindex >= 0)
-    data[dataindex].value.setUnsignedLong(u);
+  if (dataindex < 0)
+    return true;
+
+  data[dataindex].value.setUnsignedLong(u);
+
+  if (objectindex == 0 && objects[objectindex].object
+    && data[dataindex].field && !data[dataindex].field->isGroup())
+  {
+    // Immediately process updates to the root object
+    data[dataindex].field->setField(objects[objectindex].object, data[dataindex].value);
+    --dataindex;
+  }
   return true;
 }
 
 
 bool JSONInput::Double(double d)
 {
-  if (dataindex >= 0)
-    data[dataindex].value.setDouble(d);
+  if (dataindex < 0)
+    return true;
+
+  data[dataindex].value.setDouble(d);
+
+  if (objectindex == 0 && objects[objectindex].object
+    && data[dataindex].field && !data[dataindex].field->isGroup())
+  {
+    // Immediately process updates to the root object
+    data[dataindex].field->setField(objects[objectindex].object, data[dataindex].value);
+    --dataindex;
+  }
   return true;
 }
 
 
 bool JSONInput::String(const char* str, rapidjson::SizeType length, bool copy)
 {
-  if (dataindex >= 0)
-    data[dataindex].value.setString(str);
+  if (dataindex < 0)
+    return true;
+
+  // Note: JSON allows NULLs in the string values. FrePPLe doesn't, and the
+  // next line will only copy the part before the null characters.
+  // In XML, null characters are officially forbidden.
+  data[dataindex].value.setString(str);
+
+  if (data[dataindex].hash == Tags::type.getHash())
+  {
+    // Immediate processing of the type field
+    objects[objectindex].cls = MetaClass::findClass(str);
+    if (!objects[objectindex].cls)
+      throw DataException("Unknown type " + string(str));
+  }
+  else if (objectindex == 0 && objects[objectindex].object
+    && data[dataindex].field && !data[dataindex].field->isGroup())
+  {
+    // Immediately process updates to the root object
+    data[dataindex].field->setField(objects[objectindex].object, data[dataindex].value);
+    --dataindex;
+  }
   return true;
 }
 
@@ -344,9 +420,20 @@ bool JSONInput::StartObject()
     // You're joking?
     throw DataException("JSON-document nested excessively deep");
 
+  // Reset the pointer to the object class being read
+  if (objectindex && dataindex >= 0 && data[dataindex].field)
+  {
+    objects[objectindex].cls = data[dataindex].field->getClass();
+    objects[objectindex].object = NULL;
+    objects[objectindex].start = dataindex + 1;
+  }
+  else if (objectindex)
+    objects[objectindex].cls = NULL;
+
   // Debugging message
   #ifdef PARSE_DEBUG
-  logger << "Starting object #" << objectindex << endl;
+  logger << "Starting object #" << objectindex
+    << " (type " << (objects[objectindex].cls ? objects[objectindex].cls->type : "NULL")<< ")" << endl;
   #endif
   return true;
 }
@@ -354,18 +441,26 @@ bool JSONInput::StartObject()
 
 bool JSONInput::Key(const char* str, rapidjson::SizeType length, bool copy)
 {
+  if (++dataindex >= maxdata)
+    // You're joking?
+    throw DataException("JSON-document nested excessively deep");
+
   // Look up the field
-  data[++dataindex].value.setNull();
+  data[dataindex].value.setNull();
   data[dataindex].hash = Keyword::hash(str);
   data[dataindex].name = str;
 
-  /* XXX TODO
-  data[dataindex].field = objects[objectindex].cls->findField(data[dataindex].hash);
-  if (!data[dataindex].field && objects[objectindex].cls->category)
-    data[dataindex].field = objects[objectindex].cls->category->findField(data[dataindex].hash);
-  if (!data[dataindex].field)
-    throw DataException("Field '" + string(str) + "' not defined");
-  */
+  if (objects[objectindex].cls)
+  {
+    data[dataindex].field = objects[objectindex].cls->findField(data[dataindex].hash);
+    if (!data[dataindex].field && objects[objectindex].cls->category)
+      data[dataindex].field = objects[objectindex].cls->category->findField(data[dataindex].hash);
+    if (!data[dataindex].field && data[dataindex].hash != Tags::type.getHash())
+      throw DataException("Field '" + string(str) + "' not defined");
+  }
+  else
+    data[dataindex].field = NULL;
+
   // Debugging message
   #ifdef PARSE_DEBUG
   logger << "Reading field #" << dataindex << " '" << str
@@ -380,23 +475,221 @@ bool JSONInput::Key(const char* str, rapidjson::SizeType length, bool copy)
 
 bool JSONInput::EndObject(rapidjson::SizeType memberCount)
 {
+  // Build a dictionary with all fields of this model
+  JSONDataValueDict dict(data, objects[objectindex].start, dataindex);
+
+  // Check if we need to add a parent object to the dict
+  bool found_parent = false;
+  if (objects[objectindex].cls->parent)
+  {
+    assert(objects[objectindex-1].cls);
+    const MetaClass* cl = objects[objectindex-1].cls;
+    for (MetaClass::fieldlist::const_iterator i = objects[objectindex].cls->getFields().begin();
+      i != objects[objectindex].cls->getFields().end(); ++i)
+      if ((*i)->getFlag(PARENT) && objectindex >= 1)
+      {
+        const MetaFieldBase* fld = data[objects[objectindex].start-1].field;
+        if (fld && !fld->isGroup())
+          // Only under a group field can we inherit from a parent object
+          continue;
+        if (*((*i)->getClass()) == *cl
+          || (cl->category && *((*i)->getClass()) == *(cl->category)))
+        {
+          // Parent object matches expected type as parent field
+          // First, create the parent object. It is normally created only
+          // AFTER all its fields are read in, and that's too late for us.
+          if (!objects[objectindex-1].object)
+          {
+            JSONDataValueDict dict_parent(data, objects[objectindex-1].start, objects[objectindex].start-1);
+            if (objects[objectindex-1].cls->category)
+            {
+              assert(objects[objectindex-1].cls->category->readFunction);
+              objects[objectindex-1].object =
+                objects[objectindex-1].cls->category->readFunction(
+                  objects[objectindex-1].cls,
+                  dict_parent
+                  );
+            }
+            else
+            {
+              assert(static_cast<const MetaCategory*>(objects[objectindex-1].cls)->readFunction);
+              objects[objectindex-1].object =
+                static_cast<const MetaCategory*>(objects[objectindex-1].cls)->readFunction(
+                  objects[objectindex-1].cls,
+                  dict_parent
+                  );
+            }
+            // Set fields already available now on the parent object
+            for (int idx = objects[objectindex-1].start; idx < objects[objectindex].start; ++idx)
+            {
+              if (data[idx].hash == Tags::type.getHash() || data[idx].hash == Tags::action.getHash())
+                continue;
+              if (data[idx].field && !data[idx].field->isGroup())
+              {
+                  data[idx].field->setField(objects[objectindex-1].object, data[idx].value);
+                  data[idx].field = NULL; // Mark as already applied
+              }
+              else if (data[idx].hash == Tags::booleanproperty.getHash())
+                objects[objectindex].object->setProperty(data[idx].name, data[idx].value, 1);
+              else if (data[idx].hash == Tags::dateproperty.getHash())
+                objects[objectindex].object->setProperty(data[idx].name, data[idx].value, 2);
+              else if (data[idx].hash == Tags::doubleproperty.getHash())
+                objects[objectindex].object->setProperty(data[idx].name, data[idx].value, 3);
+              else if (data[idx].hash == Tags::stringproperty.getHash())
+                objects[objectindex].object->setProperty(data[idx].name, data[idx].value, 4);
+            }
+
+          }
+          // Add reference to parent to the current dict
+          if (++dataindex >= maxdata)
+            // You're joking?
+            throw DataException("JSON-document nested excessively deep");
+          data[dataindex].field = *i;
+          data[dataindex].hash = (*i)->getHash();
+          data[dataindex].value.setObject(objects[objectindex-1].object);
+          dict.enlarge();
+          found_parent = true;
+          break;
+        }
+      }
+  }
+  if (!found_parent && objects[objectindex].cls->category && objects[objectindex].cls->category->parent)
+  {
+    assert(objects[objectindex-1].cls);
+    const MetaClass* cl = objects[objectindex-1].cls;
+    for (MetaClass::fieldlist::const_iterator i = objects[objectindex].cls->category->getFields().begin();
+      i != objects[objectindex].cls->category->getFields().end(); ++i)
+      if ((*i)->getFlag(PARENT) && objectindex >= 1)
+      {
+        const MetaFieldBase* fld = data[objects[objectindex].start-1].field;
+        if (fld && !fld->isGroup())
+          // Only under a group field can we inherit from a parent object
+          continue;
+        if (*((*i)->getClass()) == *cl
+          || (cl->category && *((*i)->getClass()) == *(cl->category)))
+        {
+          // Parent object matches expected type as parent field
+          // First, create the parent object. It is normally created only
+          // AFTER all its fields are read in, and that's too late for us.
+          if (!objects[objectindex-1].object)
+          {
+            JSONDataValueDict dict_parent(data, objects[objectindex-1].start, objects[objectindex].start-1);
+            if (objects[objectindex-1].cls->category)
+            {
+              assert(objects[objectindex-1].cls->category->readFunction);
+              objects[objectindex-1].object =
+                objects[objectindex-1].cls->category->readFunction(
+                  objects[objectindex-1].cls,
+                  dict_parent
+                  );
+            }
+            else
+            {
+              assert(static_cast<const MetaCategory*>(objects[objectindex-1].cls)->readFunction);
+              objects[objectindex-1].object =
+                static_cast<const MetaCategory*>(objects[objectindex-1].cls)->readFunction(
+                  objects[objectindex-1].cls,
+                  dict_parent
+                  );
+            }
+            // Set fields already available now on the parent object
+            for (int idx = objects[objectindex-1].start; idx < objects[objectindex].start; ++idx)
+            {
+              if (data[idx].hash == Tags::type.getHash() || data[idx].hash == Tags::action.getHash())
+                continue;
+              if (data[idx].field && !data[idx].field->isGroup())
+              {
+                  data[idx].field->setField(objects[objectindex-1].object, data[idx].value);
+                  data[idx].field = NULL; // Mark as already applied
+              }
+              else if (data[idx].hash == Tags::booleanproperty.getHash())
+                objects[objectindex].object->setProperty(data[idx].name, data[idx].value, 1);
+              else if (data[idx].hash == Tags::dateproperty.getHash())
+                objects[objectindex].object->setProperty(data[idx].name, data[idx].value, 2);
+              else if (data[idx].hash == Tags::doubleproperty.getHash())
+                objects[objectindex].object->setProperty(data[idx].name, data[idx].value, 3);
+              else if (data[idx].hash == Tags::stringproperty.getHash())
+                objects[objectindex].object->setProperty(data[idx].name, data[idx].value, 4);
+            }
+          }
+          // Add reference to parent to the current dict
+          if (++dataindex >= maxdata)
+            // You're joking?
+            throw DataException("JSON-document nested excessively deep");
+          data[dataindex].field = *i;
+          data[dataindex].hash = (*i)->getHash();
+          data[dataindex].value.setObject(objects[objectindex-1].object);
+          dict.enlarge();
+          break;
+        }
+      }
+  }
+
   // Debugging
   #ifdef PARSE_DEBUG
-  cout << "Ending Object #" << objectindex << " (" << memberCount << ")" << endl;
-  for (int i = 0; i <= static_cast<int>(memberCount); ++i)
-  {
-    if (dataindex - i < 0)
-      break;
-    logger << "   " << (dataindex - i)
-      << " " << data[dataindex - i].name
-      << " (" << data[dataindex - i].value.getDataType()
-      << "): " << data[dataindex - i].value.getString()  << endl;
-  }
+  logger << "Ending Object #" << objectindex << " ("
+    << ((objectindex >= 0 && objects[objectindex].cls) ? objects[objectindex].cls->type : "none")
+    << "):" << endl;
+  dict.print();
   #endif
 
+  // Root object never gets created
+  if (!objectindex)
+    return true;
+
+  // Call the object factory for the category and pass all field values
+  // in a dictionary.
+  // In some cases, the reading of the child fields already triggered the
+  // creation of the parent. In such cases we can skip the creation step
+  // here.
+  if (!objects[objectindex].object)
+  {
+    if (objects[objectindex].cls->category)
+    {
+      assert(objects[objectindex].cls->category->readFunction);
+      objects[objectindex].object =
+        objects[objectindex].cls->category->readFunction(
+          objects[objectindex].cls,
+          dict
+          );
+    }
+    else
+    {
+      assert(static_cast<const MetaCategory*>(objects[objectindex].cls)->readFunction);
+      objects[objectindex].object =
+        static_cast<const MetaCategory*>(objects[objectindex].cls)->readFunction(
+          objects[objectindex].cls,
+          dict
+          );
+    }
+  }
+
+  // Update all fields on the new object
+  if (objects[objectindex].object)
+  {
+    for (int idx = dict.getStart(); idx <= dict.getEnd(); ++idx)
+    {
+      if (data[idx].hash == Tags::type.getHash() || data[idx].hash == Tags::action.getHash())
+        continue;
+      if (data[idx].field && !data[idx].field->isGroup())
+        data[idx].field->setField(objects[objectindex].object, data[idx].value);
+      else if (data[idx].hash == Tags::booleanproperty.getHash())
+        objects[objectindex].object->setProperty(data[idx].name, data[idx].value, 1);
+      else if (data[idx].hash == Tags::dateproperty.getHash())
+        objects[objectindex].object->setProperty(data[idx].name, data[idx].value, 2);
+      else if (data[idx].hash == Tags::doubleproperty.getHash())
+        objects[objectindex].object->setProperty(data[idx].name, data[idx].value, 3);
+      else if (data[idx].hash == Tags::stringproperty.getHash())
+        objects[objectindex].object->setProperty(data[idx].name, data[idx].value, 4);
+    }
+  }
+
+  if (objectindex && dataindex && data[dict.getStart()-1].field && data[dict.getStart()-1].field->isPointer())
+    // Update parent object
+    data[dict.getStart()-1].value.setObject(objects[objectindex].object);
+
   // Update stack
-  dataindex -= memberCount;
-  --objectindex;
+  dataindex = objects[objectindex--].start - 1;
   return true;
 }
 
@@ -634,11 +927,37 @@ Object* JSONData::getObject() const
     case JSON_UNSIGNEDLONG:
     case JSON_DOUBLE:
     case JSON_STRING:
-      throw DataException("Invalid JSON data");
+      return NULL;
     case JSON_OBJECT:
       return data_object;
   }
   throw DataException("Unknown JSON type");
+}
+
+
+void JSONDataValueDict::print()
+{
+  for (int i = strt; i <= nd; ++i)
+  {
+    if (fields[i].field)
+      logger << "  " << i << "   " << fields[i].field->getName().getName() << ": ";
+    else
+      logger << "  " << i << "   null: ";
+    Object *obj = static_cast<Object*>(fields[i].value.getObject());
+    if (obj)
+      logger << "pointer to " << obj->getType().type << endl;
+    else
+      logger << fields[i].value.getString() << endl;
+  }
+}
+
+
+const JSONData* JSONDataValueDict::get(const Keyword& key) const
+{
+  for (int i = strt; i <= nd; ++i)
+    if (fields[i].hash == key.getHash())
+      return &fields[i].value;
+  return NULL;
 }
 
 

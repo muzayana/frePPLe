@@ -867,8 +867,12 @@ class JSONData : public DataValue
 
 /** @brief A JSON parser, using the rapidjson library.
   *
-  * The parser only supports UTF-8 encodings. RapidJSON also supports
-  * UTF-16 and UTF-32, but we don't use them for now.
+  * Some specific limitations of the implementation:
+  *   - JSON allows NULLs in the string values. FrePPLe doesn't, and we will
+  *     only consider the part before the null characters.
+  *   - The parser only supports UTF-8 encodings. RapidJSON also supports
+  *     UTF-16 and UTF-32 (LE & BE), but we don't use them for now.
+  *     FrePPLe internally represents all string data as UTF-8.
   *
   * See https://github.com/miloyip/rapidjson for information on rapidjson,
   * which is released under the MIT license.
@@ -885,7 +889,7 @@ class JSONInput : public NonCopyable
     static const int maxobjects = 30;
     static const int maxdata = 200;
 
-    /** Stack of fields already read. */
+  public:
     struct fld
     {
       const MetaFieldBase* field;
@@ -893,6 +897,9 @@ class JSONInput : public NonCopyable
       JSONData value;
       string name;
     };
+
+  private:
+    /** Stack of fields already read. */
     vector<fld> data;
 
     /** Stack of objects and their data fields. */
@@ -932,15 +939,6 @@ class JSONInput : public NonCopyable
 
     /** Main parser function. */
     void parse(Object* pRoot, char* buffer);
-};
-
-
-class JSONAttributeList : public DataValueDict
-{
-  private:
-    //JSONInput::JsonNode *node;
-  public:
-    virtual const DataValue* get(const Keyword&) const;
 };
 
 
@@ -1013,9 +1011,63 @@ class JSONInputFile : public JSONInput
 };
 
 
+
+/** @brief This class represents a list of JSON key+value pairs.
+  *
+  * The method is a thin wrapper around one of the internal data
+  * structures of the parser implemented in the class JSONInput.
+  */
+class JSONDataValueDict : public DataValueDict
+{
+  public:
+    typedef vector< pair<DataKeyword, XMLData> > dict;
+
+    /** Constructor. */
+    JSONDataValueDict(
+      vector<JSONInput::fld>& f,
+      int st,
+      int nd
+      ) : fields(f), strt(st), nd(nd)
+    {
+      if (strt < 0)
+        strt = 0;
+    }
+
+    /** Look up a certain keyword. */
+    const JSONData* get(const Keyword& key) const;
+
+    /** Enlarge the dictiorary. */
+    void enlarge()
+    {
+      ++nd;
+    }
+
+    /** Auxilary debugging method. */
+    void print();
+
+    /** Return the start index in the array. */
+    inline int getStart() const
+    {
+      return strt;
+    }
+
+    /** Return the end index in the array. */
+    inline int getEnd() const
+    {
+      return nd;
+    }
+  private:
+    vector<JSONInput::fld>& fields;
+    int strt;
+    int nd;
+};
+
+
+/** Method exposed in Python to process JSON data from a string. */
 PyObject* readJSONdata(PyObject*, PyObject*);
 
 
+/** Method exposed in Python to process JSON data from a file. */
 PyObject* readJSONfile(PyObject*, PyObject*);
 
 
