@@ -167,13 +167,15 @@ void JSONInputFile::parse(Object *pRoot)
   {
     // Normal file
     // Read the complete file in a memory buffer
-    // TODO parse directly by passing the rapidjson parser a filestream
     ifstream t;
     t.open(filename.c_str());
     t.seekg(0, ios::end);
     ifstream::pos_type length = t.tellg();
     if (length > 100000000)
+    {
+      t.close();
       throw DataException("Maximum JSON file size is 100MB");
+    }
     t.seekg(0, std::ios::beg);
     char *buffer = new char[length];
     t.read(buffer, length);
@@ -239,8 +241,6 @@ PyObject* readJSONdata(PyObject *self, PyObject *args)
 
 void JSONInput::parse(Object* pRoot, char* buffer)
 {
-  if (!objectindex)
-    throw DataException("JSON parser not empty");
   if (!pRoot)
     throw DataException("Can't parse JSON data into NULL root object");
 
@@ -252,10 +252,10 @@ void JSONInput::parse(Object* pRoot, char* buffer)
   objects[0].cls = &pRoot->getType();
   objects[0].hash = pRoot->getType().typetag->getHash();
 
-  // Call rapidjson
-  // TODO Extra setting for in-site parsing
+  // Call the rapidjson in-site parser.
+  // The parser will modify the string buffer during the parsing!
+  rapidjson::InsituStringStream buf(buffer);
   rapidjson::Reader reader;
-  rapidjson::StringStream buf(buffer);
   reader.Parse(buf, *this);
 }
 
@@ -441,6 +441,7 @@ bool JSONInput::StartObject()
 
 bool JSONInput::Key(const char* str, rapidjson::SizeType length, bool copy)
 {
+
   if (++dataindex >= maxdata)
     // You're joking?
     throw DataException("JSON-document nested excessively deep");
@@ -480,7 +481,7 @@ bool JSONInput::EndObject(rapidjson::SizeType memberCount)
 
   // Check if we need to add a parent object to the dict
   bool found_parent = false;
-  if (objects[objectindex].cls->parent)
+  if (objectindex > 0 && objects[objectindex].cls->parent)
   {
     assert(objects[objectindex-1].cls);
     const MetaClass* cl = objects[objectindex-1].cls;
@@ -553,7 +554,9 @@ bool JSONInput::EndObject(rapidjson::SizeType memberCount)
         }
       }
   }
-  if (!found_parent && objects[objectindex].cls->category && objects[objectindex].cls->category->parent)
+  if (!found_parent && objectindex > 0
+    && objects[objectindex].cls->category
+    && objects[objectindex].cls->category->parent)
   {
     assert(objects[objectindex-1].cls);
     const MetaClass* cl = objects[objectindex-1].cls;

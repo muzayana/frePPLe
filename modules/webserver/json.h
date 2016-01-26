@@ -868,11 +868,13 @@ class JSONData : public DataValue
 /** @brief A JSON parser, using the rapidjson library.
   *
   * Some specific limitations of the implementation:
-  *   - JSON allows NULLs in the string values. FrePPLe doesn't, and we will
-  *     only consider the part before the null characters.
-  *   - The parser only supports UTF-8 encodings. RapidJSON also supports
-  *     UTF-16 and UTF-32 (LE & BE), but we don't use them for now.
-  *     FrePPLe internally represents all string data as UTF-8.
+  *   - JSON allows NULLs in the string values.
+  *     FrePPLe doesn't, and we will only consider the part before the
+  *     null characters.
+  *   - The parser only supports UTF-8 encodings.
+  *     RapidJSON also supports UTF-16 and UTF-32 (LE & BE), but a) FrePPLe
+  *     internally represents all string data as UTF-8 and b) the in-situ
+  *     parser requires input and destination encoding to be the same.
   *
   * See https://github.com/miloyip/rapidjson for information on rapidjson,
   * which is released under the MIT license.
