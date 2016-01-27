@@ -96,7 +96,7 @@ bool WebServer::handleGet(CivetServer *server, struct mg_connection *conn)
     return false;
 
   // Find the matching field
-  const MetaFieldBase *fld = Plan::metadata->findField(*(cat->grouptag));
+  const MetaFieldBase *fld = Plan::metacategory->findField(*(cat->grouptag));
 
   if (fld && (!slash || !*(slash+1)))
   {
