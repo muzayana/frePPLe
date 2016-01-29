@@ -3989,6 +3989,7 @@ class PythonIterator : public Object
 /** @brief This class is a wrapper around platform specific mutex functions. */
 class Mutex: public NonCopyable
 {
+  friend class ConditionVariable;
   public:
 #if defined(HAVE_PTHREAD_H)
     // Pthreads
@@ -4058,6 +4059,78 @@ class ScopeMutexLock: public NonCopyable
     {
       mtx.unlock();
     }
+};
+
+
+/** @brief This class is a wrapper around the platform specific
+  * implementation condition variable.
+  *
+  * A condition variable is a mechanism to synchronize execution threads.
+  * It is used to block one or more threads until another thread both
+  * modifies a shared variable (the condition), and notifies the condition
+  * variable.
+  *
+  * The typical usage will follow this pattern:
+  *   - For the thread that is waiting for a condition:
+  *        mutex.lock();
+  *        while (condition is not true)
+  *          condition_variable.wait(mutex);
+  *        update the condition;
+  *        mutex.unlock();
+  *   - For the thread updating the condition:
+  *        mutex.lock();
+  *        update condition;
+  *        waiting.signal();
+  *        mutex.unlock();
+  *   - The wait method is used to delay the thread.
+  *   - The signal method is used to flag all waiting threads of a condition
+  *     change.
+  *   - A mutex is required to control single-threaded access to the condition.
+  */
+class ConditionVariable: public NonCopyable
+{
+  public:
+#if defined(HAVE_PTHREAD_H)
+    // Pthreads
+    ConditionVariable()
+    {
+      pthread_cond_init (&cond, NULL);
+    }
+
+    ~ConditionVariable()
+    {
+      pthread_cond_destroy(&cond);
+    }
+
+    void wait(Mutex& x)
+    {
+      pthread_cond_wait(&cond, x.mtx);
+    }
+
+    void signal()
+    {
+      pthread_cond_signal(&cond);
+    }
+  private:
+    pthread_cond_t cond;
+#else
+    // Windows
+    ConditionVariable() {}
+
+    ~ConditionVariable() {}
+
+    void wait(Mutex& x)
+    {
+      SleepConditionVariableCS(&cond, &x.critsec, INFINITE);
+    }
+
+    void signal()
+    {
+      WakeAllConditionVariable(&cond);
+    }
+  private:
+    CONDITION_VARIABLE cond;
+#endif
 };
 
 

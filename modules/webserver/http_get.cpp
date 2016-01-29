@@ -60,6 +60,7 @@ bool WebServer::handleGet(CivetServer *server, struct mg_connection *conn)
   // TODO use chunked output stream
   if (!strcmp(request_info->uri, "/"))
   {
+    rw_lock.addReader();
     if (format == "json")
     {
       // CASE 1a: JSON format
@@ -80,6 +81,7 @@ bool WebServer::handleGet(CivetServer *server, struct mg_connection *conn)
       o.writeElementWithHeader(Tags::plan, &Plan::instance());
       mg_printf(conn, "%s", o.getData().c_str());
     }
+    rw_lock.removeReader();
     return true;
   }
 
@@ -100,6 +102,7 @@ bool WebServer::handleGet(CivetServer *server, struct mg_connection *conn)
 
   if (fld && (!slash || !*(slash+1)))
   {
+    rw_lock.addReader();
     // CASE 2: Return all objects of a single category
     if (format == "json")
     {
@@ -113,7 +116,6 @@ bool WebServer::handleGet(CivetServer *server, struct mg_connection *conn)
       fld->writeField(o);
       o.writeString("}");
       mg_printf(conn, "%s", o.getData().c_str());
-      return true;
     }
     else
     {
@@ -127,12 +129,14 @@ bool WebServer::handleGet(CivetServer *server, struct mg_connection *conn)
       fld->writeField(o);
       mg_printf(conn, "%s", o.getData().c_str());
       mg_printf(conn, "</plan>\n");
-      return true;
     }
+    rw_lock.removeReader();
+    return true;
   }
   else
   {
     // CASE 3: Return a single object
+    rw_lock.addReader();
     string entitykey = slash + 1;
     vector<XMLInput::fld> f(1);
     f[0].name = "name";
@@ -147,6 +151,7 @@ bool WebServer::handleGet(CivetServer *server, struct mg_connection *conn)
         "HTTP/1.1 404 Not Found\r\n\r\n"
         "<html><head><title>Entity not found</title></head><body>Sorry, the requested object doesn't exist.</body></html>"
         );
+      rw_lock.removeReader();
       return true;
     }
 
@@ -166,7 +171,6 @@ bool WebServer::handleGet(CivetServer *server, struct mg_connection *conn)
       o.EndList(*(cat->grouptag));
       o.writeString("}");
       mg_printf(conn, "%s", o.getData().c_str());
-      return true;
     }
     else
     {
@@ -184,8 +188,9 @@ bool WebServer::handleGet(CivetServer *server, struct mg_connection *conn)
       o.EndList(*(cat->grouptag));
       mg_printf(conn, "%s", o.getData().c_str());
       mg_printf(conn, "</plan>\n");
-      return true;
     }
+    rw_lock.removeReader();
+    return true;
   }
 }
 
@@ -194,24 +199,23 @@ void WebServer::buildIndex(string& index)
 {
   // Header
   ostringstream strm;
-  strm << "<!DOCTYPE html>" << endl
-    << "<html lang=\"en-us\"><head>" << endl
-    << "<title>frePPLe" << PACKAGE_VERSION << " web service API</title>" << endl
-    << "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />" << endl
-    << "<meta name=\"robots\" content=\"NONE,NOARCHIVE\" />" << endl;
+  strm << "<!DOCTYPE html>"
+    "<html lang=\"en-us\"><head>"
+    "<title>frePPLe " << PACKAGE_VERSION << " REST API</title>"
+    "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />"
+    "<meta name=\"robots\" content=\"NONE,NOARCHIVE\" />" << endl;
 
   // Style
   strm << "<style>" << endl
     << "</style>" << endl;
 
   // Body
-  strm << "</head><body>" << endl
-    << "<h1>frePPLe" << PACKAGE_VERSION << " web service API</h1>" << endl;
+  strm << "</head><body><h1>frePPLe " << PACKAGE_VERSION << " REST API</h1>" << endl;
   strm << "<h2>GET data</h2>" << endl;
   strm << "<h2>POST data</h2>" << endl;
 
   // Posting of XML data
-  strm << "<ul><li>Upload XML data<br/><form action=\"/\" method=\"post\">" << endl
+  strm << "<ul><li>Upload XML data<br/><form action=\"/xml\" method=\"post\">" << endl
     << "Data: <textarea id=\"xmldata\" name=\"xmldata\" rows=\"20\" cols=\"100\">" << endl
     << "&lt;?xml version=\"1.0\" encoding=\"UTF-8\" ?&gt;" << endl
     << "&lt;plan xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"&gt;" << endl

@@ -256,7 +256,14 @@ void JSONInput::parse(Object* pRoot, char* buffer)
   // The parser will modify the string buffer during the parsing!
   rapidjson::InsituStringStream buf(buffer);
   rapidjson::Reader reader;
-  reader.Parse(buf, *this);
+  rapidjson::ParseResult ok = reader.Parse(buf, *this);
+  if (!ok)
+  {
+    ostringstream o;
+    o << "Error position " << ok.Offset() << " during JSON parsing: "
+      << rapidjson::GetParseError_En(ok.Code());
+    throw DataException(o.str());
+  }
 }
 
 

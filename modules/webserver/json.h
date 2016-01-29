@@ -31,6 +31,7 @@ typedef __int64   int64_t;
 #endif
 
 #include "rapidjson/reader.h"
+#include "rapidjson/error/en.h"
 
 namespace module_webserver
 {
