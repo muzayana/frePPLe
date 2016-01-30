@@ -4104,7 +4104,7 @@ class ConditionVariable: public NonCopyable
 
     void wait(Mutex& x)
     {
-      pthread_cond_wait(&cond, x.mtx);
+      pthread_cond_wait(&cond, &(x.mtx));
     }
 
     void signal()
