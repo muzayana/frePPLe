@@ -24,7 +24,7 @@
 
 ; Main definitions
 !define PRODUCT_NAME "frePPLe"
-!define PRODUCT_VERSION "3.1.beta"
+!define PRODUCT_VERSION "3.0.1"
 !define PRODUCT_PUBLISHER "frePPLe"
 !define PRODUCT_WEB_SITE "http://frepple.com"
 !define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\frepple.exe"
@@ -131,8 +131,8 @@ Page custom FinishOpen FinishLeave
 !insertmacro MUI_LANGUAGE "TradChinese"
 
 ;Version Information
-VIProductVersion "3.1.0.0"
-VIAddVersionKey /LANG=${LANG_ENGLISH} FileVersion "3.1.0.0"
+VIProductVersion "3.0.0.0"
+VIAddVersionKey /LANG=${LANG_ENGLISH} FileVersion "3.0.0.0"
 VIAddVersionKey /LANG=${LANG_ENGLISH} ProductName "frePPLe enterprise edition installer"
 VIAddVersionKey /LANG=${LANG_ENGLISH} Comments "frePPLe enterprise edition installer"
 VIAddVersionKey /LANG=${LANG_ENGLISH} CompanyName "frePPLe"
@@ -380,13 +380,17 @@ Function Databaseleave
   ExecWait 'psql -d $2 -U $3 -h $5 -p $6 -c "select version();"'
   IfErrors 0 ok
      StrCpy $1 'A test connection to the database failed...$\r$\n$\r$\n'
-     StrCpy $1 '$1Update the parameters or:$\r$\n'
-     StrCpy $1 '$1  1) Install PostgreSQL 9.4$\r$\n'
-     StrCpy $1 '$1  2) Configure it to till you can successfully connect from the commands:$\r$\n'
+     StrCpy $1 '$1Correct the connection parameters or:$\r$\n'
+     StrCpy $1 '$1  1) Install PostgreSQL 9.4 or 9.5$\r$\n'
+     StrCpy $1 '$1  2) Add the PostgreSQL bin folder to the PATH environment variable$\r$\n'
+     StrCpy $1 '$1  3) Create the login role "$3"$\r$\n'
+     StrCpy $1 '$1  4) Create the database "$2" with owner "$3"$\r$\n'
+     StrCpy $1 '$1  5) Test the connection with the commands:$\r$\n'
      StrCpy $1 '$1        set PGPASSWORD=$4$\r$\n'
-     StrCpy $1 '$1        psql -d $2 -U $3 -h $5 -p $6 -c "select version();"$\r$\n'
-     StrCpy $1 '$1  3) Assure psql is on the PATH environment variable'
-     MessageBox MB_OK $1
+     StrCpy $1 '$1        psql -d $2 -U $3 -h $5 -p $6 -c "select version();"$\r$\n$\r$\n'
+     StrCpy $1 '$1  Continue despite failed connection? May not be a good idea...$\r$\n'
+     MessageBox MB_YESNO $1 IDYES ok IDNO retry
+  retry:
      ; Return to the page
      Abort
   ok:

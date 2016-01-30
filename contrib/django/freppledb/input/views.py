@@ -234,7 +234,7 @@ class PathReport(GridReport):
       result.extend([
         (level, None, i, curqty, 0, None, realdepth, pushsuper, buffer.location.name if buffer.location else None)
         for i in ItemSupplier.objects.using(db).filter(
-          item__lft__lte=buffer.item.lft, item__rght__gt=buffer.item.rght
+          item__lft__lte=buffer.item.lft, item__rght__gt=buffer.item.lft
           )
         ])
     return result
@@ -680,7 +680,7 @@ class ItemSupplierList(GridReport):
     GridFieldNumber('sizeminimum', title=_('size minimum')),
     GridFieldNumber('sizemultiple', title=_('size multiple')),
     GridFieldCurrency('cost', title=_('cost')),
-    GridFieldNumber('priority', title=_('priority')),
+    GridFieldInteger('priority', title=_('priority')),
     GridFieldDateTime('effective_start', title=_('effective start')),
     GridFieldDateTime('effective_end', title=_('effective end')),
     GridFieldText('source', title=_('source')),
@@ -705,7 +705,7 @@ class ItemDistributionList(GridReport):
     GridFieldNumber('sizeminimum', title=_('size minimum')),
     GridFieldNumber('sizemultiple', title=_('size multiple')),
     GridFieldCurrency('cost', title=_('cost')),
-    GridFieldNumber('priority', title=_('priority')),
+    GridFieldInteger('priority', title=_('priority')),
     GridFieldDateTime('effective_start', title=_('effective start')),
     GridFieldDateTime('effective_end', title=_('effective end')),
     GridFieldText('source', title=_('source')),
