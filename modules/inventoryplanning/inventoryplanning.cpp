@@ -239,13 +239,58 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
   {
     if (loglevel > 1)
       logger << "   No replenishing operation defined" << endl;
-    return;
+    // Setting an axtremely long lead time, which results in a huge
+    // safety stock that covers the entire horizon.
+    leadtime = 999L * 86400L;
   }
-  else if (oper->getType() != *OperationFixedTime::metadata
+  else if (oper->getType() == *OperationAlternate::metadata)
+  {
+    // Alternate operation: Take the lead time of the preferred operation
+    int curPrio = INT_MAX;
+    for (Operation::Operationlist::const_iterator
+      sub = oper->getSubOperations().begin();
+      sub != oper->getSubOperations().end();
+      ++sub)
+      {
+        if ((*sub)->getPriority() < curPrio && (
+          (*sub)->getOperation()->getType() == *OperationFixedTime::metadata
+          || (*sub)->getOperation()->getType() == *OperationItemDistribution::metadata
+          || (*sub)->getOperation()->getType() == *OperationItemSupplier::metadata
+          ))
+        {
+          leadtime = static_cast<OperationFixedTime*>((*sub)->getOperation())->getDuration();
+          curPrio = (*sub)->getPriority();
+        }
+      }
+  }
+  else if (oper->getType() == *OperationSplit::metadata)
+  {
+    // Split operation: Take the lead time of the longest operation
+    for (Operation::Operationlist::const_iterator
+      sub = oper->getSubOperations().begin();
+      sub != oper->getSubOperations().end();
+      ++sub)
+      {
+        if ((*sub)->getOperation()->getType() != *OperationFixedTime::metadata
+          || (*sub)->getOperation()->getType() != *OperationItemDistribution::metadata
+          || (*sub)->getOperation()->getType() != *OperationItemSupplier::metadata
+          )
+        {
+          Duration tmp = static_cast<OperationFixedTime*>((*sub)->getOperation())->getDuration();
+          if (tmp > leadtime)
+            leadtime = tmp;
+        }
+      }
+  }
+  else if (
+    oper->getType() != *OperationFixedTime::metadata
     && oper->getType() != *OperationItemDistribution::metadata
-    && oper->getType() != *OperationItemSupplier::metadata)
-    logger << "   Replenishing operation should be of type fixed_time" << endl; // TODO Make more generic
+    && oper->getType() != *OperationItemSupplier::metadata
+    )
+    // Using a lead time of 0
+    logger << "   Replenishing operation should be of type fixed_time" << endl;
   else
+    // After all special cases, the normal case of an operation with a fixed duration
     leadtime = static_cast<OperationFixedTime*>(oper)->getDuration();
 
   // Report parameter settings
