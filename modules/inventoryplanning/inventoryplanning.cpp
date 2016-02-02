@@ -330,7 +330,9 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
     ss_min_qty = ss_multiple;
 
   // Prepare the calendars to retrieve the results
-  Calendar *roq_calendar = oper->getSizeMinimumCalendar();
+  Calendar *roq_calendar = NULL;
+  if (oper)
+    roq_calendar = oper->getSizeMinimumCalendar();
   if (!roq_calendar)
     // Automatically association based on the calendar name.
     roq_calendar = Calendar::find("ROQ for " + b->getName());
@@ -716,9 +718,12 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
   }
 
   // Associate the new or updated created calendars
-  if (oper->getSizeMinimumCalendar())
-    oper->setSizeMinimumCalendar(NULL);
-  oper->setSizeMinimumCalendar(roq_calendar);
+  if (oper)
+  {
+    if (oper->getSizeMinimumCalendar())
+      oper->setSizeMinimumCalendar(NULL);
+    oper->setSizeMinimumCalendar(roq_calendar);
+  }
   if (b->getMinimumCalendar())
     const_cast<Buffer*>(b)->setMinimumCalendar(NULL);
   const_cast<Buffer*>(b)->setMinimumCalendar(ss_calendar);
