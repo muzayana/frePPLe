@@ -597,6 +597,100 @@ class Subscription : public Association<PublisherBase,WebClient,Subscription>::N
 };
 
 
+/** A simple (or simplistic) read/write lock.
+  * Multiple reading threads are allowed simultaneous access.
+  * A writing thread has exclusive access.
+  *
+  * Assumptions & limitations:
+  *  - Readers take priority over writers, potentially starving the writers.
+  *  - No fair fifo ordering for waiting threads.
+  *  - Performance overhead (due to mutex) also limits scalability for only read-access.
+  *
+  * The implementation is inspired on:
+  *   http://stackoverflow.com/questions/12033188/how-would-a-readers-writer-lock-be-implemented-in-c11
+  */
+class ReadWriteLock : private NonCopyable
+{
+  public:
+    /** Constructor. */
+    ReadWriteLock() : readers(0), write(false) {}
+
+    /** Wait until read access is obtained. */
+    void addReader()
+    {
+      access.lock();
+      while (write)
+        waiting.wait(access);
+      ++readers;
+      access.unlock();
+    }
+
+    /** Release a read lock. */
+    void removeReader()
+    {
+      access.lock();
+      --readers;
+      if (readers == 0)
+        waiting.signal();
+      access.unlock();
+    }
+
+    /** Upgrade from a read lock to a write lock. */
+    void upgradeToWriter()
+    {
+      access.lock();
+      --readers;
+      while (write || (readers > 0))
+        waiting.wait(access);
+      access.unlock();
+    }
+
+    /** Wait until write access is obtained. */
+    void addWriter()
+    {
+      access.lock();
+      while (write || (readers > 0))
+        waiting.wait(access);
+      write = true;
+      access.unlock();
+    }
+
+    /** Release a write lock. */
+    void removeWriter()
+    {
+      access.lock();
+      write = false;
+      waiting.signal();
+      access.unlock();
+    }
+
+    /** Downgrade a write lock to a read lock.
+      * A downgrade can always instantenously be granted since we are
+      * already granted exclusive access.
+      */
+    void downgradeToReader()
+    {
+      access.lock();
+      write = false;
+      ++readers;
+      access.unlock();
+    }
+
+  private:
+    /** Only one caller at a time. */
+    Mutex access;
+
+    /** Condition variable. */
+    ConditionVariable waiting;
+
+    /** Count the number of reader threads. */
+    unsigned int readers;
+
+    /** Flag wether a writer is active. */
+    bool write;
+};
+
+
 /** A class to process requests to the embedded HTTP and websocket server. */
 class WebServer : public CivetHandler
 {
@@ -687,6 +781,9 @@ class WebServer : public CivetHandler
     static short loglevel;
 
     static string connectionstring;
+
+    /** Guard the multi-read/single write pattern. */
+    static ReadWriteLock rw_lock;
 };
 
 

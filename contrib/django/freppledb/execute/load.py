@@ -48,6 +48,7 @@ class loadData(object):
 
   def loadParameter(self):
     print('Importing parameters...')
+    # Current date
     try:
       self.cursor.execute("SELECT value FROM common_parameter where name='currentdate'")
       d = self.cursor.fetchone()
@@ -56,6 +57,23 @@ class loadData(object):
       frepple.settings.current = datetime.now().replace(microsecond=0)
       print('Using system clock as current date: %s' % frepple.settings.current)
     print('Current date: %s' % frepple.settings.current)
+    # Assure the operationplan ids will be unique
+    self.cursor.execute('''
+      select
+        coalesce(max(ids.max_id), 1) + 1
+      from (
+        select max(id) as max_id from purchase_order
+          where status is not null and status <> 'proposed'
+        union all
+        select max(id) as max_id from distribution_order
+          where status is not null and status <> 'proposed'
+        union all
+        select max(id) as max_id from operationplan
+          where status is not null and status <> 'proposed'
+        ) ids
+      ''')
+    d = self.cursor.fetchone()
+    frepple.settings.id = d[0]
 
 
   def loadLocations(self):
@@ -667,13 +685,14 @@ class loadData(object):
       cnt += 1
       opplan = frepple.operationplan(
         operation=frepple.operation(name=i[0]),
-        id=i[1], quantity=i[2], source=i[6]
+        id=i[1], quantity=i[2], source=i[6],
+        start=i[3], end=i[4], status=i[5]
         )
-      if i[3]:
-        opplan.start = i[3]
-      if i[4]:
-        opplan.end = i[4]
-      opplan.status = i[5]
+      if opplan.start <= frepple.settings.current:
+        # We assume that locked operationplans with a start date in the past
+        # have already consumed all materials.
+        # TODO Specifying this explicitly may be more appropriate
+        opplan.consume_material = False
     self.cursor.execute('''
       SELECT
         operation_id, id, quantity, startdate, enddate, status, owner_id, source
@@ -686,13 +705,14 @@ class loadData(object):
       opplan = frepple.operationplan(
         operation=frepple.operation(name=i[0]),
         id=i[1], quantity=i[2], source=i[7],
-        owner=frepple.operationplan(id=i[6])
+        owner=frepple.operationplan(id=i[6]),
+        start=i[3], end=i[4], status=i[5]
         )
-      if i[3]:
-        opplan.start = i[3]
-      if i[4]:
-        opplan.end = i[4]
-      opplan.status = i[5]
+      if opplan.start <= frepple.settings.current:
+        # We assume that locked operationplans with a start date in the past
+        # have already consumed all materials.
+        # TODO Specifying this explicitly may be more appropriate
+        opplan.consume_material=False
     print('Loaded %d operationplans in %.2f seconds' % (cnt, time() - starttime))
 
 

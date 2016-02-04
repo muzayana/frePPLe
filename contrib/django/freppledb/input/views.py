@@ -234,7 +234,7 @@ class PathReport(GridReport):
       result.extend([
         (level, None, i, curqty, 0, None, realdepth, pushsuper, buffer.location.name if buffer.location else None)
         for i in ItemSupplier.objects.using(db).filter(
-          item__lft__lte=buffer.item.lft, item__rght__gt=buffer.item.rght
+          item__lft__lte=buffer.item.lft, item__rght__gt=buffer.item.lft
           )
         ])
     return result
@@ -680,7 +680,7 @@ class ItemSupplierList(GridReport):
     GridFieldNumber('sizeminimum', title=_('size minimum')),
     GridFieldNumber('sizemultiple', title=_('size multiple')),
     GridFieldCurrency('cost', title=_('cost')),
-    GridFieldNumber('priority', title=_('priority')),
+    GridFieldInteger('priority', title=_('priority')),
     GridFieldDateTime('effective_start', title=_('effective start')),
     GridFieldDateTime('effective_end', title=_('effective end')),
     GridFieldText('source', title=_('source')),
@@ -705,7 +705,7 @@ class ItemDistributionList(GridReport):
     GridFieldNumber('sizeminimum', title=_('size minimum')),
     GridFieldNumber('sizemultiple', title=_('size multiple')),
     GridFieldCurrency('cost', title=_('cost')),
-    GridFieldNumber('priority', title=_('priority')),
+    GridFieldInteger('priority', title=_('priority')),
     GridFieldDateTime('effective_start', title=_('effective start')),
     GridFieldDateTime('effective_end', title=_('effective end')),
     GridFieldText('source', title=_('source')),
@@ -974,7 +974,7 @@ class OperationPlanList(GridReport):
   frozenColumns = 1
 
   rows = (
-    GridFieldInteger('id', title=_('identifier'), key=True),
+    GridFieldInteger('id', title=_('identifier'), key=True, formatter='detail', extra="role:'input/operationplan'"),
     GridFieldText('operation', title=_('operation'), field_name='operation__name', formatter='detail', extra="role:'input/operation'"),
     GridFieldDateTime('startdate', title=_('start date')),
     GridFieldDateTime('enddate', title=_('end date')),
@@ -1004,7 +1004,7 @@ class DistributionOrderList(GridReport):
   frozenColumns = 1
 
   rows = (
-    GridFieldInteger('id', title=_('identifier'), key=True, formatter='drp' if 'freppledb.inventoryplanning' in settings.INSTALLED_APPS else 'integer'),
+    GridFieldInteger('id', title=_('identifier'), key=True, formatter='drp' if 'freppledb.inventoryplanning' in settings.INSTALLED_APPS else 'detail', extra="role:'input/distributionorder'"),
     GridFieldText('reference', title=_('reference'),
       editable='freppledb.openbravo' not in settings.INSTALLED_APPS
       ),
@@ -1064,7 +1064,7 @@ class PurchaseOrderList(GridReport):
   frozenColumns = 1
 
   rows = (
-    GridFieldInteger('id', title=_('identifier'), key=True, formatter='drp' if 'freppledb.inventoryplanning' in settings.INSTALLED_APPS else 'integer'),
+    GridFieldInteger('id', title=_('identifier'), key=True, formatter='drp' if 'freppledb.inventoryplanning' in settings.INSTALLED_APPS else 'detail', extra="role:'input/purchaseorder'"),
     GridFieldText('reference', title=_('reference'),
       editable='freppledb.openbravo' not in settings.INSTALLED_APPS
       ),

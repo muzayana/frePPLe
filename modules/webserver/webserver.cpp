@@ -21,6 +21,10 @@ PythonFunction PublisherBase::unregistrationHook;
 
 template<class T> map<T*, Publisher<T> > Publisher<T>::objects;
 
+// Multi-read/single-write pattern for the web server
+ReadWriteLock WebServer::rw_lock;
+
+
 PyObject* runWebServer (PyObject* self, PyObject* args, PyObject* kwds)
 {
   // Define callback functions
@@ -159,7 +163,6 @@ PyObject* runWebServer (PyObject* self, PyObject* args, PyObject* kwds)
 #endif
   return Py_BuildValue("");
 }
-
 
 
 int WebServer::connect_callback(const struct mg_connection *conn)

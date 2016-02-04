@@ -248,7 +248,7 @@
 			<name>Forecast 1</name>
 			<item>
 				<name>Product 1</name>
-		</item>
+			</item>
 			<priority>1</priority>
 			<calendar>
 				<name>planningbuckets</name>
@@ -470,24 +470,24 @@
 	</demands>
 	<operationplans>
 		<operationplan>
-			<id>2</id>
-			<operation>
-				<name>delivery 1</name>
-			</operation>
-			<demand>
-				<name>Order 2 for product 1</name>
-			</demand>
-			<start>2009-01-02T00:00:00</start>
-			<end>2009-01-03T00:00:00</end>
-			<quantity>90</quantity>
-		</operationplan>
-		<operationplan>
 			<id>3</id>
 			<operation>
 				<name>delivery 1</name>
 			</operation>
 			<demand>
 				<name>Order 1 for product 1</name>
+			</demand>
+			<start>2009-01-02T00:00:00</start>
+			<end>2009-01-03T00:00:00</end>
+			<quantity>90</quantity>
+		</operationplan>
+		<operationplan>
+			<id>2</id>
+			<operation>
+				<name>delivery 1</name>
+			</operation>
+			<demand>
+				<name>Order 2 for product 1</name>
 			</demand>
 			<start>2009-01-02T00:00:00</start>
 			<end>2009-01-03T00:00:00</end>

@@ -38,6 +38,7 @@ bool WebServer::handleDelete(CivetServer *server, struct mg_connection *conn)
   }
 
   // Return a single object
+  rw_lock.addReader();
   string entitykey = slash + 1;
   vector<XMLInput::fld> f(1);
   f[0].name = "name";
@@ -52,10 +53,12 @@ bool WebServer::handleDelete(CivetServer *server, struct mg_connection *conn)
       "HTTP/1.1 404 Not Found\r\n\r\n"
       "<html><head><title>Entity not found</title></head><body>Sorry, the requested object doesn't exist.</body></html>"
       );
+    rw_lock.removeReader();
     return true;
   }
 
   // Delete the object
+  rw_lock.upgradeToWriter();
   try
   {
     string persist;
@@ -134,6 +137,7 @@ bool WebServer::handleDelete(CivetServer *server, struct mg_connection *conn)
       "<html><head><title>Server error</title></head><body>Exception occurred when deleting object</body></html>"
       );
   }
+  rw_lock.removeWriter();
   return true;
 }
 

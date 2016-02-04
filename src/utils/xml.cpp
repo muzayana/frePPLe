@@ -454,7 +454,7 @@ DECLARE_EXPORT void XMLInput::endElement(const XMLCh* const uri,
 
     // Check if we need to add a parent object to the dict
     bool found_parent = false;
-    if (objects[objectindex].cls->parent)
+    if (objectindex > 0 && objects[objectindex].cls->parent)
     {
       assert(objects[objectindex-1].cls);
       const MetaClass* cl = objects[objectindex-1].cls;
@@ -524,7 +524,7 @@ DECLARE_EXPORT void XMLInput::endElement(const XMLCh* const uri,
           }
         }
     }
-    if (!found_parent && objects[objectindex].cls->category && objects[objectindex].cls->category->parent)
+    if (!found_parent && objectindex > 0 && objects[objectindex].cls->category && objects[objectindex].cls->category->parent)
     {
       assert(objects[objectindex-1].cls);
       const MetaClass* cl = objects[objectindex-1].cls;

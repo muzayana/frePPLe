@@ -12,6 +12,7 @@
  ***************************************************************************/
 
 #include "webserver.h"
+#include "json.h"
 
 namespace module_webserver
 {
@@ -20,27 +21,72 @@ bool WebServer::handlePost(CivetServer *server, struct mg_connection *conn)
 {
   const struct mg_request_info *request_info = mg_get_request_info(conn);
 
-  // TODO Assure single user access from this point onwards
+  if (loglevel > 1)
+    logger << "Receiving " << request_info->content_length << " bytes on " << request_info->uri << endl;
 
   try
   {
     if (!strcmp(request_info->uri, "/json"))
     {
+      // Read the raw post data
+      if (request_info->content_length > 1000 * 1024)
+      {
+        // Maximum size exceeded
+        mg_printf(conn,
+          "HTTP/1.1 501 Not Implemented\r\n\r\n"
+          "The maximum size for posting raw JSON data is 1MB."
+          );
+        return true;
+      }
+      char* post_data = new char[request_info->content_length + 1];
+      int post_data_len = mg_read(conn, post_data, request_info->content_length);
+      post_data[post_data_len] = 0;
+
+      // Parse the JSON data
+      rw_lock.addWriter();
+      try
+      {
+        JSONInputString(post_data).parse(&Plan::instance());
+        delete[] post_data;
+      }
+      catch (...)
+      {
+        delete[] post_data;
+        rw_lock.removeWriter();
+        throw;
+      }
+      rw_lock.removeWriter();
     }
     else if (!strcmp(request_info->uri, "/xml"))
     {
-      /*  TODO
-        char post_data[1024], input1[sizeof(post_data)], input2[sizeof(post_data)];
-    int post_data_len;
+      // Read the raw post data
+      if (request_info->content_length > 1000 * 1024)
+      {
+        // Maximum size exceeded
+        mg_printf(conn,
+          "HTTP/1.1 501 Not Implemented\r\n\r\n"
+          "The maximum size for posting raw XML data is 1MB."
+          );
+        return true;
+      }
+      char* post_data = new char[request_info->content_length + 1];
+      int post_data_len = mg_read(conn, post_data, request_info->content_length);
+      post_data[post_data_len] = 0;
 
-        // User has submitted a form, show submitted data and a variable value
-        post_data_len = mg_read(conn, post_data, sizeof(post_data));
-
-        // Parse form data. input1 and input2 are guaranteed to be NUL-terminated
-        mg_get_var(post_data, post_data_len, "input_1", input1, sizeof(input1));
-        mg_get_var(post_data, post_data_len, "input_2", input2, sizeof(input2));
-        mg_upload
-        */
+      // Parse the XML data
+      rw_lock.addWriter();
+      try
+      {
+        XMLInputString(post_data).parse(&Plan::instance());
+        delete[] post_data;
+      }
+      catch (...)
+      {
+        delete[] post_data;
+        rw_lock.removeWriter();
+        throw;
+      }
+      rw_lock.removeWriter();
     }
     else if (!strcmp(request_info->uri, "/quote/") || !strcmp(request_info->uri, "/quote"))
        return quote_or_inquiry(conn, true);

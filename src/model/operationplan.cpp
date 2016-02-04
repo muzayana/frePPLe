@@ -160,13 +160,40 @@ DECLARE_EXPORT Object* OperationPlan::createOperationPlan
   else
   {
     // Create an operationplan
+    const DataValue* startfld = in.get(Tags::start);
+    Date start;
+    if (startfld)
+      start = startfld->getDate();
+    const DataValue* endfld = in.get(Tags::end);
+    Date end;
+    if (endfld)
+      end = endfld->getDate();
+    const DataValue* quantityfld = in.get(Tags::quantity);
+    double quantity = quantityfld ? quantityfld->getDouble() : 0.0;
     opplan = static_cast<Operation*>(oper)->createOperationPlan(
-      0.0, Date::infinitePast, Date::infinitePast, NULL, NULL, id, false
+      quantity, start, end, NULL, NULL, id, false
       );
     if (!opplan->getType().raiseEvent(opplan, SIG_ADD))
     {
       delete opplan;
       throw DataException("Can't create operationplan");
+    }
+
+    // Special case: if the operation plan is locked, we need to
+    // process the start and end date before locking it.
+    // Subsequent calls won't affect the operationplan any longer.
+    const DataValue* statusfld = in.get(Tags::status);
+    if (statusfld && statusfld->getString() != "proposed")
+    {
+      string status = statusfld->getString();
+      if (start && end)
+      {
+        // Any start date, end date and quantity combination will be accepted
+        opplan->setStatus(status);
+        opplan->freezeStatus(start, end, quantity);
+      }
+      else 
+        opplan->setStatus(status);
     }
     opplan->activate();
     return opplan;
@@ -452,29 +479,25 @@ DECLARE_EXPORT void OperationPlan::createFlowLoads()
     return;
 
   // Create setup suboperationplans and loadplans
-  if (getConsumeCapacity() || !getLocked())
-    for (Operation::loadlist::const_iterator g=oper->getLoads().begin();
-        g!=oper->getLoads().end(); ++g)
-      if (!g->getAlternate())
-      {
-        new LoadPlan(this, &*g);
-        if (!g->getSetup().empty() && g->getResource()->getSetupMatrix())
-          OperationSetup::setupoperation->createOperationPlan(
-            1, getDates().getStart(), getDates().getStart(), NULL, this);
-      }
+  for (Operation::loadlist::const_iterator g=oper->getLoads().begin();
+      g!=oper->getLoads().end(); ++g)
+    if (!g->getAlternate())
+    {
+      new LoadPlan(this, &*g);
+      if (!g->getSetup().empty() && g->getResource()->getSetupMatrix())
+        OperationSetup::setupoperation->createOperationPlan(
+          1, getDates().getStart(), getDates().getStart(), NULL, this);
+    }
 
   // Create flowplans for flows
-  bool cons = getLocked() ? getConsumeMaterial() : true;
-  bool prod = getLocked() ? getProduceMaterial() : true;
-  if (cons || prod)
-    for (Operation::flowlist::const_iterator h=oper->getFlows().begin();
-        h!=oper->getFlows().end(); ++h)
-    {
-      if (!h->getAlternate() && (h->getQuantity() > 0 ? prod : cons))
-        // Only the primary flow is instantiated.
-        // Flow creation can also be explicitly switched off.
-        new FlowPlan(this, &*h);
-    }
+  for (Operation::flowlist::const_iterator h=oper->getFlows().begin();
+      h!=oper->getFlows().end(); ++h)
+  {
+    if (!h->getAlternate())
+      // Only the primary flow is instantiated.
+      // Flow creation can also be explicitly switched off.
+      new FlowPlan(this, &*h);
+  }
 }
 
 
@@ -949,8 +972,17 @@ DECLARE_EXPORT void OperationPlan::setStatus(const string& s)
   }
   else
     throw DataException("invalid operationplan status:" + s);
+  update();
   for (OperationPlan *x = firstsubopplan; x; x = x->nextsubopplan)
     x->setStatus(s);
+}
+
+
+DECLARE_EXPORT void OperationPlan::freezeStatus(Date st, Date nd, double q)
+{
+  if (!getLocked()) return;
+  dates = DateRange(st, nd);
+  quantity = q > 0 ? q : 0.0;
 }
 
 
