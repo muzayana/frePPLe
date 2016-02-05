@@ -315,10 +315,18 @@ and export results.<br>
 {% if webservice %}
 <h3><a href="#database">{% trans "web service"|capfirst %}</a></h3>
 <div><table>
-<form method="post" action="{{request.prefix}}/execute/launch/frepple_stop_web_service/">{% csrf_token %}<tr>
-<td><input id="stop" type="submit" value="{% trans "launch"|capfirst %}" /></td>
+<tr><td>
+<form method="post" action="{{request.prefix}}/execute/launch/frepple_start_web_service/">
+{% csrf_token %}<input id="start" type="submit" value="{% trans "Start"|capfirst %}" />
+</form></td>
+<td>{% trans "Start the web service." %}</td>
+</tr>
+<tr><td>
+<form method="post" action="{{request.prefix}}/execute/launch/frepple_stop_web_service/">
+{% csrf_token %}<input id="stop" type="submit" value="{% trans "Stop"|capfirst %}" />
+</form></td>
 <td>{% trans "Stop the web service." %}</td>
-</tr></form>
+</tr>
 </table></div>
 
 {% endif %}

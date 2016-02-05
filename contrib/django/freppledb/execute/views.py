@@ -177,6 +177,8 @@ def LaunchTask(request, action):
         streaming_content=importWorkbook(request)
         )
     elif action == 'frepple_stop_web_service':
+      if not request.user.has_perm('execute.generate_plan'):
+        raise Exception('Missing execution privileges')
       from django.core import management
       management.call_command('frepple_stop_web_service', force=True, database=request.database)
       return HttpResponseRedirect('%s/execute/' % request.prefix)
@@ -206,7 +208,7 @@ def wrapTask(request, action):
   now = datetime.now()
   task = None
   # A
-  if action == 'frepple_run':
+  if action in ('frepple_run', 'frepple_start_web_service'):
     if not request.user.has_perm('execute.generate_plan'):
       raise Exception('Missing execution privileges')
     constraint = 0
@@ -216,40 +218,50 @@ def wrapTask(request, action):
       except:
         pass
     task = Task(name='generate plan', submitted=now, status='Waiting', user=request.user)
-    task.arguments = "--constraint=%s --plantype=%s" % (constraint, request.POST.get('plantype'))
-    env = []
-    if request.POST.get('webservice', '0') == '1':
-      env.append("webservice")
-      task.arguments += " --background"
-    if request.POST.get('planForecast', '0') != '1':
-      env.append("noforecast")
-    if request.POST.get('planProduction', '0') != '1':
-      env.append("noproduction")
-    if request.POST.get('planInventory', '0') != '1':
-      env.append("noinventory")
-    if request.POST.get('evalInventory', '0') != '1':
-      env.append("noevaluation")
-    if request.POST.get('odoo_read', None) == '1':
-      env.append("odoo_read")
-      request.session['odoo_read'] = True
+
+    if action == 'frepple_start_web_service':
+      # Load existing plan and run as a web service
+      env = [
+        "webservice", "noforecast", "noproduction", "noinventory", "noevaluation"
+        ]
+      task.arguments = " --background"
     else:
-      request.session['odoo_read'] = False
-    if request.POST.get('odoo_write', None) == '1':
-      env.append("odoo_write")
-      request.session['odoo_write'] = True
-    else:
-      request.session['odoo_write'] = False
+      # Create a new plan
+      env = []
+      task.arguments = "--constraint=%s --plantype=%s" % (constraint, request.POST.get('plantype'))
+      if request.POST.get('webservice', '0') == '1':
+        env.append("webservice")
+        task.arguments += " --background"
+      if request.POST.get('planForecast', '0') != '1':
+        env.append("noforecast")
+      if request.POST.get('planProduction', '0') != '1':
+        env.append("noproduction")
+      if request.POST.get('planInventory', '0') != '1':
+        env.append("noinventory")
+      if request.POST.get('evalInventory', '0') != '1':
+        env.append("noevaluation")
+      if request.POST.get('odoo_read', None) == '1':
+        env.append("odoo_read")
+        request.session['odoo_read'] = True
+      else:
+        request.session['odoo_read'] = False
+      if request.POST.get('odoo_write', None) == '1':
+        env.append("odoo_write")
+        request.session['odoo_write'] = True
+      else:
+        request.session['odoo_write'] = False
     if env:
       task.arguments = "%s --env=%s" % (task.arguments, ','.join(env))
     task.save(using=request.database)
-    # Update the session object
-    request.session['plantype'] = request.POST.get('plantype')
-    request.session['constraint'] = constraint
-    request.session['webservice'] = request.POST.get('webservice', '0')
-    request.session['planForecast'] = request.POST.get('planForecast', '0')
-    request.session['planProduction'] = request.POST.get('planProduction', '0')
-    request.session['planInventory'] = request.POST.get('planInventory', '0')
-    request.session['evalInventory'] = request.POST.get('evalInventory', '0')
+    if action != 'frepple_start_web_service':
+      # Update the session object
+      request.session['plantype'] = request.POST.get('plantype')
+      request.session['constraint'] = constraint
+      request.session['webservice'] = request.POST.get('webservice', '0')
+      request.session['planForecast'] = request.POST.get('planForecast', '0')
+      request.session['planProduction'] = request.POST.get('planProduction', '0')
+      request.session['planInventory'] = request.POST.get('planInventory', '0')
+      request.session['evalInventory'] = request.POST.get('evalInventory', '0')
   # B
   elif action == 'frepple_createmodel':
     task = Task(name='generate model', submitted=now, status='Waiting', user=request.user)
