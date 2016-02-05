@@ -151,9 +151,10 @@ void InventoryPlanningSolver::solve(void* v)
       plan_qty = d->getMinShipment();
 
     // Create a delivery operationplan for the remaining quantity
-    deliveryoper->createOperationPlan(
+    OperationPlan* deli = deliveryoper->createOperationPlan(
       plan_qty, Date::infinitePast, d->getDue(), &*d, NULL, 0, true
       );
+    deli->activate();
   }
 
   // Step 3: Solve buffer by buffer, ordered by level
