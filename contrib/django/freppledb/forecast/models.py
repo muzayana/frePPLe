@@ -340,6 +340,8 @@ class Forecast(AuditModel):
           forecast__item__rght__gt = i.forecast.item.lft,
           forecast__customer__lft__lte = i.forecast.customer.lft,
           forecast__customer__rght__gt = i.forecast.customer.lft,
+          forecast__location__lft__lte = i.forecast.location.lft,
+          forecast__location__rght__gt = i.forecast.location.lft,
           startdate = i.startdate
           )
       else:
@@ -348,6 +350,8 @@ class Forecast(AuditModel):
           forecast__item__rght__gt = i.forecast.item.lft,
           forecast__customer__lft__lte = i.forecast.customer.lft,
           forecast__customer__rght__gt = i.forecast.customer.lft,
+          forecast__location__lft__lte = i.forecast.location.lft,
+          forecast__location__rght__gt = i.forecast.location.lft,
           startdate = i.startdate
           )
       i.parentkeys = {}
