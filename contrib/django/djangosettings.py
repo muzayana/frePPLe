@@ -240,11 +240,6 @@ REST_FRAMEWORK = {
     'rest_framework.renderers.JSONRenderer',
     'freppledb.common.api.renderers.freppleBrowsableAPI',
   ),
-
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
-#    'PAGE_SIZE': 100,                 # Default to 10
-    # Use Django's standard `django.contrib.auth` permissions,
-    # or allow read-only access for unauthenticated users.
 }
 
 import django.contrib.admindocs
