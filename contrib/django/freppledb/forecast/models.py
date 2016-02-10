@@ -282,6 +282,8 @@ class Forecast(AuditModel):
         forecast__item__lft__lt = self.item.rght,
         forecast__customer__lft__gte = self.customer.lft,
         forecast__customer__lft__lt = self.customer.rght,
+        forecast__location__lft__gte = self.location.lft,
+        forecast__location__lft__lt = self.location.rght,
         startdate__gte = startdate,
         startdate__lt = enddate,
         forecast__planned = True  # TODO need a more generic way to find the leaf forecasts. Only works for bottom up fcst

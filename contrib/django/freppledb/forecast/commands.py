@@ -416,7 +416,6 @@ def exportForecastFull(cursor):
     ])
   transaction.commit(using=cursor.db.alias)
   fcst_calendar = Parameter.getValue('forecast.calendar', cursor.db.alias, None)
-  # TODO LOCATION NOT CONSIDERED
   cursor.execute('''
     update forecastplan
       set ordersplanned=coalesce(plannedquantities.planneddemand,0),
@@ -426,10 +425,10 @@ def exportForecastFull(cursor):
       from (
         select
            forecast.name as forecast, calendarbucket.startdate as startdate,
-           sum(case when demand.name is not null then planquantity else 0 end) as planneddemand,
-           sum(case when demand.name is null then planquantity else 0 end) as plannedforecast,
-           sum(case when demand.name is not null then (planquantity*item.price) else 0 end) as planneddemandvalue,
-           sum(case when demand.name is null then (planquantity*item.price) else 0 end) as plannedforecastvalue
+           sum(case when demand.name is not null and location.lft between flocation.lft and flocation.rght then planquantity else 0 end) as planneddemand,
+           sum(case when demand.name is null and out_demand.demand like forecast.name || ' - %%' then planquantity else 0 end) as plannedforecast,
+           sum(case when demand.name is not null and location.lft between flocation.lft and flocation.rght then (planquantity*item.price) else 0 end) as planneddemandvalue,
+           sum(case when demand.name is null and out_demand.demand like forecast.name || ' - %%' then (planquantity*item.price) else 0 end) as plannedforecastvalue
         from out_demand
         inner join item
           on out_demand.item = item.name
@@ -437,6 +436,8 @@ def exportForecastFull(cursor):
           on out_demand.customer = customer.name
         left outer join demand
           on out_demand.demand = demand.name
+        left outer join location
+          on location.name = demand.location_id
         inner join item as fitem
           on item.lft between fitem.lft and fitem.rght
         left outer join customer as fcustomer
@@ -444,6 +445,8 @@ def exportForecastFull(cursor):
         inner join forecast
           on fitem.name = forecast.item_id
           and fcustomer.name = forecast.customer_id
+        inner join location as flocation
+          on flocation.name = forecast.location_id
         inner join calendarbucket
           on calendarbucket.calendar_id = %s
           and out_demand.plandate >= calendarbucket.startdate
@@ -565,7 +568,6 @@ def exportForecastPlanned(cursor):
     ])
   transaction.commit(using=cursor.db.alias)
   fcst_calendar = Parameter.getValue('forecast.calendar', cursor.db.alias, None)
-  # TODO location match not considered
   cursor.execute('''
     update forecastplan
       set ordersplanned=coalesce(plannedquantities.planneddemand,0),
@@ -575,10 +577,10 @@ def exportForecastPlanned(cursor):
       from (
         select
            forecast.name as forecast, calendarbucket.startdate as startdate,
-           sum(case when demand.name is not null then planquantity else 0 end) as planneddemand,
-           sum(case when demand.name is null then planquantity else 0 end) as plannedforecast,
-           sum(case when demand.name is not null then (planquantity*item.price) else 0 end) as planneddemandvalue,
-           sum(case when demand.name is null then (planquantity*item.price) else 0 end) as plannedforecastvalue
+           sum(case when demand.name is not null and location.lft between flocation.lft and flocation.rght then planquantity else 0 end) as planneddemand,
+           sum(case when demand.name is null and out_demand.demand like forecast.name || ' - %%' then planquantity else 0 end) as plannedforecast,
+           sum(case when demand.name is not null and location.lft between flocation.lft and flocation.rght then (planquantity*item.price) else 0 end) as planneddemandvalue,
+           sum(case when demand.name is null and out_demand.demand like forecast.name || ' - %%' then (planquantity*item.price) else 0 end) as plannedforecastvalue
         from out_demand
         inner join item
           on out_demand.item = item.name
@@ -586,6 +588,8 @@ def exportForecastPlanned(cursor):
           on out_demand.customer = customer.name
         left outer join demand
           on out_demand.demand = demand.name
+        left outer join location
+          on demand.location_id = location.name
         inner join item as fitem
           on item.lft between fitem.lft and fitem.rght
         inner join customer as fcustomer
@@ -593,6 +597,8 @@ def exportForecastPlanned(cursor):
         inner join forecast
           on fitem.name = forecast.item_id
           and fcustomer.name = forecast.customer_id
+        inner join location as flocation
+          on flocation.name = forecast.location_id
         inner join calendarbucket
           on calendarbucket.calendar_id = %s
           and out_demand.plandate >= calendarbucket.startdate
