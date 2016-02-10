@@ -812,9 +812,11 @@ function displayPlanGraph()
     .attr("d", line(result.plan));
 
   // Display Y-Axis
+
   var yAxis = d3.svg.axis()
     .scale(y)
-    .orient("left");
+    .orient("left")
+    .tickFormat(d3.format("s"));
   svg.append("g")
     .attr("class", "y axis")
     .call(yAxis);
@@ -989,7 +991,8 @@ function displayForecastGraph()
   // Display Y-Axis
   var yAxis = d3.svg.axis()
     .scale(y)
-    .orient("left");
+    .orient("left")
+    .tickFormat(d3.format("s"));
   svg.append("g")
     .attr("class", "y axis")
     .call(yAxis);
