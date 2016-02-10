@@ -1213,7 +1213,7 @@ class DRPitemlocation(View):
         frepple_itemsupplier.effective_start = i.effective_start
       if i.effective_end:
         frepple_itemsupplier.effective_end = i.effective_end
-    for i in ItemDistribution.objects.all().using(request.database).filter(item=ip.buffer.item.name):
+    for i in ItemDistribution.objects.all().using(request.database).filter(item__lft__lte=ip.buffer.item.lft, item__rght__gte=ip.buffer.item.rght):
       frepple_itemdistribution = frepple.itemdistribution(
         origin=frepple.location(name=i.origin.name),
         destination=frepple.location(name=i.location.name) if i.location else None,

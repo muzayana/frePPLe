@@ -75,86 +75,100 @@ bool WebServer::quote_or_inquiry(struct mg_connection* conn, bool keepreservatio
   if (loglevel > 2)
     logger << "Quoting request posted: " << char_start << endl;
 
-  // Parse the XML data, with validation enabled
-  xml_demands.clear();
-  XMLInputString xml(char_start);
-  xml.setUserExitCpp(parsingCallback);
-  xml.parse(&Plan::instance(), true);
-
-  // Prepare to collect results
-  ostringstream response;
-  response << "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" << endl;
-  response << "<plan xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">" << endl;
-  response << "<demands>" << endl;
-
-  // Clean up the supply planned for all demands
-  OperatorDelete solver_delete;
-  solver_delete.setLogLevel(loglevel);
-  for (list<Demand*>::iterator dmd = xml_demands.begin(); dmd != xml_demands.end(); ++dmd)
+  // Lock exclusive access
+  rw_lock.addWriter();
+  try
   {
-    if (loglevel > 2)
-      logger << "Erasing plan of demand " << *dmd << endl;
-    solver_delete.solve(*dmd);
-  }
+    // Parse the XML data, with validation enabled
+    xml_demands.clear();
+    XMLInputString xml(char_start);
+    xml.setUserExitCpp(parsingCallback);
+    xml.parse(&Plan::instance(), true);
 
-  // Plan the list of all demand
-  SolverMRP solver_plan;
-  solver_plan.setLogLevel(loglevel);
-  solver_plan.setAutocommit(false);
-  solver_plan.setConstraints(15);
-  solver_plan.setPlanType(1);
-  XMLSerializer xmlserializer(response);
-  xmlserializer.setContentType(DETAIL);
-  for (list<Demand*>::iterator dmd = xml_demands.begin(); dmd != xml_demands.end(); ++dmd)
-  {
-    if (loglevel > 2)
-      logger << "Planning demand " << *dmd << endl;
-    solver_plan.solve(*dmd, &(solver_plan.getCommands()));
-    xmlserializer.pushCurrentObject(*dmd);
-    if (keepreservation)
+    // Prepare to collect results
+    ostringstream response;
+    response << "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" << endl;
+    response << "<plan xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">" << endl;
+    response << "<demands>" << endl;
+
+    // Clean up the supply planned for all demands
+    OperatorDelete solver_delete;
+    solver_delete.setLogLevel(loglevel);
+    for (list<Demand*>::iterator dmd = xml_demands.begin(); dmd != xml_demands.end(); ++dmd)
     {
-      solver_plan.scanExcess(&(solver_plan.getCommands()));
-      solver_plan.getCommands().CommandManager::commit();
-      (*dmd)->writeElement(&xmlserializer, Tags::demand, DETAIL);
+      if (loglevel > 2)
+        logger << "Erasing plan of demand " << *dmd << endl;
+      solver_delete.solve(*dmd);
     }
-    else
+
+    // Plan the list of all demand
+    SolverMRP solver_plan;
+    solver_plan.setLogLevel(loglevel);
+    solver_plan.setAutocommit(false);
+    solver_plan.setConstraints(15);
+    solver_plan.setPlanType(1);
+    XMLSerializer xmlserializer(response);
+    xmlserializer.setContentType(DETAIL);
+    for (list<Demand*>::iterator dmd = xml_demands.begin(); dmd != xml_demands.end(); ++dmd)
     {
-      (*dmd)->writeElement(&xmlserializer, Tags::demand, DETAIL);
-      solver_plan.getCommands().rollback();
+      if (loglevel > 2)
+        logger << "Planning demand " << *dmd << endl;
+      solver_plan.solve(*dmd, &(solver_plan.getCommands()));
+      xmlserializer.pushCurrentObject(*dmd);
+      if (keepreservation)
+      {
+        solver_plan.scanExcess(&(solver_plan.getCommands()));
+        solver_plan.getCommands().CommandManager::commit();
+        (*dmd)->writeElement(&xmlserializer, Tags::demand, DETAIL);
+      }
+      else
+      {
+        (*dmd)->writeElement(&xmlserializer, Tags::demand, DETAIL);
+        solver_plan.getCommands().rollback();
+      }
     }
-  }
-  response << "</demands></plan>" << endl;
+    response << "</demands></plan>" << endl;
 
-  // Persist in the database
-  for (list<Demand*>::iterator dmd = xml_demands.begin(); dmd != xml_demands.end(); ++dmd)
+    // Persist in the database
+    for (list<Demand*>::iterator dmd = xml_demands.begin(); dmd != xml_demands.end(); ++dmd)
+    {
+      DatabaseWriter::pushStatement(
+        "delete from demand where name = $1;",
+        (*dmd)->getName()
+        );
+      DatabaseWriter::pushStatement(
+        "insert into demand "
+          "(name, quantity, priority, description, status, item_id, location_id, "
+          "customer_id, minshipment, maxlateness, category, due, lastmodified) "
+          "values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, now())",
+        (*dmd)->getName(),
+        toString((*dmd)->getQuantity()),
+        toString((*dmd)->getPriority()),
+        (*dmd)->getDescription(),
+        string("quote"),
+        (*dmd)->getItem()->getName(),
+        (*dmd)->getLocation() ? (*dmd)->getLocation()->getName() : string(""),
+        (*dmd)->getCustomer() ? (*dmd)->getCustomer()->getName() : string(""),
+        toString((*dmd)->getMinShipment()),
+        toString(static_cast<long>((*dmd)->getMaxLateness())),
+        (*dmd)->getCategory(),
+        toString((*dmd)->getDue())
+        );
+    }
+
+    // Collect the replanning results
+    mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/xml\r\n\r\n");
+    mg_printf(conn, "%s", response.str().c_str());
+  }
+  catch (...)
   {
-    DatabaseWriter::pushStatement(
-      "delete from demand where name = $1;",
-      (*dmd)->getName()
+    mg_printf(conn,
+      "HTTP/1.1 500 Internal Server Error\r\n\r\n"
+      "<html><head><title>Server error</title></head><body>Exception occurred when quoting</body></html>"
       );
-    DatabaseWriter::pushStatement(
-      "insert into demand "
-        "(name, quantity, priority, description, status, item_id, location_id, "
-        "customer_id, minshipment, maxlateness, category, due, lastmodified) "
-        "values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, now())",
-      (*dmd)->getName(),
-      toString((*dmd)->getQuantity()),
-      toString((*dmd)->getPriority()),
-      (*dmd)->getDescription(),
-      string("quote"),
-      (*dmd)->getItem()->getName(),
-      (*dmd)->getLocation() ? (*dmd)->getLocation()->getName() : string(""),
-      (*dmd)->getCustomer() ? (*dmd)->getCustomer()->getName() : string(""),
-      toString((*dmd)->getMinShipment()),
-      toString(static_cast<long>((*dmd)->getMaxLateness())),
-      (*dmd)->getCategory(),
-      toString((*dmd)->getDue())
-      );
+    logger << "Error caught when quoting" << endl;
   }
-
-  // Collect the replanning results
-  mg_printf(conn, "HTTP/1.1 200 OK\r\nContent-Type: application/xml\r\n\r\n");
-  mg_printf(conn, "%s", response.str().c_str());
+  rw_lock.removeWriter();
   return true;
 }
 

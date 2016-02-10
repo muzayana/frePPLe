@@ -76,25 +76,37 @@ Here are the steps to get a fully working environment.
        create user USR with password 'PWD';
        create database DB encoding 'utf-8' owner USR;
 
-#. **Install the Python database drivers**
+#. **Install Python3 and pip3**
 
-   You'll need to install the python-psycopg2 (or python3-psycopg2 depending on your linux distribution) package for PostgreSQL.
+   You'll need to install the Python 3.4 or higher and ensure the pip3 command is available.
+   Most Linux distributions provide python2 by default, and you'll need python3 in parallel
+   with it.
 
-#. **Install the Python database drivers, Django and other python modules**
+   On RPM based distributions:
+   ::
 
-   Since frePPle requires some patches to the standard Django package,
-   you can't install the binary package that comes with your Linux distribution.
+     yum install python3 python3-pip
 
-   Instead, the source from our cloned and patched version of django will be downloaded
-   and installed.
+   On Debian based distributions:
+   ::
 
-   In the root of your python install you will find a "requirements.txt" file containing a list like:
+     apt-get install python3 python3-pip
+
+#. **Install the Python modules**
+
+   The python3 modules used by frePPLe are listed in the file "requirements.txt". You can download
+   it from https://raw.githubusercontent.com/frepple/frepple/3.0/contrib/django/requirements.txt
+   (make sure to replace 3.0 with the appropriate version number!)
+
+   Alternatively you can create the file yourself with the following content:
    ::
 
       CherryPy >= 3.2.2
       djangorestframework >= 3.3.1
       djangorestframework-bulk >= 0.2.1
       djangorestframework-filters >= 0.6.0
+      django-admin-bootstrapped
+      django-bootstrap3
       et-xmlfile >= 1.0.0
       html5lib >= 0.999
       jdcal >= 1.0
@@ -102,11 +114,10 @@ Here are the steps to get a fully working environment.
       openpyxl >= 2.3.0-b2
       https://github.com/frePPLe/django/tarball/frepple_3.0
 
-   To install the requirements just issue a pip3 (or pip depending on your distribution) command:
+   Next, install these modules with a pip3 command:
    ::
 
-      sudo pip install -r requirements.txt
-
+      pip3 install -r requirements.txt
 
 #. **Install the frepple binary package**
 
@@ -259,7 +270,9 @@ inspiration for your own deployments.
   sudo apt-get -y -q upgrade
 
   # Install PostgreSQL
-  sudo apt-get -y install postgresql python3-psycopg2
+  # For a production installation you'll need to tune the database
+  # configuration to match the available hardware.
+  sudo apt-get -y install postgresql
   sudo su - postgres
   psql template1 -c "create user frepple with password 'frepple'"
   psql template1 -c "create database frepple encoding 'utf-8' owner frepple"
@@ -272,24 +285,15 @@ inspiration for your own deployments.
   sudo sed -i 's/local\(\s*\)all\(\s*\)all\(\s*\)md5/local\1all\2all\3\md5/g' /etc/postgresql/9.*/main/pg_hba.conf
   sudo service postgresql restart
 
-  # Install a patched version of Django
-  wget -q https://github.com/frePPLe/django/archive/frepple_$FREPPLERELEASE.tar.gz
-  tar xfz frepple_$FREPPLERELEASE.tar.gz
-  cd django-frepple_$FREPPLERELEASE
-  sudo python3 setup.py install
-
-  # Install pip for python >= 3.0
-  sudo apt-get -y install python3-pip
+  # Install python3 and required python modules
+  sudo apt-get -y install python3 python3-pip
+  sudo pip3 install -r requirements.txt
 
   # Install the frePPLe binary .deb package and the necessary dependencies.
   # There are frepple, frepple-doc and frepple-dev debian package files.
   # Normally you only need to install the frepple debian package.
-  cd ~
   sudo dpkg -i frepple_*.deb
   sudo apt-get -f -y -q install
-
-  # Install the requirements just issue a pip3 (or pip depending on your distribution) command from your frePPLe root:
-  sudo pip install -r requirements.txt
 
   # Configure apache web server
   sudo a2enmod expires
@@ -318,7 +322,9 @@ inspiration for your own deployments.
   sudo -S -n yum -y update
 
   # Install the PostgreSQL database
-  sudo yum install postgresql postgresql-server python3-psycopg2
+  # For a production installation you'll need to tune the database
+  # configuration to match the available hardware.
+  sudo yum install postgresql postgresql-server
   sudo service postgresql initdb
   sudo service postgresql start
   sudo su - postgres
@@ -333,23 +339,14 @@ inspiration for your own deployments.
   sudo sed -i 's/local\(\s*\)all\(\s*\)all\(\s*\)md5/local\1all\2all\3\md5/g' /etc/postgresql/9.*/main/pg_hba.conf
   sudo service postgresql restart
 
-  # Install a patched version of Django
-  wget -q https://github.com/frePPLe/django/archive/frepple_$FREPPLERELEASE.tar.gz
-  tar xfz frepple_$FREPPLERELEASE.tar.gz
-  cd django-frepple_$FREPPLERELEASE
-  sudo -S -n python3 setup.py install
-
-  # Install openpyxl
-  # The sequence is a bit weird: we first enable the EPEL repository, then install pip, and
-  # finish by installing openpyxl itself.
-  sudo -S -n rpm -Uvh http://download.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.noarch.rpm
-  sudo -S -n yum -y install yum-plugin-protectbase.noarch
-  sudo -S -n yum -y install python3-pip
+  # Install python3 and required python modules
+  sudo yum install python3 python3-pip
+  sudo pip3 install -r requirements.txt
 
   # Install the frePPLe binary RPM package and the necessary dependencies.
   # There are frepple, frepple-doc and frepple-dev package files.
   # Normally you only need to install the frepple package.
-  yum --nogpgcheck localinstall  *.rpm
+  yum --nogpgcheck localinstall  frepple*.rpm
 
   # Create frepple database schema
   frepplectl migrate --noinput
@@ -370,9 +367,7 @@ You can use it as a guideline and inspiration for your own deployments.
   sudo zypper upgrade
 
   # Install the PostgreSQL database
-
-  tip: "sudo zypper se PACKAGENAME" to look for the correct package names
-
+  # tip: "sudo zypper se PACKAGENAME" to look for the correct package names
   sudo zypper install postgresql postgresql-server postgres-devel
 
   sudo su
@@ -395,18 +390,15 @@ You can use it as a guideline and inspiration for your own deployments.
   sudo sed -i 's/local\(\s*\)all\(\s*\)all\(\s*\)md5/local\1all\2all\3\md5/g' /etc/postgresql/9.*/main/pg_hba.conf
   rcpostgrsql restart
 
-  # Install Django, openpyxl, ...
-  # pip is in SUSE included in the Python3 package but must be enabled.
-  # After pip3 is available we can finish by installing openpyxl itself.
+  # Install python3 and required python modules
+  sudo zypper install python3 python3-pip
   sudo python3 -m ensure pip
+  sudo pip3 install -r requirements.txt
 
   # Install the frePPLe binary RPM package and the necessary dependencies.
   # There are frepple, frepple-doc and frepple-dev package files.
   # Normally you only need to install the frepple package.
   sudo rpm -i *.rpm
-
-  # Install the requirements just issue a pip3 (or pip depending on your distribution) command from your frePPLe root:
-  sudo pip3 install -r requirements.txt
 
   # Create frepple database schema
   frepplectl migrate --noinput

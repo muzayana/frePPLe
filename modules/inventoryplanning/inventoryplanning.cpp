@@ -151,9 +151,10 @@ void InventoryPlanningSolver::solve(void* v)
       plan_qty = d->getMinShipment();
 
     // Create a delivery operationplan for the remaining quantity
-    deliveryoper->createOperationPlan(
+    OperationPlan* deli = deliveryoper->createOperationPlan(
       plan_qty, Date::infinitePast, d->getDue(), &*d, NULL, 0, true
       );
+    deli->activate();
   }
 
   // Step 3: Solve buffer by buffer, ordered by level
@@ -239,13 +240,58 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
   {
     if (loglevel > 1)
       logger << "   No replenishing operation defined" << endl;
-    return;
+    // Setting an axtremely long lead time, which results in a huge
+    // safety stock that covers the entire horizon.
+    leadtime = 999L * 86400L;
   }
-  else if (oper->getType() != *OperationFixedTime::metadata
+  else if (oper->getType() == *OperationAlternate::metadata)
+  {
+    // Alternate operation: Take the lead time of the preferred operation
+    int curPrio = INT_MAX;
+    for (Operation::Operationlist::const_iterator
+      sub = oper->getSubOperations().begin();
+      sub != oper->getSubOperations().end();
+      ++sub)
+      {
+        if ((*sub)->getPriority() < curPrio && (
+          (*sub)->getOperation()->getType() == *OperationFixedTime::metadata
+          || (*sub)->getOperation()->getType() == *OperationItemDistribution::metadata
+          || (*sub)->getOperation()->getType() == *OperationItemSupplier::metadata
+          ))
+        {
+          leadtime = static_cast<OperationFixedTime*>((*sub)->getOperation())->getDuration();
+          curPrio = (*sub)->getPriority();
+        }
+      }
+  }
+  else if (oper->getType() == *OperationSplit::metadata)
+  {
+    // Split operation: Take the lead time of the longest operation
+    for (Operation::Operationlist::const_iterator
+      sub = oper->getSubOperations().begin();
+      sub != oper->getSubOperations().end();
+      ++sub)
+      {
+        if ((*sub)->getOperation()->getType() != *OperationFixedTime::metadata
+          || (*sub)->getOperation()->getType() != *OperationItemDistribution::metadata
+          || (*sub)->getOperation()->getType() != *OperationItemSupplier::metadata
+          )
+        {
+          Duration tmp = static_cast<OperationFixedTime*>((*sub)->getOperation())->getDuration();
+          if (tmp > leadtime)
+            leadtime = tmp;
+        }
+      }
+  }
+  else if (
+    oper->getType() != *OperationFixedTime::metadata
     && oper->getType() != *OperationItemDistribution::metadata
-    && oper->getType() != *OperationItemSupplier::metadata)
-    logger << "   Replenishing operation should be of type fixed_time" << endl; // TODO Make more generic
+    && oper->getType() != *OperationItemSupplier::metadata
+    )
+    // Using a lead time of 0
+    logger << "   Replenishing operation should be of type fixed_time" << endl;
   else
+    // After all special cases, the normal case of an operation with a fixed duration
     leadtime = static_cast<OperationFixedTime*>(oper)->getDuration();
 
   // Report parameter settings
@@ -285,7 +331,9 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
     ss_min_qty = ss_multiple;
 
   // Prepare the calendars to retrieve the results
-  Calendar *roq_calendar = oper->getSizeMinimumCalendar();
+  Calendar *roq_calendar = NULL;
+  if (oper)
+    roq_calendar = oper->getSizeMinimumCalendar();
   if (!roq_calendar)
     // Automatically association based on the calendar name.
     roq_calendar = Calendar::find("ROQ for " + b->getName());
@@ -671,9 +719,12 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
   }
 
   // Associate the new or updated created calendars
-  if (oper->getSizeMinimumCalendar())
-    oper->setSizeMinimumCalendar(NULL);
-  oper->setSizeMinimumCalendar(roq_calendar);
+  if (oper)
+  {
+    if (oper->getSizeMinimumCalendar())
+      oper->setSizeMinimumCalendar(NULL);
+    oper->setSizeMinimumCalendar(roq_calendar);
+  }
   if (b->getMinimumCalendar())
     const_cast<Buffer*>(b)->setMinimumCalendar(NULL);
   const_cast<Buffer*>(b)->setMinimumCalendar(ss_calendar);
