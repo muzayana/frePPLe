@@ -22,7 +22,6 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q, Min, Max
 from django.db import connections, transaction
 from django.db.models.fields.related import RelatedField
-from django.db.models.expressions import RawSQL
 from django.forms.models import modelform_factory
 from django.http import Http404, JsonResponse
 from django.http.response import StreamingHttpResponse, HttpResponse, HttpResponseServerError
@@ -156,6 +155,9 @@ class InventoryPlanningList(GridReport):
 
   rows = (
     GridFieldText('buffer', title=_('buffer'), field_name="buffer__name", key=True, formatter='detail', extra="role:'input/buffer'"),
+    GridFieldText('description', title=_('description'), field_name="buffer__item__description"),
+    GridFieldText('category', title=_('category'), field_name="buffer__item__category"),
+    GridFieldText('subcategory', title=_('subcategory'), field_name="buffer__item__subcategory"),
     GridFieldChoice('roq_type', title=_('ROQ type'),
       choices=InventoryPlanning.calculationtype, extra="formatoptions:{defaultValue:''}"),
     GridFieldNumber('roq_min_qty', title=_('ROQ minimum quantity'), extra="formatoptions:{defaultValue:''}"),
@@ -213,6 +215,9 @@ class DRP(GridReport):
     GridFieldInteger('opentransfers', title=_('open transfers'), extra="formatoptions:{defaultValue:''}, summaryType:'sum'"),
     GridFieldInteger('proposedpurchases', title=_('proposed purchases'), extra="formatoptions:{defaultValue:''}, summaryType:'sum'"),
     GridFieldInteger('proposedtransfers', title=_('proposed transfers'), extra="formatoptions:{defaultValue:''}, summaryType:'sum'"),
+    GridFieldText('description', title=_('description'), field_name="buffer__item__description"),
+    GridFieldText('category', title=_('category'), field_name="buffer__item__category"),
+    GridFieldText('subcategory', title=_('subcategory'), field_name="buffer__item__subcategory"),
     )
 
   @classmethod
@@ -829,7 +834,7 @@ class DRPitemlocation(View):
       raise Http404('Only ajax requests allowed')
     errors = []
 
-    if True: #try:
+    try:
       # Unescape special characters in the argument, which is encoded django-admin style.
       itemlocation = unquote(arg)
 
@@ -1140,8 +1145,8 @@ class DRPitemlocation(View):
             else:
               errors.append("Invalid comment data")
 
-    #except Exception as e:
-    #  errors.append(str(e))
+    except Exception as e:
+      errors.append(str(e))
 
     if errors:
       logger.error("Error saving DRP updates: %s" % "".join(errors))
