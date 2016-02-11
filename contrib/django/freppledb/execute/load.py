@@ -57,7 +57,11 @@ class loadData(object):
       frepple.settings.current = datetime.now().replace(microsecond=0)
       print('Using system clock as current date: %s' % frepple.settings.current)
     print('Current date: %s' % frepple.settings.current)
-    # Assure the operationplan ids will be unique
+
+  def finalize(self):
+    # Assure the operationplan ids will be unique.
+    # We call this method only at the end, as calling it earlier gives a slower
+    # performance to load operationplans
     self.cursor.execute('''
       select
         coalesce(max(ids.max_id), 1) + 1
@@ -725,7 +729,7 @@ class loadData(object):
         location_id, id, reference, item_id, supplier_id, quantity, startdate, enddate, status, source
       FROM purchase_order
       WHERE status <> 'closed' %s
-      ORDER BY location_id, id ASC
+      ORDER BY id ASC
       ''' % self.filter_and)
     for i in self.cursor.fetchall():
       cnt += 1
@@ -753,7 +757,7 @@ class loadData(object):
         enddate, consume_material, status, source
       FROM distribution_order
       WHERE status <> 'closed' %s
-      ORDER BY destination_id, id ASC
+      ORDER BY id ASC
       ''' % self.filter_and)
     for i in self.cursor.fetchall():
       cnt += 1
@@ -848,6 +852,7 @@ class loadData(object):
     self.loadPurchaseOrders()
     self.loadDistributionOrders()
     self.loadDemand()
+    self.finalize()
 
     # Close the database connection
     self.cursor.close()
