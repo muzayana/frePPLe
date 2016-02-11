@@ -358,34 +358,6 @@ FrePPLe also saves a copy of the data in its own database for reporting.">Live d
 		</div>
 	  {% endif %}
 
-{% if webservice %}
-	  <div class="panel panel-default">
-		  <div class="panel-heading" data-parent="#tasks" role="tab" id="AccHeadWebservice"  data-toggle="collapse" data-target="#AccBodyWebservice">
-		    <h4 class="panel-title">
-		      <a role="button">{% trans "web service"|capfirst %}</a>
-		    </h4>
-		  </div>
-		  <div id="AccBodyWebservice" class="panel-collapse collapse" role="tabpanel" aria-labelledby="AccHeadWebservice">
-            <div class="panel-body">
-				<table>
-				<tr><td>
-				<form method="post" action="{{request.prefix}}/execute/launch/frepple_start_web_service/">
-				{% csrf_token %}<input id="start" type="submit" value="{% trans "Start"|capfirst %}" />
-				</form></td>
-				<td>{% trans "Start the web service." %}</td>
-				</tr>
-				<tr><td>
-				<form method="post" action="{{request.prefix}}/execute/launch/frepple_stop_web_service/">
-				{% csrf_token %}<input id="stop" type="submit" value="{% trans "Stop"|capfirst %}" />
-				</form></td>
-				<td>{% trans "Stop the web service." %}</td>
-				</tr>
-				</table>
-            </div>
-          </div>
-      </div>
-{% endif %}
-
 	  <div class="panel panel-default">
 		  <div class="panel-heading" data-parent="#tasks" role="tab" id="tweedeHeading"  data-toggle="collapse" data-target="#tweedeAccord">
 		    <h4 class="panel-title">
@@ -451,6 +423,34 @@ FrePPLe also saves a copy of the data in its own database for reporting.">Live d
 			    </div>
 		  </div>
 		</div>
+		
+		{% if webservice %}
+    <div class="panel panel-default">
+      <div class="panel-heading" data-parent="#tasks" role="tab" id="AccHeadWebservice"  data-toggle="collapse" data-target="#AccBodyWebservice">
+        <h4 class="panel-title">
+          <a role="button">{% trans "web service"|capfirst %}</a>
+        </h4>
+      </div>
+      <div id="AccBodyWebservice" class="panel-collapse collapse" role="tabpanel" aria-labelledby="AccHeadWebservice">
+            <div class="panel-body">
+        <table>
+        <tr><td style="padding: 5px 15px;">
+        <form method="post" action="{{request.prefix}}/execute/launch/frepple_start_web_service/">
+        {% csrf_token %}<button class="btn btn-primary" type="submit" value="{% trans "Start"|capfirst %}" style="width: 100%;">{% trans "Start"|capfirst %}</button>
+        </form></td>
+        <td>&nbsp;{% trans "Start the web service." %}</td>
+        </tr>
+        <tr><td style="padding: 5px 15px;">
+        <form method="post" action="{{request.prefix}}/execute/launch/frepple_stop_web_service/">
+        {% csrf_token %}<button class="btn btn-primary" id="stop" type="submit" value="{% trans "Stop"|capfirst %}" style="width: 100%;">{% trans "Stop"|capfirst %}</button>
+        </form></td>
+        <td>&nbsp;{% trans "Stop the web service." %}</td>
+        </tr>
+        </table>
+            </div>
+          </div>
+      </div>
+    {% endif %}
 
 	  {% if scenarios.count > 1 %}
 	  <div class="panel panel-default">
