@@ -327,7 +327,7 @@ int WebServer::websocket_solve(
     {
       JSONSerializerString o;
       o.setReferencesOnly(true);
-      o.setContentType(DETAIL);
+      o.setContentType(PLAN);
       o.writeString("{\"category\": \"plan\", ");
       bool first = true;
       for (WebClient::subscriptionlist::iterator j = i->second.getSubscriptions().begin();
@@ -341,7 +341,7 @@ int WebServer::websocket_solve(
           first = false;
         }
         Object *tmp = o.pushCurrentObject(static_cast<Resource*>(j->getPublisher()->getOwner()));
-        static_cast<Resource*>(j->getPublisher()->getOwner())->writeElement(&o, Tags::resource);
+        static_cast<Resource*>(j->getPublisher()->getOwner())->writeElement(&o, Tags::resource, PLAN);
         o.pushCurrentObject(tmp);
       }
       if (!first)
@@ -358,7 +358,7 @@ int WebServer::websocket_solve(
           first = false;
         }
         Object *tmp = o.pushCurrentObject(static_cast<Buffer*>(j->getPublisher()->getOwner()));
-        static_cast<Buffer*>(j->getPublisher()->getOwner())->writeElement(&o, Tags::buffer);
+        static_cast<Buffer*>(j->getPublisher()->getOwner())->writeElement(&o, Tags::buffer, PLAN);
         o.pushCurrentObject(tmp);
       }
       if (!first)
@@ -375,7 +375,7 @@ int WebServer::websocket_solve(
           first = false;
         }
         Object* tmp = o.pushCurrentObject(static_cast<Operation*>(j->getPublisher()->getOwner()));
-        static_cast<Operation*>(j->getPublisher()->getOwner())->writeElement(&o, Tags::operation);
+        static_cast<Operation*>(j->getPublisher()->getOwner())->writeElement(&o, Tags::operation, PLAN);
         o.pushCurrentObject(tmp);
       }
       if (!first)
@@ -396,7 +396,7 @@ int WebServer::websocket_solve(
           }
           Demand * dm = static_cast<Demand*>(j->getPublisher()->getOwner());
           Object* tmp = o.pushCurrentObject(dm);
-          dm->writeElement(&o, Tags::demand);
+          dm->writeElement(&o, Tags::demand, PLAN);
           o.pushCurrentObject(tmp);
           if (changedDemand == dm)
             changedDemand = NULL;
@@ -409,7 +409,7 @@ int WebServer::websocket_solve(
             first = false;
           }
           Object* tmp = o.pushCurrentObject(changedDemand);
-          changedDemand->writeElement(&o, Tags::demand);
+          changedDemand->writeElement(&o, Tags::demand, PLAN);
           o.pushCurrentObject(tmp);
         }
       }
@@ -424,7 +424,7 @@ int WebServer::websocket_solve(
             first = false;
           }
           Object* tmp = o.pushCurrentObject(&*d);
-          d->writeElement(&o, Tags::demand);
+          d->writeElement(&o, Tags::demand, PLAN);
           o.pushCurrentObject(tmp);
         }
       }

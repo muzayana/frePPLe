@@ -2,10 +2,6 @@
 {% load i18n %}
 {% block extrahead %}{{block.super}}
 <style type="text/css">
-.spacing {
-  padding-left: 5px;
-  padding-bottom: 5px;
-}
 #gantt line {
    fill: none;
    stroke: #000;
@@ -42,19 +38,18 @@ var service_url = ('https:' == document.location.protocol ? 'wss://' : 'ws://') 
   + ':{{port}}/ws/?username={{request.user.username|urlencode}}&userid={{request.user.id}}&time={{time}}&token={{token}}';
 
 $(function() {
-  $(".fa-lg").tooltip({show: {effect: "fade", delay: 500}});
-  $("#ganttdiv").resizable({
+  /*
+  $("#ganttdiv").resizable({   // TODO
     handles:"s",
     maxHeight: ganttRows.length * rowheight,
     minHeight: 2 * rowheight + 10
     });
-  $("#tabs").tabs();
-  $("#chatsend").button();
+  */
   timeAxis = d3.select("#gantt").append("g").attr("transform", "translate(250,0)");
   drawAxis();
   connect(service_url, function() {
     send("/get/");
-    var initialrows = {{preferences|safe}};
+    var initialrows = []; // TODO restore where we left {{preferences|safe}};
     for (var idx = 0; idx < initialrows.length; idx++)
       send("/register/" + initialrows[idx]);
     for (var idx = 0; idx < initialrows.length; idx++)
@@ -71,101 +66,187 @@ $(function() {
       }
     }
   });
+	$("#horizonbucketsul li a").click(function(){
+		  $("#horizonbuckets1").html($(this).text() + '  <span class="caret"></span>');
+		  $("#horizonbuckets").val($(this).prop('name'));
+		});
+
+	$("#horizonunitul li a").click(function(){
+	  $("#horizonunit1").html($(this).text() + '  <span class="caret"></span>');
+	  $("#horizonunit").val($(this).prop('name'));
+	});
+
 });
 
 </script>
 {% endblock %}
 {% block content %}
-<div id="toolicons">
-<span onclick="gantt.zoom(0.5,0)" class="fa fa-search-plus fa-lg" title="{% trans 'zoom in'|capfirst|force_escape %}"></span>&nbsp;&nbsp;
-<span onclick="gantt.zoom(1.5,0)" class="fa fa-search-minus fa-lg" title="{% trans 'zoom out'|capfirst|force_escape %}"></span>&nbsp;&nbsp;
-<span onclick="gantt.zoom(1,-86400000)" class="fa fa-backward fa-lg" title="{% filter capfirst|force_escape %}{% trans 'move in' context 'Gantt' %}{% endfilter %}"></span>&nbsp;&nbsp;
-<span onclick="gantt.zoom(1,86400000)" class="fa fa-forward fa-lg" title="{% filter capfirst|force_escape %}{% trans 'move out' context 'Gantt' %}{% endfilter %}"></span>&nbsp;&nbsp;
-<span onclick="resetBoard()" class="fa fa-square fa-lg" title="{% trans 'reset'|capfirst|force_escape %}"></span>&nbsp;&nbsp;
-<span onclick="grid.showBucket()" title="{% trans 'configure time buckets'|capfirst|force_escape %}" id="bucketconfig" class="fa fa-clock-o fa-lg"></span>
+<div class="row">
+<div class="col-md-12"><div class="pull-right" id="toolicons">
+<button class="btn btn-xs btn-primary" onclick="gantt.zoom(0.5,0)" data-toggle="tooltip" data-placement="top" data-original-title="{% trans 'zoom in'|capfirst|force_escape %}" ><span class="fa fa-search-plus"></span></button>
+<button class="btn btn-xs btn-primary" onclick="gantt.zoom(1.5,0)" data-toggle="tooltip" data-placement="top" data-original-title="{% trans 'zoom out'|capfirst|force_escape %}" ><span class="fa fa-search-minus"></span></button>
+<button class="btn btn-xs btn-primary" onclick="gantt.zoom(1,-86400000)" data-toggle="tooltip" data-placement="top" data-original-title="{% trans 'move in'|capfirst|force_escape %}" ><span class="fa fa-backward"></span></button>
+<button class="btn btn-xs btn-primary" onclick="gantt.zoom(1,86400000)" data-toggle="tooltip" data-placement="top" data-original-title="{% trans 'move out'|capfirst|force_escape %}" ><span class="fa fa-forward"></span></button>
+<button class="btn btn-xs btn-primary" onclick="resetBoard()" data-toggle="tooltip" data-placement="top" data-original-title="{% trans 'reset'|capfirst|force_escape %}" ><span class="fa fa-square"></span></button>
+<button class="btn btn-xs btn-primary" onclick="grid.showBucket()" data-toggle="tooltip" data-placement="top" data-original-title="{% trans 'configure time buckets'|capfirst|force_escape %}" id="bucketconfig"><span class="fa fa-clock-o"></span></button>
+</div></div></div>
+
+<div class="row">
+<div class="col-md-12">
+<div id="ganttdiv" style="margin: 5px 1px 5px 0px; overflow-x: hide; overflow-y: scroll; border: 1px solid">
+<svg id="gantt" style="width:100%"></svg>
+</div></div></div>
+
+<div class="row">
+<div class="col-md-12">
+<ul class="nav nav-tabs">
+    <li class="active" role="presentation"><a data-toggle="tab" href="#demand">{% trans "demand"|capfirst %}</a></li>
+    <li role="presentation"><a data-toggle="tab" href="#resource">{% trans "resource"|capfirst %}</a></li>
+    <li role="presentation"><a data-toggle="tab" href="#buffer">{% trans "buffer"|capfirst %}</a></li>
+    <li role="presentation"><a data-toggle="tab" href="#operation">{% trans "operation"|capfirst %}</a></li>
+    <li role="presentation"><a data-toggle="tab" href="#supplier">{% trans "supplier"|capfirst %}</a></li>
+    {% comment %}Translators: Translation included with Django {% endcomment %}
+    <li role="presentation"><a data-toggle="tab" href="#chat">{% trans "Messages"|capfirst %}</a></li>
+    <li role="presentation"><a data-toggle="tab" href="#chart">{% trans "chart"|capfirst %}</a></li>
+</ul>
 </div>
-<div id="content-main" style="width:100%; border: 1px solid; border-radius: 10px">
-<div id="ganttdiv" style="margin: 5px 1px 5px 0px; overflow-x: hide; overflow-y: scroll"><svg id="gantt"></svg></div>
 </div>
 
-<div id="tabs" style="width:100%; margin-top:10px">
-  <ul>
-    <li><a href="#demand">{% trans "demand"|capfirst %}</a></li>
-    <li><a href="#resource">{% trans "resource"|capfirst %}</a></li>
-    <li><a href="#buffer">{% trans "buffer"|capfirst %}</a></li>
-    <li><a href="#operation">{% trans "operation"|capfirst %}</a></li>
-    <li><a href="#supplier">{% trans "supplier"|capfirst %}</a></li>
-    {% comment %}Translators: Translation included with Django {% endcomment %}
-    <li><a href="#chat">{% trans "Messages"|capfirst %}</a></li>
-    <li><a href="#chart">{% trans "chart"|capfirst %}</a></li>
-  </ul>
-  <div id="demand">
-    <div style="float: right">
-    <span onclick="actionSelectedDemand('/solve/erase/', '/solve/unplan/')" title="{% trans 'clear the plan of selected demands'|capfirst|force_escape %}" class="fa fa-stop fa-lg spacing"></span>
-    <span onclick="actionSelectedDemand('/solve/replan/backward/', '/solve/demand/backward/')" title="{% trans 'plan selected demands backward from their due date'|capfirst|force_escape %}" class="fa fa-fast-backward fa-lg spacing"></span>
-    <span onclick="actionSelectedDemand('/solve/replan/forward/', '/solve/demand/forward/')" title="{% trans 'plan selected demands forward from the current date'|capfirst|force_escape %}" class="fa fa-fast-forward fa-lg spacing"></span>
-    <span onclick="addSelected('demand')" title="{% trans 'add to the graph'|escape %}" class="fa fa-tasks fa-lg"></span>
-    </div>
-    <div class="clear"><table id="demandlist"></table></div>
+<div class="row">
+<div class="col-md-12">
+  <div class="tab-content">
+  <div id="demand" class="tab-pane active">
+    <div class="row"><div class="col-md-12"><div class="pull-right">
+    <button class="btn btn-xs btn-primary" onclick="actionSelectedDemand('/solve/erase/', '/solve/unplan/')" data-toggle="tooltip" data-placement="top" data-original-title="{% trans 'clear the plan of selected demands'|capfirst|force_escape %}"><span class="fa fa-stop"></span></button>
+    <button class="btn btn-xs btn-primary" onclick="actionSelectedDemand('/solve/replan/backward/', '/solve/demand/backward/')" data-toggle="tooltip" data-placement="top" data-original-title="{% trans 'plan selected demands backward from their due date'|capfirst|force_escape %}"><span class="fa fa-fast-backward"></span></button>
+    <button class="btn btn-xs btn-primary" onclick="actionSelectedDemand('/solve/replan/forward/', '/solve/demand/forward/')" data-toggle="tooltip" data-placement="top" data-original-title="{% trans 'plan selected demands forward from the current date'|capfirst|force_escape %}"><span class="fa fa-fast-forward"></span></button>
+    <button class="btn btn-xs btn-primary" onclick="addSelected('demand')" data-toggle="tooltip" data-placement="top" data-original-title="{% trans 'Add to the graph'|escape %}"><span class="fa fa-tasks"></span></button>
+    </div></div></div>
+    <div class="row"><div class="col-md-12">
+    <table id="demandlist"></table>
+    </div></div>
   </div>
-  <div id="resource">
-    <div style="float: right">
-    <span onclick="addSelected('resource')" title="{% trans 'add to the graph'|capfirst|force_escape %}" class="fa fa-tasks fa-lg spacing"></span>
-    </div>
-    <div class="clear"><table id="resourcelist"></table></div>
+  <div id="resource" class="tab-pane">
+    <div class="row"><div class="col-md-12"><div class="pull-right">
+    <button class="btn btn-xs btn-primary" onclick="addSelected('resource')" data-toggle="tooltip" data-placement="top" data-original-title="{% trans 'Add to the graph'|capfirst|force_escape %}"><span class="fa fa-tasks"></span></button>
+    </div></div></div>
+    <div class="row"><div class="col-md-12">
+    <table id="resourcelist"></table>
+    </div></div>
   </div>
-  <div id="buffer">
-    <div style="float: right">
-    <span onclick="addSelected('buffer')" title="{% trans 'add to the graph'|capfirst|force_escape %}" class="fa fa-tasks fa-lg spacing"></span>
-    </div>
-    <div class="clear"><table id="bufferlist"></table></div>
+  <div id="buffer" class="tab-pane">
+    <div class="row"><div class="col-md-12"><div class="pull-right">
+    <button class="btn btn-xs btn-primary" onclick="addSelected('buffer')" data-toggle="tooltip" data-placement="top" data-original-title=="{% trans 'Add to the graph'|capfirst|force_escape %}"><span class="fa fa-tasks"></span></button>
+    </div></div></div>
+    <div class="row"><div class="col-md-12">
+    <table id="bufferlist"></table>
+    </div></div>
   </div>
-  <div id="operation">
-    <div style="float: right">
-    <span onclick="addSelected('operation')" title="{% trans 'add to the graph'|capfirst|force_escape %}" class="fa fa-tasks fa-lg spacing"></span>
-    </div>
-    <div class="clear"><table id="operationlist"></table></div>
+  <div id="operation" class="tab-pane">
+    <div class="row"><div class="col-md-12"><div class="pull-right">
+    <button class="btn btn-xs btn-primary" onclick="addSelected('operation')" data-toggle="tooltip" data-placement="top" data-original-title=="{% trans 'Add to the graph'|capfirst|force_escape %}"><span class="fa fa-tasks"></span></button>
+    </div></div></div>
+    <div class="row"><div class="col-md-12">
+    <table id="operationlist"></table>
+    </div></div>
   </div>
-  <div id="supplier">
-    <div style="float: right">
-    <span onclick="addSelected('supplier')" title="{% trans 'add to the graph'|capfirst|force_escape %}" class="fa fa-tasks fa-lg spacing"></span>
-    </div>
-    <div class="clear"><table id="supplierlist"></table></div>
+  <div id="supplier" class="tab-pane">
+    <div class="row"><div class="col-md-12"><div class="pull-right">
+    <button class="btn btn-xs btn-primary" onclick="addSelected('supplier')" data-toggle="tooltip" data-placement="top" data-original-title=="{% trans 'Add to the graph'|capfirst|force_escape %}"><span class="fa fa-tasks"></span></button>
+    </div></div></div>
+    <div class="row"><div class="col-md-12">
+    <table id="supplierlist"></table>
+    </div></div>
   </div>
-  <div id="chat">
-    <div style="width: 100%; height: 200px; overflow-y: scroll"><table id="chathistory"></table></div>
-    <input id="chatsend" onclick="sendChat()" type="button" value="{% trans "send"|capfirst %}">
+  <div id="chat" class="tab-pane">
+    <div class="row"><div class="col-md-12" style="height: 200px; overflow-y: scroll">
+    <table id="chathistory"></table>
+    </div></div>
+    <div class="row"><div class="col-md-12">
+    <button class="btn btn-xs btn-primary" id="chatsend" onclick="sendChat()">{% trans "send"|capfirst %}</button>
     <input id="chatmsg" type="text" size="40">
+    </div></div>
   </div>
-  <div id="chart">
-    Color by:<br/>
+  <div id="chart" class="tab-pane">
+    <div class="row"><div class="col-md-12">
+    Color by:<br>
     <input id="color_default" type="radio" name="chartcolor" value="default" onclick="colorBoard('default')" checked><label for="color_default">Default</label><br/>
     <input id="color_criticality" type="radio" name="chartcolor" onclick="colorBoard('criticality')" value="criticality"><label for="color_criticality">Criticality</label>
     <input id="color_critical_red" type="number" step="1" min="0" max="100" size="3" value="5" onchange="colorBoard('criticality')"/>
     <input id="color_critical_green" type="number" step="1" min="0" max="100" size="3" value="20" onchange="colorBoard('criticality')"/><br/>
+  	</div></div>
   </div>
-</div>
+</div></div></div>
 
-<div id="timebuckets" style="display:none" title="{% trans 'time buckets'|capfirst %}">
-<form method="get" action="">
-{% trans 'bucket size'|capfirst %}&nbsp;&nbsp;<select name="horizonbuckets" id="horizonbuckets">
-{% for i in bucketnames %}<option value="{{i}}"{% ifequal i request.user.horizonbuckets %} selected="selected"{% endifequal %}>{% trans i %}</option>
-{% endfor %}</select><br/>
-<input type="radio" name="horizontype" value="0"{% if not request.user.horizontype %} checked{% endif %}/>&nbsp;&nbsp;
-{% trans 'from'|capfirst %}&nbsp;
-<input id="horizonstart" type="text" size="9" class="vDateField" value="{{request.user.horizonstart|date:"Y-m-d"}}"/>
-{% trans 'to' %}&nbsp;
-<input id="horizonend" type="text" size="9" class="vDateField" value="{{request.user.horizonend|date:"Y-m-d"}}"/><br/>
-<input type="radio" id="horizontype" name="horizontype" value="1"{% if request.user.horizontype %} checked{% endif %}/>&nbsp;&nbsp;
-<input id="horizonlength" name="horizonlength" type="text" size="2" value="{{request.user.horizonlength}}"/>&nbsp;
-<select name="horizonunit" id="horizonunit">
-<option value="day"{% ifequal request.user.horizonunit 'day' %} selected="selected"{% endifequal %}>{% trans 'days' %}</option>
-<option value="week"{% ifequal request.user.horizonunit 'week' %} selected="selected"{% endifequal %}>{% trans 'weeks' %}</option>
-<option value="month"{% ifequal request.user.horizonunit 'month' %} selected="selected"{% endifequal %}>{% trans 'months' %}</option>
-</select>&nbsp;{% trans 'after plan current date' %}
-<input id="horizonoriginal" type="hidden" value="{{request.user.horizonbuckets}}|{{request.user.horizonstart|date:"Y-m-d"}}|{{request.user.horizonend|date:"Y-m-d"}}|{{request.user.horizontype}}|{{request.user.horizonlength}}|{{request.user.horizonunit}}"/>
-</form>
-</div>
+<div id="timebuckets" class="modal fade" role="dialog" aria-labelledby="timebucketsLabel">
+  <div class="modal-dialog">
+    <div class="modal-content" style="width: 500px;">
+      <div class="modal-header">
+       <h4 class="modal-title">{% trans 'time buckets'|capfirst %}</h4>
+      </div>
+      <div class="modal-body">
 
+      <form method="get" action="#">
+      <input type="hidden" name="horizonbuckets" id="horizonbuckets" value="{{request.user.horizonbuckets}}">
+      <input type="hidden" name="horizonunit" id="horizonunit" value="{{request.user.horizonunit}}">
+      <input id="horizonoriginal" type="hidden" value="{{request.user.horizonbuckets}}|{{request.user.horizonstart|date:"Y-m-d"}}|{{request.user.horizonend|date:"Y-m-d"}}|{{request.user.horizontype}}|{{request.user.horizonlength}}|{{request.user.horizonunit}}"/>
+          <div class="row" style="padding-bottom: 15px">
+            <div class="col-xs-12">
+		          {% trans 'bucket size'|capfirst %}&nbsp;&nbsp;
+		          <div class="dropdown dropdown-submit-input" style="display:inline">
+		              <button class="btn btn-default dropdown-toggle" type="button" name="horizonbuckets1" id="horizonbuckets1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+		                {% if request.user.horizonbuckets %}{% trans request.user.horizonbuckets %}{% endif %}&nbsp;&nbsp;<span class="caret"></span>
+		              </button>
+		              <ul class="dropdown-menu" aria-labelledby="horizonbuckets1" id="horizonbucketsul" name="horizonbucketsul" style="top: auto;">
+		              {% for i in bucketnames %}
+		                <li><a onclick="" name="{{ i }}">{% trans i %}</a></li>
+		              {% endfor %}
+		              </ul>
+		          </div>
+            </div>
+          </div>
+
+          <div class="row" style="padding-bottom: 15px">
+            <div class="col-xs-12 form-inline">
+							<input type="radio" name="horizontype" value="0"{% if not request.user.horizontype %} checked{% endif %}/>
+							&nbsp;&nbsp;{% trans 'from'|capfirst %}&nbsp;
+							<input id="horizonstart"  style="display:inline" type="text" size="9" class="vDateField form-control" value="{{request.user.horizonstart|date:"Y-m-d"}}"/>
+							&nbsp;{% trans 'to' %}&nbsp;
+							<input id="horizonend"  style="display:inline" type="text" size="9" class="vDateField form-control" value="{{request.user.horizonend|date:"Y-m-d"}}"/>
+							<br/>
+           </div>
+          </div>
+
+          <div class="row">
+            <div class="col-xs-12 form-inline">
+              <input type="radio" id="horizontype" name="horizontype" value="1"{% if request.user.horizontype %} checked{% endif %}/>&nbsp;&nbsp;
+              <input id="horizonlength" name="horizonlength" type="number" class="form-control" min="1" max="99" maxlength="2" value="{{request.user.horizonlength}}"/>&nbsp;
+              <div class="dropdown dropdown-submit-input" style="display:inline">
+	              <button class="btn btn-default dropdown-toggle form-control" type="button" name="horizonunit1" id="horizonunit1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+	                {% if request.user.horizonunit == "day" %}{% trans 'days' %}{% endif %}
+	                {% if request.user.horizonunit == "week" %}{% trans 'weeks' %}{% endif %}
+	                {% if request.user.horizonunit == "month" %}{% trans 'months' %}{% endif %}
+	                &nbsp;&nbsp;<span class="caret"></span>
+	              </button>
+	              <ul class="dropdown-menu" aria-labelledby="horizonunit1" id="horizonunitul" name="horizonunitul" style="top: auto;">
+	                <li><a name="day">{% trans 'days' %}</a></li>
+	                <li><a name="week">{% trans 'weeks' %}</a></li>
+	                <li><a name="month">{% trans 'months' %}</a></li>
+	              </ul>
+		          </div>
+		          &nbsp;{% trans 'after plan current date' %}
+            </div>
+          </div>
+
+      </form>
+			</div>
+			<div class="modal-footer">
+				<input type="submit" id="okbutton" role="button" class="btn btn-primary pull-left" value="{% trans 'OK' %}">
+				<input type="submit" id="cancelbutton" role="button" class="btn btn-primary pull-right" data-dismiss="modal" value="{% trans 'cancel'|capfirst %}">
+			</div>
+
+		</div>
+	</div>
+</div>
 
 {% endblock %}
