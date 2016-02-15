@@ -2038,6 +2038,11 @@ class OperationPlan
       assignIdentifier();
     }
 
+    void setRawIdentifier(unsigned long i)
+    {
+      id = i;
+    }
+
     /** Return the identifier. This method can return the lazy identifier 1. */
     unsigned long getRawIdentifier() const
     {
@@ -2049,9 +2054,8 @@ class OperationPlan
       */
     static void setIDCounter(unsigned long l)
     {
-      if (l < counterMin)
-        throw DataException("Can't decrement the operationplan id counter");
-      counterMin = l;
+      if (l > counterMin)
+        counterMin = l;
     }
 
     /** Return the next-id number. */
@@ -4156,6 +4160,11 @@ class OperationItemDistribution : public OperationFixedTime
       * automatically and a data problem is also generated.
       */
     static PyObject* createOrder(PyObject*, PyObject*, PyObject*);
+
+    /** Scan and trim operationplans creating excess inventory in the
+      * buffer.
+      */
+    DECLARE_EXPORT void trimExcess() const;
 };
 
 
@@ -4217,6 +4226,11 @@ class OperationItemSupplier : public OperationFixedTime
       * and a data problem is also generated.
       */
     static PyObject* createOrder(PyObject*, PyObject*, PyObject*);
+
+    /** Scan and trim operationplans creating excess inventory in the
+      * buffer.
+      */
+    DECLARE_EXPORT void trimExcess() const;
 };
 
 
@@ -4311,6 +4325,9 @@ class Buffer : public HasHierarchy<Buffer>, public HasLevel,
     {
       tool = b;
     }
+
+    /** Debugging function. */
+    DECLARE_EXPORT void inspect(string msg = "") const;
 
     /** Return a pointer to the next buffer for the same item. */
     Buffer* getNextItemBuffer() const
@@ -5874,6 +5891,9 @@ class Resource : public HasHierarchy<Resource>,
     {
       return loads;
     }
+
+    /** Debugging function. */
+    DECLARE_EXPORT void inspect(string msg = "") const;
 
     /** Returns a constant reference to the list of loads. It defines
       * which operations are using the resource.

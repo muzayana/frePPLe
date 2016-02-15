@@ -165,9 +165,16 @@ class ManufacturingOrderWidget(Widget):
       .attr("height", height - 10 - margin_x)
       .attr("width", x.rangeBand())
       .attr("fill-opacity", 0)
-      .on("mouseover", function(d) { $("#mo_tooltip").css("display", "block").html(d[0] + "<br>" + d[1] + "<br>" + d[2]) })
-      .on("mousemove", function(){ $("#mo_tooltip").css("top", (event.pageY-10)+"px").css("left",(event.pageX+10)+"px"); })
-      .on("mouseout", function(){ $("#mo_tooltip").css("display", "none") });
+      .on("mouseover", function(d) {
+        $("#mo_tooltip").css("display", "block").html(d[0] + "<br>" + + d[1] + " / %s " + d[2] + "%s");
+        })
+      .on("mousemove", function(){
+        var pos = $("#mo_chart").offset();
+        $("#mo_tooltip").css("top", (event.pageY-pos.top)+"px").css("left",(event.pageX-pos.left)+"px");
+        })
+      .on("mouseout", function(){
+        $("#mo_tooltip").css("display", "none")
+        });
 
     // Draw x-axis
     var xAxis = d3.svg.axis().scale(x)
@@ -186,7 +193,7 @@ class ManufacturingOrderWidget(Widget):
     var yAxis = d3.svg.axis().scale(y_value)
         .orient("left")
         .ticks(5)
-        .tickFormat(d3.format(".0f%"));
+        .tickFormat(d3.format(".0f%%"));
     svg.append("g")
       .attr("transform", "translate(" + margin_y + ", 10 )")
       .attr("class", "y axis")
@@ -210,7 +217,7 @@ class ManufacturingOrderWidget(Widget):
       .attr('class', 'graphline')
       .attr("stroke","#FFC000")
       .attr("d", line_count(data));
-    '''
+    ''' % (settings.CURRENCY[0], settings.CURRENCY[1])
 
   @classmethod
   def render(cls, request=None):
@@ -279,8 +286,7 @@ class ManufacturingOrderWidget(Widget):
         result.append('<div class="col-xs-4"><h2>%s / %s%s%s&nbsp;<a href="%s/data/input/operationplan/?sord=asc&sidx=startdate&startdate__lte=%s&amp;status=proposed" rol="button" class="btn btn-success btn-xs">Review</a></h2><small>proposed orders within %s days</small></div>' % (
           rec[3], settings.CURRENCY[0], rec[4], settings.CURRENCY[1], request.prefix, limit_fence2.strftime("%Y-%m-%d"), fence2
           ))
-
-    result.append('</div><div id="mo_tooltip" style="display: none; z-index:10; position:absolute; color:black"></div>')
+    result.append('</div><div id="mo_tooltip" class="tooltip-inner" style="display: none; z-index:10000; position:absolute;"></div>')
     return HttpResponse('\n'.join(result))
 
 Dashboard.register(ManufacturingOrderWidget)
@@ -344,9 +350,16 @@ class DistributionOrderWidget(Widget):
       .attr("height", height - 10 - margin_x)
       .attr("width", x.rangeBand())
       .attr("fill-opacity", 0)
-      .on("mouseover", function(d) { $("#do_tooltip").css("display", "block").html(d[0] + "<br>" + d[1] + "<br>" + d[2]) })
-      .on("mousemove", function(){ $("#do_tooltip").css("top", (event.pageY-10)+"px").css("left",(event.pageX+10)+"px"); })
-      .on("mouseout", function(){ $("#do_tooltip").css("display", "none") });
+      .on("mouseover", function(d) {
+        $("#do_tooltip").css("display", "block").html(d[0] + "<br>"+ d[1] + " / %s " + d[2] + "%s");
+        })
+      .on("mousemove", function(){
+        var pos = $("#do_chart").offset();
+        $("#do_tooltip").css("top", (event.pageY-pos.top)+"px").css("left",(event.pageX-pos.left)+"px");
+        })
+      .on("mouseout", function(){
+        $("#do_tooltip").css("display", "none");
+        });
 
     // Draw x-axis
     var xAxis = d3.svg.axis().scale(x)
@@ -365,7 +378,7 @@ class DistributionOrderWidget(Widget):
     var yAxis = d3.svg.axis().scale(y_value)
         .orient("left")
         .ticks(5)
-        .tickFormat(d3.format(".0f%"));
+        .tickFormat(d3.format(".0f%%"));
     svg.append("g")
       .attr("transform", "translate(" + margin_y + ", 10 )")
       .attr("class", "y axis")
@@ -389,7 +402,7 @@ class DistributionOrderWidget(Widget):
       .attr('class', 'graphline')
       .attr("stroke","#FFC000")
       .attr("d", line_count(data));
-    '''
+    ''' % (settings.CURRENCY[0], settings.CURRENCY[1])
 
   @classmethod
   def render(cls, request=None):
@@ -466,7 +479,7 @@ class DistributionOrderWidget(Widget):
         result.append('<div class="col-xs-4"><h2>%s / %s%s%s&nbsp;<a href=%s/data/input/distributionorder/?sord=asc&sidx=startdate&startdate__lte=%s&amp;status=proposed\'" class="btn btn-success btn-xs">Review</a></h2><small>proposed orders within %s days</small></div>' % (
           rec[3], settings.CURRENCY[0], rec[4], settings.CURRENCY[1], request.prefix, limit_fence2.strftime("%Y-%m-%d"), fence2
           ))
-    result.append('</div><div id="do_tooltip" style="display: none; z-index:10; position:absolute; color:black"></div>')
+    result.append('</div><div id="do_tooltip" class="tooltip-inner" style="display: none; z-index:10000; position:absolute;"></div>')
     return HttpResponse('\n'.join(result))
 
 Dashboard.register(DistributionOrderWidget)
@@ -534,9 +547,16 @@ class PurchaseOrderWidget(Widget):
       .attr("height", height - 10 - margin_x)
       .attr("width", x.rangeBand())
       .attr("fill-opacity", 0)
-      .on("mouseover", function(d) { $("#po_tooltip").css("display", "block").html(d[0] + "<br>" + d[1] + "<br>" + d[2]) })
-      .on("mousemove", function(){ $("#po_tooltip").css("top", (event.pageY-10)+"px").css("left",(event.pageX+10)+"px"); })
-      .on("mouseout", function(){ $("#po_tooltip").css("display", "none") });
+      .on("mouseover", function(d) {
+        $("#po_tooltip").css("display", "block").html(d[0] + "<br>" + d[1] + " / %s " + d[2] + "%s")
+        })
+      .on("mousemove", function(){
+        var pos = $("#po_chart").offset();
+        $("#po_tooltip").css("top", (event.pageY-pos.top)+"px").css("left",(event.pageX-pos.left)+"px");
+        })
+      .on("mouseout", function(){
+        $("#po_tooltip").css("display", "none");
+        });
 
     // Draw x-axis
     var xAxis = d3.svg.axis().scale(x)
@@ -555,7 +575,7 @@ class PurchaseOrderWidget(Widget):
     var yAxis = d3.svg.axis().scale(y_value)
         .orient("left")
         .ticks(5)
-        .tickFormat(d3.format(".0f%"));
+        .tickFormat(d3.format(".0f%%"));
     svg.append("g")
       .attr("transform", "translate(" + margin_y + ", 10 )")
       .attr("class", "y axis")
@@ -579,7 +599,7 @@ class PurchaseOrderWidget(Widget):
       .attr('class', 'graphline')
       .attr("stroke","#FFC000")
       .attr("d", line_count(data));
-    '''
+    ''' % (settings.CURRENCY[0], settings.CURRENCY[1])
 
   @classmethod
   def render(cls, request=None):
@@ -663,7 +683,7 @@ class PurchaseOrderWidget(Widget):
         result.append('<div class="col-xs-4"><h2>%s / %s%s%s&nbsp;<a href="%s/data/input/purchaseorder/?sord=asc&sidx=startdate&startdate__lte=%s&amp;status=proposed" class="btn btn-success btn-xs">Review</a></h2><small>proposed orders within %s days</small></div>' % (
           rec[3], settings.CURRENCY[0], rec[4], settings.CURRENCY[1], request.prefix, limit_fence2.strftime("%Y-%m-%d"), fence2
           ))
-    result.append('</div><div id="po_tooltip" style="display: none; z-index:10; position:absolute; color:black"></div>')
+    result.append('</div><div id="po_tooltip" class="tooltip-inner" style="display: none; z-index:10000; position:absolute;"></div>')
     return HttpResponse('\n'.join(result))
 
 Dashboard.register(PurchaseOrderWidget)
@@ -875,23 +895,30 @@ class AlertsWidget(Widget):
   permissions = (("view_problem_report", "Can view problem report"),)
   asynchronous = True
   url = '/problem/'
+  entities = 'material,capacity,demand'
 
   @classmethod
   def render(cls, request=None):
+    entities = request.GET.get('entities', cls.entities).split(',')
+    try:
+      db = _thread_locals.request.database or DEFAULT_DB_ALIAS
+    except:
+      db = DEFAULT_DB_ALIAS
     result = [
       '<table style="width:100%">',
       '<tr><th class="alignleft">%s</th><th>%s</th><th>%s</th></tr>' % (
-        capfirst(force_text(_("resource"))), capfirst(force_text(_("count"))),
+        capfirst(force_text(_("type"))), capfirst(force_text(_("count"))),
         capfirst(force_text(_("weight")))
         )
       ]
-    cursor = connections[request.database].cursor()
+    cursor = connections[db].cursor()
     query = '''select name, count(*), sum(weight)
       from out_problem
+      where entity in (%s)
       group by name
       order by name
-      '''
-    cursor.execute(query)
+      ''' % (', '.join(['%s']*len(entities)))
+    cursor.execute(query, entities)
     alt = False
     for res in cursor.fetchall():
       result.append('<tr%s><td class="underline"><a href="%s/problem/?name=%s">%s</a></td><td class="aligncenter">%d</td><td class="aligncenter">%d</td></tr>' % (
@@ -902,6 +929,33 @@ class AlertsWidget(Widget):
     return HttpResponse('\n'.join(result))
 
 Dashboard.register(AlertsWidget)
+
+
+class DemandAlertsWidget(AlertsWidget):
+  name = "demand_alerts"
+  title = _("Demand alerts")
+  url = '/problem/?entity=demand'
+  entities = 'demand'
+
+Dashboard.register(DemandAlertsWidget)
+
+
+class CapacityAlertsWidget(AlertsWidget):
+  name = "capacity_alerts"
+  title = _("Capacity alerts")
+  url = '/problem/?entity=capacity'
+  entities = 'capacity'
+
+Dashboard.register(CapacityAlertsWidget)
+
+
+class MaterialAlertsWidget(AlertsWidget):
+  name = "material_alerts"
+  title = _("Material alerts")
+  url = '/problem/?entity=material'
+  entities = 'material'
+
+Dashboard.register(MaterialAlertsWidget)
 
 
 class ResourceLoadWidget(Widget):

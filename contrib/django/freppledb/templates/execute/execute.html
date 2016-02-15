@@ -284,7 +284,7 @@
 		      </a>
 		    </h4>
 		  </div>
-		  <div id="eersteAccord" class="panel-collapse collapse" role="tabpanel" aria-labelledby="eersteHeading">
+		  <div id="eersteAccord" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="eersteHeading">
 		    <div class="panel-body">
 			    <table>
 			      <form role="form" method="post" action="{{request.prefix}}/execute/launch/frepple_run/">{% csrf_token %}
@@ -299,21 +299,19 @@
 										and export results.<br><br>
 								<p><b>Plan type</b><br>
 				        {% endblocktrans %}
-				        <label>
-						        <input type="radio" name="plantype" {% ifnotequal request.session.plantype '2' %}checked {% endifnotequal %}value="1"/>
-						        {% blocktrans %}
-				            <span data-toggle="tooltip" data-placement="top" title="This plan respects the constraints enabled below.
-In case of shortages the demand is planned late or short.">Constrained plan</span>
-                    {% endblocktrans %}<span class="fa fa-question-circle" style="display:inline-block;"></span>
-                </label>
-				        <br>
-
-				        <label><input type="radio" name="plantype" {% ifequal  request.session.plantype '2' %}checked {% endifequal %}value="2"/>
-				            {% blocktrans %}
-				            <span data-toggle="tooltip" data-placement="bottom"  title="This plan shows material, capacity and operation problems that prevent the demand from being planned in time.
-The demand is always met completely and on time.">Unconstrained plan</span>
-				            {% endblocktrans %}<span class="fa fa-question-circle" style="display:inline-block;"></span>
-				        </label>
+                {% if forecastModule %}<input type="checkbox" name="planForecast" {% if planForecast == 1 %}checked {% endif %}value="1" id="planForecast"/><label for="planForecast">&nbsp;&nbsp;{% blocktrans %}<span data-toggle="tooltip" data-placement="top" title = "Compute the statistical sales forecast" >Generate forecast</span>{% endblocktrans %}
+                <span class="fa fa-question-circle" style="display:inline-block;"></span></label><br>{% endif %}
+                {% if inventoryModule %}<input type="checkbox" name="planInventory" {% if planInventory == 1 %}checked {% endif %}value="1" id="planInventory"/><label for="planInventory">&nbsp;&nbsp;{% blocktrans %}<span data-toggle="tooltip" data-placement="top" title="Compute the safety stock and reorder points">Generate inventory planning parameters</span>{% endblocktrans %}
+                <span class="fa fa-question-circle" style="display:inline-block;"></span></label><br>{% endif %}
+                <input type="checkbox" name="planProduction" {% if planProduction == 1 %}checked {% endif %}value="1" id="planProduction"/><label for="planProduction">&nbsp;&nbsp;{% trans "Generate production plan" %}</label><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="radio" id="plantype1" name="plantype" {% ifnotequal request.session.plantype '2' %}checked {% endifnotequal %}value="1"/>
+                <label for="plantype1">{% blocktrans %}<span data-toggle="tooltip" data-placement="top" data-html="true" data-original-title="Generate a manufacturing and distribution plan that respects all constraints.<br>In case of shortages the demand is planned late or short.">Constrained plan</span>{% endblocktrans %}
+                <span class="fa fa-question-circle" style="display:inline-block;"></span></label><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="radio" id="plantype2" name="plantype" {% ifequal  request.session.plantype '2' %}checked {% endifequal %}value="2"/>
+                <label for="plantype2">{% blocktrans %}<span data-toggle="tooltip" data-placement="top" data-html="true" data-original-title="Generate a manufacturing and distribution plan that shows material, capacity and operation problems that prevent the demand from being planned in time.<br>The demand is always met completely and on time.">Unconstrained plan</span>{% endblocktrans %}
+                <span class="fa fa-question-circle" style="display:inline-block;"></span></label><br>
+                {% if inventoryModule %}<input type="checkbox" id="evalInventory" name="evalInventory" {% if evalInventory == 1 %}checked {% endif %}value="1" id="evalInventory"/><label for="evalInventory">&nbsp;&nbsp;{% blocktrans %}<span data-toggle="tooltip" data-placement="top" title="Scan for expected inventory stockouts">Evaluate stock position</span>{% endblocktrans %}
+                <span class="fa fa-question-circle" style="display:inline-block;"></span></label><br>{% endif %}
 				        </p>
 				        <p>
 				        <b>{% trans "constraints"|capfirst %}</b><br>
@@ -323,16 +321,16 @@ The demand is always met completely and on time.">Unconstrained plan</span>
 								<label for="cb8"><input type="checkbox" name="constraint" {% if fenceconstrained %}checked {% endif %}value="8" id="cb8"/>&nbsp;&nbsp;{% trans "Release fence: do not plan within the release time window" %}</label><br>
 				        </p>
                 {% if webservice %}<p>
-                {% blocktrans %}<b title="The planning engine is normally shut down after generating the plan.<br><br>With this option you can keep the plan active in memory as a web service, which is used for order quoting and interactive planning.">Web service</b>{% endblocktrans %}
+                {% blocktrans %}<b data-toggle="tooltip" data-placement="top" data-html="true" title="The planning engine is normally shut down after generating the plan.<br>With this option you can keep the plan active in memory as a web service, which is used for order quoting and interactive planning.">Web service</b>{% endblocktrans %}
                 <span class="fa fa-question-circle" style="display:inline-block;"></span><br>
                 <input type="checkbox" name="webservice" {% if webservice == 1 %}checked {% endif %}value="1" id="ws"/><label for="ws">&nbsp;&nbsp;{% trans "Keep active in memory" %}</label><br>
                 </p>{% endif %}
 				        <p>
 				        {% if odoo %}
 				          {% blocktrans %}
-				              <b data-toggle="tooltip" title="A live data source allows your frePPLe plan to be 100% in sync with data in an external system.
-FrePPLe will read data from them before planning.
-And after the plan is generated frePPLe directly exports the results to them.
+				              <b data-toggle="tooltip" title="A live data source allows your frePPLe plan to be 100% in sync with data in an external system.<br>
+FrePPLe will read data from them before planning.<br>
+And after the plan is generated frePPLe directly exports the results to them.<br>
 FrePPLe also saves a copy of the data in its own database for reporting.">Live data sources</b>
 				          {% endblocktrans %}
 				          <span class="fa fa-question-circle" style="display:inline-block;"></span><br>
@@ -357,34 +355,6 @@ FrePPLe also saves a copy of the data in its own database for reporting.">Live d
 		  </div>
 		</div>
 	  {% endif %}
-
-{% if webservice %}
-	  <div class="panel panel-default">
-		  <div class="panel-heading" data-parent="#tasks" role="tab" id="AccHeadWebservice"  data-toggle="collapse" data-target="#AccBodyWebservice">
-		    <h4 class="panel-title">
-		      <a role="button">{% trans "web service"|capfirst %}</a>
-		    </h4>
-		  </div>
-		  <div id="AccBodyWebservice" class="panel-collapse collapse" role="tabpanel" aria-labelledby="AccHeadWebservice">
-            <div class="panel-body">
-				<table>
-				<tr><td>
-				<form method="post" action="{{request.prefix}}/execute/launch/frepple_start_web_service/">
-				{% csrf_token %}<input id="start" type="submit" value="{% trans "Start"|capfirst %}" />
-				</form></td>
-				<td>{% trans "Start the web service." %}</td>
-				</tr>
-				<tr><td>
-				<form method="post" action="{{request.prefix}}/execute/launch/frepple_stop_web_service/">
-				{% csrf_token %}<input id="stop" type="submit" value="{% trans "Stop"|capfirst %}" />
-				</form></td>
-				<td>{% trans "Stop the web service." %}</td>
-				</tr>
-				</table>
-            </div>
-          </div>
-      </div>
-{% endif %}
 
 	  <div class="panel panel-default">
 		  <div class="panel-heading" data-parent="#tasks" role="tab" id="tweedeHeading"  data-toggle="collapse" data-target="#tweedeAccord">
@@ -451,6 +421,34 @@ FrePPLe also saves a copy of the data in its own database for reporting.">Live d
 			    </div>
 		  </div>
 		</div>
+		
+		{% if webservice %}
+    <div class="panel panel-default">
+      <div class="panel-heading" data-parent="#tasks" role="tab" id="AccHeadWebservice"  data-toggle="collapse" data-target="#AccBodyWebservice">
+        <h4 class="panel-title">
+          <a role="button">{% trans "web service"|capfirst %}</a>
+        </h4>
+      </div>
+      <div id="AccBodyWebservice" class="panel-collapse collapse" role="tabpanel" aria-labelledby="AccHeadWebservice">
+            <div class="panel-body">
+        <table>
+        <tr><td style="padding: 5px 15px;">
+        <form method="post" action="{{request.prefix}}/execute/launch/frepple_start_web_service/">
+        {% csrf_token %}<button class="btn btn-primary" type="submit" value="{% trans "Start"|capfirst %}" style="width: 100%;">{% trans "Start"|capfirst %}</button>
+        </form></td>
+        <td>&nbsp;{% trans "Start the web service." %}</td>
+        </tr>
+        <tr><td style="padding: 5px 15px;">
+        <form method="post" action="{{request.prefix}}/execute/launch/frepple_stop_web_service/">
+        {% csrf_token %}<button class="btn btn-primary" id="stop" type="submit" value="{% trans "Stop"|capfirst %}" style="width: 100%;">{% trans "Stop"|capfirst %}</button>
+        </form></td>
+        <td>&nbsp;{% trans "Stop the web service." %}</td>
+        </tr>
+        </table>
+            </div>
+          </div>
+      </div>
+    {% endif %}
 
 	  {% if scenarios.count > 1 %}
 	  <div class="panel panel-default">

@@ -3,21 +3,6 @@ var socket = null;
 var curState = 'closed';    // Possible states: closed, connecting, open, disconnecting
 var timeAxis = null;
 
-function parseDate(val)
-{
-	return new Date();
-  var dt = new Date(
-	parseInt(val.substr(0,4)),  // YYYY
-	parseInt(val.substr(5,2)),  // MM
-	parseInt(val.substr(8,2)),  // DD
-	parseInt(val.substr(11,2)), // hh
-	parseInt(val.substr(13,2)), // mm
-	parseInt(val.substr(8,2))   // ss
-    );
-	console.log(val, dt);
-  return dt;
-}
-
 function connect(url, callback)
 {
   if (curState != "closed") return;
@@ -66,7 +51,7 @@ function disconnect()
 function onmessage(ev)
 {
   // Debugging message
-  console.log(ev.data);
+  //console.log(ev.data);
 
   // Dispatch the message to a handler function
   jsondoc = jQuery.parseJSON(ev.data);
@@ -83,9 +68,9 @@ function onmessage(ev)
 function demandAction (cellvalue, options, row)
 {
   var esc = row['name'].replace("'", "\\'");
-  return '<span onclick="send(\'/solve/unplan/' + esc + '\')" class="fa fa-stop spacing"></span>' +
-    '<span onclick="send(\'/solve/demand/backward/' + esc + '\')" class="fa fa-fast-backward spacing"></span>' +
-    '<span onclick="send(\'/solve/demand/forward/' + esc + '\')" class="fa fa-fast-forward spacing"></span>';
+  return '<button class="btn btn-xs btn-primary" onclick="send(\'/solve/unplan/' + esc + '\')"><span class="fa fa-stop"></span></button>' +
+    '<button class="btn btn-xs btn-primary" onclick="send(\'/solve/demand/backward/' + esc + '\')"><span class="fa fa-fast-backward"></span></button>' +
+    '<button class="btn btn-xs btn-primary" onclick="send(\'/solve/demand/forward/' + esc + '\')"><span class="fa fa-fast-forward"></span></button>';
 }
 
 
@@ -98,7 +83,7 @@ function displayList(jsondoc)
     height: 250,
     width: w,
     colModel:[
-      {name:'action', width:55, formatter:demandAction, sortable:false, search:false, fixed:true},
+      {name:'action', width:73, formatter:demandAction, sortable:false, search:false, fixed:true},
       {name:'name', index:'name', key:true, width:90, searchoptions:{sopt:['eq','ne','le','lt','gt','ge']}},
       {name:'item', index:'item', width:100, searchoptions:{sopt:['eq','ne','le','lt','gt','ge']}},
       {name:'customer', index:'customer', width:80, searchoptions:{sopt:['eq','ne','le','lt','gt','ge']}},
@@ -188,9 +173,9 @@ function displayList(jsondoc)
 
 function displayPlan(jsondoc)
 {
-  width = $("#content-main").width() - 24;
+  width = $("#ganttdiv").width() - 24;
   height = numRows * rowheight + timescaleheight;
-  $('#ganttdiv').resizable('option', 'maxHeight', height + 10);
+  // $('#ganttdiv').resizable('option', 'maxHeight', height + 10);  TODO resizable
   svg = d3.select("#gantt")
     .attr("width", width)
     .attr("height", height);
@@ -235,8 +220,8 @@ function displayOperation()
   var layer = [];
   $(this.operationplans).each(function() {
     var row = 0;
-    var strt = parseDate(this.start);
-    var nd = parseDate(this.end);
+    var strt = moment(this.start);
+    var nd = moment(this.end);
     for (; row < layer.length; ++row)
     {
       if (strt >= layer[row])
@@ -302,8 +287,8 @@ function displayOperation()
     .on("mouseenter", function(d) {
       graph.showTooltip(
         d[0] + '<br/>'
-        + $.datepicker.formatDate("yy/mm/dd", d[1]) + " " + d[1].getHours() + ":" + d[1].getMinutes() + ":" + d[1].getSeconds() + ' - '
-        + $.datepicker.formatDate("yy/mm/dd", d[2]) + " " + d[2].getHours() + ":" + d[2].getMinutes() + ":" + d[2].getSeconds() + '<br/>'
+        + moment(d[1]).format("YYYY-MM-DD h:mm:ss") + ' - '
+        + moment(d[2]).format("YYYY-MM-DD h:mm:ss") + '<br/>'
         + d[3]
         )
       })
@@ -324,11 +309,10 @@ function displayResource()
   // Parse JSON data
   var data = [];
   var layer = [];
-  $(this.loadplans).each(function() {
-    if (this.quantity > 0) {
+  $(this.operationplans).each(function() {
       var row = 0;
-      var strt = parseDate(this.operationplan.start);
-      var nd = parseDate(this.operationplan.end);
+      var strt = moment(this.start);
+      var nd = moment(this.end);
       for (; row < layer.length; ++row)
       {
         if (strt >= layer[row])
@@ -340,16 +324,14 @@ function displayResource()
       if (row >= layer.length)
         layer.push(nd);
       data.push([
-        this.operationplan.operation,
+        this.operation.name,
         strt,
         nd,
         this.quantity,
         row,
-        this.operationplan.criticality
+        this.criticality
         ]);
-      }
     });
-  console.log("------", data);
 
   // Find existing svg row or create a new one
   if (ganttRows['resource/' + res].svg !== null)
@@ -396,8 +378,8 @@ function displayResource()
     .on("mouseenter", function(d) {
       graph.showTooltip(
         d[0] + '<br/>'
-        + $.datepicker.formatDate("yy/mm/dd", d[1]) + " " + d[1].getHours() + ":" + d[1].getMinutes() + ":" + d[1].getSeconds() + ' - '
-        + $.datepicker.formatDate("yy/mm/dd", d[2]) + " " + d[2].getHours() + ":" + d[2].getMinutes() + ":" + d[2].getSeconds() + '<br/>'
+        + moment(d[1]).format("YYYY-MM-DD h:mm:ss") + ' - '
+        + moment(d[2]).format("YYYY-MM-DD h:mm:ss") + '<br/>'
         + d[3]
         )
       })
@@ -422,7 +404,7 @@ function displayBuffer()
   $(this.flowplans).each(function() {
     var oh = this.onhand;
     data.push([
-      parseDate(this.date),
+      moment(this.date),
       this.quantity,
       oh,
       this.minimum,
@@ -504,7 +486,7 @@ function displayBuffer()
   .on("mouseenter", function(d) {
     graph.showTooltip(
       "Quantity: " + d[1] + '<br/>'
-      + "Date: " + $.datepicker.formatDate("yy/mm/dd", d[0]) + " " + d[0].getHours() + ":" + d[0].getMinutes() + ":" + d[0].getSeconds() + '<br/>'
+      + "Date: " + moment(d[0]).format("YYYY-MM-DD h:mm:ss") + '<br/>'
       + "On hand: " + d[2]
       )
     })
@@ -536,11 +518,11 @@ function displayDemand()
   // Parse JSON data
   var data = [];
   var layer = [];
-  $(this.operationplans).each(function() {
-    if (this.quantity > 0) {
+  $(this.pegging).each(function() {
+    if (this.quantity > 0 && this.operationplan !== undefined) {
       var row = 0;
-      var strt = parseDate(this.start);
-      var nd = parseDate(this.end);
+      var strt = moment(this.operationplan.start);
+      var nd = moment(this.operationplan.end);
       for (; row < layer.length; ++row)
       {
         if (nd <= layer[row])
@@ -552,12 +534,12 @@ function displayDemand()
       if (row >= layer.length)
         layer.push(strt);
       data.push([
-        this.operation,
+        this.operationplan.operation.name,
         strt,
         nd,
-        this.quantity,
+        this.operationplan.quantity,
         row,
-        this.pegging,
+        this.quantity,
         this.criticality
         ]);
       }
@@ -608,8 +590,8 @@ function displayDemand()
     .on("mouseenter", function(d) {
       graph.showTooltip(
         d[0] + '<br/>'
-        + $.datepicker.formatDate("yy/mm/dd", d[1]) + " " + d[1].getHours() + ":" + d[1].getMinutes() + ":" + d[1].getSeconds() + ' - '
-        + $.datepicker.formatDate("yy/mm/dd", d[2]) + " " + d[2].getHours() + ":" + d[2].getMinutes() + ":" + d[2].getSeconds() + '<br/>'
+        + moment(d[1]).format("YYYY-MM-DD h:mm:ss") + ' - '
+        + moment(d[2]).format("YYYY-MM-DD h:mm:ss") + '<br/>'
         + interpolate(gettext("%s allocated out of %s"), [d[5], d[3]])
         )
       })
@@ -678,7 +660,7 @@ function addSelected(entity)
 function drawAxis()
 {
   timeAxis.selectAll("*").remove();
-  var width = $("#content-main").width() - 24 - 250;
+  var width = $("#ganttdiv").width() - 250;
   timeAxis.append("line")
     .attr("x1", 0)
     .attr("x2", width)
@@ -712,7 +694,7 @@ function drawAxis()
         .attr('class', 'svgheadertext')
         .attr('x', Math.floor((x1+x2)/2))
         .attr('y', timescaleheight-3)
-        .text($.datepicker.formatDate("M", bucketstart));
+        .text(moment(bucketstart).format("MMM"));
       if (bucketstart.getMonth() % 3 == 0)
       {
         var quarterend = new Date(bucketstart.getFullYear(), bucketstart.getMonth()+3, 1);
@@ -753,7 +735,7 @@ function drawAxis()
         .attr('class', 'svgheadertext')
         .attr('x', Math.floor(x + scaling*3.5))
         .attr('y', timescaleheight-3)
-        .text($.datepicker.formatDate("mm-dd", bucketstart));
+        .text(moment(bucketstart).format("MM-DD"));
       timeAxis.append('line')
         .attr('class', 'time')
         .attr('x1', Math.floor(x))
@@ -773,7 +755,7 @@ function drawAxis()
         .attr('class', 'svgheadertext')
         .attr('x', Math.floor((x1+x2)/2))
         .attr('y', timescaleheight/2-1)
-        .text($.datepicker.formatDate("M yy", bucketstart));
+        .text(moment(bucketstart).format("MMM YY"));
       timeAxis.append('line')
         .attr('class', 'time')
         .attr('x1', Math.floor(x1))
@@ -800,7 +782,7 @@ function drawAxis()
         .attr('class', 'svgheadertext')
         .attr('x', x + scaling*7.0/2.0)
         .attr('y', timescaleheight-3)
-        .text($.datepicker.formatDate("yy-mm-dd", bucketstart));
+        .text(moment(bucketstart).format("YY-MM-DD"));
       x = x + scaling*7.0;
       bucketstart.setTime(bucketstart.getTime() + 86400000 * 7);
     }
@@ -820,7 +802,7 @@ function drawAxis()
         .attr('class', 'svgheadertext')
         .attr('x', Math.floor((x1+x2)/2))
         .attr('y', timescaleheight/2-1)
-        .text($.datepicker.formatDate("M yy", bucketstart));
+        .text(moment(bucketstart).format("MMM YY"));
       bucketstart = bucketend;
     }
   }
@@ -842,7 +824,7 @@ function drawAxis()
           .attr('class', 'svgheadertext')
           .attr('x', Math.floor(x + scaling*7/2))
           .attr('y', timescaleheight/2-1)
-          .text($.datepicker.formatDate("yy-mm-dd", bucketstart));
+          .text(moment(bucketstart).format("YY-MM-DD"));
       }
       else
       {
@@ -857,7 +839,7 @@ function drawAxis()
         .attr('class', 'svgheadertext')
         .attr('x', Math.floor(x + scaling/2))
         .attr('y', timescaleheight-3)
-        .text($.datepicker.formatDate("d", bucketstart));
+        .text(moment().format("DD", bucketstart));
       x = x + scaling;
       bucketstart.setDate(bucketstart.getDate()+1);
     }
@@ -880,7 +862,7 @@ function drawAxis()
           .attr('class', 'svgheadertext')
           .attr('x', Math.floor(x + scaling*7/2))
           .attr('y', timescaleheight/2-1)
-          .text($.datepicker.formatDate("yy-mm-dd", bucketstart));
+          .text(moment(bucketstart).format("YY-MM-DD"));
       }
       else
       {
@@ -895,7 +877,7 @@ function drawAxis()
         .attr('class', 'svgheadertext')
         .attr('x', Math.floor(x + scaling/2))
         .attr('y', timescaleheight-3)
-        .text($.datepicker.formatDate("dd M", bucketstart));
+        .text(moment(bucketstart).format("DD MM"));
       x = x + scaling;
       bucketstart.setDate(bucketstart.getDate()+1);
     }
@@ -918,7 +900,7 @@ function drawAxis()
           .attr('class', 'svgheadertext')
           .attr('x', Math.floor(x + scaling*3.5))
           .attr('y', timescaleheight/2-1)
-          .text($.datepicker.formatDate("yy-mm-dd", bucketstart));
+          .text(moment(bucketstart).format("YY-MM-DD"));
       }
       else
       {
@@ -933,7 +915,7 @@ function drawAxis()
         .attr('class', 'svgheadertext')
         .attr('x', Math.floor(x + scaling/2))
         .attr('y', timescaleheight-3)
-        .text($.datepicker.formatDate("D dd M", bucketstart));
+        .text(moment(bucketstart).format("ddd DD MM"));
       x = x + scaling;
       bucketstart.setDate(bucketstart.getDate()+1);
     }
@@ -956,7 +938,7 @@ function drawAxis()
           .attr('class', 'svgheadertext')
           .attr('x', Math.floor(x + scaling/2))
           .attr('y', timescaleheight/2-1)
-          .text($.datepicker.formatDate("D yy-mm-dd", bucketstart));
+          .text(moment(bucketstart).format("ddd YY-MM-DD"));
       }
       else
       {
@@ -1035,10 +1017,16 @@ function colorBoard(type)
 
 function resetBoard()
 {
-  gantt.reset();
-  ganttRows = {};
   numRows = 0;
+  width = $("#ganttdiv").width() - 24;
+  height = numRows * rowheight + timescaleheight;
+  svg = d3.select("#gantt")
+    .attr("width", width)
+    .attr("height", height);
+  ganttRows = {};
   d3.select("#gantt").selectAll("*").remove();
+  timeAxis = d3.select("#gantt").append("g").attr("transform", "translate(250,0)");
+  drawAxis();
   if (typeof url_prefix != 'undefined')
     var url = url_prefix + '/settings/';
   else

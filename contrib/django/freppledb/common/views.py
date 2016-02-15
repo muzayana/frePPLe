@@ -8,7 +8,6 @@
 # or in the form of compiled binaries.
 #
 
-import inspect
 import json
 
 from django.shortcuts import render_to_response
@@ -41,6 +40,16 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+@login_required
+def cockpit(request):
+  return render_to_response('index.html', {
+    'title': _('Cockpit'),
+    'bucketnames': Bucket.objects.order_by('-level').values_list('name', flat=True),
+    },
+    context_instance=RequestContext(request)
+    )
+
+
 def handler404(request):
   '''
   Custom error handler which redirects to the main page rather than displaying the 404 page.
@@ -50,7 +59,7 @@ def handler404(request):
     #. Translators: Translation included with Django
     force_text(_('Page not found') + ": " + request.prefix + request.get_full_path())
     )
-  return HttpResponseRedirect(request.prefix + "/data/")
+  return HttpResponseRedirect(request.prefix + "/")
 
 
 def handler500(request):
@@ -64,6 +73,7 @@ def handler500(request):
   except TemplateDoesNotExist:
     return HttpResponseServerError('<h1>Server Error (500)</h1>', content_type='text/html')
   return HttpResponseServerError(template.render(RequestContext(request)))
+
 
 class PreferencesForm(forms.Form):
   language = forms.ChoiceField(

@@ -22,18 +22,24 @@
   }
 
   $(function() {
-    {% if mode == "graph" %}graph.header();
-    {% endif %}$("#units").buttonset();
-    $("#unitsmode").click(function() {updateScreen("value");});
-    $("#valuemode").click(function() {updateScreen("units");});
+    {% if mode == "graph" %}graph.header();{% endif %}
+
+    $("#unitsmode").on('click', function() {console.log("units"); updateScreen("units");});
+    $("#valuemode").on('click', function() {console.log("value"); updateScreen("value");});
   })
 </script>
 {% endblock %}
 
-{% block extra_toolicons %}<form style="display: inline"><span id="units">
-<input type="radio" id="unitsmode" name="units" value="value" {% if not "units" in preferences or preferences.units == 'value' %}checked{% endif %}><label for="unitsmode"><span title="{% trans "display value"|capfirst|force_escape %}" class="fa fa-dollar fa-lg" style="color:#4c3000"></span></label>
-<input type="radio" id="valuemode" name="units" value="units" {% if "units" in preferences and preferences.units == 'units' %}checked{% endif %}><label for="valuemode"><span title="{% trans "display units"|capfirst|force_escape %}" class="fa fa-truck fa-lg" style="color:#4c3000"></span></label>
-</span></form>&nbsp;&nbsp;{% endblock %}
+{% block extra_toolicons %}
+<div class="btn-group" role="group">
+	<button data-toggle="tooltip" data-placement="top" title="" class="btn btn-xs btn-primary{% if not "units" in preferences or preferences.units == 'value' %} active{% endif %}" type="radio" id="valuemode" name="units" value="value" data-original-title="Display value">
+	      <label for="valuemode" style="margin-bottom: 2px;"><span title="{% trans "display value"|capfirst|force_escape %}" class="fa fa-dollar"></span></label>
+	</button>
+	<button data-toggle="tooltip" data-placement="top" title="" class="btn btn-xs btn-primary{% if "units" in preferences and preferences.units == 'units' %} active{% endif %}" type="radio" id="unitsmode" name="units" value="units" data-original-title="Display quantity">
+	      <label for="unitsmode" style="margin-bottom: 2px;"><span title="{% trans "display units"|capfirst|force_escape %}" class="fa fa-truck"></span></label>
+	</button>
+</div>&nbsp;
+{% endblock %}
 
 {% block contextmenus %}
 <div id="detail0context" class="ContextMenu"><ul class="ui-menu ui-widget ui-widget-content ui-corner-all ui-state-default">
