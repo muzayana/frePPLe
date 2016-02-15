@@ -11,12 +11,9 @@
 from datetime import datetime
 from urllib.parse import urlencode
 
-from django.db import DEFAULT_DB_ALIAS, connections
+from django.db import connections
 from django.http import HttpResponse
-from django.utils.encoding import force_text
 from django.utils.html import escape
-from django.utils.http import urlquote
-from django.utils.text import capfirst
 from django.utils.translation import ugettext_lazy as _
 
 from freppledb.common.dashboard import Dashboard, Widget
@@ -45,8 +42,7 @@ class ForecastAccuracyWidget(Widget):
     var margin_y = 30;  // Width allocated for the Y-axis
     var margin_x = 60;  // Height allocated for the X-axis
     var svg = d3.select("#forecast_error");
-    var width = $("#forecast_error").width();
-    var height = $("#forecast_error").height();
+    var svgrectangle = document.getElementById("forecast_error").getBoundingClientRect();
 
     // Collect the data
     var domain_x = [];
@@ -66,9 +62,9 @@ class ForecastAccuracyWidget(Widget):
 
     var x = d3.scale.ordinal()
       .domain(domain_x)
-      .rangeRoundBands([0, width - margin_y - 10], 0);
+      .rangeRoundBands([0, svgrectangle['width'] - margin_y - 10], 0);
     var y = d3.scale.linear()
-      .range([height - margin_x - 10, 0])
+      .range([svgrectangle['height'] - margin_x - 10, 0])
       .domain([min_error - 5, max_error + 5]);
 
     // Draw invisible rectangles for the hoverings
@@ -78,7 +74,7 @@ class ForecastAccuracyWidget(Widget):
      .append("g")
      .attr("transform", function(d, i) { return "translate(" + ((i) * x.rangeBand() + margin_y) + ",10)"; })
      .append("rect")
-      .attr("height", height - 10 - margin_x)
+      .attr("height", svgrectangle['height'] - 10 - margin_x)
       .attr("width", x.rangeBand())
       .attr("fill-opacity", 0)
       .on("mouseover", function(d) { $("#fcst_tooltip").css("display", "block").html(d[0] + " " + d[1] + "%") })
@@ -89,7 +85,7 @@ class ForecastAccuracyWidget(Widget):
     var xAxis = d3.svg.axis().scale(x)
         .orient("bottom").ticks(5);
     svg.append("g")
-      .attr("transform", "translate(" + margin_y  + ", " + (height - margin_x) +" )")
+      .attr("transform", "translate(" + margin_y  + ", " + (svgrectangle['height'] - margin_x) +" )")
       .attr("class", "x axis")
       .call(xAxis)
       .selectAll("text")
