@@ -193,7 +193,7 @@ class ManufacturingOrderWidget(Widget):
     var yAxis = d3.svg.axis().scale(y_value)
         .orient("left")
         .ticks(5)
-        .tickFormat(d3.format(".0f%%"));
+        .tickFormat(d3.format("s"));
     svg.append("g")
       .attr("transform", "translate(" + margin_y + ", 10 )")
       .attr("class", "y axis")
@@ -378,7 +378,7 @@ class DistributionOrderWidget(Widget):
     var yAxis = d3.svg.axis().scale(y_value)
         .orient("left")
         .ticks(5)
-        .tickFormat(d3.format(".0f%%"));
+        .tickFormat(d3.format("s"));
     svg.append("g")
       .attr("transform", "translate(" + margin_y + ", 10 )")
       .attr("class", "y axis")
@@ -575,7 +575,7 @@ class PurchaseOrderWidget(Widget):
     var yAxis = d3.svg.axis().scale(y_value)
         .orient("left")
         .ticks(5)
-        .tickFormat(d3.format(".0f%%"));
+        .tickFormat(d3.format("s"));
     svg.append("g")
       .attr("transform", "translate(" + margin_y + ", 10 )")
       .attr("class", "y axis")

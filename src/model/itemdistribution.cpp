@@ -85,7 +85,7 @@ DECLARE_EXPORT ItemDistribution::~ItemDistribution()
       if (j)
         j->next = next;
       else
-        throw LogicException("Corrupted ItemDistribution list");
+        logger << "Error: Corrupted ItemDistribution list" << endl;
     }
   }
 
@@ -297,7 +297,7 @@ OperationItemDistribution::~OperationItemDistribution()
       while (i->nextOperation != this && i->nextOperation)
         i = i->nextOperation;
       if (!i)
-        throw LogicException("ItemDistribution operation list corrupted");
+        logger << "Error: ItemDistribution operation list corrupted" << endl;
       else
         i->nextOperation = nextOperation;
     }
