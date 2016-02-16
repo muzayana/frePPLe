@@ -31,6 +31,7 @@ import math
 import operator
 import json
 from io import StringIO, BytesIO
+import urllib
 from openpyxl import load_workbook, Workbook
 
 from django.apps import apps
@@ -52,7 +53,7 @@ from django.http import HttpResponseForbidden, HttpResponseNotAllowed
 from django.shortcuts import render
 from django.utils import translation, six
 from django.utils.decorators import method_decorator
-from django.utils.encoding import smart_str, iri_to_uri, force_text
+from django.utils.encoding import smart_str, force_text, force_str
 from django.utils.html import escape
 from django.utils.translation import ugettext as _
 from django.utils.formats import get_format
@@ -569,7 +570,8 @@ class GridReport(View):
       content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       content=output.getvalue()
       )
-    response['Content-Disposition'] = 'attachment; filename=%s.xlsx' % title
+    # Filename parameter is encoded as specified in rfc5987
+    response['Content-Disposition'] = "attachment; filename*=utf-8''%s.xlsx" % urllib.parse.quote(force_str(title))
     response['Cache-Control'] = "no-cache, no-store"
     return response
 
@@ -888,7 +890,8 @@ class GridReport(View):
         content_type='text/csv; charset=%s' % settings.CSV_CHARSET,
         streaming_content=reportclass._generate_csv_data(request, *args, **kwargs)
         )
-      response['Content-Disposition'] = 'attachment; filename=%s.csv' % iri_to_uri(reportclass.title.lower())
+      # Filename parameter is encoded as specified in rfc5987
+      response['Content-Disposition'] = "attachment; filename*=utf-8''%s.csv" % urllib.parse.quote(force_str(reportclass.title.lower()))
       response['Cache-Control'] = "no-cache, no-store"
       return response
     else:
@@ -1962,7 +1965,8 @@ class GridPivot(GridReport):
       content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       content=output.getvalue()
       )
-    response['Content-Disposition'] = 'attachment; filename=%s.xlsx' % reportclass.model._meta.model_name
+    # Filename parameter is encoded as specified in rfc5987
+    response['Content-Disposition'] = "attachment; filename*=utf-8''%s.xlsx" % urllib.parse.quote(force_str(reportclass.model._meta.model_name))
     response['Cache-Control'] = "no-cache, no-store"
     return response
 
@@ -2068,7 +2072,7 @@ def exportWorkbook(request):
     content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     content=output.getvalue()
     )
-  response['Content-Disposition'] = 'attachment; filename=frepple.xlsx'
+  response['Content-Disposition'] = 'attachment; filename="frepple.xlsx"'
   response['Cache-Control'] = "no-cache, no-store"
   return response
 
