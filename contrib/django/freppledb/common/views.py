@@ -14,7 +14,6 @@ from django.shortcuts import render_to_response
 from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.decorators import login_required
-from django.contrib.admin.utils import unquote, quote
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.contenttypes.models import ContentType
 from django.core.urlresolvers import reverse, resolve
@@ -40,7 +39,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-@login_required
+@staff_member_required
 def cockpit(request):
   return render_to_response('index.html', {
     'title': _('Cockpit'),
