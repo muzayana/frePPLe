@@ -1,33 +1,19 @@
 {% extends "admin/base_site_grid.html" %}
 {% load i18n %}
-
 {% block extrastyle %}
-<link rel="stylesheet" type="text/css" href="{{STATIC_URL}}admin/css/base.css" />
-<link rel="stylesheet" type="text/css" href="{{STATIC_URL}}admin/css/forms.css" />
 <style>
 
-#id_name, #id_description, #id_item, #id_location, #id_customer {
-  width: 20em;
-}
-
-.quotebutton {
-  width: 23%;
-  float: left;
-  margin-left: 5px;
-}
-
 #status h1 {
-  padding-top: 5px;
-  padding-bottom: 5px;
+	padding-top: 5px;
+	padding-bottom: 5px;
 }
 
 td, th {
-  border-bottom: none;
+	border-bottom: none;
 }
-
 </style>
-{{block.super}}{% endblock %}
-
+{{block.super}}
+{% endblock %}
 {% block extrahead %}{{block.super}}
 <script type="text/javascript">
 
@@ -106,14 +92,17 @@ function getQuote(event)
         }, 1000);
     },
     error: function (result, stat, errorThrown) {
-      $('#popup').html(result.responseText)
-        .dialog({
-          title: gettext("Error"),
-          autoOpen: true,
-          resizable: false,
-          width: 'auto',
-          height: 'auto'
-        });
+      $('#popup').html('<div class="modal-dialog">'+
+          '<div class="modal-content">'+
+            '<div class="modal-header">'+
+              '<h4 class="modal-title">'+gettext('Error')+'</h4>'+
+              '<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">x</span></button>'+
+            '</div>'+
+            '<div class="modal-body">'+ result.responseText +'</div>' +
+            '<div class="modal-footer">'+'</div>'+
+          '</div>'+
+      '</div>')
+      .modal('show');
       }
     });
   event.preventDefault();
@@ -137,7 +126,7 @@ function inquireQuote(event)
   v = $("#id_customer").val();
   if (v!=null && v!='')
     demand.append( $('<customer/>').attr("name", v) );
-  v = ("#id_minshipment").val();
+  v = $("#id_minshipment").val();
   if (v!=null && v!='' && !isNaN(v))
     demand.append( $('<minshipment/>').text(v) );
   else
@@ -148,6 +137,7 @@ function inquireQuote(event)
   var demands = $('<demands/>').append(demand);
   var plan = $('<plan/>').attr("xmlns:xsi","http://www.w3.org/2001/XMLSchema-instance").append(demands);
   var root = $('<XMLDocument />').append(plan);
+  //console.log(root.html());
   $.ajax({
     type: 'POST',
     url: '{{request.prefix}}/quote/inquiry/',
@@ -161,14 +151,17 @@ function inquireQuote(event)
         }, 1000);
     },
     error: function (result, stat, errorThrown) {
-      $('#popup').html(result.responseText)
-        .dialog({
-          title: gettext("Error"),
-          autoOpen: true,
-          resizable: false,
-          width: 'auto',
-          height: 'auto'
-        });
+      $('#popup').html('<div class="modal-dialog">'+
+          '<div class="modal-content">'+
+            '<div class="modal-header">'+
+              '<h4 class="modal-title">'+gettext('Error')+'</h4>'+
+              '<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">x</span></button>'+
+            '</div>'+
+            '<div class="modal-body">'+ result.responseText +'</div>' +
+            '<div class="modal-footer">'+'</div>'+
+          '</div>'+
+      '</div>')
+      .modal('show');
       }
     });
   event.preventDefault();
@@ -192,24 +185,25 @@ function cancelQuote(event)
       $("#id_customer").val('');
       $("#id_location").val('');
       $("#id_quantity").val('1');
-      var today = new Date();
-      $("#id_due_0").val('' + today.getFullYear() + '-' + (today.getMonth()+1) + '-' + today.getDate());
+      $("#id_due_0").val(moment().format("YYYY-MM-DD"));
       $("#id_due_1").val('00:00:00');
       $("#id_minshipment").val('1');
       $("#id_maxlateness").val('');
       $('#status').html('');
     },
     error: function (result, stat, errorThrown) {
-      $('#popup').html(result.responseText)
-        .dialog({
-          title: gettext("Error"),
-          autoOpen: true,
-          resizable: false,
-          width: 'auto',
-          height: 'auto'
-        });
-      }
-    });
+      $('#popup').html('<div class="modal-dialog">'+
+          '<div class="modal-content">'+
+            '<div class="modal-header">'+
+              '<h4 class="modal-title">'+gettext('Error')+'</h4>'+
+              '<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">x</span></button>'+
+            '</div>'+
+            '<div class="modal-body">'+ result.responseText +'</div>' +
+            '<div class="modal-footer">'+'</div>'+
+          '</div>'+
+      '</div>')
+      .modal('show');
+      }     });
   event.preventDefault();
   event.stopPropagation();
 }
@@ -231,22 +225,24 @@ function confirmQuote(event)
       $("#id_customer").val('');
       $("#id_location").val('');
       $("#id_quantity").val('1');
-      var today = new Date();
-      $("#id_due_0").val('' + today.getFullYear() + '-' + (today.getMonth()+1) + '-' + today.getDate());
+      $("#id_due_0").val(moment().format("YYYY-MM-DD"));
       $("#id_due_1").val('00:00:00');
       $("#id_minshipment").val('');
       $("#id_maxlateness").val('');
       $('#status').html('');
     },
     error: function (result, stat, errorThrown) {
-      $('#popup').html(result.responseText)
-        .dialog({
-          title: gettext("Error"),
-          autoOpen: true,
-          resizable: false,
-          width: 'auto',
-          height: 'auto'
-        });
+      $('#popup').html('<div class="modal-dialog">'+
+          '<div class="modal-content">'+
+            '<div class="modal-header">'+
+              '<h4 class="modal-title">'+gettext('Error')+'</h4>'+
+              '<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">x</span></button>'+
+            '</div>'+
+            '<div class="modal-body">'+ result.responseText +'</div>' +
+            '<div class="modal-footer">'+'</div>'+
+          '</div>'+
+      '</div>')
+      .modal('show');
       }
     });
   event.preventDefault();
@@ -264,29 +260,79 @@ function displayInfo(rowid) {
     	displayXMLdata(xmldata);
     },
     error: function (result, stat, errorThrown) {
-      $('#popup').html(result.responseText)
-        .dialog({
-          title: gettext("Error getting quote info"),
-          autoOpen: true,
-          resizable: false,
-          width: 'auto',
-          height: 'auto'
-        });
+      $('#popup').html('<div class="modal-dialog">'+
+		      '<div class="modal-content">'+
+		        '<div class="modal-header">'+
+		          '<h4 class="modal-title">'+gettext('Error')+'</h4>'+
+		          '<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">x</span></button>'+
+		        '</div>'+
+		        '<div class="modal-body">'+ result.responseText +'</div>' +
+		        '<div class="modal-footer">'+'</div>'+
+		      '</div>'+
+		  '</div>')
+		  .modal('show');
       }
     });
 }
 
+function getDropdownData()
+{
+  $.ajax({
+    type: 'POST',
+    url: '{{request.prefix}}/data/input/item/',
+    dataType: 'html',
+    success: function (xmldata, status, jqXHR) {
+      setTimeout(function(){
+        jQuery("#grid").trigger('reloadGrid', [{current:true}]);
+        }, 1000);
+      $("#id_item1").val('test');
+      $("#id_customer").val('');
+      $("#id_location").val('');
+    },
+    error: function (result, stat, errorThrown) {
+      $('#popup').html('<div class="modal-dialog">'+
+          '<div class="modal-content">'+
+            '<div class="modal-header">'+
+              '<h4 class="modal-title">'+gettext('Error')+'</h4>'+
+              '<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">x</span></button>'+
+            '</div>'+
+            '<div class="modal-body"><text-area>'+ result.responseText +'</text-area></div>' +
+            '<div class="modal-footer">'+'</div>'+
+          '</div>'+
+      '</div>')
+      .modal('show');
+      }
+    });
+  event.preventDefault();
+  event.stopPropagation();
+}
+
 $(function() {
-  $(".date, .vDateField").datepicker({
-      showOtherMonths: true, selectOtherMonths: true,
-      dateFormat: "yy-mm-dd", changeMonth:true,
-      changeYear:true, yearRange: "c-1:c+5"
-      });
-  var today = new Date();
-  $("#id_due_0").val('' + today.getFullYear() + '-' + (today.getMonth()+1) + '-' + today.getDate());
+  icons = {
+      time: 'fa fa-clock-o',
+      date: 'fa fa-calendar',
+      up: 'fa fa-chevron-up',
+      down: 'fa fa-chevron-down',
+      previous: 'fa fa-chevron-left',
+      next: 'fa fa-chevron-right',
+      today: 'fa fa-bullseye',
+      clear: 'fa fa-trash',
+      close: 'fa fa-remove'
+    };
+  // Date picker
+  $(".vDateField").on('focusin', function() {
+    $(this).parent().css('position', 'relative');
+    $(this).datetimepicker({format: 'YYYY-MM-DD', calendarWeeks: true, icons, locale: document.documentElement.lang});
+  });
+  $(".vTimeField").on('focusin', function() {
+    $(this).parent().css('position', 'relative');
+    $(this).datetimepicker({format: 'HH:mm:ss', icons, locale: document.documentElement.lang});
+  });
+
+  $("#id_due_0").val(moment().format("YYYY-MM-DD"));
   $("#id_due_1").val('00:00:00');
   $("#id_quantity").val('1');
-  $("#fields").resizable({
+/*  $("#fields").resizable({
     handles:'e',
     minWidth:350,
     resize: function() {
@@ -294,34 +340,148 @@ $(function() {
       clearTimeout(resizing);
       resizing = setTimeout(saveColumnConfiguration, 200);
       }
-    });
+  });
+*/
+  $("#id_itemul li a").click(function(){
+    $("#id_item1").html($(this).text() + ' <span class="caret"></span>');
+    $("#id_item").val($(this).text());
+  });
+
+  $("#id_customerul li a").click(function(){
+    $("#id_customer1").html($(this).text() + ' <span class="caret"></span>');
+    $("#id_customer").val($(this).text());
+  });
+
+  $("#id_locationul li a").click(function(){
+    $("#id_location1").html($(this).text() + ' <span class="caret"></span>');
+    $("#id_location").val($(this).text());
+  });
+  
+
+  
 });
 
 </script>
-{% endblock %}
-{% block extra_grid %}onSelectRow: displayInfo,
-{% endblock %}
-{% block after_table %}
-<br/>
-<div style="padding: 5px; float:left; width:100%; white-space: nowrap; overflow:hidden">
-<div id="fields" style="display: inline-block; width:{% if "heigth" in preferences %}{{preferences.width}}{% else %}600{% endif %}px">
-<h1>{% trans "quote"|capfirst %}</h1>
-<form class="form" id="quoteform" class="form">{% csrf_token %}
-<table><tbody>{% for field in form %}<tr>
-<th style="text-align:right; vertical-align:middle;">{{ field.label_tag }}</th>
-<td>{{ field.errors }}{{ field }}</td>
-</tr>
-{% endfor %}</tbody></table>
-<br>
-</form>
-<input type="submit" class="quotebutton ui-button ui-widget ui-state-default ui-corner-all" id="form_inquiry" value="{% trans 'inquiry'|capfirst %}" onclick="inquireQuote(event)">
-<input type="submit" class="quotebutton ui-button ui-widget ui-state-default ui-corner-all" id="form_quote" value="{% trans 'quote'|capfirst %}" onclick="getQuote(event)">
-{% comment %}Translators: Translation included with Django {% endcomment %}
-<input type="submit" class="quotebutton ui-button ui-widget ui-state-default ui-corner-all" id="form_cancel" value="{% filter capfirst|force_escape %}{% trans 'Cancel' %}{% endfilter %}" onclick="cancelQuote(event)">
-<input type="submit" class="quotebutton ui-button ui-widget ui-state-default ui-corner-all" id="form_confirm" value="{% trans 'confirm'|capfirst %}" onclick="confirmQuote(event)">
+{% endblock %} {% block extra_grid %}onSelectRow: displayInfo, {% endblock %} {% block after_table %}
 
-</div>
-<div id="status" style="display: inline-block; overflow-x: auto; vertical-align:top"><h1>{% trans "deliveries"|capfirst %}</h1><br/>
-<h1>{% trans "problems"|capfirst %}</h1><br/>
-<h1>{% trans "why short or late?"|capfirst %}</h1></div>
-{% endblock %}
+<div class="row" style="white-space: nowrap; overflow: hidden">
+	<div class="col col-sm-6">
+
+		<h1>{% trans "quote"|capfirst %}</h1>
+		<form id="quoteform" class="form-horizontal">
+			<input type='hidden' name='csrfmiddlewaretoken'	value="{{ csrf_token }}" />
+			<input type="hidden" id="id_customer" name="customer" value="1">
+			<input type="hidden" id="id_location" name="location" value="1">
+			<input type="hidden" id="id_item" name="item" value="1">
+			
+			<label for="id_name" class="col-sm-3 control-label"> {% trans "name"|capfirst %}:</label>
+			<div class="col-sm-9" style="padding-bottom: 5px;">
+				<input class="form-control" id="id_name" maxlength="300" name="name"	type="text" />
+			</div>
+
+			<label for="id_description" class="col-sm-3 control-label">{% 	trans "description"|capfirst %}:</label>
+			<div class="col-sm-9" style="padding-bottom: 5px;">
+				<input class="form-control" id="id_description" maxlength="500" name="description" type="text" />
+			</div>
+
+			{{ form.quoteform.item }}
+			<label for="id_item1"	class="col-sm-3 control-label">{% trans "item"|capfirst %}:</label>
+			<div class="dropdown dropdown-submit-input col-sm-9" style="padding-bottom: 5px;">
+				<button class="btn btn-default dropdown-toggle form-control" id="id_item1" value="" type="button" data-toggle="dropdown">
+				  ------------&nbsp;&nbsp;<span class="caret"></span>
+				</button>
+				<ul class="dropdown-menu col-sm-12" aria-labelledby="id_item1" id="id_itemul" style="height: auto; max-height: 200px; overflow-x: hidden;">
+					<li><a>------------</a></li>
+					{% for j in items %}
+					<li><a name="{{j.name}}">{{j.name}}</a></li>
+				  {% endfor %}
+				</ul>
+			</div>
+
+			<label for="id_customer1" class="col-sm-3 control-label">{% trans "customer"|capfirst %}:</label>
+			<div class="dropdown dropdown-submit-input col-sm-9" style="padding-bottom: 5px;">
+				<button class="btn btn-default dropdown-toggle form-control" id="id_customer1" value="" type="button" data-toggle="dropdown">
+					------------&nbsp;&nbsp;<span class="caret"></span>
+				</button>
+				<ul class="dropdown-menu col-sm-12" aria-labelledby="id_customer1" id="id_customerul" style="height: auto; max-height: 200px; overflow-x: hidden;">
+					<li><a>------------</a></li>
+          {% for j in customers %}
+          <li><a name="{{j.name}}">{{j.name}}</a></li>
+          {% endfor %}
+				</ul>
+			</div>
+
+			<label for="id_location1" class="col-sm-3 control-label">{% trans "location"|capfirst %}:</label>
+			<div class="dropdown dropdown-submit-input col-sm-9" style="padding-bottom: 5px;">
+				<button class="btn btn-default dropdown-toggle form-control" id="id_location1" value="1" type="button" data-toggle="dropdown">
+					------------&nbsp;&nbsp;<span class="caret"></span>
+				</button>
+				<ul class="dropdown-menu col-sm-12" aria-labelledby="id_location1" id="id_locationul" style="height: auto; max-height: 150px; overflow-x: hidden;">
+					<li><a>------------</a></li>
+          {% for j in locations %}
+          <li><a name="{{j.name}}">{{j.name}}</a></li>
+          {% endfor %}
+				</ul>
+			</div>
+
+			<div class="col-sm-6">
+				<label class="control-label" for="id_quantity">
+				{% trans "quantity"|capfirst %}:
+				</label>
+				<input class="form-control" id="id_quantity" name="quantity" step="0.0001" type="number" value="0" min="0" />
+			</div>
+			<div class="col-sm-6">
+				<label class="control-label" for="id_minshipment">
+				{% trans "minimum shipment"|capfirst %}:
+				</label>
+				<input class="form-control" id="id_minshipment" name="minshipment" step="0.0001" type="number" value="0" min="0"/>
+			</div>
+
+			<div class="col-sm-4">
+				<label class="control-label" for="id_due_0">
+				{% trans "due date"|capfirst %}:
+				</label>
+				<input class="vDateField form-control" id="id_due_0" name="due_0" />
+			</div>
+			<div class="col-sm-4">
+				<label class="control-label" for="id_due_1">
+				{% trans	"Time"|capfirst %}:
+				</label>
+				<input class="vTimeField form-control" id="id_due_1" name="due_1" />
+			</div>
+			<div class="col-sm-4">
+				<label class="control-label" for="id_maxlateness">
+				{% trans "maximum lateness"|capfirst %}:
+				</label>
+				<input class="form-control" id="id_maxlateness" name="maxlateness" step="1" value="0" type="number" min="0"/>
+			</div>
+
+			<div class="col-sm-12">
+			<br>
+			</div>
+		</form>
+		
+		<div class="form-horizontal">
+      <div class="col-sm-3">
+				<input type="submit" class="quotebutton btn btn-primary form-control" id="form_inquiry" value="{% trans 'inquiry'|capfirst %}" onclick="inquireQuote(event)">
+      </div>
+      <div class="col-sm-3">
+				<input type="submit" class="quotebutton btn btn-primary form-control" id="form_quote" value="{% trans 'quote'|capfirst %}" onclick="getQuote(event)">
+      </div>
+      <div class="col-sm-3">
+				{% comment %}Translators: Translation included with Django {% endcomment %}
+				<input type="submit" class="quotebutton btn btn-primary form-control" id="form_cancel" value="{% filter capfirst|force_escape %}{% trans 'Cancel' %}{% endfilter %}" onclick="cancelQuote(event)">
+      </div>
+      <div class="col-sm-3">
+				<input type="submit" class="quotebutton btn btn-primary form-control" id="form_confirm" value="{% trans 'confirm'|capfirst %}" onclick="confirmQuote(event)">
+      </div>
+		</div>
+	</div>
+	<div class="col col-sm-6" id="status" style="display: inline-block; overflow-x: auto; vertical-align: top">
+		<h1>{% trans "deliveries"|capfirst %}</h1>
+		<br />
+		<h1>{% trans "problems"|capfirst %}</h1>
+		<br />
+		<h1>{% trans "why short or late?"|capfirst %}</h1>
+	</div>
+	{% endblock %}

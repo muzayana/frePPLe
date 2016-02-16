@@ -25,7 +25,7 @@ from freppledb.common.models import Parameter
 from freppledb.common.dashboard import Dashboard, Widget
 from freppledb.common.report import GridReport
 from freppledb.input.models import PurchaseOrder, DistributionOrder
-from freppledb.output.models import LoadPlan, Problem, OperationPlan, Demand
+from freppledb.output.models import LoadPlan, Problem
 
 
 class LateOrdersWidget(Widget):
@@ -38,6 +38,19 @@ class LateOrdersWidget(Widget):
   exporturl = True
   limit = 20
 
+  query = '''
+    select
+      out_problem.owner, out_problem.weight,
+      out_problem.startdate, out_problem.enddate
+    from out_problem
+    left outer join demand
+      on out_problem.owner = demand.name
+    where out_problem.name = 'late' and out_problem.entity = 'demand'
+      and demand.name is not null
+    order by out_problem.startdate, out_problem.weight desc
+    limit %s
+    '''
+
   def args(self):
     return "?%s" % urlencode({'limit': self.limit})
 
@@ -48,6 +61,7 @@ class LateOrdersWidget(Widget):
       db = _thread_locals.request.database or DEFAULT_DB_ALIAS
     except:
       db = DEFAULT_DB_ALIAS
+    cursor = connections[db].cursor()
     result = [
       '<table style="width:100%">',
       '<tr><th class="alignleft">%s</th><th>%s</th><th>%s</th><th>%s</th></tr>' % (
@@ -56,9 +70,10 @@ class LateOrdersWidget(Widget):
         )
       ]
     alt = False
-    for prob in Problem.objects.using(db).filter(name='late', entity='demand').order_by('startdate', '-weight')[:limit]:
+    cursor.execute(cls.query % limit)
+    for rec in cursor.fetchall():
       result.append('<tr%s><td class="underline"><a href="%s/demandpegging/%s/">%s</a></td><td class="aligncenter">%s</td><td class="aligncenter">%s</td><td class="aligncenter">%s</td></tr>' % (
-        alt and ' class="altRow"' or '', request.prefix, urlquote(prob.owner), escape(prob.owner), prob.startdate.date(), prob.enddate.date(), int(prob.weight)
+        alt and ' class="altRow"' or '', request.prefix, urlquote(rec[0]), escape(rec[0]), rec[2].date(), rec[3].date(), int(rec[1])
         ))
       alt = not alt
     result.append('</table>')
@@ -79,6 +94,18 @@ class ShortOrdersWidget(Widget):
   exporturl = True
   limit = 20
 
+  query = '''
+    select
+      out_problem.owner, out_problem.weight, out_problem.startdate
+    from out_problem
+    left outer join demand
+      on out_problem.owner = demand.name
+    where out_problem.name in ('short', 'unplanned') and out_problem.entity = 'demand'
+      and demand.name is not null
+    order by out_problem.startdate desc
+    limit %s
+    '''
+
   def args(self):
     return "?%s" % urlencode({'limit': self.limit})
 
@@ -89,6 +116,7 @@ class ShortOrdersWidget(Widget):
       db = _thread_locals.request.database or DEFAULT_DB_ALIAS
     except:
       db = DEFAULT_DB_ALIAS
+    cursor = connections[db].cursor()
     result = [
       '<table style="width:100%">',
       '<tr><th class="alignleft">%s</th><th>%s</th><th>%s</th></tr>' % (
@@ -96,9 +124,10 @@ class ShortOrdersWidget(Widget):
         )
       ]
     alt = False
-    for prob in Problem.objects.using(db).filter(name__gte='short', entity='demand').order_by('startdate')[:limit]:
+    cursor.execute(cls.query % limit)
+    for rec in cursor.fetchall():
       result.append('<tr%s><td class="underline"><a href="%s/demandpegging/%s/">%s</a></td><td class="aligncenter">%s</td><td class="aligncenter">%s</td></tr>' % (
-        alt and ' class="altRow"' or '', request.prefix, urlquote(prob.owner), escape(prob.owner), prob.startdate.date(), int(prob.weight)
+        alt and ' class="altRow"' or '', request.prefix, urlquote(rec[0]), escape(rec[0]), rec[2].date(), int(rec[1])
         ))
       alt = not alt
     result.append('</table>')
@@ -125,8 +154,7 @@ class ManufacturingOrderWidget(Widget):
     var margin_y = 70;  // Width allocated for the Y-axis
     var margin_x = 60;  // Height allocated for the X-axis
     var svg = d3.select("#mo_chart");
-    var width = $("#mo_chart").width();
-    var height = $("#mo_chart").height();
+    var svgrectangle = document.getElementById("mo_chart").getBoundingClientRect();
 
     // Collect the data
     var domain_x = [];
@@ -147,12 +175,12 @@ class ManufacturingOrderWidget(Widget):
     // Define axis domains
     var x = d3.scale.ordinal()
       .domain(domain_x)
-      .rangeRoundBands([0, width - margin_y - 10], 0);
+      .rangeRoundBands([0, svgrectangle['width'] - margin_y - 10], 0);
     var y_value = d3.scale.linear()
-      .range([height - margin_x - 10, 0])
+      .range([svgrectangle['height'] - margin_x - 10, 0])
       .domain([0, max_value + 5]);
     var y_count = d3.scale.linear()
-      .range([height - margin_x - 10, 0])
+      .range([svgrectangle['height'] - margin_x - 10, 0])
       .domain([0, max_count + 5]);
 
     // Draw invisible rectangles for the hoverings
@@ -162,7 +190,7 @@ class ManufacturingOrderWidget(Widget):
      .append("g")
      .attr("transform", function(d, i) { return "translate(" + ((i) * x.rangeBand() + margin_y) + ",10)"; })
      .append("rect")
-      .attr("height", height - 10 - margin_x)
+      .attr("height", svgrectangle['height'] - 10 - margin_x)
       .attr("width", x.rangeBand())
       .attr("fill-opacity", 0)
       .on("mouseover", function(d) {
@@ -180,7 +208,7 @@ class ManufacturingOrderWidget(Widget):
     var xAxis = d3.svg.axis().scale(x)
         .orient("bottom").ticks(5);
     svg.append("g")
-      .attr("transform", "translate(" + margin_y  + ", " + (height - margin_x) +" )")
+      .attr("transform", "translate(" + margin_y  + ", " + (svgrectangle['height'] - margin_x) +" )")
       .attr("class", "x axis")
       .call(xAxis)
       .selectAll("text")
@@ -273,8 +301,8 @@ class ManufacturingOrderWidget(Widget):
       if rec[0] == 0:
         result.append('<tr><td>%s</td><td>%s</td><td>%s</td></tr>' % (rec[1], rec[3], rec[4]))
       elif rec[0] == 1:
-        result.append('</table><div class="row"><div class="col-xs-4"><h2>%s / %s <small>units</small></h2><small>confirmed orders</small></div>' % (
-          rec[3], rec[4]
+        result.append('</table><div class="row"><div class="col-xs-4"><h2>%s / %s%s%s&nbsp;<a href="%s/data/input/operationplan/?sord=asc&sidx=startdate&amp;status=confirmed" role="button" class="btn btn-success btn-xs">Review</a></h2><small>confirmed orders</small></div>' % (
+          rec[3], settings.CURRENCY[0], rec[4], settings.CURRENCY[1], request.prefix
           ))
       elif rec[0] == 2 and fence1:
         limit_fence1 = current + timedelta(days=fence1)
@@ -310,8 +338,7 @@ class DistributionOrderWidget(Widget):
     var margin_y = 70;  // Width allocated for the Y-axis
     var margin_x = 60;  // Height allocated for the X-axis
     var svg = d3.select("#do_chart");
-    var width = $("#do_chart").width();
-    var height = $("#do_chart").height();
+    var svgrectangle = document.getElementById("do_chart").getBoundingClientRect();
 
     // Collect the data
     var domain_x = [];
@@ -332,12 +359,12 @@ class DistributionOrderWidget(Widget):
     // Define axis domains
     var x = d3.scale.ordinal()
       .domain(domain_x)
-      .rangeRoundBands([0, width - margin_y - 10], 0);
+      .rangeRoundBands([0, svgrectangle['width'] - margin_y - 10], 0);
     var y_value = d3.scale.linear()
-      .range([height - margin_x - 10, 0])
+      .range([svgrectangle['height'] - margin_x - 10, 0])
       .domain([0, max_value + 5]);
     var y_count = d3.scale.linear()
-      .range([height - margin_x - 10, 0])
+      .range([svgrectangle['height'] - margin_x - 10, 0])
       .domain([0, max_count + 5]);
 
     // Draw invisible rectangles for the hoverings
@@ -347,7 +374,7 @@ class DistributionOrderWidget(Widget):
      .append("g")
      .attr("transform", function(d, i) { return "translate(" + ((i) * x.rangeBand() + margin_y) + ",10)"; })
      .append("rect")
-      .attr("height", height - 10 - margin_x)
+      .attr("height", svgrectangle['height'] - 10 - margin_x)
       .attr("width", x.rangeBand())
       .attr("fill-opacity", 0)
       .on("mouseover", function(d) {
@@ -365,7 +392,7 @@ class DistributionOrderWidget(Widget):
     var xAxis = d3.svg.axis().scale(x)
         .orient("bottom").ticks(5);
     svg.append("g")
-      .attr("transform", "translate(" + margin_y  + ", " + (height - margin_x) +" )")
+      .attr("transform", "translate(" + margin_y  + ", " + (svgrectangle['height'] - margin_x) +" )")
       .attr("class", "x axis")
       .call(xAxis)
       .selectAll("text")
@@ -466,17 +493,17 @@ class DistributionOrderWidget(Widget):
       if rec[0] == 0:
         result.append('<tr><td>%s</td><td>%s</td><td>%s</td></tr>' % (rec[1], rec[3], rec[4]))
       elif rec[0] == 1:
-        result.append('</table><div class="row"><div class="col-xs-4"><h2>%s / %s%s%s</h2><small>confirmed orders</small></div>' % (
-          rec[3], settings.CURRENCY[0], rec[4], settings.CURRENCY[1]
+        result.append('</table><div class="row"><div class="col-xs-4"><h2>%s / %s%s%s&nbsp;<a href="%s/data/input/distributionorder/?sord=asc&sidx=startdate&amp;status=confirmed" class="btn btn-success btn-xs">Review</a></h2><small>confirmed orders</small></div>' % (
+          rec[3], settings.CURRENCY[0], rec[4], settings.CURRENCY[1], request.prefix
           ))
       elif rec[0] == 2 and fence1:
         limit_fence1 = current + timedelta(days=fence1)
-        result.append('<div class="col-xs-4"><h2>%s / %s%s%s&nbsp;<a href="%s/data/input/distributionorder/?sord=asc&sidx=startdate&startdate__lte=%s&amp;status=proposed\'" class="btn btn-success btn-xs">Review</a></h2><small>proposed orders within %s days</small></div>' % (
+        result.append('<div class="col-xs-4"><h2>%s / %s%s%s&nbsp;<a href="%s/data/input/distributionorder/?sord=asc&sidx=startdate&startdate__lte=%s&amp;status=proposed" class="btn btn-success btn-xs">Review</a></h2><small>proposed orders within %s days</small></div>' % (
           rec[3], settings.CURRENCY[0], rec[4], settings.CURRENCY[1], request.prefix, limit_fence1.strftime("%Y-%m-%d"), fence1
           ))
       elif fence2:
         limit_fence2 = current + timedelta(days=fence2)
-        result.append('<div class="col-xs-4"><h2>%s / %s%s%s&nbsp;<a href=%s/data/input/distributionorder/?sord=asc&sidx=startdate&startdate__lte=%s&amp;status=proposed\'" class="btn btn-success btn-xs">Review</a></h2><small>proposed orders within %s days</small></div>' % (
+        result.append('<div class="col-xs-4"><h2>%s / %s%s%s&nbsp;<a href=%s/data/input/distributionorder/?sord=asc&sidx=startdate&startdate__lte=%s&amp;status=proposed" class="btn btn-success btn-xs">Review</a></h2><small>proposed orders within %s days</small></div>' % (
           rec[3], settings.CURRENCY[0], rec[4], settings.CURRENCY[1], request.prefix, limit_fence2.strftime("%Y-%m-%d"), fence2
           ))
     result.append('</div><div id="do_tooltip" class="tooltip-inner" style="display: none; z-index:10000; position:absolute;"></div>')
@@ -507,8 +534,7 @@ class PurchaseOrderWidget(Widget):
     var margin_y = 70;  // Width allocated for the Y-axis
     var margin_x = 60;  // Height allocated for the X-axis
     var svg = d3.select("#po_chart");
-    var width = $("#po_chart").width();
-    var height = $("#po_chart").height();
+    var svgrectangle = document.getElementById("po_chart").getBoundingClientRect();
 
     // Collect the data
     var domain_x = [];
@@ -529,12 +555,12 @@ class PurchaseOrderWidget(Widget):
     // Define axis domains
     var x = d3.scale.ordinal()
       .domain(domain_x)
-      .rangeRoundBands([0, width - margin_y - 10], 0);
+      .rangeRoundBands([0, svgrectangle['width'] - margin_y - 10], 0);
     var y_value = d3.scale.linear()
-      .range([height - margin_x - 10, 0])
+      .range([svgrectangle['height'] - margin_x - 10, 0])
       .domain([0, max_value + 5]);
     var y_count = d3.scale.linear()
-      .range([height - margin_x - 10, 0])
+      .range([svgrectangle['height'] - margin_x - 10, 0])
       .domain([0, max_count + 5]);
 
     // Draw invisible rectangles for the hoverings
@@ -544,7 +570,7 @@ class PurchaseOrderWidget(Widget):
      .append("g")
      .attr("transform", function(d, i) { return "translate(" + ((i) * x.rangeBand() + margin_y) + ",10)"; })
      .append("rect")
-      .attr("height", height - 10 - margin_x)
+      .attr("height", svgrectangle['height'] - 10 - margin_x)
       .attr("width", x.rangeBand())
       .attr("fill-opacity", 0)
       .on("mouseover", function(d) {
@@ -562,7 +588,7 @@ class PurchaseOrderWidget(Widget):
     var xAxis = d3.svg.axis().scale(x)
         .orient("bottom").ticks(5);
     svg.append("g")
-      .attr("transform", "translate(" + margin_y  + ", " + (height - margin_x) +" )")
+      .attr("transform", "translate(" + margin_y  + ", " + (svgrectangle['height'] - margin_x) +" )")
       .attr("class", "x axis")
       .call(xAxis)
       .selectAll("text")
@@ -670,8 +696,8 @@ class PurchaseOrderWidget(Widget):
       if rec[0] == 0:
         result.append('<tr><td>%s</td><td>%s</td><td>%s</td></tr>' % (rec[1], rec[3], rec[4]))
       elif rec[0] == 1:
-        result.append('</table><div class="row"><div class="col-xs-4"><h2>%s / %s%s%s</h2><small>confirmed orders</small></div>' % (
-          rec[3], settings.CURRENCY[0], rec[4], settings.CURRENCY[1]
+        result.append('</table><div class="row"><div class="col-xs-4"><h2>%s / %s%s%s&nbsp;<a href="%s/data/input/purchaseorder/?sord=asc&sidx=startdate&amp;status=confirmed" class="btn btn-success btn-xs">Review</a></h2><small>confirmed orders</small></div>' % (
+          rec[3], settings.CURRENCY[0], rec[4], settings.CURRENCY[1], request.prefix
           ))
       elif rec[0] == 2 and fence1:
         limit_fence1 = current + timedelta(days=fence1)
@@ -983,8 +1009,9 @@ class ResourceLoadWidget(Widget):
       data.push( [l.attr("href"), l.text(), v] );
       if (v > max_util) max_util = v;
       });
-    var barHeight = $("#resLoad").height() / data.length;
-    var x = d3.scale.linear().domain([0, max_util]).range([0, $("#resLoad").width()]);
+    var svgrectangle = document.getElementById("resLoad").getBoundingClientRect();
+    var barHeight = svgrectangle['height'] / data.length;
+    var x = d3.scale.linear().domain([0, max_util]).range([0, svgrectangle['width']]);
     var resload_high = parseFloat($("#resload_high").html());
     var resload_medium = parseFloat($("#resload_medium").html());
 
@@ -1083,8 +1110,9 @@ class InventoryByLocationWidget(Widget):
          ] );
       if (l > invmax) invmax = l;
       });
-    var x_width = ($("#invByLoc").width()-margin) / data.length;
-    var y = d3.scale.linear().domain([0, invmax]).range([$("#invByLoc").height() - 20, 0]);
+    var svgrectangle = document.getElementById("invByLoc").getBoundingClientRect();
+    var x_width = (svgrectangle['width']-margin) / data.length;
+    var y = d3.scale.linear().domain([0, invmax]).range([svgrectangle['height'] - 20, 0]);
     var y_zero = y(0);
 
     // Draw the chart
@@ -1172,8 +1200,9 @@ class InventoryByItemWidget(Widget):
          ] );
       if (l > invmax) invmax = l;
       });
-    var x_width = ($("#invByItem").width()-margin) / data.length;
-    var y = d3.scale.linear().domain([0, invmax]).range([$("#invByItem").height() - 20, 0]);
+    var svgrectangle = document.getElementById("invByItem").getBoundingClientRect();
+    var x_width = (svgrectangle['width']-margin) / data.length;
+    var y = d3.scale.linear().domain([0, invmax]).range([svgrectangle['height'] - 20, 0]);
     var y_zero = y(0);
 
     // Draw the chart

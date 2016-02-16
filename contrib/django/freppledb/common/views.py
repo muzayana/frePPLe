@@ -86,7 +86,7 @@ class PreferencesForm(forms.Form):
     initial=100
     )
   theme = forms.ChoiceField(
-    label=_('Theme'),
+    label=capfirst(_('theme')),
     required=False,
     choices=[ (i, capfirst(i)) for i in settings.THEMES ],
     )
