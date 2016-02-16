@@ -4,12 +4,12 @@
 <style>
 
 #status h1 {
-	padding-top: 5px;
-	padding-bottom: 5px;
+    padding-top: 5px;
+    padding-bottom: 5px;
 }
 
 td, th {
-	border-bottom: none;
+    border-bottom: none;
 }
 </style>
 {{block.super}}
@@ -257,20 +257,20 @@ function displayInfo(rowid) {
     data: JSON.stringify([rowid]),
     dataType: 'xml',
     success: function (xmldata, status, jqXHR) {
-    	displayXMLdata(xmldata);
+        displayXMLdata(xmldata);
     },
     error: function (result, stat, errorThrown) {
       $('#popup').html('<div class="modal-dialog">'+
-		      '<div class="modal-content">'+
-		        '<div class="modal-header">'+
-		          '<h4 class="modal-title">'+gettext('Error')+'</h4>'+
-		          '<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">x</span></button>'+
-		        '</div>'+
-		        '<div class="modal-body">'+ result.responseText +'</div>' +
-		        '<div class="modal-footer">'+'</div>'+
-		      '</div>'+
-		  '</div>')
-		  .modal('show');
+              '<div class="modal-content">'+
+                '<div class="modal-header">'+
+                  '<h4 class="modal-title">'+gettext('Error')+'</h4>'+
+                  '<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">x</span></button>'+
+                '</div>'+
+                '<div class="modal-body">'+ result.responseText +'</div>' +
+                '<div class="modal-footer">'+'</div>'+
+              '</div>'+
+          '</div>')
+          .modal('show');
       }
     });
 }
@@ -356,132 +356,129 @@ $(function() {
     $("#id_location1").html($(this).text() + ' <span class="caret"></span>');
     $("#id_location").val($(this).text());
   });
-  
 
-  
+
+
 });
 
 </script>
 {% endblock %} {% block extra_grid %}onSelectRow: displayInfo, {% endblock %} {% block after_table %}
 
-<div class="row" style="white-space: nowrap; overflow: hidden">
-	<div class="col col-sm-6">
+<div class="row" style="white-space: nowrap;">
+    <div class="col col-sm-6">
 
-		<h1>{% trans "quote"|capfirst %}</h1>
-		<form id="quoteform" class="form-horizontal">
-			<input type='hidden' name='csrfmiddlewaretoken'	value="{{ csrf_token }}" />
-			<input type="hidden" id="id_customer" name="customer" value="1">
-			<input type="hidden" id="id_location" name="location" value="1">
-			<input type="hidden" id="id_item" name="item" value="1">
-			
-			<label for="id_name" class="col-sm-3 control-label"> {% trans "name"|capfirst %}:</label>
-			<div class="col-sm-9" style="padding-bottom: 5px;">
-				<input class="form-control" id="id_name" maxlength="300" name="name"	type="text" />
-			</div>
+        <h1>{% trans "quote"|capfirst %}</h1>
+        <form id="quoteform" class="form-horizontal">
+            <input type='hidden' name='csrfmiddlewaretoken' value="{{ csrf_token }}" />
+            <input type="hidden" id="id_customer" name="customer" value="1">
+            <input type="hidden" id="id_location" name="location" value="1">
+            <input type="hidden" id="id_item" name="item" value="1">
 
-			<label for="id_description" class="col-sm-3 control-label">{% 	trans "description"|capfirst %}:</label>
-			<div class="col-sm-9" style="padding-bottom: 5px;">
-				<input class="form-control" id="id_description" maxlength="500" name="description" type="text" />
-			</div>
+            <label for="id_name" class="col-sm-3 control-label"> {% trans "name"|capfirst %}:</label>
+            <div class="col-sm-9" style="padding-bottom: 5px;">
+                <input class="form-control" id="id_name" maxlength="300" name="name"    type="text" />
+            </div>
 
-			{{ form.quoteform.item }}
-			<label for="id_item1"	class="col-sm-3 control-label">{% trans "item"|capfirst %}:</label>
-			<div class="dropdown dropdown-submit-input col-sm-9" style="padding-bottom: 5px;">
-				<button class="btn btn-default dropdown-toggle form-control" id="id_item1" value="" type="button" data-toggle="dropdown">
-				  ------------&nbsp;&nbsp;<span class="caret"></span>
-				</button>
-				<ul class="dropdown-menu col-sm-12" aria-labelledby="id_item1" id="id_itemul" style="height: auto; max-height: 200px; overflow-x: hidden;">
-					<li><a>------------</a></li>
-					{% for j in items %}
-					<li><a name="{{j.name}}">{{j.name}}</a></li>
-				  {% endfor %}
-				</ul>
-			</div>
+            <label for="id_description" class="col-sm-3 control-label">{%   trans "description"|capfirst %}:</label>
+            <div class="col-sm-9" style="padding-bottom: 5px;">
+                <input class="form-control" id="id_description" maxlength="500" name="description" type="text" />
+            </div>
 
-			<label for="id_customer1" class="col-sm-3 control-label">{% trans "customer"|capfirst %}:</label>
-			<div class="dropdown dropdown-submit-input col-sm-9" style="padding-bottom: 5px;">
-				<button class="btn btn-default dropdown-toggle form-control" id="id_customer1" value="" type="button" data-toggle="dropdown">
-					------------&nbsp;&nbsp;<span class="caret"></span>
-				</button>
-				<ul class="dropdown-menu col-sm-12" aria-labelledby="id_customer1" id="id_customerul" style="height: auto; max-height: 200px; overflow-x: hidden;">
-					<li><a>------------</a></li>
-          {% for j in customers %}
-          <li><a name="{{j.name}}">{{j.name}}</a></li>
+            {{ form.quoteform.item }}
+            <label for="id_item1"   class="col-sm-3 control-label">{% trans "item"|capfirst %}:</label>
+            <div class="dropdown dropdown-submit-input col-sm-9" style="padding-bottom: 5px;">
+                <button class="btn btn-default dropdown-toggle form-control" id="id_item1" value="" type="button" data-toggle="dropdown">
+                  ------------&nbsp;&nbsp;<span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu col-sm-12" aria-labelledby="id_item1" id="id_itemul" style="height: auto; max-height: 200px; overflow-x: hidden;">
+                    {% for id, name in form.item.field.choices %}
+                    <li><a name="{{id}}">{{name}}</a></li>
+                  {% endfor %}
+                </ul>
+            </div>
+
+            <label for="id_customer1" class="col-sm-3 control-label">{% trans "customer"|capfirst %}:</label>
+            <div class="dropdown dropdown-submit-input col-sm-9" style="padding-bottom: 5px;">
+                <button class="btn btn-default dropdown-toggle form-control" id="id_customer1" value="" type="button" data-toggle="dropdown">
+                    ------------&nbsp;&nbsp;<span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu col-sm-12" aria-labelledby="id_customer1" id="id_customerul" style="height: auto; max-height: 200px; overflow-x: hidden;">
+          {% for id, name in form.customer.field.choices %}
+          <li><a name="{{id}}">{{name}}</a></li>
           {% endfor %}
-				</ul>
-			</div>
+                </ul>
+            </div>
 
-			<label for="id_location1" class="col-sm-3 control-label">{% trans "location"|capfirst %}:</label>
-			<div class="dropdown dropdown-submit-input col-sm-9" style="padding-bottom: 5px;">
-				<button class="btn btn-default dropdown-toggle form-control" id="id_location1" value="1" type="button" data-toggle="dropdown">
-					------------&nbsp;&nbsp;<span class="caret"></span>
-				</button>
-				<ul class="dropdown-menu col-sm-12" aria-labelledby="id_location1" id="id_locationul" style="height: auto; max-height: 150px; overflow-x: hidden;">
-					<li><a>------------</a></li>
-          {% for j in locations %}
-          <li><a name="{{j.name}}">{{j.name}}</a></li>
+            <label for="id_location1" class="col-sm-3 control-label">{% trans "location"|capfirst %}:</label>
+            <div class="dropdown dropdown-submit-input col-sm-9" style="padding-bottom: 5px;">
+                <button class="btn btn-default dropdown-toggle form-control" id="id_location1" value="1" type="button" data-toggle="dropdown">
+                    ------------&nbsp;&nbsp;<span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu col-sm-12" aria-labelledby="id_location1" id="id_locationul" style="height: auto; max-height: 150px; overflow-x: hidden;">
+          {% for id, name in form.location.field.choices %}
+          <li><a name="{{id}}">{{name}}</a></li>
           {% endfor %}
-				</ul>
-			</div>
+                </ul>
+            </div>
 
-			<div class="col-sm-6">
-				<label class="control-label" for="id_quantity">
-				{% trans "quantity"|capfirst %}:
-				</label>
-				<input class="form-control" id="id_quantity" name="quantity" step="0.0001" type="number" value="0" min="0" />
-			</div>
-			<div class="col-sm-6">
-				<label class="control-label" for="id_minshipment">
-				{% trans "minimum shipment"|capfirst %}:
-				</label>
-				<input class="form-control" id="id_minshipment" name="minshipment" step="0.0001" type="number" value="0" min="0"/>
-			</div>
+            <div class="col-sm-6">
+                <label class="control-label" for="id_quantity">
+                {% trans "quantity"|capfirst %}:
+                </label>
+                <input class="form-control" id="id_quantity" name="quantity" step="0.0001" type="number" value="0" min="0" />
+            </div>
+            <div class="col-sm-6">
+                <label class="control-label" for="id_minshipment">
+                {% trans "minimum shipment"|capfirst %}:
+                </label>
+                <input class="form-control" id="id_minshipment" name="minshipment" step="0.0001" type="number" value="0" min="0"/>
+            </div>
 
-			<div class="col-sm-4">
-				<label class="control-label" for="id_due_0">
-				{% trans "due date"|capfirst %}:
-				</label>
-				<input class="vDateField form-control" id="id_due_0" name="due_0" />
-			</div>
-			<div class="col-sm-4">
-				<label class="control-label" for="id_due_1">
-				{% trans	"Time"|capfirst %}:
-				</label>
-				<input class="vTimeField form-control" id="id_due_1" name="due_1" />
-			</div>
-			<div class="col-sm-4">
-				<label class="control-label" for="id_maxlateness">
-				{% trans "maximum lateness"|capfirst %}:
-				</label>
-				<input class="form-control" id="id_maxlateness" name="maxlateness" step="1" value="0" type="number" min="0"/>
-			</div>
+            <div class="col-sm-4">
+                <label class="control-label" for="id_due_0">
+                {% trans "due date"|capfirst %}:
+                </label>
+                <input class="vDateField form-control" id="id_due_0" name="due_0" />
+            </div>
+            <div class="col-sm-4">
+                <label class="control-label" for="id_due_1">
+                {% trans    "Time"|capfirst %}:
+                </label>
+                <input class="vTimeField form-control" id="id_due_1" name="due_1" />
+            </div>
+            <div class="col-sm-4">
+                <label class="control-label" for="id_maxlateness">
+                {% trans "maximum lateness"|capfirst %}:
+                </label>
+                <input class="form-control" id="id_maxlateness" name="maxlateness" step="1" value="0" type="number" min="0"/>
+            </div>
 
-			<div class="col-sm-12">
-			<br>
-			</div>
-		</form>
-		
-		<div class="form-horizontal">
+            <div class="col-sm-12">
+            <br>
+            </div>
+        </form>
+
+        <div class="form-horizontal">
       <div class="col-sm-3">
-				<input type="submit" class="quotebutton btn btn-primary form-control" id="form_inquiry" value="{% trans 'inquiry'|capfirst %}" onclick="inquireQuote(event)">
+                <input type="submit" class="quotebutton btn btn-primary form-control" id="form_inquiry" value="{% trans 'inquiry'|capfirst %}" onclick="inquireQuote(event)">
       </div>
       <div class="col-sm-3">
-				<input type="submit" class="quotebutton btn btn-primary form-control" id="form_quote" value="{% trans 'quote'|capfirst %}" onclick="getQuote(event)">
+                <input type="submit" class="quotebutton btn btn-primary form-control" id="form_quote" value="{% trans 'quote'|capfirst %}" onclick="getQuote(event)">
       </div>
       <div class="col-sm-3">
-				{% comment %}Translators: Translation included with Django {% endcomment %}
-				<input type="submit" class="quotebutton btn btn-primary form-control" id="form_cancel" value="{% filter capfirst|force_escape %}{% trans 'Cancel' %}{% endfilter %}" onclick="cancelQuote(event)">
+                {% comment %}Translators: Translation included with Django {% endcomment %}
+                <input type="submit" class="quotebutton btn btn-primary form-control" id="form_cancel" value="{% filter capfirst|force_escape %}{% trans 'Cancel' %}{% endfilter %}" onclick="cancelQuote(event)">
       </div>
       <div class="col-sm-3">
-				<input type="submit" class="quotebutton btn btn-primary form-control" id="form_confirm" value="{% trans 'confirm'|capfirst %}" onclick="confirmQuote(event)">
+                <input type="submit" class="quotebutton btn btn-primary form-control" id="form_confirm" value="{% trans 'confirm'|capfirst %}" onclick="confirmQuote(event)">
       </div>
-		</div>
-	</div>
-	<div class="col col-sm-6" id="status" style="display: inline-block; overflow-x: auto; vertical-align: top">
-		<h1>{% trans "deliveries"|capfirst %}</h1>
-		<br />
-		<h1>{% trans "problems"|capfirst %}</h1>
-		<br />
-		<h1>{% trans "why short or late?"|capfirst %}</h1>
-	</div>
-	{% endblock %}
+        </div>
+    </div>
+    <div class="col col-sm-6" id="status" style="display: inline-block; overflow-x: auto; vertical-align: top">
+        <h1>{% trans "deliveries"|capfirst %}</h1>
+        <br />
+        <h1>{% trans "problems"|capfirst %}</h1>
+        <br />
+        <h1>{% trans "why short or late?"|capfirst %}</h1>
+    </div>
+    {% endblock %}

@@ -94,9 +94,6 @@ class QuoteReport(GridReport):
   def extra_context(reportclass, request, *args, **kwargs):
     return { 
       'form': createQuoteForm(request.database),
-      'items': Item.objects.all(),
-      'customers': Customer.objects.all(),
-      'locations': Location.objects.all()
       }
 
 
