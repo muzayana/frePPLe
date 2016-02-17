@@ -12,9 +12,6 @@
 		  <button class="btn btn-xs btn-primary"  onclick="grid.showBucket()" data-toggle="tooltip" data-placement="top" data-original-title="{% trans 'Configure time buckets'|escape %}">
 		    <span class="fa fa-clock-o"></span>
 		  </button>
-          <button class="btn btn-xs btn-primary"  onclick="dashboard.customize()" data-toggle="tooltip" data-placement="top" data-original-title="{% trans 'customize'|capfirst|force_escape %}">
-            <span class="fa fa-wrench"></span>
-          </button>
 	  </h1>
 	</div>
 </div>
@@ -25,21 +22,7 @@
 <script type="text/javascript" src="/static/js/jquery-ui-1.11.4.min.js"></script>
 <script>
   $(function() {
-    $(".cockpitcolumn").sortable({
-      connectWith: ".cockpitcolumn",
-      handle: ".panel-heading",
-      cancel: ".panel-toggle",
-      placeholder: "panel-placeholder"
-    });
-    $(".panel-toggle").click(function() {
-      var icon = $(this);
-      icon.toggleClass("fa-minus fa-plus");
-      icon.closest(".panel").find(".panel-body").toggle();
-    });
-    $(".panel-close").click(function() {
-      $(this).closest(".panel").remove();
-      dashboard.save();
-    });
+	  dashboard.dragAndDrop();
 
     $("#horizonbucketsul li a").click(function(){
       $("#horizonbuckets1").html($(this).text() + '  <span class="caret"></span>');
@@ -50,18 +33,24 @@
       $("#horizonunit1").html($(this).text() + '  <span class="caret"></span>');
       $("#horizonunit").val($(this).prop('name'));
     });
+
   });
 </script>
 {% endblock %}
 
 {% block content %}
-{% getDashboard as dashboard hiddenwidgets %}
+{% getDashboard as dashboard availablewidgets %}
 {% for row in dashboard %}
-    <div class="row"><div class="col-md-6 col-sm-12 ui-sortable"><h1 style="float: left">{{ row.rowname }}</h1></div></div>
-    <div class="row" id="{{ row.rowname }}">
+    <div class="row" data-cockpit-row="{{ row.rowname }}">
+    <div class="col-md-11 ui-sortable"><h1 style="float: left">{{ row.rowname }}</h1></div>
+    <div class="col-md-1 ui-sortable"><h1 class="pull-right">
+      <button class="btn btn-xs btn-primary" onclick="dashboard.customize('{{ row.rowname }}')" data-toggle="tooltip" data-placement="top" data-original-title="{% trans 'customize'|capfirst|force_escape %}"><span class="fa fa-wrench"></span></button>
+    </h1></div>
+    </div>
+    <div class="row" data-cockpit-row="{{ row.rowname }}">
 				{% for cols in row.cols %}
-				<div class="cockpitcolumn {{cols.width}}">
-					  {% for widget in cols.widgets %}<div class="panel panel-default">
+				<div class="cockpitcolumn col-md-{{cols.width}} col-sm-12">
+					  {% for widget in cols.widgets %}<div class="panel panel-default" data-cockpit-widget="{{widget.name}}">
 					  <div class="panel-heading" data-toggle="tooltip" data-placement="top" title="{{widget.tooltip|escape}}">
 						    <span class='fa fa-times pull-right panel-close'></span>
 						    <span class='fa fa-minus pull-right panel-toggle'></span>
@@ -170,8 +159,8 @@
 </div>
 
 <script>
-var hiddenwidgets = [
-{% for key, value in hiddenwidgets.items%}{% if not forloop.first %},
+var availablewidgets = [
+{% for key, value in availablewidgets.items%}{% if not forloop.first %},
 {% endif %}  ["{{key|escapejs}}","{{value.title|escapejs}}"]{% endfor %}
 ];
 </script>
