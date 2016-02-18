@@ -855,10 +855,10 @@ class DRPitemlocation(View):
         factor = 1.0
 
       # Recompute the plan
-      newplan = self.replan(ip, editvalue, data, request, simulate)
       if simulate:
-        return JsonResponse(newplan)
-
+        return JsonResponse(self.replan(ip, editvalue, data, request, simulate))
+      else:
+        self.replan(ip, editvalue, data, request, simulate)
 
       # Save all changes to the database
       if not simulate:
@@ -1827,13 +1827,13 @@ class DRPitemlocation(View):
     frepple_itemdistribution = frepple_demand = frepple_location = None
     frepple_operationplan = i = j = fl = None
     gc.collect()
-    frepple.demand(name=tmp, action='R')
-    frepple.buffer(name=tmp, action='R')
-    frepple.calendar(name="ROQ for %s" % tmp, action='R')
-    frepple.calendar(name="SS for %s" % tmp, action='R')
-    frepple.operation(name="%s dependent demand" % tmp, action='R')
-    frepple.operation(name="%s local demand" % tmp, action='R')
-    frepple.item(name=tmp, action='R')
+    # frepple.demand(name=tmp, action='R')
+    # frepple.buffer(name=tmp, action='R')
+    # frepple.calendar(name="ROQ for %s" % tmp, action='R')
+    # frepple.calendar(name="SS for %s" % tmp, action='R')
+    # frepple.operation(name="%s dependent demand" % tmp, action='R')
+    # frepple.operation(name="%s local demand" % tmp, action='R')
+    # frepple.item(name=tmp, action='R')
 
     # Return the new plan
     return result
