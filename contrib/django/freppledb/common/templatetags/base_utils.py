@@ -414,9 +414,9 @@ class DashboardNode(Node):
   r'''
   A tag to return HTML code for the dashboard.
   '''
-  def __init__(self, varname, widgetlist):
+  def __init__(self, varname, hiddenvarname):
       self.varname = varname
-      self.widgetlist = widgetlist
+      self.hiddenvarname = hiddenvarname
 
   def render(self, context):
     from freppledb.common.dashboard import Dashboard
@@ -424,20 +424,22 @@ class DashboardNode(Node):
       req = context['request']
     except:
       return ''  # No request found in the context
-
     reg = Dashboard.buildList()
     mydashboard = req.user.getPreference("freppledb.common.cockpit")
     if not mydashboard:
       mydashboard = settings.DEFAULT_DASHBOARD
-    context[self.widgetlist] = { i: j for i, j in reg.items() }
-    context[self.varname] = [
-      {
-         'rowname': rown['rowname'],
-         'cols': [ {
-           'width': i['width'],
-           'widgets': [ reg[j[0]](**j[1]) for j in i['widgets'] if reg[j[0]].has_permission(req.user) ]
-           } for i in rown['cols'] ]
-      } for rown in mydashboard ]
+    context[self.hiddenvarname] = { i: j for i, j in reg.items() }
+    context[self.varname] = []
+    for i in mydashboard:
+      cols = []
+      for j in i['cols']:
+        widgets = []
+        for k in j['widgets']:
+          if reg[k[0]].has_permission(req.user):
+            widgets.append(reg[k[0]](**k[1]))
+            context[self.hiddenvarname].pop(k[0], None)
+        cols.append( {'width': j['width'], 'widgets': widgets}  )
+      context[self.varname].append( {'rowname': i['rowname'], 'cols': cols} )
     return ''
 
   def __repr__(self):

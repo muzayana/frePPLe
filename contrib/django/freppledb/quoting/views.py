@@ -94,9 +94,6 @@ class QuoteReport(GridReport):
   def extra_context(reportclass, request, *args, **kwargs):
     return { 
       'form': createQuoteForm(request.database),
-      'items': Item.objects.all(),
-      'customers': Customer.objects.all(),
-      'locations': Location.objects.all()
       }
 
 
@@ -153,7 +150,6 @@ def InfoView(request, action):
           "content-length": len(data)
           }
         conn.request("POST", "/%s" % action, data, headers)
-        print(data)
     else:
       raise Exception('Invalid action')
     response = conn.getresponse()

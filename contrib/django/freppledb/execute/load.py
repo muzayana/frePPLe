@@ -339,7 +339,8 @@ class loadData(object):
     self.cursor.execute('''
       SELECT
         supplier_id, item_id, location_id, sizeminimum, sizemultiple,
-        cost, priority, effective_start, effective_end, source, leadtime
+        cost, priority, effective_start, effective_end, source, leadtime,
+        resource_id, resource_qty
       FROM itemsupplier %s
       ORDER BY supplier_id, item_id, location_id, priority desc
       ''' % self.filter_where)
@@ -354,7 +355,10 @@ class loadData(object):
         if i[1] != curitemname:
           curitemname = i[1]
           curitem = frepple.item(name=curitemname)
-        curitemsupplier = frepple.itemsupplier(supplier=cursupplier, item=curitem, source=i[9], leadtime=i[10] or 0)
+        curitemsupplier = frepple.itemsupplier(
+          supplier=cursupplier, item=curitem, source=i[9],
+          leadtime=i[10] or 0, resource_qty=i[12]
+          )
         if i[2]:
           curitemsupplier.location = frepple.location(name=i[2])
         if i[3]:
@@ -369,6 +373,8 @@ class loadData(object):
           curitemsupplier.effective_start = i[7]
         if i[8]:
           curitemsupplier.effective_end = i[8]
+        if i[11]:
+          curitemsupplier.resource = frepple.resource(name=i[11])
       except Exception as e:
         print("Error:", e)
     print('Loaded %d item suppliers in %.2f seconds' % (cnt, time() - starttime))
@@ -381,7 +387,8 @@ class loadData(object):
     self.cursor.execute('''
       SELECT
         origin_id, item_id, location_id, sizeminimum, sizemultiple,
-        cost, priority, effective_start, effective_end, source, leadtime
+        cost, priority, effective_start, effective_end, source,
+        leadtime, resource_id, resource_qty
       FROM itemdistribution %s
       ORDER BY origin_id, item_id, location_id, priority desc
       ''' % self.filter_where)
@@ -396,7 +403,10 @@ class loadData(object):
         if i[1] != curitemname:
           curitemname = i[1]
           curitem = frepple.item(name=curitemname)
-        curitemdistribution = frepple.itemdistribution(origin=curorigin, item=curitem, source=i[9], leadtime=i[10] or 0)
+        curitemdistribution = frepple.itemdistribution(
+          origin=curorigin, item=curitem, source=i[9],
+          leadtime=i[10] or 0, resource_qty=i[12]
+          )
         if i[2]:
           curitemdistribution.destination = frepple.location(name=i[2])
         if i[3]:
@@ -411,6 +421,8 @@ class loadData(object):
           curitemdistribution.effective_start = i[7]
         if i[8]:
           curitemdistribution.effective_end = i[8]
+        if i[11]:
+          curitemdistribution.resource = frepple.resource(name=i[11])
       except Exception as e:
         print("Error:", e)
     print('Loaded %d item itemdistributions in %.2f seconds' % (cnt, time() - starttime))
@@ -840,12 +852,12 @@ class loadData(object):
     self.loadOperations()
     self.loadSuboperations()
     self.loadItems()
-    self.loadItemSuppliers()
-    self.loadItemDistributions()
     self.loadBuffers()
     self.loadSetupMatrices()
     self.loadResources()
     self.loadResourceSkills()
+    self.loadItemSuppliers()
+    self.loadItemDistributions()
     self.loadFlows()
     self.loadLoads()
     self.loadOperationPlans()

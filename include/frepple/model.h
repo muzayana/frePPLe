@@ -3658,6 +3658,32 @@ class ItemDistribution : public Object,
       HasLevel::triggerLazyRecomputation();
     }
 
+    /** Update the resource representing the supplier capacity. */
+    void setResource(Resource* r)
+    {
+      res = r;
+    }
+
+    /** Return the resource representing the distribution capacity. */
+    Resource* getResource() const
+    {
+      return res;
+    }
+
+    /** Update the resource capacity used per distributed unit. */
+    void setResourceQuantity(double d)
+    {
+      if (d < 0)
+        throw DataException("Resource_quantity must be positive");
+      res_qty = d;
+    }
+
+    /** Return the resource capacity used per distributed unit. */
+    double getResourceQuantity() const
+    {
+      return res_qty;
+    }
+
     /** Return the purchasing leadtime. */
     Duration getLeadTime() const
     {
@@ -3739,6 +3765,8 @@ class ItemDistribution : public Object,
       m->addIntField<Cls>(Tags::priority, &Cls::getPriority, &Cls::setPriority, 1);
       m->addDateField<Cls>(Tags::effective_start, &Cls::getEffectiveStart, &Cls::setEffectiveStart);
       m->addDateField<Cls>(Tags::effective_end, &Cls::getEffectiveEnd, &Cls::setEffectiveEnd, Date::infiniteFuture);
+      m->addPointerField<Cls, Resource>(Tags::resource, &Cls::getResource, &Cls::setResource);
+      m->addDoubleField<Cls>(Tags::resource_qty, &Cls::getResourceQuantity, &Cls::setResourceQuantity);
       m->addIteratorField<Cls, OperationIterator, OperationItemDistribution>(Tags::operations, Tags::operation, &Cls::getOperations, DONT_SERIALIZE);
       HasSource::registerFields<Cls>(m);
     }
@@ -3764,6 +3792,10 @@ class ItemDistribution : public Object,
 
     /** Pointer to the next ItemDistribution for the same item. */
     ItemDistribution* next;
+
+    Resource *res;
+
+    double res_qty;
 };
 
 
@@ -4047,6 +4079,32 @@ class ItemSupplier : public Object,
       loc = l;
     }
 
+    /** Update the resource representing the supplier capacity. */
+    void setResource(Resource* r)
+    {
+      res = r;
+    }
+
+    /** Return the resource representing the supplier capacity. */
+    Resource* getResource() const
+    {
+      return res;
+    }
+
+    /** Update the resource capacity used per purchased unit. */
+    void setResourceQuantity(double d)
+    {
+      if (d < 0)
+        throw DataException("Resource_quantity must be positive");
+      res_qty = d;
+    }
+
+    /** Return the resource capacity used per purchased unit. */
+    double getResourceQuantity() const
+    {
+      return res_qty;
+    }
+
     /** Return the purchasing lead time. */
     Duration getLeadTime() const
     {
@@ -4083,6 +4141,8 @@ class ItemSupplier : public Object,
       m->addIntField<Cls>(Tags::priority, &Cls::getPriority, &Cls::setPriority, 1);
       m->addDateField<Cls>(Tags::effective_start, &Cls::getEffectiveStart, &Cls::setEffectiveStart);
       m->addDateField<Cls>(Tags::effective_end, &Cls::getEffectiveEnd, &Cls::setEffectiveEnd, Date::infiniteFuture);
+      m->addPointerField<Cls, Resource>(Tags::resource, &Cls::getResource, &Cls::setResource);
+      m->addDoubleField<Cls>(Tags::resource_qty, &Cls::getResourceQuantity, &Cls::setResourceQuantity);
       HasSource::registerFields<Cls>(m);
     }
 
@@ -4107,6 +4167,10 @@ class ItemSupplier : public Object,
 
     /** Pointer to the head of the auto-generated purchase operation list.*/
     OperationItemSupplier* firstOperation;
+
+    Resource *res;
+
+    double res_qty;
 };
 
 
