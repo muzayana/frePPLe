@@ -1062,7 +1062,7 @@ var dashboard = {
       });
   },
 
-  save : function()
+  save : function(reload)
   {
     // Loop over all rows
     var results = [];
@@ -1115,6 +1115,10 @@ var dashboard = {
       type: 'POST',
       contentType: 'application/json; charset=utf-8',
       data: JSON.stringify({"freppledb.common.cockpit": results}),
+      success: function () {
+        if ($.type(reload) === "string")
+          window.location.href = window.location.href;
+      },
       error: function (result, stat, errorThrown) {
         $('#popup').html(result.responseText)
           .dialog({      // TODO Replace this dialog with a modal
@@ -1203,17 +1207,17 @@ var dashboard = {
          '<div class="form-group">' +
        '<label class="col-md-3 control-label" for="id_widget2">' + gettext("Add widget") + ':</label>' +
        '<div class="col-md-9 dropdown dropdown-submit-input">' +
-     '<button class="btn btn-default dropdown-toggle" id="id_widget2" type="button" data-toggle="dropdown">' + 
+     '<button class="btn btn-default dropdown-toggle" id="id_widget2" type="button" data-toggle="dropdown">' +
      '<span id="id_widget">-</span>&nbsp;<span class="caret"></span>' +
      '</button>' +
-     '<ul class="dropdown-menu col-sm-9" aria-labelledby="id_layout" id="id_layoutul">';
+     '<ul class="dropdown-menu col-sm-9" aria-labelledby="id_widget2" id="id_widgetul">';
 
-       var numwidgets = availablewidgets.length;
+       var numwidgets = hiddenwidgets.length;
        for (var i = 0; i < numwidgets; i++)
-         txt += '<li><a onclick="dashboard.setwidget(this)">' + availablewidgets[i][1] + '</a></li>';
+         txt += '<li><a onclick="dashboard.setwidget(' + i + ')">' + hiddenwidgets[i][1] + '</a></li>';
 
        txt +=
-     '</ul></div>' +
+     '</ul></div><span id="newwidgetname" style="display:none"></span>' +
        '</div>' +
 
      '</form></div>' +
@@ -1234,74 +1238,67 @@ var dashboard = {
     $("#id_layout").text($(elem).text());
   },
 
-  setwidget: function(elem) {
-    $("#id_widget").text($(elem).text());
+  setwidget: function(idx) {
+    $("#id_widget").text(hiddenwidgets[idx][1]);
+    $("#newwidgetname").text(hiddenwidgets[idx][0]);
   },
 
   saveCustomization: function(rowname) {
-	// Make sure name is unique
+	// Update the name
     var newname = $("#id_name").val();
-    var cnt = 2;
-    while ($("[data-cockpit-row='" + newname + "']").length > 1)
-      newname = $("#id_name").val() + ' - ' + (cnt++);
-
-    // Update the name
-    $("[data-cockpit-row='" + rowname + "'] .col-md-11 h1").text(newname);
-    $("[data-cockpit-row='" + rowname + "']").attr("data-cockpit-row", newname);
-
-    // Update the layout TODO
-    var layout = $("#id_layout").val();
-    /*
-    var sel = $('#popup input[name=layout]:checked').val();
-    if (sel !== undefined)
+    if (rowname != newname)
     {
-      // A layout was selected
-      sel = sel.split(",");
-      var lastcol;
-      var count = -1;
-      $(".column").each(function(idx) {
-        if (idx >= sel.length)
-        {
-          // Remove column
-          $(this).find(".portlet").each(function() {$(lastcol).append($(this));});
-          $(this).remove();
-        }
-        else
-        {
-          // Resize column
-          $(this).css('width',sel[idx] + '%');
-          lastcol = this;
-        }
-        count = idx;
-        });
-      while (count < sel.length-1)
-      {
-        // Add column
-        count += 1;
-        $(lastcol).after('<div class="column ui-sortable" style="width:' + sel[count] + '%"></div>');
-        $(".column").sortable({
-          connectWith: ".column",
-          handle: ".portlet-header",
-          cancel: ".portlet-toggle",
-          placeholder: "portlet-placeholder ui-corner-all",
-          stop: dashboard.save
-        });
-      }
+      // Make sure name is unique
+      var cnt = 2;
+      while ($("[data-cockpit-row='" + newname + "']").length > 1)
+        newname = $("#id_name").val() + ' - ' + (cnt++);
+
+      // Update
+      $("[data-cockpit-row='" + rowname + "'] .col-md-11 h1").text(newname);
+      $("[data-cockpit-row='" + rowname + "'] h1 button").attr("onclick", "dashboard.customize('" + newname + "')");
+      $("[data-cockpit-row='" + rowname + "']").attr("data-cockpit-row", newname);
     }
-    var sel = $('#popup option:selected').val();
-    if (sel != '')
-      dashboard.save(sel);
+
+    // Update the layout
+    var newlayout = $("#id_layout").text().split("-");
+    var colindex = 0;
+    var lastcol = null;
+    // Loop over existing columns
+    $("[data-cockpit-row='" + rowname + "'] .cockpitcolumn").each(function() {
+      if (colindex < newlayout.length)
+      {
+        // Resize existing column
+        lastcol = this;
+        $(this).removeClass("col-md-1 col-md-2 col-md-3 col-md-4 col-md-5 col-md-6 col-md-7 col-md-8 col-md-9 col-md-10 col-md-11 col-md-12");
+        $(this).addClass("col-md-" + Math.round(0.12 * parseInt(newlayout[colindex])));
+      }
+      else
+      {
+        // Remove this column, after moving all widgets to the previous column
+        $("[data-cockpit-widget]", this).appendTo(lastcol);
+        $(this).remove();
+      }
+      colindex++;
+    });
+    while(colindex < newlayout.length)
+    {
+      // Adding extra columns
+      lastcol = $('<div class="cockpitcolumn col-md-' + Math.round(0.12 * parseInt(newlayout[colindex])) + ' col-sm-12"></div>').insertAfter(lastcol);
+      colindex++;
+    }
+
+    // Adding new widget
+    var newwidget = $("#newwidgetname").text();
+    if (newwidget != '')
+    {
+      $('<div class="panel panel-default" data-cockpit-widget="' + newwidget + '"></div>').appendTo(lastcol);
+      dashboard.save("true"); // Force reload of the page
+    }
     else
       dashboard.save();
-    $(this).dialog("close");
-  }
-},
-*/
 
-    // Save to the server
-    dashboard.save();
-
-    // Close the modal
+    // Almost done
+    dashboard.dragAndDrop();
     $('#popup').modal('hide');
   },
 
@@ -1317,8 +1314,8 @@ var dashboard = {
 	var cnt = 2;
 	while ($("[data-cockpit-row='" + newname + "']").length > 1)
       newname = $("#id_name").val() + ' - ' + (cnt++);
-    	  
-    // Build new content    
+
+    // Build new content
     var newelements = '<div class="row" data-cockpit-row="' + newname + '">' +
       '<div class="col-md-11 ui-sortable"><h1 style="float: left">' + newname + '</h1></div>' +
       '<div class="col-md-1 ui-sortable"><h1 class="pull-right">' +
@@ -1327,8 +1324,14 @@ var dashboard = {
       '</div>' +
       '<div class="row" data-cockpit-row="' + newname + '">';
     var newlayout = $("#id_layout").text().split("-");
+    var newwidget = $("#newwidgetname").text();
     for (var i = 0; i < newlayout.length; i++)
-      newelements += '<div class="cockpitcolumn col-md-' + Math.round(0.12 * parseInt(newlayout[i])) + ' col-sm-12"></div>';
+    {
+      newelements += '<div class="cockpitcolumn col-md-' + Math.round(0.12 * parseInt(newlayout[i])) + ' col-sm-12">';
+      if (i == 0 && newwidget != '')
+        newelements += '<div class="panel panel-default" data-cockpit-widget="' + newwidget + '"></div>';
+      newelements += '</div>';
+    }
     newelements += '</div></div>';
 
     // Insert in page
@@ -1337,9 +1340,13 @@ var dashboard = {
     else
       $("[data-cockpit-row='" + rowname + "']").last().after($(newelements));
 
-    // Finalize
+    // Almost done
+    if (newwidget != '')
+      // Force reload of the page when adding a widget
+      dashboard.save("true");
+    else
+      dashboard.save();
     dashboard.dragAndDrop();
-    dashboard.save();
     $('#popup').modal('hide');
   }
 

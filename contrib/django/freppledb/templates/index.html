@@ -39,7 +39,7 @@
 {% endblock %}
 
 {% block content %}
-{% getDashboard as dashboard availablewidgets %}
+{% getDashboard as dashboard hiddenwidgets %}
 {% for row in dashboard %}
     <div class="row" data-cockpit-row="{{ row.rowname }}">
     <div class="col-md-11 ui-sortable"><h1 style="float: left">{{ row.rowname }}</h1></div>
@@ -159,8 +159,8 @@
 </div>
 
 <script>
-var availablewidgets = [
-{% for key, value in availablewidgets.items%}{% if not forloop.first %},
+var hiddenwidgets = [
+{% for key, value in hiddenwidgets.items%}{% if not forloop.first %},
 {% endif %}  ["{{key|escapejs}}","{{value.title|escapejs}}"]{% endfor %}
 ];
 </script>
