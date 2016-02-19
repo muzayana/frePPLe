@@ -1,7 +1,8 @@
 {% extends "admin/base_site_grid.html" %}
 {% load i18n %}
 
-{% block extra_grid %}onSelectRow: selectRow,
+{% block extra_grid %}
+onSelectRow: selectRow,
 {% if preferences.grouping == 'item' or preferences.grouping == 'location' %}
   grouping:true,
   groupingView : {
@@ -14,7 +15,8 @@
 	  groupCollapse : {% if args %}false{% else %}true{% endif %},
 	  hideFirstGroupCol: false,
 	  showSummaryOnHide: true
-  },{% endif %}
+  },
+{% endif %}
 {% endblock %}
 
 
@@ -37,32 +39,39 @@ function selectRow(id)
     // Selection has not changed
     return;
 
-  if ($('#save').hasClass("save_undo_button_active"))
+  if ($('#save').hasClass("btn-danger"))
   {
     // Warn about unsaved changes
     $('#popup')
-      .html("{% trans 'Do you want to save your changes first?'|escapejs %}")
-      .dialog({
-        title: gettext("Unsaved changes"),
-        autoOpen: true,
-        resizable: false,
-        width: 'auto',
-        height: 'auto',
-        buttons : {
-            {% comment %}Translators: Translation included with Django {% endcomment %}
-            "{% filter escapejs %}{% trans "Save" %}{% endfilter %}" : function() {
-              $(this).dialog("close");
-              save(false);
-              selectRow(id);
-            },
-            {% comment %}Translators: Translation included with Django {% endcomment %}
-            "{% trans "No"|capfirst|escapejs %}" : function() {
-              $('#undo, #recalculate, #save').addClass("save_undo_button_inactive").removeClass("save_undo_button_active");
-              selectRow(id);
-              $(this).dialog("close");
-            }
-          }
-      });
+      .html('<div class="modal-dialog" style="width: 300px">'+
+          '<div class="modal-content">'+
+          '<div class="modal-header">'+
+            '<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true" class="fa fa-times"></span></button>'+
+            '<h4 class="modal-title">{% trans "Unsaved changes" %}</h4>'+
+          '</div>'+
+          '<div class="modal-body">'+
+            '<p>{% trans 'Do you want to save your changes first?'|escapejs %}</p>'+
+          '</div>'+
+          '<div class="modal-footer">'+
+          {% comment %}Translators: Translation included with Django {% endcomment %}
+            '<input type="submit" id="saveMbutton" role="button" class="btn btn-primary" value="{% trans "Yes"|escapejs %}">'+
+          {% comment %}Translators: Translation included with Django {% endcomment %}
+            '<input type="submit" id="cancelMbutton" role="button" class="btn btn-primary" value="{% trans "No"|escapejs %}">'+
+          '</div>'+
+        '</div>'+
+    '</div>' ).modal('show');
+    $('#cancelMbutton').on('click', function() {
+			$('#undo, #save').addClass("btn-primary disabled").removeClass("btn-danger");
+			$('#recalculate').addClass("disabled");
+			selectRow(id);
+	    $('#popup').modal('hide');
+    });
+    $('#saveMbutton').on('click', function() {
+      save(false);
+      selectRow(id);
+      $('#popup').modal('hide');
+    });
+		event.stopPropagation();
     return;
   }
 
@@ -84,14 +93,10 @@ function selectRow(id)
       }
     });
 
-  $('#undo').addClass("save_undo_button_inactive").removeClass("save_undo_button_active");
-  $('#save').addClass("save_undo_button_inactive").removeClass("save_undo_button_active");
-  $("#actions")
-  .addClass("ui-selectmenu-disabled ui-state-disabled change_status_selectmenu_inactive")
-  .removeClass("change_status_selectmenu_active ui-state-enabled ui-selectmenu-enabled")
-  .prop('disabled', 'disabled');
+  $('#undo').addClass("btn-primary disabled").removeClass("btn-danger");
+  $('#save').addClass("btn-primary disabled").removeClass("btn-danger");
+  $("#actions").addClass("disabled").removeClass("");
 }
-
 
 function clickNoStock()
 {
@@ -103,13 +108,13 @@ function clickNoStock()
   {
 		// Same value as received from server
 		$(this).removeClass('dirty-cell');
-	  $('label[for=nostock]').removeClass('red');
+	  $('label[for=nostock]').removeClass('btn-danger');
   }
 	else
 	{
 		activateSaveUndo();
 	  $(this).addClass('dirty-cell');
-	  $('label[for=nostock]').addClass('red');
+	  $('label[for=nostock]').addClass('btn-danger');
 	}
 }
 
@@ -117,14 +122,14 @@ function clickNoStock()
 function clickROQtype()
 {
 	var sel = $('input[name="roq_type"]:checked');
-	$('label[for=roq_type_calculated], label[for=roq_type_quantity], label[for=roq_type_periodofcover]').removeClass('red');
+	$('label[for=roq_type_calculated], label[for=roq_type_quantity], label[for=roq_type_periodofcover]').removeClass('btn-danger');
 	if (result && sel.val() == result.parameters.roq_type)
 		// Same value as received from server
-		$('label[for=' + sel.attr('id') + ']').removeClass('red');
+		$('label[for=' + sel.attr('id') + ']').removeClass('btn-danger');
 	else
 	{
 	  // Different value
-		$('label[for=' + sel.attr('id') + ']').addClass('red');
+		$('label[for=' + sel.attr('id') + ']').addClass('btn-danger');
 	  activateSaveUndo();
 	}
 }
@@ -133,14 +138,14 @@ function clickROQtype()
 function clickSStype()
 {
   var sel = $('input[name="ss_type"]:checked');
-  $('label[for=ss_type_calculated], label[for=ss_type_quantity], label[for=ss_type_periodofcover]').removeClass('red');
+  $('label[for=ss_type_calculated], label[for=ss_type_quantity], label[for=ss_type_periodofcover]').removeClass('btn-danger');
   if (result && sel.val() == result.parameters.ss_type)
     // Same value as received from server
-    $('label[for=' + sel.attr('id') + ']').removeClass('red');
+    $('label[for=' + sel.attr('id') + ']').removeClass('btn-danger');
   else
   {
 	  // Different value
-    $('label[for=' + sel.attr('id') + ']').addClass('red');
+    $('label[for=' + sel.attr('id') + ']').addClass('btn-danger');
     activateSaveUndo();
   }
 }
@@ -155,21 +160,22 @@ function extraPreference()
     "type": result ? result.type : null,
     "name": result ? result.name : null,
     "units": units,
-    "grouping": $("#grouping").val()
+    "grouping": $("#grouping").val(),
   };
 }
 
 function select()
 {
-  $('#save').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
-  $('#undo').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
+  $('#save').removeClass("btn-primary disabled").addClass("btn-danger");
+  $('#undo').removeClass("btn-primary disabled").addClass("btn-danger");
   $(window).off('beforeunload', warnUnsavedChanges);
   $(window).on('beforeunload', warnUnsavedChanges);
 }
 
 function activateSaveUndo()
 {
-  $('#save, #recalculate, #undo').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
+  $('#save, #undo').removeClass("btn-primary disabled").addClass("btn-danger");
+  $('#recalculate').removeClass("disabled");
   $(window).off('beforeunload', warnUnsavedChanges);
   $(window).on('beforeunload', warnUnsavedChanges);
 }
@@ -185,10 +191,11 @@ function onChange(event) {
 
 function undo() {
   // Reset the buttons
-  $('#undo, #save, #recalculate').addClass("save_undo_button_inactive").removeClass("save_undo_button_active");
+  $('#undo, #save').addClass("btn-primary disabled").removeClass("btn-danger");
+  $('#recalculate').addClass("disabled");
   $("#actions").addClass("ui-selectmenu-disabled ui-state-disabled change_status_selectmenu_inactive")
-    .removeClass("change_status_selectmenu_active ui-state-enabled ui-selectmenu-enabled")
-    .prop('disabled', 'disabled');
+    .removeClass("change_status_selectmenu_active ui-state-enabled ui-selectmenu-enabled");
+  $('#forecastmethod').addClass("btn-default").removeClass("btn-danger dirty-cell");
   $(window).off('beforeunload', warnUnsavedChanges);
   var entity = result.name;
   result = null;
@@ -198,7 +205,8 @@ function undo() {
 function select() {
   $('#filter').addClass("ui-state-disabled");
   $.jgrid.hideModal("#searchmodfbox_grid");
-  $('#save, #undo, #recalculate').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
+  $('#save, #undo').removeClass("btn-primary disabled").addClass("btn-danger");
+  $('#recalculate').removeClass("disabled");
   $(window).off('beforeunload', warnUnsavedChanges);
   $(window).on('beforeunload', warnUnsavedChanges);
 }
@@ -209,19 +217,16 @@ function markSelectedRow(id)
   var sel = jQuery("#transactiongrid").jqGrid('getGridParam','selarrrow').length;
   if (sel > 0)
   {
-    $("#actions").removeClass("ui-selectmenu-disabled ui-state-disabled change_status_selectmenu_inactive")
-    .addClass("change_status_selectmenu_active ui-state-enabled ui-selectmenu-enabled")
-    .prop('disabled', false);
+    $("#actions").removeClass("disabled")
+    .addClass("");
   }
   else
   {
     $("#actions")
-    .addClass("ui-selectmenu-disabled ui-state-disabled change_status_selectmenu_inactive")
-    .removeClass("change_status_selectmenu_active ui-state-enabled ui-selectmenu-enabled")
-    .prop('disabled', 'disabled');
+    .addClass("disabled")
+    .removeClass("");
   }
 }
-
 
 function changeGrouping()
 {
@@ -248,16 +253,19 @@ function setStatus(newstatus)
     jQuery("#transactiongrid").jqGrid("setRowData", sel[i], false, "edited");
   };
 
-  $("#actions").prop("selectedIndex",0);
-  $('#save, #undo').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
+  $("#actions").text(newstatus);
+  $('#save, #undo').removeClass("btn-primary disabled").addClass("btn-danger");
   $(window).on('beforeunload', warnUnsavedChanges);
 }
 
 {% if perms.forecast.change_forecast %}
 function setForecastMethod(newmethod)
 {
-  $('#save, #undo, #recalculate').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
-  $('#forecastmethod').addClass('dirty-cell red');
+  $('#save, #undo').removeClass("btn-primary disabled").addClass("btn-danger");
+  $('#recalculate').removeClass("disabled");
+  $('#forecastmethod').val(newmethod);
+  $('#forecastmethod').text(newmethod);
+  $('#forecastmethod').removeClass('btn-primary').addClass('dirty-cell btn-danger');
   $(window).on('beforeunload', warnUnsavedChanges);
 }
 {% endif %}
@@ -306,15 +314,15 @@ function collectChanges() {
 
   {% if perms.common.add_comment %}
   // Get a new entered comment
-  $("#commentitemlocation.comment_button_active").each(function() {
+  $("#commentitemlocation.active").each(function() {
     data["comment"] = $("#newcomment").val();
     data["commenttype"] = "itemlocation";
     });
-  $("#commentlocation.comment_button_active").each(function() {
+  $("#commentlocation.active").each(function() {
     data["comment"] = $("#newcomment").val();
     data["commenttype"] = "location";
     });
-  $("#commentitem.comment_button_active").each(function() {
+  $("#commentitem.active").each(function() {
     data["comment"] = $("#newcomment").val();
     data["commenttype"] = "item";
     });
@@ -390,7 +398,7 @@ function collectChanges() {
   var prmtr = {};
   {% if perms.inventoryplanning.change_inventoryplanning %}
   var tmp = $('input[name="roq_type"]:checked');
-  if ($("label[for=" + tmp.attr('id') + "]").hasClass('red'))
+  if ($("label[for=" + tmp.attr('id') + "]").hasClass('btn-danger'))
 	  result.parameters['roq_type'] = prmtr["roq_type"] = $('input[name="roq_type"]:checked').val();
 	if ($("#roq_min_qty").hasClass('dirty-cell'))
 		result.parameters['roq_min_qty'] = prmtr["roq_min_qty"] = $("#roq_min_qty").val();
@@ -403,17 +411,17 @@ function collectChanges() {
 	if ($("#leadtime_deviation").hasClass('dirty-cell'))
 		result.parameters['leadtime_deviation'] = prmtr["leadtime_deviation"] = $("#leadtime_deviation").val();
   var tmp = $('input[name="ss_type"]:checked');
-	if ($("label[for=" + tmp.attr('id') + "]").hasClass('red'))
+	if ($("label[for=" + tmp.attr('id') + "]").hasClass('btn-danger'))
 		result.parameters['ss_type'] = prmtr["ss_type"] = $('input[name="ss_type"]:checked').val();
   if ($("#ss_min_qty").hasClass('dirty-cell'))
 	  result.parameters['ss_min_qty'] = prmtr["ss_min_qty"] = $("#ss_min_qty").val();
   if ($("#ss_min_poc").hasClass('dirty-cell'))
 	  result.parameters['ss_min_poc'] = prmtr["ss_min_poc"] = $("#ss_min_poc").val();
-  if ($("label[for=nostock]").hasClass('red'))
+  if ($("label[for=nostock]").hasClass('btn-danger'))
 	  result.parameters['nostock'] = prmtr["nostock"] = $("#nostock").prop('checked');
   {% endif %}
   {% if perms.forecast.change_forecast %}
-  if ($("#forecastmethod").hasClass('red'))
+  if ($("#forecastmethod").hasClass('btn-danger'))
 	  result.parameters['forecastmethod'] = prmtr["forecastmethod"] = $("#forecastmethod").val();
   {% endif %}
   if (!$.isEmptyObject(prmtr))
@@ -460,7 +468,9 @@ function save(simulate)
         else
         {
 		      // Reset the buttons
-		      $('#undo, #recalculate, #save').addClass("save_undo_button_inactive").removeClass("save_undo_button_active");
+		      $('#undo, #save').addClass("btn-primary disabled").removeClass("btn-danger");
+		      $('#recalculate').addClass("disabled");
+		      $('#forecastmethod').addClass("btn-default").removeClass("btn-danger dirty-cell");
 		      $(window).off('beforeunload', warnUnsavedChanges);
 	        // Refresh the detail pane from the server after successful save.
 	        // TODO This could be optimized: the server could return the updated
@@ -490,26 +500,26 @@ function forecastfields() {
   var col =
 	{% if perms.forecast.change_forecastdemand %}
     '{{_("total orders 3 years ago")|capfirst}}<br/>' +
-    '<span class="editablepivotcol">{{_("orders adjustment 3 years ago")|capfirst}}</span><br/>' +
+    '<span class="editablepivotcol" style="line-height: 19px">{{_("orders adjustment 3 years ago")|capfirst}}</span><br/>' +
     '{{_("total orders 2 years ago")|capfirst}}<br/>' +
-    '<span class="editablepivotcol">{{_("orders adjustment 2 years ago")|capfirst}}</span><br/>' +
+    '<span class="editablepivotcol" style="line-height: 20px">{{_("orders adjustment 2 years ago")|capfirst}}</span><br/>' +
     '{{_("total orders 1 year ago")|capfirst}}<br/>' +
-    '<span class="editablepivotcol">{{_("orders adjustment 1 year ago")|capfirst}}</span><br/>' +
+    '<span class="editablepivotcol" style="line-height: 19px">{{_("orders adjustment 1 year ago")|capfirst}}</span><br/>' +
     '{{_("total orders")|capfirst}}<br/>' +
     '{{_("open orders")|capfirst}}<br/>' +
-    '<span class="bold">{{_("forecast baseline")|capfirst}}</span><br/>' +
-    '<span class="editablepivotcol">{{_("forecast override")|capfirst}}</span><br/>';
+    '<span><strong>{{_("forecast baseline")|capfirst}}</strong></span><br/>' +
+    '<span class="editablepivotcol" style="line-height: 20px">{{_("forecast override")|capfirst}}</span><br/>';
   {% else %}
 	  '{{_("total orders 3 years ago")|capfirst}}<br/>' +
-	  '{{_("orders adjustment 3 years ago")|capfirst}}<br/>' +
+	  '<span style="line-height: 20px">{{_("orders adjustment 3 years ago")|capfirst}}</span><br/>' +
 	  '{{_("total orders 2 years ago")|capfirst}}<br/>' +
-	  '{{_("orders adjustment 2 years ago")|capfirst}}<br/>' +
+	  '<span style="line-height: 20px">{{_("orders adjustment 2 years ago")|capfirst}}</span><br/>' +
 	  '{{_("total orders 1 year ago")|capfirst}}<br/>' +
-	  '{{_("orders adjustment 1 year ago")|capfirst}}<br/>' +
+	  '<span style="line-height: 20px">{{_("orders adjustment 1 year ago")|capfirst}}</span><br/>' +
 	  '{{_("total orders")|capfirst}}<br/>' +
 	  '{{_("open orders")|capfirst}}<br/>' +
-	  '<span class="bold">{{_("forecast baseline")|capfirst}}</span><br/>' +
-	  '{{_("forecast override")|capfirst}}<br/>';
+	  '<span><strong>{{_("forecast baseline")|capfirst}}</strong><br/>' +
+	  '<span style="line-height: 20px">{{_("forecast override")|capfirst}}</span><br/>';
   {% endif %}
   return col;
 }
@@ -519,29 +529,29 @@ function planfields() {
   var col =
   {% if perms.input.change_calendarbucket %}
     '{{_("reorder quantity")|capfirst}}' + "<br/>" +
-    '<span class="editablepivotcol">{{_("reorder quantity override")|capfirst}}</span><br/>' +
+    '<span style="line-height: 21px"><span class="editablepivotcol">{{_("reorder quantity override")|capfirst}}</span></span><br/>' +
     '{{_("safety stock")|capfirst}}<br/>' +
-    '<span class="editablepivotcol">{{_("safety stock override")|capfirst}}</span><br/>' +
+    '<span style="line-height: 21px"><span class="editablepivotcol">{{_("safety stock override")|capfirst}}</span></span><br/>' +
     '{{_("starting inventory")|capfirst}}<br/>' +
     '{{_("local demand")|capfirst}}<br/>' +
     '{{_("dependent demand")|capfirst}}<br/>' +
-    '<span class="bold">{{_("total demand")|capfirst}}</span><br/>' +
+    '<span><strong>{{_("total demand")|capfirst}}</strong></span></span><br/>' +
     '{{_("confirmed supply")|capfirst}}<br/>' +
     '{{_("proposed supply")|capfirst}}<br/>' +
-    '<span class="bold">{{_("total supply")|capfirst}}</span><br/>' +
+    '<span><strong>{{_("total supply")|capfirst}}</strong></span></span><br/>' +
     '{{_("ending inventory")|capfirst}}<br/>';
   {% else %}
 	  '{{_("reorder quantity")|capfirst}}' + "<br/>" +
-	  '{{_("reorder quantity override")|capfirst}}<br/>' +
+	  '{{_("reorder quantity override")|capfirst}}</span><br/>' +
 	  '{{_("safety stock")|capfirst}}<br/>' +
-	  '{{_("safety stock override")|capfirst}}<br/>' +
+	  '{{_("safety stock override")|capfirst}}</span><br/>' +
 	  '{{_("starting inventory")|capfirst}}<br/>' +
 	  '{{_("local demand")|capfirst}}<br/>' +
 	  '{{_("dependent demand")|capfirst}}<br/>' +
-	  '<span class="bold">{{_("total demand")|capfirst}}</span><br/>' +
+	  '<span><strong>{{_("total demand")|capfirst}}</strong></span><br/>' +
 	  '{{_("confirmed supply")|capfirst}}<br/>' +
 	  '{{_("proposed supply")|capfirst}}<br/>' +
-	  '<span class="bold">{{_("total supply")|capfirst}}</span><br/>' +
+	  '<span><strong>{{_("total supply")|capfirst}}</strong></span><br/>' +
 	  '{{_("ending inventory")|capfirst}}<br/>';
   {% endif %}
   return col;
@@ -558,9 +568,9 @@ function forecastcell(cellvalue, options, rowObject) {
   {
     // Beyond 1 year we don't show the order adjustment values
     {% if perms.forecast.change_forecastdemand %}
-    cellstring += "<br><span class='editablepivotcol'></span><br><br><span class='editablepivotcol'></span><br><br><span class='editablepivotcol'></span><br>";
+    cellstring += "<br><span style='line-height: 21px' class='editablepivotcol'></span><br><br><span style='line-height: 21px' class='editablepivotcol'></span><br><br><span style='line-height: 21px' class='editablepivotcol'></span><br>";
     {% else %}
-    cellstring += "<br><br><br><br><br><br>";
+    cellstring += "<span style='line-height: 21px'><br><br><br></span><br><br><br>";
     {% endif %}
   }
   else
@@ -589,7 +599,7 @@ function forecastcell(cellvalue, options, rowObject) {
     else {
       cellstring += cell_min3.orderstotal + "<br>";
       {% if perms.forecast.change_forecastdemand %}
-      cellstring += '<input type="number" min="0" tabindex="4" class="smallpadding adjhistory-3" value="' + ((cell_min3.ordersadjustment === null) ? '' : Math.round(cell_min3.ordersadjustment)) + '" oninput="onChange(event)" onclick="$(this).select();"/><br>';
+      cellstring += '<input type="number" min="0" tabindex="4" style="width: 100%" class="smallpadding adjhistory-3" value="' + ((cell_min3.ordersadjustment === null) ? '' : Math.round(cell_min3.ordersadjustment)) + '" oninput="onChange(event)" onclick="$(this).select();"/><br>';
       {% else %}
       cellstring += ((cell_min3.ordersadjustment === null) ? '' : Math.round(cell_min3.ordersadjustment)) + '<br>';
       {% endif %}
@@ -599,7 +609,7 @@ function forecastcell(cellvalue, options, rowObject) {
     else {
       cellstring += cell_min2.orderstotal + "<br/>";
       {% if perms.forecast.change_forecastdemand %}
-      cellstring += '<input type="number" min="0" tabindex="3" class="smallpadding adjhistory-2" value="' + ((cell_min2.ordersadjustment === null) ? '' : Math.round(cell_min2.ordersadjustment)) + '" oninput="onChange(event)" onclick="$(this).select();"/><br>';
+      cellstring += '<input type="number" min="0" tabindex="3" style="width: 100%" class="smallpadding adjhistory-2" value="' + ((cell_min2.ordersadjustment === null) ? '' : Math.round(cell_min2.ordersadjustment)) + '" oninput="onChange(event)" onclick="$(this).select();"/><br>';
       {% else %}
       cellstring += ((cell_min2.ordersadjustment === null) ? '' : Math.round(cell_min2.ordersadjustment)) + '<br>';
       {% endif %}
@@ -609,7 +619,7 @@ function forecastcell(cellvalue, options, rowObject) {
     else {
       cellstring += cell_min1.orderstotal + "<br/>";
       {% if perms.forecast.change_forecastdemand %}
-      cellstring += '<input type="number" min="0" tabindex="2" class="smallpadding adjhistory-1" value="' + ((cell_min1.ordersadjustment === null) ? '' : Math.round(cell_min1.ordersadjustment)) + '" oninput="onChange(event)" onclick="$(this).select();"/><br>';
+      cellstring += '<input type="number" min="0" tabindex="2" style="width: 100%" class="smallpadding adjhistory-1" value="' + ((cell_min1.ordersadjustment === null) ? '' : Math.round(cell_min1.ordersadjustment)) + '" oninput="onChange(event)" onclick="$(this).select();"/><br>';
       {% else %}
       cellstring += ((cell_min1.ordersadjustment === null) ? '' : Math.round(cell_min1.ordersadjustment)) + '<br>';
       {% endif %}
@@ -617,9 +627,9 @@ function forecastcell(cellvalue, options, rowObject) {
   }
   cellstring += cell.orderstotal + "<br>";
   cellstring += cell.ordersopen + "<br>";
-  cellstring += '<span class="bold">' + cell.forecastbaseline + "</span><br>";
+  cellstring += '<span><strong>' + cell.forecastbaseline + "</strong></span><br>";
   {% if perms.forecast.change_forecastdemand %}
-  cellstring += '<input type="number" min="0" tabindex="1" class="smallpadding adjforecast" value="' + ((cell.forecastadjustment === null) ? '' : Math.round(cell.forecastadjustment)) + '" oninput="onChange(event)" onclick="$(this).select();"/><br>';
+  cellstring += '<input type="number" min="0" tabindex="1" style="width: 100%" class="smallpadding adjforecast" value="' + ((cell.forecastadjustment === null) ? '' : Math.round(cell.forecastadjustment)) + '" oninput="onChange(event)" onclick="$(this).select();"/><br>';
   {% else %}
   cellstring += Math.round(cell.forecastadjustment) + '<br>';
   {% endif %}
@@ -633,20 +643,20 @@ function plancell(cellvalue, options, rowObject)
   if (!cell) return "s";
   var cellstring = "";
   cellstring += cell.roq + "<br>"{% if perms.input.change_purchaseorder %}
-  cellstring += '<input type="number" min="0" tabindex="1" class="smallpadding roqoverride" value="' + ((cell.roqoverride === null) ? '' : Math.round(cell.roqoverride)) + '" oninput="onChange(event)" onclick="$(this).select();"/><br>';
+  cellstring += '<input type="number" min="0" tabindex="1" style="width: 100%" class="smallpadding roqoverride" value="' + ((cell.roqoverride === null) ? '' : Math.round(cell.roqoverride)) + '" oninput="onChange(event)" onclick="$(this).select();"/><br>';
   {% else %}
   cellstring += Math.round(cell.roqoverride) + '<br>';{% endif %}
   cellstring += cell.ss + "<br>"{% if perms.input.change_purchaseorder %}
-  cellstring += '<input type="number" min="0" tabindex="2" class="smallpadding ssoverride" value="' + ((cell.ssoverride === null) ? '' : Math.round(cell.ssoverride)) + '" oninput="onChange(event);;" onclick="$(this).select();"/><br>';
+  cellstring += '<input type="number" min="0" tabindex="2" style="width: 100%" class="smallpadding ssoverride" value="' + ((cell.ssoverride === null) ? '' : Math.round(cell.ssoverride)) + '" oninput="onChange(event);;" onclick="$(this).select();"/><br>';
   {% else %}
   cellstring += Math.round(cell.ssoverride) + '<br>';{% endif %}
   cellstring += cell.startoh + "<br>";
   cellstring += cell.dmdlocal + "<br>";
   cellstring += cell.dmddependent + "<br>";
-  cellstring += '<span class="bold">' + cell.dmdtotal + "</span><br>";
+  cellstring += '<span><strong>' + cell.dmdtotal + "</strong></span><br>";
   cellstring += cell.supplyconfirmed + "<br>";
   cellstring += cell.supplyproposed + "<br>";
-  cellstring += '<span class="bold">' + cell.supply + "</span><br>";
+  cellstring += '<span><strong>' + cell.supply + "</strong></span><br>";
   cellstring += cell.endoh + "<br>";
   return cellstring;
 }
@@ -933,10 +943,9 @@ function displayForecastGraph()
         d3.event.stopPropagation();
       })
     .on("mouseenter", function(d) {
-       graph.showTooltip(
-         '<div style="text-align:center; font-weight:bold">'
-         + d.bucket + '</div>'
-         + '<table><tr><td>{{_('total orders')|capfirst}}</td><td style="text-align:right">'
+       graph.showTooltip(''
+         + '<div style="text-align:center"><strong>'+ d.bucket + '</strong></div>'
+         + '<table style="margin: 5px;"><tr><td>{{_('total orders')|capfirst}}</td><td style="text-align:right">'
          + (Math.round(d.orderstotal*10)/10)
          + '</td></tr><tr><td>{{_('open orders')|capfirst}}</td><td style="text-align:right">'
          + (Math.round(d.ordersopen*10)/10)
@@ -1058,10 +1067,10 @@ function displayResult(reset)
   // Update the forecasting parameters
   {% if perms.forecast.change_forecast %}
   if (reset)
-	  $("#forecastmethod").removeClass('red');
+	  $("#forecastmethod").removeClass('btn-danger');
   {% endif %}
   if ("forecastmethod" in result.parameters)
-	  $("#forecastmethod").val(result.parameters.forecastmethod);
+	  $("#forecastmethod").text(result.parameters.forecastmethod);
   if ("forecast_out_smape" in result.parameters)
     $("#forecast_out_smape").html(result.parameters.forecast_out_smape);
   if ("forecast_out_method" in result.parameters)
@@ -1112,16 +1121,17 @@ function displayResult(reset)
   {
     // Forecast grid displayed for the first time
     $("#forecastgrid").jqGrid({
-      data: [1],  // Dummy: single row
+      data: [{dummy:1}],  // Dummy: single row
       datatype: 'local',
       jsonReader: { repeatitems: false },
       hoverrows: false,
       colModel:[
-         {name:'fields',index:'fields',width:180,editable:false,label:' ',align:'left',title:false,key:true,counter:0,frozen:true,sortable:false,formatter:forecastfields},
+         {name:'fields',index:'fields',width:200,editable:false,label:' ',align:'left',title:false,key:true,counter:0,frozen:true,sortable:false,formatter:forecastfields},
          {% for f in request.report_bucketlist %}{% if not forloop.first %},
          {% endif %}{ name:'{{f.name|safe}}',startdate:'{{f.startdate|date:"Y-m-d"}}',enddate:'{{f.enddate|date:"Y-m-d"}}',sortable:false,width:90,align:'center',formatter:forecastcell,search:false,title:false }{% endfor %}
          ],
       iconSet: "fontAwesome",
+      guiStyle: "bootstrapPrimary",
       width: $('#content-main').width(),
       shrinkToFit: false,
       loadonce: true,
@@ -1136,7 +1146,7 @@ function displayResult(reset)
     // Refresh data in the forecast grid
     $('#forecastgrid')
       .jqGrid('clearGridData')
-      .jqGrid('setGridParam', {data: [1]}) // Dummy: single row
+      .jqGrid('setGridParam', { data: [{dummy:1}] }) // Dummy: single row
       .trigger('reloadGrid');
   }
 
@@ -1147,16 +1157,17 @@ function displayResult(reset)
     displayPlanGraph();
     // Plan grid displayed for the first time
     $("#plangrid").jqGrid({
-      data: [1],
+      data: [{dummy:1}],
       datatype: 'local',
       jsonReader: { repeatitems: false },
       hoverrows: false,
       colModel:[
-         {name:'fields',index:'fields',editable:false,label:' ',align:'left',title:false,key:true,counter:0,frozen:true,sortable:false,formatter:planfields},
+         {name:'fields',index:'fields',editable:false,label:' ',width:185,align:'left',title:false,key:true,counter:0,frozen:true,sortable:false,formatter:planfields},
          {% for f in request.report_bucketlist %}{% if not forloop.first %},
          {% endif %}{ name:'{{f.name|safe}}',startdate:'{{f.startdate|date:"Y-m-d"}}',enddate:'{{f.enddate|date:"Y-m-d"}}',sortable:false,width:90,align:'center',formatter:plancell,search:false,title:false }{% endfor %}
          ],
       iconSet: "fontAwesome",
+      guiStyle: "bootstrapPrimary",
       width: $('#content-main').width(),
       shrinkToFit: false,
       loadonce: true,
@@ -1171,7 +1182,7 @@ function displayResult(reset)
     // Refresh data in the plan grid
     $('#plangrid')
       .jqGrid('clearGridData')
-      .jqGrid('setGridParam', {data: [1]})
+      .jqGrid('setGridParam', { data: [{dummy:1}] })
       .trigger('reloadGrid');
   }
 
@@ -1182,6 +1193,7 @@ function displayResult(reset)
     // Transaction grid displayed for the first time
     $("#transactiongrid").jqGrid({
       data: transactiondata,
+      shrinkToFit: false,
       datatype: 'clientSide',
       jsonReader: { repeatitems: false },
       altRows: true,
@@ -1189,22 +1201,23 @@ function displayResult(reset)
       colModel:[
          {name:'id',index:'id',editable:false,label:'{% trans "identifier"|capfirst %}',align:'center',title:false,key:true,hidden:true,counter:0,frozen:true,searchoptions:{searchhidden: true}},
          {name:'date',index:'date',editable:false,label:'{% trans "date"|capfirst %}',align:'center',title:false,formatter:'date',formatoptions:{srcformat:'Y-m-d H:i:s',newformat:'Y-m-d H:i:s'},width:140,counter:1,searchoptions:{searchhidden: true}},
-         {name:'type',index:'status',editable:false,label:'{% trans "type"|capfirst %}',align:'center',title:false,formatter:'select', edittype:'select', editoptions:{value:'DO out:DO out;DO in:DO in;PO:PO'},width:100,counter:2,searchoptions:{searchhidden: true}},
+         {name:'type',index:'status',editable:false,label:'{% trans "type"|capfirst %}',align:'center',title:false,formatter:'select', edittype:'select', editoptions:{value:'DO out:DO out;DO in:DO in;PO:PO'},width:80,counter:2,searchoptions:{searchhidden: true}},
          {name:'reference',index:'reference',editable:true,label:'{% trans "reference"|capfirst %}',align:'left',title:false,width:200,counter:3,searchoptions:{searchhidden: true}{% if openbravo %}, editable: false{% endif %}},
-         {name:'status',index:'status',editable:true,label:'{% trans "status"|capfirst %}',align:'center',title:false,formatter:'select', edittype:'select', editoptions:{value:'proposed:proposed;{% if openbravo %}approved:approved;{% endif %}confirmed:confirmed;closed:closed'}, {% if openbravo %}editable: false, {% endif %}width:100,counter:4,searchoptions:{searchhidden: true}},
+         {name:'status',index:'status',editable:true,label:'{% trans "status"|capfirst %}',align:'center',title:false,formatter:'select', edittype:'select', editoptions:{value:'proposed:proposed;{% if openbravo %}approved:approved;{% endif %}confirmed:confirmed;closed:closed'}, {% if openbravo %}editable: false, {% endif %}width:120,counter:4,searchoptions:{searchhidden: true}},
          {name:'item',index:'item',editable:true,label:'{% trans "item"|capfirst %}',align:'left',title:false,formatter:'item',width:200,counter:5,searchoptions:{searchhidden: true}},
          {name:'location',index:'location',editable:true,label:'{% trans "location"|capfirst %}',align:'left',title:false,width:200,counter:6,searchoptions:{searchhidden: true}},
          {name:'origin',index:'origin',editable:true,label:'{% trans "origin"|capfirst %}',align:'left',title:false,width:200,counter:7,searchoptions:{searchhidden: true}},
          {name:'startdate',index:'startdate',editable:true,label:'{% trans "start date"|capfirst %}',align:'center',title:false,formatter:'date',formatoptions:{srcformat:'Y-m-d H:i:s',newformat:'Y-m-d H:i:s'},width:140,counter:8,searchoptions:{searchhidden: true}},
          {name:'enddate',index:'enddate',editable:true,label:'{% trans "end date"|capfirst %}',align:'center',title:false,formatter:'date',formatoptions:{srcformat:'Y-m-d H:i:s',newformat:'Y-m-d H:i:s'},width:140,counter:9,searchoptions:{searchhidden: true}},
-         {name:'quantity',index:'quantity',editable:true,label:'{% trans "quantity"|capfirst %}',align:'center',title:false,formatter:'number',searchrules:{number:true},width:70,counter:10,searchoptions:{searchhidden: true}},
-         {name:'value',index:'value',editable:true,label:'{% trans "value"|capfirst %}',align:'center',title:false,formatter:'number',searchrules:{number:true},width:70,counter:11,searchoptions:{searchhidden: true}},
-         {name:'criticality',index:'criticality',editable:false,label:'{% trans "criticality"|capfirst %}',align:'center',title:false,formatter:'number',searchrules:{number:true},width:70,counter:12,searchoptions:{searchhidden: true}},
+         {name:'quantity',index:'quantity',editable:true,label:'{% trans "quantity"|capfirst %}',align:'center',title:false,formatter:'number',searchrules:{number:true},width:80,counter:10,searchoptions:{searchhidden: true}},
+         {name:'value',index:'value',editable:true,label:'{% trans "value"|capfirst %}',align:'center',title:false,formatter:'number',searchrules:{number:true},width:100,counter:11,searchoptions:{searchhidden: true}},
+         {name:'criticality',index:'criticality',editable:false,label:'{% trans "criticality"|capfirst %}',align:'center',title:false,formatter:'number',searchrules:{number:true},width:60,counter:12,searchoptions:{searchhidden: true}},
          {name:'lastmodified',index:'lastmodified',editable:false,label:'Last Modified',align:'center',title:false,formatter:'date',formatoptions:{srcformat:'Y-m-d H:i:s',newformat:'Y-m-d H:i:s'},width:140,counter:13,searchoptions:{searchhidden: true}}
          ],
       rowNum:20,
       rowList:[20, 30, 50],
       iconSet: "fontAwesome",
+      guiStyle: "bootstrapPrimary",
       sortname: 'date',
       sortorder: "asc",
       width: $('#content-main').width(),
@@ -1235,7 +1248,7 @@ function displayResult(reset)
   // Note that a recalculate doesn't send back the comments, and we don't change the existing content
   if ("comments" in result)
 	{
-	  $("#commentlocation, #commentitem, #commentitemlocation").removeClass("comment_button_active ui-state-disabled");
+	  $("#commentlocation, #commentitem, #commentitemlocation").removeClass("active disabled");
 	  $("#newcomment:visible").css("display", "none");
 	  var comments = $("#pastcomments");
 	  comments.empty();
@@ -1274,13 +1287,16 @@ function selectTab(value)
   if (showtab != null)
   {
     // Hide previous tab
-    $("#" + showtab + "tab").removeClass("frepple-tabs-active");
-    $("#" + showtab + "data").css("display", "none");
+    $("#" + showtab + "tab").removeClass("active");
+    
+    if (showtab == "plan")  $("#" + showtab + "data").css("visibility", "hidden");
+    else $("#" + showtab + "data").css("display", "none");
 
     // Show new tab
     showtab = value;
-    $("#" + showtab + "tab").addClass("frepple-tabs-active");
-    $("#" + showtab + "data").css("display", "block");
+    $("#" + showtab + "tab").addClass("active");
+    if (showtab == "plan")  $("#" + showtab + "data").css("visibility", "visible");
+    else $("#" + showtab + "data").css("display", "block");
 
     // Save newly selected table as a preference
     grid.saveColumnConfiguration();
@@ -1289,26 +1305,32 @@ function selectTab(value)
   {
     // Show new tab
     showtab = value;
-    $("#" + showtab + "tab").addClass("frepple-tabs-active");
-    $("#" + showtab + "data").css("display", "block");
+    $("#" + showtab + "tab").addClass("active");
+    if (showtab == "plan")  $("#" + showtab + "data").css("visibility", "visible");
+    else $("#" + showtab + "data").css("display", "block");
   }
   if (showtab == "transactions")
     $('#actions').css("display", "initial");
   else
     $('#actions').css("display", "none");
+  if ( ["forecast", "plan", "transactions"].indexOf(showtab) >=0 )
+    $('#recalculate').css("display", "initial");
+  else
+    $('#recalculate').css("display", "none");
   return false;
+
 }
 
 
 function setCommentType(t)
 {
   if (t == "item")
-    $("#commentitemlocation, #commentlocation").removeClass("comment_button_active ui-state-disabled");
+    $("#commentitemlocation, #commentlocation").removeClass("disabled active");
   else if (t == "location")
-    $("#commentitemlocation, #commentitem").removeClass("comment_button_active ui-state-disabled");
+    $("#commentitemlocation, #commentitem").removeClass("disabled active");
   else
-    $("#commentlocation, #commentitem").removeClass("comment_button_active ui-state-disabled");
-  $("#comment" + t).addClass("comment_button_active ui-state-disabled");
+    $("#commentlocation, #commentitem").removeClass("disabled active");
+  $("#comment" + t).addClass("active");
   $("#newcomment:hidden").toggle();
 }
 
@@ -1318,7 +1340,6 @@ $(function() {
   {% elif args.1 %}selectRow("{{ args.0|escapejs }}@{{ args.1|escapejs }}");{% endif %}
   selectTab("{% if preferences.showtab %}{{ preferences.showtab }}{% else %}plan{% endif %}");
 
-  $("#units").buttonset();
   $("#unitsmode").click(function() {changeUnits("value");});
   $("#valuemode").click(function() {changeUnits("units");});
 
@@ -1329,110 +1350,243 @@ $(function() {
 	  $("#transactiongrid").setGridWidth(newsize);
 	  $("#forecastgrid").setGridWidth(newsize);
 	});
+
+  $("#grouping_ul li a").click(function(){
+    $("#grouping").val($(this).attr('name'));
+    $("#grouping").html($(this).text() + ' <span class="caret"></span>');
+    changeGrouping();
+  });
 });
 
 </script>
 {% endblock %}
 
-{% block save_undo_buttons %}<div style="float:left"><select id="grouping" onchange="changeGrouping()">
-  <option value="itemlocation"{% if not "grouping" in preferences or preferences.grouping == 'itemlocation' %} selected{% endif %}>{% filter capfirst %}{% trans "no grouping"|capfirst %}{% endfilter %}</option>
-  <option value="item"{% if preferences.grouping == 'item' %} selected{% endif %}>{% filter capfirst %}{% trans "group by item"|capfirst %}{% endfilter %}</option>
-  <option value="location"{% if preferences.grouping == 'location' %} selected{% endif %}>{% filter capfirst %}{% trans "group by location"|capfirst %}{% endfilter %}</option>
-</select></div>{% endblock %}
+{% block save_undo_buttons %}
+<div style="float:left">
+
+	<div class="dropdown dropdown-submit-input">
+		<button class="btn btn-default dropdown-toggle form-control"  id="grouping" name="grouping" value={% if not "grouping" in preferences or preferences.grouping == '' %}"itemlocation"{% else %}"{{ preferences.grouping }}"{% endif %} type="button" data-toggle="dropdown">
+		  {% if not "grouping" in preferences or preferences.grouping == '' or preferences.grouping == 'itemlocation' %}{% trans 'no grouping'|capfirst %}
+		  {% elif preferences.grouping == 'item' %}{% trans "group by item"|capfirst %}
+		  {% elif preferences.grouping == 'location' %}{% trans "group by location"|capfirst %}
+		  {% endif %}
+		  &nbsp;&nbsp;<span class="caret"></span>
+		</button>
+		<ul class="dropdown-menu col-xs-12" aria-labelledby="grouping" id="grouping_ul" name="grouping_ul">
+		   <li><a name="itemlocation">{% trans "no grouping"|capfirst %}</a></li>
+		   <li><a name="item">{% trans "group by item"|capfirst %}</a></li>
+		   <li><a name="location">{% trans "group by location"|capfirst %}</a></li>
+	  </ul>
+	</div>
+
+</div>
+{% endblock %}
 
 {% block actions %}<form style="display: inline"><span id="units">
-<input type="radio" id="unitsmode" name="units" value="value" {% if not "units" in preferences or preferences.units == 'value' %}checked{% endif %}><label for="unitsmode"><span title="{% trans "display value"|capfirst|force_escape %}" class="fa fa-dollar fa-lg" style="color:#4c3000"></span></label>
-<input type="radio" id="valuemode" name="units" value="units" {% if "units" in preferences and preferences.units == 'units' %}checked{% endif %}><label for="valuemode"><span title="{% trans "display units"|capfirst|force_escape %}" class="fa fa-truck fa-lg" style="color:#4c3000"></span></label>
-</span></form>&nbsp;&nbsp;
-<span id="filter" onclick="grid.showFilter()" title="{% trans 'filter data'|capfirst|force_escape %}" class="fa fa-search fa-lg"></span>
-<span onclick="grid.showBucket()" title="{% trans 'Configure time buckets'|escape %}" id="bucketconfig" class="fa fa-clock-o fa-lg"></span>
-<span onclick="grid.showExport(true)" title="{% trans 'Export as CSV or Excel file'|escape %}" class="fa fa-arrow-down fa-lg"></span>
-<span onclick="grid.showCustomize(false);" title="{% trans 'customize'|capfirst|force_escape %}" class="fa fa-wrench fa-lg"></span>{% endblock %}
+<div class="btn-group" role="group">
+  <button data-toggle="tooltip" data-placement="top" title="" class="btn btn-xs btn-primary{% if not "units" in preferences or preferences.units == 'value' %} active{% endif %}" type="radio" id="unitsmode" name="units" value="value" data-original-title="Display value">
+        <label for="valuemode" style="margin-bottom: 2px;"><span title="{% trans "display value"|capfirst|force_escape %}" class="fa fa-dollar"></span></label>
+  </button>
+  <button data-toggle="tooltip" data-placement="top" title="" class="btn btn-xs btn-primary{% if "units" in preferences and preferences.units == 'units' %} active{% endif %}" type="radio" id="valuemode" name="units" value="units" data-original-title="Display quantity">
+        <label for="unitsmode" style="margin-bottom: 2px;"><span title="{% trans "display units"|capfirst|force_escape %}" class="fa fa-truck"></span></label>
+  </button>
+</div>&nbsp;</span></form>
+<button class="btn btn-xs btn-primary" id="filter" onclick="grid.showFilter()" data-toggle="tooltip" data-placement="top" data-original-title="{% trans 'filter data'|capfirst|force_escape %}" ><span class="fa fa-search"></span></button>
+<button class="btn btn-xs btn-primary" onclick="grid.showBucket()" data-toggle="tooltip" data-placement="top" data-original-title="{% trans 'filter data'|capfirst|force_escape %}" ><span class="fa fa-clock-o"></span></button>
+<button class="btn btn-xs btn-primary" onclick="grid.showExport(true)" data-toggle="tooltip" data-placement="top" data-original-title="{% trans 'export as CSV or Excel file'|capfirst|force_escape %}"><span class="fa fa-arrow-down"></span></button>
+<button class="btn btn-xs btn-warning" onclick="grid.showCustomize(false);" data-toggle="tooltip" data-placement="top" data-original-title="{% trans 'customize'|capfirst|force_escape %}"><span class="fa fa-wrench"></span></button>
+{% endblock %}
+
 {% block after_table %}
-<br/>
-<div id="detail"><h1 id="detailtitle">{% trans "detail"|capfirst %}</h1>
-{% if perms.input.change_purchaseorder or perms.input.change_distributionorder or perms.forecast.change_forecastdemand or perms.input.change_calendarbucket or perms.forecast.change_forecast or perms.inventoryplanning.change_inventoryplanning %}
-{% comment %}Translators: Translation included with Django {% endcomment %}
-&nbsp;&nbsp;<input type="submit" value="{% filter upper|force_escape %}{% trans 'Save' %}{% endfilter %}" id="save" class="button ui-corner-all save_undo_button_inactive" role="button" onclick="save(false)" title="{% trans 'save changes'|capfirst|force_escape %}">
-&nbsp;&nbsp;<input type="submit" value="{% filter upper|force_escape %}{% trans 'Undo' %}{% endfilter %}" id="undo" class="button ui-corner-all save_undo_button_inactive" role="button" onclick="undo()" title="{% trans 'undo changes'|capfirst|force_escape %}">
-&nbsp;&nbsp;<input type="submit" value="{% filter upper|force_escape %}{% trans 'Recalculate' %}{% endfilter %}" id="recalculate" class="button ui-corner-all save_undo_button_inactive" role="button" onclick="save(true)" title="{% trans 'simulate changes without saving'|capfirst|force_escape %}">
-{% endif %}
-{% if perms.input.change_purchaseorder or perms.input.change_distributionorder %}
-&nbsp;&nbsp;<select disabled='disabled' name="actions" id="actions" onchange="javascript: if ( $(this).val() == 'openbravo_export') {openbravo.IncrementalExport(jQuery('#transactiongrid'),'all');} else {setStatus($(this).val());}" style="display: initial" class="ui-corner-all ui-selectmenu-disabled ui-state-disabled change_status_selectmenu_inactive" >
-  <option value='no_action'>{% trans "select action"|capfirst %}</option>
-  {% if openbravo %}
-  <option value='openbravo_export'>{% filter capfirst %}{% trans "incremental export to openbravo" %}{% endfilter %}</option>
-  {% else %}
-  <option value='proposed'>{% filter capfirst %}{% blocktrans with status=_("proposed") %}change status to {{status}}{% endblocktrans %}{% endfilter %}</option>
-  <option value='confirmed'>{% filter capfirst %}{% blocktrans with status=_("confirmed") %}change status to {{status}}{% endblocktrans %}{% endfilter %}</option>
-  <option value='closed'>{% filter capfirst %}{% blocktrans with status=_("closed") %}change status to {{status}}{% endblocktrans %}{% endfilter %}</option>
-  {% endif %}
-</select>
-{% endif %}
-<div class="frepple-tabs" id="tabs">
-<ul role="tablist">
-<li id="forecasttab" role="tab"><a class="ui-tabs-anchor" onclick="return selectTab('forecast')">{% trans 'forecast'|capfirst %}</a></li>
-<li id="plantab" role="tab"><a class="ui-tabs-anchor" onclick="return selectTab('plan')">{% trans 'plan'|capfirst %}</a></li>
-<li id="transactionstab" role="tab"><a class="ui-tabs-anchor" onclick="return selectTab('transactions')">{% trans 'transactions'|capfirst %}</a></li>
-<li id="commentstab" role="tab"><a class="ui-tabs-anchor" onclick="return selectTab('comments')">{% trans 'comments'|capfirst %}</a></li>
-{% comment %}Translators: Translation included with Django {% endcomment %}
-<li id="historytab" role="tab"><a class="ui-tabs-anchor" onclick="return selectTab('history')">{% trans 'History'|capfirst %}</a></li>
-</ul>
+<div class="row" id="detail">
+	<div class="col-sm-12">
+	  <h1 id="detailtitle">{% trans "detail"|capfirst %}</h1>
+	</div>
+
+  <div class="col-sm-6">
+    {% if perms.input.change_purchaseorder or perms.input.change_distributionorder or perms.forecast.change_forecastdemand or perms.input.change_calendarbucket or perms.forecast.change_forecast or perms.inventoryplanning.change_inventoryplanning %}
+    <div class="form-inline">
+    {% comment %}Translators: Translation included with Django {% endcomment %}
+
+		<input type="submit" value="{% filter upper|force_escape %}{% trans 'Save' %}{% endfilter %}" id="save" class="btn btn-primary disabled" role="button" onclick="save(false)" title="{% trans 'save changes'|capfirst|force_escape %}">
+		<input type="submit" value="{% filter upper|force_escape %}{% trans 'Undo' %}{% endfilter %}" id="undo" class="btn btn-primary disabled" role="button" onclick="undo()" title="{% trans 'undo changes'|capfirst|force_escape %}">
+		<input type="submit" value="{% filter upper|force_escape %}{% trans 'Recalculate' %}{% endfilter %}" id="recalculate" class="btn btn-primary disabled" role="button" onclick="save(true)" title="{% trans 'simulate changes without saving'|capfirst|force_escape %}">
+	  {% endif %}
+
+	  {% if perms.input.change_purchaseorder or perms.input.change_distributionorder %}
+		  <div class="dropdown dropdown-submit-input" style="display: inline;">
+		    <button class="btn btn-primary dropdown-toggle form-control disabled"  id="actions" name="actions" value="{% trans 'no'|capfirst %}" type="button" data-toggle="dropdown">{% trans "select action"|capfirst %}&nbsp;&nbsp;<span class="caret"></span>
+		    </button>
+		    <ul class="dropdown-menu col-xs-12" aria-labelledby="actions" id="actionsul" name="actionsul">
+		       <li><a onclick="openbravo.IncrementalExport(jQuery('#transactiongrid'),'all');">{% filter capfirst %}{% trans "incremental export to openbravo" %}{% endfilter %}</a></li>
+		       <li><a onclick="setStatus('proposed');">{% filter capfirst %}{% blocktrans with status=_("proposed") %}change status to {{status}}{% endblocktrans %}{% endfilter %}</a></li>
+		       <li><a onclick="setStatus('confirmed');">{% filter capfirst %}{% blocktrans with status=_("confirmed") %}change status to {{status}}{% endblocktrans %}{% endfilter %}</a></li>
+		       <li><a onclick="setStatus('closed');">{% filter capfirst %}{% blocktrans with status=_("closed") %}change status to {{status}}{% endblocktrans %}{% endfilter %}</a></li>
+		    </ul>
+	    </div>
+	  </div>
+		{% endif %}
+  </div>
+
+	<div id="tabs" class="col-sm-6 form-inline hor-align-right">
+			<ul class="nav nav-tabs">
+				<li id="forecasttab" role="presentation"><a class="ui-tabs-anchor" onclick="return selectTab('forecast')">{% trans 'forecast'|capfirst %}</a></li>
+				<li id="plantab" role="presentation"><a class="ui-tabs-anchor" onclick="return selectTab('plan')">{% trans 'plan'|capfirst %}</a></li>
+				<li id="transactionstab" role="presentation"><a class="ui-tabs-anchor" onclick="return selectTab('transactions')">{% trans 'transactions'|capfirst %}</a></li>
+				<li id="commentstab" role="presentation"><a class="ui-tabs-anchor" onclick="return selectTab('comments')">{% trans 'comments'|capfirst %}</a></li>
+				{% comment %}Translators: Translation included with Django {% endcomment %}
+				<li id="historytab" role="presentation"><a class="ui-tabs-anchor" onclick="return selectTab('history')">{% trans 'History'|capfirst %}</a></li>
+			</ul>
+	</div>
 </div>
 
 <div id="forecastdata" class="clear" style="display:none">
-<div id="forecastgraph" style="clear: both; height: 200px; padding: 10px; "></div>
-<table id="forecastgrid"></table><br/>
-<h2>{% trans "parameters"|capfirst %}</h2>
-<table><tr><td>{% trans "forecast method"|capfirst %}</td><td>&nbsp;&nbsp;{% if perms.forecast.change_forecast %}<select id="forecastmethod" onchange="setForecastMethod($(this).val())">
-<option value="Automatic">{% trans "automatic" context "forecast method"%}</option>
-<option value="Constant">{% trans "constant" context "forecast method" %}</option>
-<option value="Trend">{% trans "trend" context "forecast method" %}</option>
-<option value="Seasonal">{% trans "seasonal" context "forecast method" %}</option>
-<option value="Intermittent">{% trans "intermittent" context "forecast method" %}</option>
-<option value="Moving average">{% trans "moving average" context "forecast method" %}</option>
-<option value="Manual" selected="selected">{% trans "manual" context "forecast method" %}</option>
-</select>{% else %}<span id="forecastmethod"></span>{% endif %}</td></tr>
-<tr><td>{% trans "selected forecast method"|capfirst %}</td><td>&nbsp;&nbsp;<span id="forecast_out_method"></span></td></tr>
-<tr><td>{% trans "estimated forecast error"|capfirst %}</td><td>&nbsp;&nbsp;<span id="forecast_out_smape"></span>&nbsp;%</td></tr></table>
-</div>
+	<div class=row>
+		<div class="col-xs-12">
+		  <div id="forecastgraph" class="col-xs-12" style="clear: both; height: 200px; padding: 10px; "></div>
+		</div>
+		<div class="col-xs-12">
+		  <table id="forecastgrid"></table><br/>
+		</div>
 
-<div id="plandata" class="clear" style="display:none">
-<div id="plangraph" style="clear: both; height: 200px; padding: 10px; "></div>
-<table id="plangrid"></table><br/>
-<h2>{% trans "parameters"|capfirst %}</h2>
-<table><tr><td class="bold">{% trans "reorder quantity"|capfirst %}</td>
-<td class="bold">{% trans "safety stock"|capfirst %}</td></tr>
-<tr><td valign="top">
-<input type="radio" id="roq_type_calculated" name="roq_type" value="calculated" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="clickROQtype()"{% else %}disabled="disabled"{% endif %}><label for="roq_type_calculated">&nbsp;{% trans "economic order quantity"|capfirst %}: <span id="roq_calculated">&nbsp;&nbsp;&nbsp;&nbsp;</span> {% trans "units"|capfirst %}&nbsp;&nbsp;&nbsp;&nbsp;</label><br/>
-<input type="radio" id="roq_type_quantity" name="roq_type" value="quantity" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="clickROQtype()"{% else %}disabled="disabled"{% endif %}><label for="roq_type_quantity">&nbsp;{% trans "quantity"|capfirst %}&nbsp;<input style="width:80px" type="number" id="roq_min_qty"{% if perms.change_inventoryplanning %} oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" {% else %} readonly="true" {% endif %}min="1"> {% trans "units"|capfirst %}</label><br/>
-<input type="radio" id="roq_type_periodofcover" name="roq_type" value="periodofcover" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="clickROQtype()"{% else %}disabled="disabled"{% endif %}><label for="roq_type_periodofcover">&nbsp;{% trans "period of cover"|capfirst %}&nbsp;<input style="width:50px" type="number" id="roq_min_poc"{% if perms.inventoryplanning.change_inventoryplanning %} oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" {% else %} readonly="true" {% endif %}min="1" step="1"> {% trans "days" %}</label><br/>
-</td><td valign="top">
-<input type="radio" id="ss_type_calculated" name="ss_type" value="calculated" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="clickSStype()"{% else %}disabled="disabled"{% endif %}><label for="ss_type_calculated">&nbsp;{% trans "service level"|capfirst %}: <span id="ss_calculated">&nbsp;&nbsp;&nbsp;&nbsp;</span> {% trans "units" %}<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{% trans "minimum"|capfirst %} <input type="number" id="service_level"{% if perms.inventoryplanning.change_inventoryplanning %} oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" {% else %} readonly="true" {% endif %}min="0" max="100" size="7"> %<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{% trans "demand standard deviation"|capfirst %} <input style="width:80px" type="number" id="demand_deviation"{% if perms.inventoryplanning.change_inventoryplanning %} oninput="activateSaveUndo(); $(this).addClass('dirty-cell');" {% else %} readonly="true" {% endif %}size="7"> {% trans "units" %}<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{% trans "lead time standard deviation"|capfirst %} <input style="width:80px" type="number" id="leadtime_deviation"{% if perms.inventoryplanning.change_inventoryplanning %} oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" {% else %} readonly="true" {% endif %}size="7"> {% trans "days" %}</label><br/>
-<input type="radio" id="ss_type_quantity" name="ss_type" value="quantity" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="clickSStype()"{% else %}disabled="disabled"{% endif %}><label for="ss_type_quantity">&nbsp;{% trans "quantity"|capfirst %}<input style="width:80px" type="number" id="ss_min_qty"{% if perms.change_inventoryplanning %}  oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" {% else %} readonly="true" {% endif %}min="1"> {% trans "units"|capfirst %}</label><br/>
-<input type="radio" id="ss_type_periodofcover" name="ss_type" value="periodofcover" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="clickSStype()"{% else %}disabled="disabled"{% endif %}><label for="ss_type_periodofcover">&nbsp;{% trans "period of cover"|capfirst %}<input style="width:50px" type="number" id="ss_min_poc" min="1" step="7"{% if perms.inventoryplanning.change_inventoryplanning %}  oninput="activateSaveUndo(); $(this).addClass('dirty-cell')"{% else %} readonly="true"{% endif %}> {% trans "days" %}</label><br/>
-</td></tr>
-</table>
-<input type="checkbox" id="nostock" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="clickNoStock()"{% else %}disabled="disabled"{% endif %}>&nbsp;&nbsp;<label for="nostock">{% trans "don't stock"|capfirst %}</label>
+		<div class="col-sm-6">
+			<h2>{% trans "parameters"|capfirst %}</h2>
+			<table class="table"><tr><td>{% trans "forecast method"|capfirst %}</td><td>
+			{% if perms.forecast.change_forecast %}
+			  <div class="dropdown dropdown-submit-input">
+			    <button class="btn btn-default dropdown-toggle form-control"  id="forecastmethod" name=forecastmethod" value="" type="button" data-toggle="dropdown">&nbsp;&nbsp;<span class="caret"></span>
+			    </button>
+			    <ul class="dropdown-menu col-xs-12" aria-labelledby="forecastmethod" id="forecastmethodul" name="forecastmethodul">
+			       <li><a name="Automatic" onclick="setForecastMethod('Automatic')">{% trans "Automatic" context "forecast method" %}</a></li>
+			       <li><a name="Constant" onclick="setForecastMethod('Constant')">{% trans "Constant" context "forecast method" %}</a></li>
+			       <li><a name="Trend" onclick="setForecastMethod('Trend')">{% trans "Trend" context "forecast method" %}</a></li>
+			       <li><a name="Seasonal" onclick="setForecastMethod('Seasonal')">{% trans "Seasonal" context "forecast method" %}</a></li>
+			       <li><a name="Intermittent" onclick="setForecastMethod('Intermittent')">{% trans "Intermittent" context "forecast method" %}</a></li>
+			       <li><a name="Moving average" onclick="setForecastMethod('Moving average')">{% trans "Moving average" context "forecast method" %}</a></li>
+			       <li><a name="Manual" onclick="setForecastMethod('Manual')">{% trans "Manual" context "forecast method" %}</a></li>
+			    </ul>
+			  </div>
+
+			{% else %}<span id="forecastmethod"></span>{% endif %}</td></tr>
+			<tr><td>{% trans "selected forecast method"|capfirst %}</td><td><span id="forecast_out_method"></span></td></tr>
+			<tr><td>{% trans "estimated forecast error"|capfirst %}</td><td><span id="forecast_out_smape"></span>&nbsp;%</td></tr></table>
+		</div>
+
+	</div>
 </div>
 
 <div id="transactionsdata" class="clear" style="display:none">
-<table id="transactiongrid"></table>
-</div>
-<div id="commentsdata" class="clear" style="display:none">
-{% if perms.common.add_comment %}<input type="submit"  role="button" id="commentitem" value="{% trans 'new item comment'|capfirst %}" onclick="return setCommentType('item')" aria-disabled="false" style="font-size:12px" disabled="disabled" class="ui-button ui-widget ui-state-default ui-state-disabled ui-corner-all" />
-&nbsp;&nbsp;
-<input type="submit"  role="button" id="commentitemlocation" value="{% trans 'new item-location comment'|capfirst %}" onclick="return setCommentType('itemlocation')" aria-disabled="false" style="font-size:12px" disabled="disabled" class="ui-button ui-widget ui-state-default ui-state-disabled ui-corner-all" />
-&nbsp;&nbsp;
-<input type="submit"  role="button" id="commentlocation" value="{% trans 'new location comment'|capfirst %}" onclick="return setCommentType('location')" aria-disabled="false" style="font-size:12px" disabled="disabled" class="ui-button ui-widget ui-state-default ui-state-disabled ui-corner-all" />
-&nbsp;&nbsp;
-<textarea style="display:none; width:100%" id="newcomment" name="comment" rows="5" oninput="activateSaveUndo()"></textarea><br/>{% endif %}
-<span id="pastcomments">{% trans "no comments yet"|capfirst %}</span>
+  <div class="row">
+    <div class="col-xs-12">
+      <table id="transactiongrid"></table>
+    </div>
+	</div>
 </div>
 
-<div id="historydata" class="clear" style="display:none"><span id="history"></span></div>
+<div id="commentsdata" class="clear" style="display:none">
+	<div class="row">
+		<div class="col-xs-12">
+			{% if perms.common.add_comment %}
+			<input type="submit"  role="button" id="commentitem" value="{% trans 'new item comment'|capfirst %}" onclick="return setCommentType('item')" aria-disabled="false" style="font-size:12px" disabled="disabled" class="btn btn-primary" />
+			<input type="submit"  role="button" id="commentitemlocation" value="{% trans 'new item-location comment'|capfirst %}" onclick="return setCommentType('itemlocation')" aria-disabled="false" style="font-size:12px" disabled="disabled" class="btn btn-primary" />
+			<input type="submit"  role="button" id="commentlocation" value="{% trans 'new location comment'|capfirst %}" onclick="return setCommentType('location')" aria-disabled="false" style="font-size:12px" disabled="disabled" class="btn btn-primary" />
+			<textarea style="display:none; width:100%" id="newcomment" name="comment" rows="5" oninput="activateSaveUndo(); "></textarea><br/>
+			{% endif %}
+			<span id="pastcomments">{% trans "no comments yet"|capfirst %}</span>
+		</div>
+  </div>
 </div>
+
+<div id="historydata" class="clear" style="display:none">
+  <div class="row">
+    <div class="col-xs-12">
+      <span id="history"></span>
+    </div>
+  </div>
+</div>
+
+<div id="plandata" class="clear" style="visibility:hidden">
+  <div class="row">
+    <div class="col-xs-12">
+      <div id="plangraph" style="clear: both; height: 200px; padding: 10px; "></div>
+    </div>
+    <div class="col-xs-12">
+      <table id="plangrid"></table><br/>
+    </div>
+
+    <div class="col-xs-8 col-sm8">
+      <h2>{% trans "parameters"|capfirst %}</h2>
+      
+      <table class="table">
+        <tr>
+          <th class="bold">{% trans "reorder quantity"|capfirst %}</th>
+          <th class="bold">{% trans "safety stock"|capfirst %}</th>
+        </tr>
+        <tr>
+          <td valign="top">
+            <label>
+              <input type="radio" id="roq_type_calculated" name="roq_type" value="calculated" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="clickROQtype()"{% else %}disabled="disabled"{% endif %}>
+              {% trans "economic order quantity"|capfirst %}: <span id="roq_calculated">&nbsp;&nbsp;&nbsp;&nbsp;</span> {% trans "units" %}&nbsp;&nbsp;&nbsp;&nbsp;
+            </label>
+            </br>
+            <span class="form-inline">
+	            <label>
+	              <input type="radio" id="roq_type_quantity" name="roq_type" style="display:inline" value="quantity" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="clickROQtype()"{% else %}disabled="disabled"{% endif %}>
+	              {% trans "quantity"|capfirst %}&nbsp;
+	              <input type="number" id="roq_min_qty" class="form-control" style="width:120px; display:inline;" {% if perms.change_inventoryplanning %} oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" {% else %} readonly="true" {% endif %}min="1"> {% trans "units" %}
+	            </label>
+            </span>
+            </br>
+            <span class="form-inline">
+	            <label id="roq_type_periodofcover_label">
+	              <input type="radio" id="roq_type_periodofcover" name="roq_type" style="display:inline" value="periodofcover" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="clickROQtype()"{% else %}disabled="disabled"{% endif %}>
+	              {% trans "period of cover"|capfirst %}&nbsp;
+	              <input type="number" id="roq_min_poc" class="form-control" style="display:inline; width:80px;" {% if perms.inventoryplanning.change_inventoryplanning %} oninput="activateSaveUndo(); $(this).addClass('dirty-cell');" {% else %} readonly="true" {% endif %}min="1" step="1"> {% trans "days" %}
+	            </label>
+            </span>
+          </td>
+          <td valign="top">
+            <label>
+	            <input type="radio" id="ss_type_calculated" name="ss_type" value="calculated" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="clickSStype()"{% else %}disabled="disabled"{% endif %}>
+
+	            {% trans "service level"|capfirst %}: <span id="ss_calculated">&nbsp;&nbsp;&nbsp;&nbsp;</span> {% trans "units" %}<br/>
+	            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{% trans "minimum"|capfirst %}
+	            <input type="number" id="service_level"{% if perms.inventoryplanning.change_inventoryplanning %} oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" {% else %} readonly="true" {% endif %}min="0" max="100" step="0.01" size="5"> %<br/>
+	            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{% trans "demand standard deviation"|capfirst %}
+	            <input style="width:80px" type="number" id="demand_deviation"{% if perms.inventoryplanning.change_inventoryplanning %} oninput="activateSaveUndo(); $(this).addClass('dirty-cell');" {% else %} readonly="true" {% endif %}size="7"> {% trans "units" %}<br/>
+	            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{% trans "lead time standard deviation"|capfirst %}
+	            <input style="width:80px" type="number" id="leadtime_deviation"{% if perms.inventoryplanning.change_inventoryplanning %} oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" {% else %} readonly="true" {% endif %}size="7"> {% trans "days" %}
+            </label>
+            <br/>
+            <span class="form-inline">
+	            <label>
+	              <input type="radio" id="ss_type_quantity" style="display:inline" name="ss_type" value="quantity" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="clickSStype()"{% else %}disabled="disabled"{% endif %}>
+	              {% trans "quantity"|capfirst %}&nbsp;
+	              <input style="display:inline; width:120px;" class="form-control" type="number" id="ss_min_qty"{% if perms.change_inventoryplanning %}  oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" {% else %} readonly="true" {% endif %}min="1"> {% trans "units" %}
+	            </label>
+            </span>
+            <br/>
+             <span class="form-inline">
+	            <label>
+	              <input type="radio" id="ss_type_periodofcover" name="ss_type" style="display:inline" value="periodofcover" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="clickSStype()"{% else %}disabled="disabled"{% endif %}>
+	              {% trans "period of cover"|capfirst %}&nbsp;
+	              <input style="display:inline; width:80px;" class="form-control" type="number" id="ss_min_poc" min="1" step="1"{% if perms.inventoryplanning.change_inventoryplanning %}  oninput="activateSaveUndo(); $(this).addClass('dirty-cell')"{% else %} readonly="true"{% endif %}>
+	              {% trans "days" %}
+	            </label>
+            </span>
+            <br/>
+        </td>
+        </tr>
+        <tr>
+          <td>
+            <input type="checkbox" id="nostock"{% if perms.inventoryplanning.change_inventoryplanning %}onclick="clickNoStock()" class="btn btn-primary"{% else %}class="btn btn-primary disabled" disabled="disabled"{% endif %}>
+            <label style="border: 1px; color='red'" for="nostock">{% trans "don't stock"|capfirst %}</label>
+          <td>
+        </tr>
+      </table>
+      </div>
+     </div>
+  
+</div>
+
 {% endblock %}
