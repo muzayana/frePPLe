@@ -108,13 +108,13 @@ function clickNoStock()
   {
 		// Same value as received from server
 		$(this).removeClass('dirty-cell');
-	  $('label[for=nostock]').removeClass('btn-danger');
+	  $('label[for=nostock]').removeClass('alert-danger');
   }
 	else
 	{
 		activateSaveUndo();
 	  $(this).addClass('dirty-cell');
-	  $('label[for=nostock]').addClass('btn-danger');
+	  $('label[for=nostock]').addClass('alert-danger');
 	}
 }
 
@@ -122,14 +122,14 @@ function clickNoStock()
 function clickROQtype()
 {
 	var sel = $('input[name="roq_type"]:checked');
-	$('label[for=roq_type_calculated], label[for=roq_type_quantity], label[for=roq_type_periodofcover]').removeClass('btn-danger');
+	$('label[for=roq_type_calculated], label[for=roq_type_quantity], label[for=roq_type_periodofcover]').removeClass('alert-danger');
 	if (result && sel.val() == result.parameters.roq_type)
 		// Same value as received from server
-		$('label[for=' + sel.attr('id') + ']').removeClass('btn-danger');
+		$('label[for=' + sel.attr('id') + ']').removeClass('alert-danger');
 	else
 	{
 	  // Different value
-		$('label[for=' + sel.attr('id') + ']').addClass('btn-danger');
+		$('label[for=' + sel.attr('id') + ']').addClass('alert-danger');
 	  activateSaveUndo();
 	}
 }
@@ -138,14 +138,14 @@ function clickROQtype()
 function clickSStype()
 {
   var sel = $('input[name="ss_type"]:checked');
-  $('label[for=ss_type_calculated], label[for=ss_type_quantity], label[for=ss_type_periodofcover]').removeClass('btn-danger');
+  $('label[for=ss_type_calculated], label[for=ss_type_quantity], label[for=ss_type_periodofcover]').removeClass('alert-danger');
   if (result && sel.val() == result.parameters.ss_type)
     // Same value as received from server
-    $('label[for=' + sel.attr('id') + ']').removeClass('btn-danger');
+    $('label[for=' + sel.attr('id') + ']').removeClass('alert-danger');
   else
   {
 	  // Different value
-    $('label[for=' + sel.attr('id') + ']').addClass('btn-danger');
+    $('label[for=' + sel.attr('id') + ']').addClass('alert-danger');
     activateSaveUndo();
   }
 }
@@ -1103,9 +1103,9 @@ function displayResult(reset)
 	  $("#ss_min_poc").val(result.parameters.ss_min_poc);
   if (reset)
   {
-    $("label[for=nostock]").removeClass("red");
-    $("label[for=roq_type_periodofcover], label[for=roq_type_calculated], label[for=roq_type_quantity]").removeClass("red");
-    $("label[for=ss_type_periodofcover], label[for=ss_type_calculated], label[for=ss_type_quantity]").removeClass("red");
+    $("label[for=nostock]").removeClass("alert-danger");
+    $("label[for=roq_type_periodofcover], label[for=roq_type_calculated], label[for=roq_type_quantity]").removeClass("alert-danger");
+    $("label[for=ss_type_periodofcover], label[for=ss_type_calculated], label[for=ss_type_quantity]").removeClass("alert-danger");
     $("#roq_min_qty").removeClass('dirty-cell');
     $("#roq_min_poc").removeClass('dirty-cell');
     $("#service_level").removeClass('dirty-cell');
@@ -1288,7 +1288,7 @@ function selectTab(value)
   {
     // Hide previous tab
     $("#" + showtab + "tab").removeClass("active");
-    
+
     if (showtab == "plan")  $("#" + showtab + "data").css("visibility", "hidden");
     else $("#" + showtab + "data").css("display", "none");
 
@@ -1516,7 +1516,7 @@ $(function() {
 
     <div class="col-xs-8 col-sm8">
       <h2>{% trans "parameters"|capfirst %}</h2>
-      
+
       <table class="table">
         <tr>
           <th class="bold">{% trans "reorder quantity"|capfirst %}</th>
@@ -1524,13 +1524,13 @@ $(function() {
         </tr>
         <tr>
           <td valign="top">
-            <label>
+            <label for='roq_type_calculated'>
               <input type="radio" id="roq_type_calculated" name="roq_type" value="calculated" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="clickROQtype()"{% else %}disabled="disabled"{% endif %}>
               {% trans "economic order quantity"|capfirst %}: <span id="roq_calculated">&nbsp;&nbsp;&nbsp;&nbsp;</span> {% trans "units" %}&nbsp;&nbsp;&nbsp;&nbsp;
             </label>
             </br>
             <span class="form-inline">
-	            <label>
+	            <label for='roq_type_quantity'>
 	              <input type="radio" id="roq_type_quantity" name="roq_type" style="display:inline" value="quantity" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="clickROQtype()"{% else %}disabled="disabled"{% endif %}>
 	              {% trans "quantity"|capfirst %}&nbsp;
 	              <input type="number" id="roq_min_qty" class="form-control" style="width:120px; display:inline;" {% if perms.change_inventoryplanning %} oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" {% else %} readonly="true" {% endif %}min="1"> {% trans "units" %}
@@ -1538,7 +1538,7 @@ $(function() {
             </span>
             </br>
             <span class="form-inline">
-	            <label id="roq_type_periodofcover_label">
+	            <label for='roq_type_periodofcover'>
 	              <input type="radio" id="roq_type_periodofcover" name="roq_type" style="display:inline" value="periodofcover" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="clickROQtype()"{% else %}disabled="disabled"{% endif %}>
 	              {% trans "period of cover"|capfirst %}&nbsp;
 	              <input type="number" id="roq_min_poc" class="form-control" style="display:inline; width:80px;" {% if perms.inventoryplanning.change_inventoryplanning %} oninput="activateSaveUndo(); $(this).addClass('dirty-cell');" {% else %} readonly="true" {% endif %}min="1" step="1"> {% trans "days" %}
@@ -1546,20 +1546,29 @@ $(function() {
             </span>
           </td>
           <td valign="top">
-            <label>
+            <label for='ss_type_calculated'>
 	            <input type="radio" id="ss_type_calculated" name="ss_type" value="calculated" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="clickSStype()"{% else %}disabled="disabled"{% endif %}>
 
-	            {% trans "service level"|capfirst %}: <span id="ss_calculated">&nbsp;&nbsp;&nbsp;&nbsp;</span> {% trans "units" %}<br/>
-	            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{% trans "minimum"|capfirst %}
-	            <input type="number" id="service_level"{% if perms.inventoryplanning.change_inventoryplanning %} oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" {% else %} readonly="true" {% endif %}min="0" max="100" step="0.01" size="5"> %<br/>
-	            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{% trans "demand standard deviation"|capfirst %}
-	            <input style="width:80px" type="number" id="demand_deviation"{% if perms.inventoryplanning.change_inventoryplanning %} oninput="activateSaveUndo(); $(this).addClass('dirty-cell');" {% else %} readonly="true" {% endif %}size="7"> {% trans "units" %}<br/>
-	            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{% trans "lead time standard deviation"|capfirst %}
-	            <input style="width:80px" type="number" id="leadtime_deviation"{% if perms.inventoryplanning.change_inventoryplanning %} oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" {% else %} readonly="true" {% endif %}size="7"> {% trans "days" %}
+	            {% trans "service level"|capfirst %}: <span style="margin-bottom: 5px" id="ss_calculated">&nbsp;&nbsp;&nbsp;&nbsp;</span> {% trans "units" %}<br/>
+	            <span style="margin-bottom: 5px">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{% trans "minimum"|capfirst %}
+		            <input style="width:80px; display: inline;" class="form-control" type="number" id="service_level"{% if perms.inventoryplanning.change_inventoryplanning %} oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" {% else %} readonly="true" {% endif %}min="0" max="100" step="0.01" size="5">
+		            %
+		            <br/>
+	            </span>
+	            <span style="margin-bottom: 5px">
+		            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{% trans "demand standard deviation"|capfirst %}
+		            <input style="margin-bottom: 5px; width:85px; display: inline;" class="form-control" type="number" id="demand_deviation"{% if perms.inventoryplanning.change_inventoryplanning %} oninput="activateSaveUndo(); $(this).addClass('dirty-cell');" {% else %} readonly="true" {% endif %}size="7">
+		            {% trans "units" %}
+		            <br/>
+	            </span>
+		            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{% trans "lead time standard deviation"|capfirst %}
+		            <input style="width:80px; display: inline;" class="form-control" type="number" id="leadtime_deviation"{% if perms.inventoryplanning.change_inventoryplanning %} oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" {% else %} readonly="true" {% endif %}size="7">
+		            {% trans "days" %}
+	            </span>
             </label>
             <br/>
             <span class="form-inline">
-	            <label>
+	            <label for="ss_type_quantity">
 	              <input type="radio" id="ss_type_quantity" style="display:inline" name="ss_type" value="quantity" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="clickSStype()"{% else %}disabled="disabled"{% endif %}>
 	              {% trans "quantity"|capfirst %}&nbsp;
 	              <input style="display:inline; width:120px;" class="form-control" type="number" id="ss_min_qty"{% if perms.change_inventoryplanning %}  oninput="activateSaveUndo(); $(this).addClass('dirty-cell')" {% else %} readonly="true" {% endif %}min="1"> {% trans "units" %}
@@ -1567,7 +1576,7 @@ $(function() {
             </span>
             <br/>
              <span class="form-inline">
-	            <label>
+	            <label for="ss_type_periodofcover">
 	              <input type="radio" id="ss_type_periodofcover" name="ss_type" style="display:inline" value="periodofcover" {% if perms.inventoryplanning.change_inventoryplanning %}onclick="clickSStype()"{% else %}disabled="disabled"{% endif %}>
 	              {% trans "period of cover"|capfirst %}&nbsp;
 	              <input style="display:inline; width:80px;" class="form-control" type="number" id="ss_min_poc" min="1" step="1"{% if perms.inventoryplanning.change_inventoryplanning %}  oninput="activateSaveUndo(); $(this).addClass('dirty-cell')"{% else %} readonly="true"{% endif %}>
@@ -1579,14 +1588,16 @@ $(function() {
         </tr>
         <tr>
           <td>
-            <input type="checkbox" id="nostock"{% if perms.inventoryplanning.change_inventoryplanning %}onclick="clickNoStock()" class="btn btn-primary"{% else %}class="btn btn-primary disabled" disabled="disabled"{% endif %}>
-            <label style="border: 1px; color='red'" for="nostock">{% trans "don't stock"|capfirst %}</label>
+            <label for="nostock">
+              <input type="checkbox" id="nostock"{% if perms.inventoryplanning.change_inventoryplanning %}onclick="clickNoStock()" class="btn btn-primary"{% else %}class="btn btn-primary disabled" disabled="disabled"{% endif %}>
+              {% trans "don't stock"|capfirst %}
+            </label>
           <td>
         </tr>
       </table>
       </div>
      </div>
-  
+
 </div>
 
 {% endblock %}
