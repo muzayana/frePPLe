@@ -1017,14 +1017,18 @@ class DRPitemlocation(View):
                 fcst.method = val
                 fcst.save(using=request.database)
             if request.user.has_perm('inventoryplanning.change_inventoryplanning'):
-              ip.roq_type = param.get('roq_type', None)
+              val = param.get('roq_type', '')
+              if val != '':
+                ip.roq_type = val;
               val = param.get('roq_min_qty', '')
               if val != '':
                 ip.roq_min_qty = float(val)
               val = param.get('roq_min_poc', '')
               if val != '':
                 ip.roq_min_poc = float(val)
-              ip.ss_type = param.get('ss_type', None)
+              val = param.get('ss_type', '')
+              if val != '':
+                ip.ss_type = val;
               val = param.get('ss_min_qty', '')
               if val != '':
                 ip.ss_min_qty = float(val)
