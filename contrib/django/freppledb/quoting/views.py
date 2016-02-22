@@ -27,7 +27,6 @@ from freppledb.common.report import GridFieldNumber, GridFieldLastModified
 from freppledb.input.models import Demand, Item, Customer, Location
 
 import logging
-from pygments.util import xml_decl_re
 logger = logging.getLogger(__name__)
 
 
