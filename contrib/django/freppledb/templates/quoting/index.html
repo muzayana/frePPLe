@@ -4,12 +4,13 @@
 <title>frePPLe {{version}} engine web service console</title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="robots" content="NONE,NOARCHIVE" />
-<link rel="stylesheet" type="text/css" media="screen" href="/static/css/sunny/jquery-ui.css" />
+<link rel="stylesheet" type="text/css" media="screen"
+	href="/static/css/sunny/jquery-ui.css" />
 <link rel="stylesheet" type="text/css" href="/static/css/frepple.css" />
 <style>
-  a:link, a:visited {
-    text-decoration:underline
-  }
+a:link, a:visited {
+	text-decoration: underline
+}
 </style>
 <script type="text/javascript" src="/static/js/jquery-1.11.0.min.js"></script>
 <script type="text/javascript" src="/static/js/jquery-ui-1.10.4.min.js"></script>
@@ -27,92 +28,252 @@
 </script>
 </head>
 <body>
-<div id="headerbar" class="ui-widget-header" >
-<h1><br/>&nbsp;&nbsp;&nbsp;frePPLe {{version}} web service console<br/><br/></h1>
-</div>
-<div id="content-main" style="max-width: 900px; margin: 15px">
-<h3><a href="#get">GET data from the engine</a></h3>
-<div>
-Returns XML data of the in-memory objects.<br/><br/>
-<table>
-<tr><td><a href="/buffer/" target="_blank">GET {{request.base}}/buffer/</a></td><td>Get all buffers</td></tr>
-<tr><td><a href="/buffer/?plan=P" target="_blank">GET {{request.base}}/buffer/?plan=P</a></td><td>Get all buffers with their plan details</td></tr>
-<tr><td>GET {{request.base}}/buffer/{name}/</a></td><td>Get single buffer</td></tr>
-<tr><td>GET {{request.base}}/buffer/{name}/?plan=P</a></td><td>Get single buffer and its plan details</td></tr>
-<tr><td><a href="/calendar/" target="_blank">GET {{request.base}}/calendar/</a></td><td>Get all calendars</td></tr>
-<tr><td>GET {{request.base}}/calendar/{name}/</a></td><td>Get single calendar</td></tr>
-<tr><td><a href="/customer/" target="_blank">GET {{request.base}}/customer/</a></td><td>Get all customers</td></tr>
-<tr><td>GET {{request.base}}/customer/{name}/</a></td><td>Get single customer</td></tr>
-<tr><td><a href="/demand/" target="_blank">GET {{request.base}}/demand/</a></td><td>Get all demands</td></tr>
-<tr><td><a href="/demand/?plan=P" target="_blank">GET {{request.base}}/demand/?plan=P</a></td><td>Get all demands with their delivery plan</td></tr>
-<tr><td>GET {{request.base}}/demand/{name}/</a></td><td>Get single demand</td></tr>
-<tr><td>GET {{request.base}}/demand/{name}/?plan=P</a></td><td>Get single demand with its delivery plan</td></tr>
-<tr><td><a href="/flow/" target="_blank">GET {{request.base}}/flow/</a></td><td>Get all flows</td></tr>
-<tr><td><a href="/item/" target="_blank">GET {{request.base}}/item/</a></td><td>Get all items</td></tr>
-<tr><td>GET {{request.base}}/item/{name}/</a></td><td>Get single item</td></tr>
-<tr><td><a href="/load/" target="_blank">GET {{request.base}}/load/</a></td><td>Get all loads</td></tr>
-<tr><td><a href="/location/" target="_blank">GET {{request.base}}/location/</a></td><td>Get all locations</td></tr>
-<tr><td>GET {{request.base}}/location/{name}/</a></td><td>Get single location</td></tr>
-<tr><td><a href="/main" target="_blank">GET {{request.base}}/main</a></td><td>Get complete model</td></tr>
-<tr><td><a href="/operation/" target="_blank">GET {{request.base}}/operation/</a></td><td>Get all operations</td></tr>
-<tr><td><a href="/operation/?plan=P" target="_blank">GET {{request.base}}/operation/?plan=P</a></td><td>Get all operations and their plans</td></tr>
-<tr><td>GET {{request.base}}/operation/{name}/</a></td><td>Get single operation</td></tr>
-<tr><td>GET {{request.base}}/operation/{name}/?plan=P</a></td><td>Get single operation and its plan</td></tr>
-<tr><td><a href="/problem/" target="_blank">GET {{request.base}}/problem/</a></td><td>Get all problems</td></tr>
-<tr><td><a href="/resource/" target="_blank">GET {{request.base}}/resource/</a></td><td>Get all resources</td></tr>
-<tr><td><a href="/resource/?plan=P" target="_blank">GET {{request.base}}/resource/?plan=P</a></td><td>Get all resources and their plan details</td></tr>
-<tr><td>GET {{request.base}}/resource/{name}/</a></td><td>Get single resource</td></tr>
-<tr><td>GET {{request.base}}/resource/{name}/?plan=P</a></td><td>Get single resource and its plan detail</td></tr>
-<tr><td><a href="/setupmatrix" target="_blank">GET {{request.base}}/setupmatrix</a></td><td>Get all setupmatrices</td></tr>
-<tr><td>GET {{request.base}}/setupmatrix/{name}/</a></td><td>Get single setupmatrix</td></tr>
-</table></div>
-<h3><a href="#post">POST updates for an object to the engine</a></h3>
-<div>
-Update a single object at a time<br/><br/>
-<table>
-<tr><td>POST {{request.base}}/buffer/{name}/?{field}={value}&...</a></td><td>Update a single buffer</td></tr>
-<tr><td>POST {{request.base}}/calendar/{name}/?{field}={value}&...</a></td><td>Update a single calendar</td></tr>
-<tr><td>POST {{request.base}}/customer/{name}/?{field}={value}&...</a></td><td>Update a single customer</td></tr>
-<tr><td>POST {{request.base}}/demand/{name}/?{field}={value}&...</a></td><td>Update a single demand</td></tr>
-<tr><td>POST {{request.base}}/item/{name}/?{field}={value}&...</a></td><td>Update a single item</td></tr>
-<tr><td>POST {{request.base}}/location/{name}/?{field}={value}&...</a></td><td>Update a single location</td></tr>
-<tr><td>POST {{request.base}}/operation/{name}/?{field}={value}&...</a></td><td>Update a single operation</td></tr>
-<tr><td>POST {{request.base}}/resource/{name}/?{field}={value}&...</a></td><td>Update a single resource</td></tr>
-</table></div>
-<h3><a href="#postfile">POST a XML file to the engine</a></h3>
-<div>
-The data file is POSTED as a multipart-encoded form to the URL {{request.base}}.<br/>
-The XML-file must follow this XSD-schema:<a href="/frepple.xsd">{{request.base}}/frepple.xsd</a> (which references also
-<a href="/frepple_core.xsd">{{request.base}}/frepple_core.xsd</a>).<br/>
-You can also look at the XML output format of the GET requests to get examples.<br/><br/>
-<form action="/" method="post" enctype="multipart/form-data">
-Data file: <input type="file" name="xmldata"/><br/>
-<input type="submit"/>
-</form>
-</div>
-<h3><a href="#postdata">POST XML data to the engine</a></h3>
-<div>
-The data file is POSTED as a multipart form to the URL {{request.base}}.<br/>
-The XML-file must follow this XSD-schema:<a href="/frepple.xsd">{{request.base}}/frepple.xsd</a> (which references also
-<a href="/frepple_core.xsd">{{request.base}}/frepple_core.xsd</a>).<br/>
-You can also look at the output format of the GET requests to get examples.<br/><br/>
-<form action="/" method="post">
-Data: <textarea id="xmldata" name="xmldata" rows="20" cols="100">
+	<div id="headerbar" class="ui-widget-header">
+		<h1>
+			<br />&nbsp;&nbsp;&nbsp;frePPLe {{version}} web service console<br />
+			<br />
+		</h1>
+	</div>
+	<div id="content-main" style="max-width: 900px; margin: 15px">
+		<h3>
+			<a href="#get">GET data from the engine</a>
+		</h3>
+		<div>
+			Returns XML data of the in-memory objects.<br />
+			<br />
+			<table>
+				<tr>
+					<td><a href="/buffer/" target="_blank">GET
+							{{request.base}}/buffer/</a></td>
+					<td>Get all buffers</td>
+				</tr>
+				<tr>
+					<td><a href="/buffer/?plan=P" target="_blank">GET
+							{{request.base}}/buffer/?plan=P</a></td>
+					<td>Get all buffers with their plan details</td>
+				</tr>
+				<tr>
+					<td>GET {{request.base}}/buffer/{name}/</a></td>
+					<td>Get single buffer</td>
+				</tr>
+				<tr>
+					<td>GET {{request.base}}/buffer/{name}/?plan=P</a></td>
+					<td>Get single buffer and its plan details</td>
+				</tr>
+				<tr>
+					<td><a href="/calendar/" target="_blank">GET
+							{{request.base}}/calendar/</a></td>
+					<td>Get all calendars</td>
+				</tr>
+				<tr>
+					<td>GET {{request.base}}/calendar/{name}/</a></td>
+					<td>Get single calendar</td>
+				</tr>
+				<tr>
+					<td><a href="/customer/" target="_blank">GET
+							{{request.base}}/customer/</a></td>
+					<td>Get all customers</td>
+				</tr>
+				<tr>
+					<td>GET {{request.base}}/customer/{name}/</a></td>
+					<td>Get single customer</td>
+				</tr>
+				<tr>
+					<td><a href="/demand/" target="_blank">GET
+							{{request.base}}/demand/</a></td>
+					<td>Get all demands</td>
+				</tr>
+				<tr>
+					<td><a href="/demand/?plan=P" target="_blank">GET
+							{{request.base}}/demand/?plan=P</a></td>
+					<td>Get all demands with their delivery plan</td>
+				</tr>
+				<tr>
+					<td>GET {{request.base}}/demand/{name}/</a></td>
+					<td>Get single demand</td>
+				</tr>
+				<tr>
+					<td>GET {{request.base}}/demand/{name}/?plan=P</a></td>
+					<td>Get single demand with its delivery plan</td>
+				</tr>
+				<tr>
+					<td><a href="/flow/" target="_blank">GET
+							{{request.base}}/flow/</a></td>
+					<td>Get all flows</td>
+				</tr>
+				<tr>
+					<td><a href="/item/" target="_blank">GET
+							{{request.base}}/item/</a></td>
+					<td>Get all items</td>
+				</tr>
+				<tr>
+					<td>GET {{request.base}}/item/{name}/</a></td>
+					<td>Get single item</td>
+				</tr>
+				<tr>
+					<td><a href="/load/" target="_blank">GET
+							{{request.base}}/load/</a></td>
+					<td>Get all loads</td>
+				</tr>
+				<tr>
+					<td><a href="/location/" target="_blank">GET
+							{{request.base}}/location/</a></td>
+					<td>Get all locations</td>
+				</tr>
+				<tr>
+					<td>GET {{request.base}}/location/{name}/</a></td>
+					<td>Get single location</td>
+				</tr>
+				<tr>
+					<td><a href="/main" target="_blank">GET
+							{{request.base}}/main</a></td>
+					<td>Get complete model</td>
+				</tr>
+				<tr>
+					<td><a href="/operation/" target="_blank">GET
+							{{request.base}}/operation/</a></td>
+					<td>Get all operations</td>
+				</tr>
+				<tr>
+					<td><a href="/operation/?plan=P" target="_blank">GET
+							{{request.base}}/operation/?plan=P</a></td>
+					<td>Get all operations and their plans</td>
+				</tr>
+				<tr>
+					<td>GET {{request.base}}/operation/{name}/</a></td>
+					<td>Get single operation</td>
+				</tr>
+				<tr>
+					<td>GET {{request.base}}/operation/{name}/?plan=P</a></td>
+					<td>Get single operation and its plan</td>
+				</tr>
+				<tr>
+					<td><a href="/problem/" target="_blank">GET
+							{{request.base}}/problem/</a></td>
+					<td>Get all problems</td>
+				</tr>
+				<tr>
+					<td><a href="/resource/" target="_blank">GET
+							{{request.base}}/resource/</a></td>
+					<td>Get all resources</td>
+				</tr>
+				<tr>
+					<td><a href="/resource/?plan=P" target="_blank">GET
+							{{request.base}}/resource/?plan=P</a></td>
+					<td>Get all resources and their plan details</td>
+				</tr>
+				<tr>
+					<td>GET {{request.base}}/resource/{name}/</a></td>
+					<td>Get single resource</td>
+				</tr>
+				<tr>
+					<td>GET {{request.base}}/resource/{name}/?plan=P</a></td>
+					<td>Get single resource and its plan detail</td>
+				</tr>
+				<tr>
+					<td><a href="/setupmatrix" target="_blank">GET
+							{{request.base}}/setupmatrix</a></td>
+					<td>Get all setupmatrices</td>
+				</tr>
+				<tr>
+					<td>GET {{request.base}}/setupmatrix/{name}/</a></td>
+					<td>Get single setupmatrix</td>
+				</tr>
+			</table>
+		</div>
+		<h3>
+			<a href="#post">POST updates for an object to the engine</a>
+		</h3>
+		<div>
+			Update a single object at a time<br />
+			<br />
+			<table>
+				<tr>
+					<td>POST {{request.base}}/buffer/{name}/?{field}={value}&...</a></td>
+					<td>Update a single buffer</td>
+				</tr>
+				<tr>
+					<td>POST {{request.base}}/calendar/{name}/?{field}={value}&...</a></td>
+					<td>Update a single calendar</td>
+				</tr>
+				<tr>
+					<td>POST {{request.base}}/customer/{name}/?{field}={value}&...</a></td>
+					<td>Update a single customer</td>
+				</tr>
+				<tr>
+					<td>POST {{request.base}}/demand/{name}/?{field}={value}&...</a></td>
+					<td>Update a single demand</td>
+				</tr>
+				<tr>
+					<td>POST {{request.base}}/item/{name}/?{field}={value}&...</a></td>
+					<td>Update a single item</td>
+				</tr>
+				<tr>
+					<td>POST {{request.base}}/location/{name}/?{field}={value}&...</a></td>
+					<td>Update a single location</td>
+				</tr>
+				<tr>
+					<td>POST
+						{{request.base}}/operation/{name}/?{field}={value}&...</a>
+					</td>
+					<td>Update a single operation</td>
+				</tr>
+				<tr>
+					<td>POST {{request.base}}/resource/{name}/?{field}={value}&...</a></td>
+					<td>Update a single resource</td>
+				</tr>
+			</table>
+		</div>
+		<h3>
+			<a href="#postfile">POST a XML file to the engine</a>
+		</h3>
+		<div>
+			The data file is POSTED as a multipart-encoded form to the URL
+			{{request.base}}.<br /> The XML-file must follow this XSD-schema:<a
+				href="/frepple.xsd">{{request.base}}/frepple.xsd</a> (which
+			references also <a href="/frepple_core.xsd">{{request.base}}/frepple_core.xsd</a>).<br />
+			You can also look at the XML output format of the GET requests to get
+			examples.<br />
+			<br />
+			<form action="/" method="post" enctype="multipart/form-data">
+				Data file: <input type="file" name="xmldata" /><br /> <input
+					type="submit" />
+			</form>
+		</div>
+		<h3>
+			<a href="#postdata">POST XML data to the engine</a>
+		</h3>
+		<div>
+			The data file is POSTED as a multipart form to the URL
+			{{request.base}}.<br /> The XML-file must follow this XSD-schema:<a
+				href="/frepple.xsd">{{request.base}}/frepple.xsd</a> (which
+			references also <a href="/frepple_core.xsd">{{request.base}}/frepple_core.xsd</a>).<br />
+			You can also look at the output format of the GET requests to get
+			examples.<br />
+			<br />
+			<form action="/" method="post">
+				Data:
+				<textarea id="xmldata" name="xmldata" rows="20" cols="100">
 &lt;?xml version="1.0" encoding="UTF-8" ?&gt;
 &lt;plan xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"&gt;
 &lt;/plan&gt;
 </textarea>
-<br/>
-<input type="submit"/></form>
-</div>
-<h3><a href="#quote">Quote an order</a></h3>
-<div>
-To quote an order an XML document (file or form) is POSTed to URL {{request.base}}/quote.<br/>
-The difference with the previous examples is that the engine now sends back an
-XML document with a feasible delivery date for all demands that are references in the input
-document.<br/><br/>
-<form action="/quote" method="post" enctype="multipart/form-data">
-Data: <textarea id="xmldata" name="xmldata" rows="20" cols="100">
+				<br /> <input type="submit" />
+			</form>
+		</div>
+		<h3>
+			<a href="#quote">Quote an order</a>
+		</h3>
+		<div>
+			To quote an order an XML document (file or form) is POSTed to URL
+			{{request.base}}/quote.<br /> The difference with the previous
+			examples is that the engine now sends back an XML document with a
+			feasible delivery date for all demands that are references in the
+			input document.<br />
+			<br />
+			<form action="/quote" method="post" enctype="multipart/form-data">
+				Data:
+				<textarea id="xmldata" name="xmldata" rows="20" cols="100">
 &lt;?xml version="1.0" encoding="UTF-8" ?&gt;
 &lt;plan xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"&gt;
 &lt;demands&gt;
@@ -128,32 +289,66 @@ Data: <textarea id="xmldata" name="xmldata" rows="20" cols="100">
 &lt;/demands&gt;
 &lt;/plan&gt;
 </textarea>
-<br/>
-<input type="submit"/></form>
-</div>
-<h3><a href="#reload">Reload data</a></h3>
-<div>
-Erase the current data from memory and reload the model again from the database.<br/>
-No new plan is created yet.<br/><br/>
-<table>
-<tr><td><a href="/reload/">GET {{request.base}}/reload/</a></td><td>Refresh the data</td></tr>
-</table>
-</div><h3><a href="#replan">Regenerate the plan</a></h3>
-<div>
-Erase the previous plan and generate a new one.<br/><br/>
-<table>
-<tr><td><a href="/replan/">GET {{request.base}}/replan/</a></td><td>Regenerate a constrained plan</td></tr>
-<tr><td><a href="/replan/?plantype=2">GET {{request.base}}/replan/?plantype=2</a></td><td>Regenerate an unconstrained plan</td></tr>
-<tr><td>GET {{request.base}}/replan/?plantype=X&constraint=Y&loglevel=Z</a></td><td>Regenerate a plan with specified type, constraints and logging level</td></tr>
-</table>
-</div>
-<h3><a href="#stop">Shut down the service</a></h3>
-<div>
-Stop handling requests and shut down the planning service.<br/><br/>
-<table>
-<tr><td><a href="/stop/">GET {{request.base}}/stop/</a></td><td>Graceful stop after finishing all pending activities</td></tr>
-<tr><td><a href="/stop/?hard=1">GET {{request.base}}/stop/?hard=1</a></td><td>Immediate hard stop</td></tr>
-</table>
-</div>
-</div>
-</body></html>
+				<br /> <input type="submit" />
+			</form>
+		</div>
+		<h3>
+			<a href="#reload">Reload data</a>
+		</h3>
+		<div>
+			Erase the current data from memory and reload the model again from
+			the database.<br /> No new plan is created yet.<br />
+			<br />
+			<table>
+				<tr>
+					<td><a href="/reload/">GET {{request.base}}/reload/</a></td>
+					<td>Refresh the data</td>
+				</tr>
+			</table>
+		</div>
+		<h3>
+			<a href="#replan">Regenerate the plan</a>
+		</h3>
+		<div>
+			Erase the previous plan and generate a new one.<br />
+			<br />
+			<table>
+				<tr>
+					<td><a href="/replan/">GET {{request.base}}/replan/</a></td>
+					<td>Regenerate a constrained plan</td>
+				</tr>
+				<tr>
+					<td><a href="/replan/?plantype=2">GET
+							{{request.base}}/replan/?plantype=2</a></td>
+					<td>Regenerate an unconstrained plan</td>
+				</tr>
+				<tr>
+					<td>GET
+						{{request.base}}/replan/?plantype=X&constraint=Y&loglevel=Z</a>
+					</td>
+					<td>Regenerate a plan with specified type, constraints and
+						logging level</td>
+				</tr>
+			</table>
+		</div>
+		<h3>
+			<a href="#stop">Shut down the service</a>
+		</h3>
+		<div>
+			Stop handling requests and shut down the planning service.<br />
+			<br />
+			<table>
+				<tr>
+					<td><a href="/stop/">GET {{request.base}}/stop/</a></td>
+					<td>Graceful stop after finishing all pending activities</td>
+				</tr>
+				<tr>
+					<td><a href="/stop/?hard=1">GET
+							{{request.base}}/stop/?hard=1</a></td>
+					<td>Immediate hard stop</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+</body>
+</html>
