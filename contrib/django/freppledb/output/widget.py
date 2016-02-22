@@ -63,7 +63,7 @@ class LateOrdersWidget(Widget):
       db = DEFAULT_DB_ALIAS
     cursor = connections[db].cursor()
     result = [
-      '<table style="width:100%">',
+      '<div class="table-responsive"><table class="table">',
       '<tr><th class="alignleft">%s</th><th>%s</th><th>%s</th><th>%s</th></tr>' % (
         capfirst(force_text(_("name"))), capfirst(force_text(_("due"))),
         capfirst(force_text(_("planned date"))), capfirst(force_text(_("delay")))
@@ -76,7 +76,7 @@ class LateOrdersWidget(Widget):
         alt and ' class="altRow"' or '', request.prefix, urlquote(rec[0]), escape(rec[0]), rec[2].date(), rec[3].date(), int(rec[1])
         ))
       alt = not alt
-    result.append('</table>')
+    result.append('</table></div>')
     return HttpResponse('\n'.join(result))
 
 Dashboard.register(LateOrdersWidget)
@@ -118,7 +118,7 @@ class ShortOrdersWidget(Widget):
       db = DEFAULT_DB_ALIAS
     cursor = connections[db].cursor()
     result = [
-      '<table style="width:100%">',
+      '<div class="table-responsive"><table class="table">',
       '<tr><th class="alignleft">%s</th><th>%s</th><th>%s</th></tr>' % (
         capfirst(force_text(_("name"))), capfirst(force_text(_("due"))), capfirst(force_text(_("short")))
         )
@@ -130,7 +130,7 @@ class ShortOrdersWidget(Widget):
         alt and ' class="altRow"' or '', request.prefix, urlquote(rec[0]), escape(rec[0]), rec[2].date(), int(rec[1])
         ))
       alt = not alt
-    result.append('</table>')
+    result.append('</table></div>')
     return HttpResponse('\n'.join(result))
 
 Dashboard.register(ShortOrdersWidget)
@@ -736,7 +736,7 @@ class PurchaseQueueWidget(Widget):
     except:
       db = DEFAULT_DB_ALIAS
     result = [
-      '<table style="width:100%">',
+      '<div class="table-responsive"><table class="table">',
       '<tr><th class="alignleft">%s</th><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr>' % (
         capfirst(force_text(_("item"))), capfirst(force_text(_("supplier"))),
         capfirst(force_text(_("enddate"))), capfirst(force_text(_("quantity"))),
@@ -749,7 +749,7 @@ class PurchaseQueueWidget(Widget):
         alt and ' class="altRow"' or '', escape(po.item.name), escape(po.supplier.name), po.enddate.date(), int(po.quantity), int(po.criticality)
         ))
       alt = not alt
-    result.append('</table>')
+    result.append('</table></div>')
     return HttpResponse('\n'.join(result))
 
 Dashboard.register(PurchaseQueueWidget)
@@ -777,7 +777,7 @@ class DistributionQueueWidget(Widget):
     except:
       db = DEFAULT_DB_ALIAS
     result = [
-      '<table style="width:100%">',
+      '<div class="table-responsive"><table class="table">',
       '<tr><th class="alignleft">%s</th><th>%s</th><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr>' % (
         capfirst(force_text(_("item"))), capfirst(force_text(_("origin"))),
         capfirst(force_text(_("destination"))), capfirst(force_text(_("enddate"))),
@@ -790,7 +790,7 @@ class DistributionQueueWidget(Widget):
         alt and ' class="altRow"' or '', escape(po.item.name), escape(po.origin.name if po.origin else ''), escape(po.destination.name), po.enddate.date(), int(po.quantity), int(po.criticality)
         ))
       alt = not alt
-    result.append('</table>')
+    result.append('</table></div>')
     return HttpResponse('\n'.join(result))
 
 Dashboard.register(DistributionQueueWidget)
@@ -817,7 +817,7 @@ class ShippingQueueWidget(Widget):
     except:
       db = DEFAULT_DB_ALIAS
     result = [
-      '<table style="width:100%">',
+      '<div class="table-responsive"><table class="table">',
       '<tr><th class="alignleft">%s</th><th>%s</th><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr>' % (
         capfirst(force_text(_("item"))), capfirst(force_text(_("origin"))),
         capfirst(force_text(_("destination"))), capfirst(force_text(_("quantity"))),
@@ -831,7 +831,7 @@ class ShippingQueueWidget(Widget):
         int(do.quantity), do.startdate.date(), int(do.criticality)
         ))
       alt = not alt
-    result.append('</table>')
+    result.append('</table></div>')
     return HttpResponse('\n'.join(result))
 
 Dashboard.register(ShippingQueueWidget)
@@ -858,7 +858,7 @@ class ResourceQueueWidget(Widget):
     except:
       db = DEFAULT_DB_ALIAS
     result = [
-      '<table style="width:100%">',
+      '<div class="table-responsive"><table class="table">',
       '<tr><th class="alignleft">%s</th><th>%s</th><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr>' % (
         capfirst(force_text(_("resource"))), capfirst(force_text(_("operation"))),
         capfirst(force_text(_("startdate"))), capfirst(force_text(_("enddate"))),
@@ -871,7 +871,7 @@ class ResourceQueueWidget(Widget):
         alt and ' class="altRow"' or '', request.prefix, urlquote(ldplan.theresource), escape(ldplan.theresource), escape(ldplan.operationplan.operation), ldplan.startdate, ldplan.enddate, int(ldplan.operationplan.quantity), int(ldplan.operationplan.criticality)
         ))
       alt = not alt
-    result.append('</table>')
+    result.append('</table></div>')
     return HttpResponse('\n'.join(result))
 
 Dashboard.register(ResourceQueueWidget)
@@ -894,7 +894,7 @@ class PurchaseAnalysisWidget(Widget):
     except:
       db = DEFAULT_DB_ALIAS
     result = [
-      '<table style="width:100%">',
+      '<div class="table-responsive"><table class="table">',
       '<tr><th class="alignleft">%s</th><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr>' % (
         capfirst(force_text(_("item"))), capfirst(force_text(_("supplier"))),
         capfirst(force_text(_("enddate"))), capfirst(force_text(_("quantity"))),
@@ -908,7 +908,7 @@ class PurchaseAnalysisWidget(Widget):
         po.enddate.date(), int(po.quantity), int(po.criticality) if po.criticality else ""
         ))
       alt = not alt
-    result.append('</table>')
+    result.append('</table></div>')
     return HttpResponse('\n'.join(result))
 
 Dashboard.register(PurchaseAnalysisWidget)
@@ -931,7 +931,7 @@ class AlertsWidget(Widget):
     except:
       db = DEFAULT_DB_ALIAS
     result = [
-      '<table style="width:100%">',
+      '<div class="table-responsive"><table class="table">',
       '<tr><th class="alignleft">%s</th><th>%s</th><th>%s</th></tr>' % (
         capfirst(force_text(_("type"))), capfirst(force_text(_("count"))),
         capfirst(force_text(_("weight")))
@@ -951,7 +951,7 @@ class AlertsWidget(Widget):
         alt and ' class="altRow"' or '', request.prefix, urlquote(res[0]), res[0], res[1], res[2]
         ))
       alt = not alt
-    result.append('</table>')
+    result.append('</table></div>')
     return HttpResponse('\n'.join(result))
 
 Dashboard.register(AlertsWidget)

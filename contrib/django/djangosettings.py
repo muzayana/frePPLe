@@ -35,11 +35,19 @@ DATABASES = {
   'default': {
     'ENGINE': 'django.db.backends.postgresql_psycopg2',
     'NAME': 'frepple',
-    'USER': 'frepple',
-    'PASSWORD': 'frepple',
-    'HOST': '',     # Set to empty string for localhost.
-    'OPTIONS': {},  # Backend specific configuration parameters.
-    'PORT': '',     # Set to empty string for default.
+    'USER': 'frepple',     # Role name when using md5 authentication.
+                           # Leave as an empty string when using peer or
+                           # ident authencation.
+    'PASSWORD': 'frepple', # Role password when using md5 authentication.
+                           # Leave as an empty string when using peer or
+                           # ident authencation.
+    'HOST': '',            # When using TCP sockets specify the hostname,
+                           # the ip4 address or the ip6 address here.
+                           # Leave as an empty string to use Unix domain
+                           # socket ("local" lines in pg_hba.conf).
+    'PORT': '',            # Leave to empty string when using Unix domain sockets.
+                           # Specify the port number when using a TCP socket.
+    'OPTIONS': {},         # Backend specific configuration parameters.
     'TEST': {
       'NAME': 'test_frepple' # Database name used when running the test suite.
       }
@@ -47,23 +55,38 @@ DATABASES = {
   'scenario1': {
     'ENGINE': 'django.db.backends.postgresql_psycopg2',
     'NAME': 'scenario1',
-    'USER': 'frepple',
-    'PASSWORD': 'frepple',
-    'HOST': '',     # Set to empty string for localhost.
-    'OPTIONS': {},  # Backend specific configuration parameters.
-    'PORT': '',     # Set to empty string for default.
+    'USER': 'frepple',     # Role name when using md5 authentication.
+                           # Leave as an empty string when using peer or
+                           # ident authencation.
+    'PASSWORD': 'frepple', # Role password when using md5 authentication.
+                           # Leave as an empty string when using peer or
+                           # ident authencation.
+    'HOST': '',            # When using TCP sockets specify the hostname,
+                           # the ip4 address or the ip6 address here.
+                           # Leave as an empty string to use Unix domain
+                           # socket ("local" lines in pg_hba.conf).
+    'PORT': '',            # Leave to empty string when using Unix domain sockets.
+                           # Specify the port number when using a TCP socket.
+    'OPTIONS': {},         # Backend specific configuration parameters.
     'TEST': {
       'NAME': 'test_scenario1' # Database name used when running the test suite.
       }
     },
   'scenario2': {
     'ENGINE': 'django.db.backends.postgresql_psycopg2',
-    'NAME': 'scenario2',
-    'USER': 'frepple',
-    'PASSWORD': 'frepple',
-    'HOST': '',     # Set to empty string for localhost.
-    'OPTIONS': {},  # Backend specific configuration parameters.
-    'PORT': '',     # Set to empty string for default.
+    'USER': 'frepple',     # Role name when using md5 authentication.
+                           # Leave as an empty string when using peer or
+                           # ident authencation.
+    'PASSWORD': 'frepple', # Role password when using md5 authentication.
+                           # Leave as an empty string when using peer or
+                           # ident authencation.
+    'HOST': '',            # When using TCP sockets specify the hostname,
+                           # the ip4 address or the ip6 address here.
+                           # Leave as an empty string to use Unix domain
+                           # socket ("local" lines in pg_hba.conf).
+    'PORT': '',            # Leave to empty string when using Unix domain sockets.
+                           # Specify the port number when using a TCP socket.
+    'OPTIONS': {},         # Backend specific configuration parameters.
     'TEST': {
       'NAME': 'test_scenario2' # Database name used when running the test suite.
       }
@@ -71,11 +94,19 @@ DATABASES = {
   'scenario3': {
     'ENGINE': 'django.db.backends.postgresql_psycopg2',
     'NAME': 'scenario3',
-    'USER': 'frepple',
-    'PASSWORD': 'frepple',
-    'HOST': '',     # Set to empty string for localhost.
-    'OPTIONS': {},  # Backend specific configuration parameters.
-    'PORT': '',     # Set to empty string for default.
+    'USER': 'frepple',     # Role name when using md5 authentication.
+                           # Leave as an empty string when using peer or
+                           # ident authencation.
+    'PASSWORD': 'frepple', # Role password when using md5 authentication.
+                           # Leave as an empty string when using peer or
+                           # ident authencation.
+    'HOST': '',            # When using TCP sockets specify the hostname,
+                           # the ip4 address or the ip6 address here.
+                           # Leave as an empty string to use Unix domain
+                           # socket ("local" lines in pg_hba.conf).
+    'PORT': '',            # Leave to empty string when using Unix domain sockets.
+                           # Specify the port number when using a TCP socket.
+    'OPTIONS': {},         # Backend specific configuration parameters.
     'TEST': {
       'NAME': 'test_scenario3' # Database name used when running the test suite.
       }
