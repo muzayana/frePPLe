@@ -83,15 +83,21 @@ function selectRow(id)
       displayResult(true);
     },
     error: function (result, stat, errorThrown) {
-      $('#popup').html(result.responseText + "  " + stat + errorThrown).dialog({
-        title: gettext("Error retrieving data"),
-        autoOpen: true,
-        resizable: false,
-        width: 'auto',
-        height: 'auto'
-      });
-      }
-    });
+      $('#popup').html('<div class="modal-dialog" style="width: auto">'+
+          '<div class="modal-content">'+
+          '<div class="modal-header">'+
+            '<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true" class="fa fa-times"></span></button>'+
+            '<h4 class="modal-title">{% trans "Error retrieving data" %}</h4>'+
+          '</div>'+
+          '<div class="modal-body">'+
+            '<p>'+result.responseText + "  " + stat + errorThrown+'</p>'+
+          '</div>'+
+          '<div class="modal-footer">'+
+          '</div>'+
+        '</div>'+
+        '</div>' ).modal('show');
+    }
+  });
 
   $('#undo').addClass("btn-primary disabled").removeClass("btn-danger");
   $('#save').addClass("btn-primary disabled").removeClass("btn-danger");
@@ -108,13 +114,13 @@ function clickNoStock()
   {
 		// Same value as received from server
 		$(this).removeClass('dirty-cell');
-	  $('label[for=nostock]').removeClass('alert-danger');
+	  $('label[for=nostock]').removeClass('red');
   }
 	else
 	{
 		activateSaveUndo();
 	  $(this).addClass('dirty-cell');
-	  $('label[for=nostock]').addClass('alert-danger');
+	  $('label[for=nostock]').addClass('red');
 	}
 }
 
@@ -122,14 +128,15 @@ function clickNoStock()
 function clickROQtype()
 {
 	var sel = $('input[name="roq_type"]:checked');
-	$('label[for=roq_type_calculated], label[for=roq_type_quantity], label[for=roq_type_periodofcover]').removeClass('alert-danger');
+	console.log("is here");
+	$('label[for=roq_type_calculated], label[for=roq_type_quantity], label[for=roq_type_periodofcover]').removeClass('red');
 	if (result && sel.val() == result.parameters.roq_type)
 		// Same value as received from server
-		$('label[for=' + sel.attr('id') + ']').removeClass('alert-danger');
+		$('label[for=' + sel.attr('id') + ']').removeClass('red');
 	else
 	{
 	  // Different value
-		$('label[for=' + sel.attr('id') + ']').addClass('alert-danger');
+		$('label[for=' + sel.attr('id') + ']').addClass('red');
 	  activateSaveUndo();
 	}
 }
@@ -138,14 +145,14 @@ function clickROQtype()
 function clickSStype()
 {
   var sel = $('input[name="ss_type"]:checked');
-  $('label[for=ss_type_calculated], label[for=ss_type_quantity], label[for=ss_type_periodofcover]').removeClass('alert-danger');
+  $('label[for=ss_type_calculated], label[for=ss_type_quantity], label[for=ss_type_periodofcover]').removeClass('red');
   if (result && sel.val() == result.parameters.ss_type)
     // Same value as received from server
-    $('label[for=' + sel.attr('id') + ']').removeClass('alert-danger');
+    $('label[for=' + sel.attr('id') + ']').removeClass('red');
   else
   {
 	  // Different value
-    $('label[for=' + sel.attr('id') + ']').addClass('alert-danger');
+    $('label[for=' + sel.attr('id') + ']').addClass('red');
     activateSaveUndo();
   }
 }
@@ -398,7 +405,7 @@ function collectChanges() {
   var prmtr = {};
   {% if perms.inventoryplanning.change_inventoryplanning %}
   var tmp = $('input[name="roq_type"]:checked');
-  if ($("label[for=" + tmp.attr('id') + "]").hasClass('btn-danger'))
+  if ($("label[for=" + tmp.attr('id') + "]").hasClass('red'))
 	  result.parameters['roq_type'] = prmtr["roq_type"] = $('input[name="roq_type"]:checked').val();
 	if ($("#roq_min_qty").hasClass('dirty-cell'))
 		result.parameters['roq_min_qty'] = prmtr["roq_min_qty"] = $("#roq_min_qty").val();
@@ -411,13 +418,13 @@ function collectChanges() {
 	if ($("#leadtime_deviation").hasClass('dirty-cell'))
 		result.parameters['leadtime_deviation'] = prmtr["leadtime_deviation"] = $("#leadtime_deviation").val();
   var tmp = $('input[name="ss_type"]:checked');
-	if ($("label[for=" + tmp.attr('id') + "]").hasClass('btn-danger'))
+	if ($("label[for=" + tmp.attr('id') + "]").hasClass('red'))
 		result.parameters['ss_type'] = prmtr["ss_type"] = $('input[name="ss_type"]:checked').val();
   if ($("#ss_min_qty").hasClass('dirty-cell'))
 	  result.parameters['ss_min_qty'] = prmtr["ss_min_qty"] = $("#ss_min_qty").val();
   if ($("#ss_min_poc").hasClass('dirty-cell'))
 	  result.parameters['ss_min_poc'] = prmtr["ss_min_poc"] = $("#ss_min_poc").val();
-  if ($("label[for=nostock]").hasClass('btn-danger'))
+  if ($("label[for=nostock]").hasClass('red'))
 	  result.parameters['nostock'] = prmtr["nostock"] = $("#nostock").prop('checked');
   {% endif %}
   {% if perms.forecast.change_forecast %}
@@ -480,19 +487,23 @@ function save(simulate)
 	        selectRow(entity);
 	      }
       },
-	    error: function (result, stat, errorThrown) {
-	      // Error message
-	      $('#popup').html(result.responseText)
-	        .dialog({
-	        title: gettext("Error saving data"),
-	        autoOpen: true,
-	        resizable: false,
-	        width: 'auto',
-	        height: 'auto'
-	      });
-	      }
-	    });
-	  }
+      error: function (result, stat, errorThrown) {
+        $('#popup').html('<div class="modal-dialog" style="width: auto">'+
+            '<div class="modal-content">'+
+            '<div class="modal-header">'+
+              '<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true" class="fa fa-times"></span></button>'+
+              '<h4 class="modal-title">{% trans "Error retrieving data" %}</h4>'+
+            '</div>'+
+            '<div class="modal-body">'+
+              '<p>'+result.responseText + "  " + stat + errorThrown+'</p>'+
+            '</div>'+
+            '<div class="modal-footer">'+
+            '</div>'+
+          '</div>'+
+          '</div>' ).modal('show');
+      }
+	  });
+	}
 }
 
 
@@ -1103,9 +1114,9 @@ function displayResult(reset)
 	  $("#ss_min_poc").val(result.parameters.ss_min_poc);
   if (reset)
   {
-    $("label[for=nostock]").removeClass("alert-danger");
-    $("label[for=roq_type_periodofcover], label[for=roq_type_calculated], label[for=roq_type_quantity]").removeClass("alert-danger");
-    $("label[for=ss_type_periodofcover], label[for=ss_type_calculated], label[for=ss_type_quantity]").removeClass("alert-danger");
+    $("label[for=nostock]").removeClass("red");
+    $("label[for=roq_type_periodofcover], label[for=roq_type_calculated], label[for=roq_type_quantity]").removeClass("red");
+    $("label[for=ss_type_periodofcover], label[for=ss_type_calculated], label[for=ss_type_quantity]").removeClass("red");
     $("#roq_min_qty").removeClass('dirty-cell');
     $("#roq_min_poc").removeClass('dirty-cell');
     $("#service_level").removeClass('dirty-cell');
@@ -1335,7 +1346,7 @@ function setCommentType(t)
 }
 
 
-$(function() {
+$(function() { 
   {% if preferences.name and not args %}selectRow("{{ preferences.name|escapejs }}");
   {% elif args.1 %}selectRow("{{ args.0|escapejs }}@{{ args.1|escapejs }}");{% endif %}
   selectTab("{% if preferences.showtab %}{{ preferences.showtab }}{% else %}plan{% endif %}");
@@ -1418,10 +1429,13 @@ $(function() {
 		    <button class="btn btn-primary dropdown-toggle form-control disabled"  id="actions" name="actions" value="{% trans 'no'|capfirst %}" type="button" data-toggle="dropdown">{% trans "select action"|capfirst %}&nbsp;&nbsp;<span class="caret"></span>
 		    </button>
 		    <ul class="dropdown-menu col-xs-12" aria-labelledby="actions" id="actionsul" name="actionsul">
+		      {% if openbravo %}
 		       <li><a onclick="openbravo.IncrementalExport(jQuery('#transactiongrid'),'all');">{% filter capfirst %}{% trans "incremental export to openbravo" %}{% endfilter %}</a></li>
+		      {% else %}
 		       <li><a onclick="setStatus('proposed');">{% filter capfirst %}{% blocktrans with status=_("proposed") %}change status to {{status}}{% endblocktrans %}{% endfilter %}</a></li>
 		       <li><a onclick="setStatus('confirmed');">{% filter capfirst %}{% blocktrans with status=_("confirmed") %}change status to {{status}}{% endblocktrans %}{% endfilter %}</a></li>
 		       <li><a onclick="setStatus('closed');">{% filter capfirst %}{% blocktrans with status=_("closed") %}change status to {{status}}{% endblocktrans %}{% endfilter %}</a></li>
+		      {% endif %}
 		    </ul>
 	    </div>
 	  </div>
@@ -1597,7 +1611,7 @@ $(function() {
       </table>
       </div>
      </div>
-
+{{ result.parameters }}
 </div>
 
 {% endblock %}
