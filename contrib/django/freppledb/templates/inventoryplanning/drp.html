@@ -128,7 +128,6 @@ function clickNoStock()
 function clickROQtype()
 {
 	var sel = $('input[name="roq_type"]:checked');
-	console.log("is here");
 	$('label[for=roq_type_calculated], label[for=roq_type_quantity], label[for=roq_type_periodofcover]').removeClass('red');
 	if (result && sel.val() == result.parameters.roq_type)
 		// Same value as received from server
