@@ -42,6 +42,7 @@ void LibrarySolver::initialize()
   int nok = 0;
   nok += SolverMRP::initialize();
   nok += OperatorDelete::initialize();
+  nok += OperatorMoveOut::initialize();
   if (nok) throw RuntimeException("Error registering new Python types");
 }
 

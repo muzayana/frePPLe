@@ -860,6 +860,12 @@ def generate_plan():
     createInventoryPlan(database=db)
 
   if not 'noproduction' in os.environ:
+    # Use the solver that solves constraints in a single sweeping pass.
+    # Suitable for lightly constrained plans.
+    # frepple.solver_moveout(loglevel=3).solve()
+    # Use the solver which solves demand per demand.
+    # Suitable for plans with complex constraints, alternates and
+    # prioritization.
     if not 'noinventory' in os.environ and with_inventoryplanning:
       # Remove the unconstrained inventory plan
       frepple.erase(False)
