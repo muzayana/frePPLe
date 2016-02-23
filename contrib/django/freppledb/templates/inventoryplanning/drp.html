@@ -106,22 +106,22 @@ function selectRow(id)
 
 function clickNoStock()
 {
-	// Verify if different from current value
-	if (result && (
-		(result.parameters.nostock == 'True' && $("#nostock").prop('checked'))
-		|| (result.parameters.nostock != 'True' && !$("#nostock").prop('checked'))
-		))
+  // Verify if different from current value
+  if (result && (
+   (result.parameters.nostock == 'true' && !$("#nostock").prop('checked'))
+    || (result.parameters.nostock != 'true' && $("#nostock").prop('checked'))
+   ))
   {
-		// Same value as received from server
-		$(this).removeClass('dirty-cell');
-	  $('label[for=nostock]').removeClass('red');
+    // Same value as received from server
+    $(this).removeClass('dirty-cell');
+    $('label[for=nostock]').removeClass('red');
   }
-	else
-	{
-		activateSaveUndo();
-	  $(this).addClass('dirty-cell');
-	  $('label[for=nostock]').addClass('red');
-	}
+  else
+  {
+    activateSaveUndo();
+    $(this).addClass('dirty-cell');
+    $('label[for=nostock]').addClass('red');
+  }
 }
 
 
