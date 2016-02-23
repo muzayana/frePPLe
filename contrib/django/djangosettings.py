@@ -19,7 +19,6 @@ try:
 except:
   DEBUG = False
 
-
 ADMINS = (
     # ('Your Name', 'your_email@domain.com'),
 )
@@ -74,6 +73,7 @@ DATABASES = {
     },
   'scenario2': {
     'ENGINE': 'django.db.backends.postgresql_psycopg2',
+    'NAME': 'scenario2',
     'USER': 'frepple',     # Role name when using md5 authentication.
                            # Leave as an empty string when using peer or
                            # ident authencation.
@@ -272,7 +272,7 @@ REST_FRAMEWORK = {
   'DEFAULT_RENDERER_CLASSES': (
     'rest_framework.renderers.JSONRenderer',
     'freppledb.common.api.renderers.freppleBrowsableAPI',
-  ),
+  )
 }
 
 import django.contrib.admindocs

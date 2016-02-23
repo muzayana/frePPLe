@@ -595,7 +595,7 @@ var grid = {
       $('#popup').html('<div class="modal-dialog">'+
           '<div class="modal-content">'+
             '<div class="modal-header">'+
-              '<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>'+
+              '<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true" class="fa fa-times"></span></button>'+
               '<h4 class="modal-title">'+gettext("Export CSV or Excel file")+'</h4>'+
             '</div>'+
             '<div class="modal-body">'+
@@ -614,6 +614,7 @@ var grid = {
       $('#popup').html('<div class="modal-dialog">'+
           '<div class="modal-content">'+
             '<div class="modal-header">'+
+              '<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true" class="fa fa-times"></span></button>'+
               '<h4 class="modal-title">'+gettext("Export CSV or Excel file")+'</h4>'+
             '</div>'+
             '<div class="modal-body">'+
@@ -687,7 +688,7 @@ var grid = {
 
             if (params == $('#horizonoriginal').val())
               // No changes to the settings. Close the popup.
-              $(this).modal('hide');
+              $('#timebuckets').modal('hide');
             else {
               // Ajax request to update the horizon preferences
               $.ajax({
@@ -727,6 +728,7 @@ var grid = {
      $('#popup').html('<div class="modal-dialog">'+
              '<div class="modal-content">'+
                '<div class="modal-header">'+
+                 '<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true" class="fa fa-times"></span></button>'+
                  '<h4 class="modal-title">'+gettext('Delete data')+'</h4>'+
                '</div>'+
                '<div class="modal-body">'+
@@ -774,6 +776,7 @@ var grid = {
      $('#popup').html('<div class="modal-dialog">'+
              '<div class="modal-content">'+
                '<div class="modal-header">'+
+                 '<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true" class="fa fa-times"></span></button>'+
                  '<h4 class="modal-title">'+gettext("Copy data")+'</h4>'+
                  '</div>'+
                  '<div class="modal-body">'+
@@ -993,6 +996,7 @@ var openbravo = {
      $('#popup').html('<div class="modal-dialog">'+
            '<div class="modal-content">'+
              '<div class="modal-header">'+
+               '<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true" class="fa fa-times"></span></button>'+
                '<h4 class="modal-title">'+gettext("export")+'</h4>'+
              '</div>'+
              '<div class="modal-body">'+
@@ -1549,7 +1553,7 @@ function import_show(url)
   $('#popup').html('<div class="modal-dialog">'+
       '<div class="modal-content">'+
         '<div class="modal-header">'+
-          '<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>'+
+          '<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true" class="fa fa-times"></span></button>'+
           '<h4 class="modal-title">'+ gettext("Import CSV or Excel file") +'</h4>'+
         '</div>'+
         '<div class="modal-body">'+
@@ -2040,8 +2044,8 @@ var tour = {
     $('#popup').removeClass("fade in").addClass("tourguide").html('<div class="modal-dialog" id="tourModal" role="dialog" style="width: 390px; position: absolute; bottom: 10px; left: auto; right: 15px;">'+
         '<div class="modal-content">'+
         '<div class="modal-header">'+
-          '<h4 id="modalTitle" class="modal-title alert alert-info">'+ gettext("Guided tour") +
-          '<button type="button" id="tourcancelbutton" class="close" data-dismiss="modal" aria-hidden="true">×</button>'+'</h4>'+
+          '<button type="button" id="tourcancelbutton" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true" class="fa fa-times"></span></button>'+
+          '<h4 id="modalTitle" class="modal-title alert alert-info">'+ gettext("Guided tour") + '</h4>'+
         '</div>'+
         '<div class="modal-body" id="tourmodalbody" style="padding-bottom:20px;">'+
             tourdata[tour.chapter]['description']+

@@ -760,8 +760,13 @@ class ItemSupplier(AuditModel):
     _('resource quantity'), null=True, blank=True,
     max_digits=15, decimal_places=4, default='1.0',
     help_text=_("Resource capacity consumed per purchased unit")
-    )  
-  
+    )
+  fence = DurationField(
+    _('fence'), null=True, blank=True,
+    max_digits=15, decimal_places=4,
+    help_text=_('Frozen fence for creating new procurements')
+    )
+
   def __str__(self):
     return '%s - %s - %s' % (
       self.supplier.name if self.supplier else 'No supplier',
@@ -833,7 +838,12 @@ class ItemDistribution(AuditModel):
     _('resource quantity'), null=True, blank=True,
     max_digits=15, decimal_places=4, default='1.0',
     help_text=_("Resource capacity consumed per distributed unit")
-    )  
+    )
+  fence = DurationField(
+    _('fence'), null=True, blank=True,
+    max_digits=15, decimal_places=4,
+    help_text=_('Frozen fence for creating new shipments')
+    )
 
   def __str__(self):
     return '%s - %s - %s' % (

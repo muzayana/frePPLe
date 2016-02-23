@@ -3753,6 +3753,16 @@ class ItemDistribution : public Object,
       return OperationIterator(this);
     }
 
+    Duration getFence() const
+    {
+      return fence;
+    }
+
+    void setFence(Duration d)
+    {
+      fence = d;
+    }
+
     template<class Cls> static inline void registerFields(MetaClass* m)
     {
       m->addPointerField<Cls, Item>(Tags::item, &Cls::getItem, &Cls::setItem, MANDATORY + PARENT);
@@ -3767,6 +3777,7 @@ class ItemDistribution : public Object,
       m->addDateField<Cls>(Tags::effective_end, &Cls::getEffectiveEnd, &Cls::setEffectiveEnd, Date::infiniteFuture);
       m->addPointerField<Cls, Resource>(Tags::resource, &Cls::getResource, &Cls::setResource);
       m->addDoubleField<Cls>(Tags::resource_qty, &Cls::getResourceQuantity, &Cls::setResourceQuantity);
+      m->addDurationField<Cls>(Tags::fence, &Cls::getFence, &Cls::setFence);
       m->addIteratorField<Cls, OperationIterator, OperationItemDistribution>(Tags::operations, Tags::operation, &Cls::getOperations, DONT_SERIALIZE);
       HasSource::registerFields<Cls>(m);
     }
@@ -3793,9 +3804,14 @@ class ItemDistribution : public Object,
     /** Pointer to the next ItemDistribution for the same item. */
     ItemDistribution* next;
 
+    /** Resource to model distribution capacity. */
     Resource *res;
 
+    /** Consumption on the distribution capacity resource. */
     double res_qty;
+
+    /** Release fence for the distribution operation. */
+    Duration fence;
 };
 
 
@@ -4105,6 +4121,16 @@ class ItemSupplier : public Object,
       return res_qty;
     }
 
+    Duration getFence() const
+    {
+      return fence;
+    }
+
+    void setFence(Duration d)
+    {
+      fence = d;
+    }
+
     /** Return the purchasing lead time. */
     Duration getLeadTime() const
     {
@@ -4143,6 +4169,7 @@ class ItemSupplier : public Object,
       m->addDateField<Cls>(Tags::effective_end, &Cls::getEffectiveEnd, &Cls::setEffectiveEnd, Date::infiniteFuture);
       m->addPointerField<Cls, Resource>(Tags::resource, &Cls::getResource, &Cls::setResource);
       m->addDoubleField<Cls>(Tags::resource_qty, &Cls::getResourceQuantity, &Cls::setResourceQuantity);
+      m->addDurationField<Cls>(Tags::fence, &Cls::getFence, &Cls::setFence);
       HasSource::registerFields<Cls>(m);
     }
 
@@ -4168,9 +4195,14 @@ class ItemSupplier : public Object,
     /** Pointer to the head of the auto-generated purchase operation list.*/
     OperationItemSupplier* firstOperation;
 
+    /** Resource to model supplier capacity. */
     Resource *res;
 
+    /** Consumption on the supplier capacity resource. */
     double res_qty;
+
+    /** Release fence for the purchasing operation. */
+    Duration fence;
 };
 
 
