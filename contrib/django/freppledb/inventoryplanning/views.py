@@ -324,7 +324,6 @@ class DRP(GridReport):
         sortcol, sortdir = reportclass.get_sort(request).split(' ')
         sortrow = reportclass.rows[int(sortcol)-1]
         aggregate = "sum" if isinstance(sortrow, (GridFieldNumber, GridFieldInteger)) else "max"
-        print("loc fr", sortrow.field_name)
         if sortrow.field_name.find("__") < 0:
             # location grouping 1: field in the outinventoryplanning table
             q = q.extra(
@@ -1504,7 +1503,7 @@ class DRPitemlocation(View):
       if val:
         frepple_buf.ss_max_poc = val
       val = changes['parameters'].get('nostock', None)
-      if val:
+      if val is not None:
         frepple_buf.nostock = val
       val = changes['parameters'].get('roq_type', None)
       if val:
@@ -1708,8 +1707,8 @@ class DRPitemlocation(View):
     for fl in frepple_buf.flowplans:
       if fl.date < agg_buckets[agg_bucket_idx].startdate:
         continue
-      if fl.date > agg_buckets[agg_bucket_idx].enddate:
-        while False: #fl.date > agg_buckets[agg_bucket_idx+1].startdate:
+      if fl.date >= agg_buckets[agg_bucket_idx].enddate:
+        while fl.date > agg_buckets[agg_bucket_idx+1].enddate:
           result["plan"].append({
             "bucket": agg_buckets[agg_bucket_idx].name,
             "startoh": start_oh,
