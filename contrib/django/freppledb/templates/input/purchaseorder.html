@@ -4,7 +4,6 @@
 <script type="text/javascript">
 jQuery.extend($.fn.fmatter, { 
   drp: function drp( cellvalue, options, row ){
-    console.log(row);
     if (cellvalue === undefined || cellvalue === '' || cellvalue === null) return '';
     return cellvalue + "<a href='{{request.prefix}}/inventoryplanning/drp/" + admin_escape(row['item']) + '/' + admin_escape(row['location']) + "/'><span class='leftpadding fa fa-caret-right'></span></a>";
   }
