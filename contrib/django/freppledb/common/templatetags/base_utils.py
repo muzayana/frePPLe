@@ -14,7 +14,6 @@ import json
 from django.db import models
 from django.contrib.admin.utils import unquote
 from django.template import Library, Node, Variable, TemplateSyntaxError
-from django.template.loader import get_template
 from django.conf import settings
 from django.utils.translation import ugettext as _
 from django.utils.http import urlquote
@@ -435,7 +434,7 @@ class DashboardNode(Node):
       for j in i['cols']:
         widgets = []
         for k in j['widgets']:
-          if reg[k[0]].has_permission(req.user):
+          if k[0] in reg and reg[k[0]].has_permission(req.user):
             widgets.append(reg[k[0]](**k[1]))
             context[self.hiddenvarname].pop(k[0], None)
         cols.append( {'width': j['width'], 'widgets': widgets}  )

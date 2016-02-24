@@ -84,6 +84,11 @@ The following widgets are currently available:
 * | **Inventory by item**
   | This widget shows the items which take up the most inventory value.
 
+* | **Inventory analysis**
+  | Display an analysis of which item-locations have stockout risks.
+  | Depending on the stockout risk, a red/yellow/green color code is assigned.
+  | The widget shows the number of SKUs in each color code by location.
+
 * | **Forecast error**
   | Display the Symmetric Mean Percentage Error (aka SMAPE). The result is
     aggregated across all forecast per bucket, weighted by the forecast quantity.

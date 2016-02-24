@@ -425,6 +425,7 @@ DEFAULT_DASHBOARD = [
     {'width':12, 'widgets':[
       ("distribution_orders",{"fence1":7, "fence2": 30}),
       #("shipping_queue",{"limit":20}),
+      ("stockoutrisk",{"green": 30, "yellow": 50}),
     ]},
   ]},
   { 'rowname': 'Manufacturing', 'cols': [
