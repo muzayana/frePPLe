@@ -93,6 +93,7 @@ var upload = {
               $('#popup').html('<div class="modal-dialog">'+
                       '<div class="modal-content">'+
                         '<div class="modal-header">'+
+                          '<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true" class="fa fa-times"></span></button>'+
                           '<h4 class="modal-title alert alert-danger">'+ gettext("Error saving data")+'</h4>'+
                         '</div>'+
                         '<div class="modal-body">'+
@@ -305,13 +306,37 @@ var grid = {
   // Render the customization popup window
   showCustomize: function (pivot)
   {
-    $.jgrid.hideModal("#searchmodfbox_grid");
-    val = "<select id='configure' multiple='multiple' class='multiselect' name='fields' style='width:440px; height:200px; margin:10px; padding:10px'>" +
-    "<optgroup label='Rows'>";
     var colModel = $("#grid")[0].p.colModel;
     var maxfrozen = 0;
     var skipped = 0;
     var graph = false;
+
+    var row0 = ""+
+      '<div class="row">' +
+      '<div class="col-xs-6">' +
+        '<div class="panel panel-default"><div class="panel-heading">Selected Columns</div>' +
+          '<div class="panel-body">' +
+            '<ul class="list-group" id="Rows" style="height: 160px; overflow-y: scroll;">placeholder0</ul>' +
+          '</div>' +
+        '</div>'+
+      '</div>' +
+      '<div class="col-xs-6">' +
+        '<div class="panel panel-default"><div class="panel-heading">Available Columns</div>' +
+          '<div class="panel-body">' +
+            '<ul class="list-group" id="DroppointRows" style="height: 160px; overflow-y: scroll;">placeholder1</ul>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+
+    row1= "";
+    row2= "";
+
+    var val0s = ""; //selected columns
+    var val0a = ""; //available columns
+    var val1s = ""; //selected columns
+    var val1a = ""; //available columns
+
     for (var i in colModel)
     {
       if (colModel[i].name == 'graph')
@@ -319,146 +344,219 @@ var grid = {
       else if (colModel[i].name != "rn" && colModel[i].name != "cb" && colModel[i].counter != null && colModel[i].label != '' && !('alwayshidden' in colModel[i]))
       {
         if (colModel[i].frozen) maxfrozen = parseInt(i,10) + 1 - skipped;
-        val += "<option value='" + (i) + "'";
-        if (!colModel[i].hidden) val += " selected='selected'";
-        if (colModel[i].key) val += " disabled='disabled'";
-        val += ">" + colModel[i].label + "</option>";
+        if (!colModel[i].hidden) {
+          val0s += '<li id="' + (i) + '"  class="list-group-item">' + colModel[i].label + '</li>';
+        } else {
+          val0a += '<li id="' + (i) + '"  class="list-group-item">' + colModel[i].label + '</li>';
+        }
       }
       else
         skipped++;
     }
-    val += "</optgroup>";
+
     if (pivot)
     {
       // Add list of crosses
-      val += "<optgroup label='Crosses'>";
+      var row1 = ''+
+      '<div class="row">' +
+        '<div class="col-xs-6">' +
+          '<div class="panel panel-default">' +
+            '<div class="panel-heading">' +
+              'Selected for Cross' +
+            '</div>' +
+            '<div class="panel-body">' +
+              '<ul class="list-group" id="Crosses" style="height: 160px; overflow-y: scroll;">placeholder0</ul>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="col-xs-6">' +
+          '<div class="panel panel-default">' +
+            '<div class="panel-heading">' +
+              'Available for Cross' +
+            '</div>' +
+            '<div class="panel-body">' +
+              '<ul class="list-group" id="DroppointCrosses" style="height: 160px; overflow-y: scroll;">placeholder1</ul>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
       for (var j in cross_idx)
       {
-        val += "<option value='" + (100+parseInt(cross_idx[j],10)) + "' selected='selected'";
-        val += ">" + cross[cross_idx[j]]['name'] + "</option>";
+        val1s += '<li class="list-group-item" id="' + (100+parseInt(cross_idx[j],10)) + '">' + cross[cross_idx[j]]['name'] + '</li>';
       }
       for (var j in cross)
       {
         if (cross_idx.indexOf(parseInt(j,10)) > -1) continue;
-        val += "<option value='" + (100+parseInt(j,10)) + "'";
-        val += ">" + cross[j]['name'] + "</option>";
+        val1a += '<li class="list-group-item" id="' + (100 + parseInt(j,10) ) + '">' + cross[j]['name'] + '</li>';
       }
-      val += "</optgroup></select>";
     }
     else
     {
       // Add selection of number of frozen columns
-      val += "</select>Frozen columns <select id='frozen'>";
-      for (var i = 0; i <= 4; i++)
-        if (i == maxfrozen)
-          val += "<option value'" + i + "' selected='selected'>" + i + "</option>";
-        else
-          val += "<option value'" + i + "'>" + i + "</option>";
-      val += "</select>";
+      row2 = '<div class="row"><div class="col-xs-12">' +
+        "Frozen columns <input type='number' id='frozen' min='0' max='4' step='1'>" +
+        '</div></div>';
     }
-    $('#popup').html(val).dialog({
-       title: gettext("Customize"),
-       width: 465,
-       height: 'auto',
-       autoOpen: true,
-       resizable: false,
-       buttons: [{
-         text: gettext("OK"),
-         click: function() {
-           var colModel = $("#grid")[0].p.colModel;
-           var perm = [];
-           var hiddenrows = [];
-           if (colModel[0].name == "cb") perm.push(0);
-           cross_idx = [];
-           if (!graph)
-             $("#grid").jqGrid('destroyFrozenColumns');
-           $('#configure option').each(function() {
-             val = parseInt(this.value,10);
-             if (val < 100)
-             {
-               if (this.selected)
-               {
-                 $("#grid").jqGrid("showCol", colModel[val].name);
-                 perm.push(val);
-               }
-               else
-               {
-                 hiddenrows.push(val);
-                 if (pivot)
-                   $("#grid").jqGrid('setColProp', colModel[val].name, {frozen:false});
-                 $("#grid").jqGrid("hideCol", colModel[val].name);
-               }
-             }
-             else if (this.selected)
-               cross_idx.push(val-100);
-           });
-           var numfrozen = 0;
-           if (pivot)
-           {
-             var firstnonfrozen = 0;
-             for (var i in colModel)
-               if ("counter" in colModel[i])
-                 numfrozen = i+1;
-               else
-                 perm.push(parseInt(i,10));
-           }
-           else
-             numfrozen = parseInt($("#frozen :selected").text())
-           for (var i in hiddenrows)
-             perm.push(hiddenrows[i]);
-           $("#grid").jqGrid("remapColumns", perm, true);
-           var skipped = 0;
-           for (var i in colModel)
-             if (colModel[i].name != "rn" && colModel[i].name != "cb" && colModel[i].counter != null)
-               $("#grid").jqGrid('setColProp', colModel[i].name, {frozen:i-skipped<numfrozen});
-             else
-               skipped++;
-           if (!graph)
-             $("#grid").jqGrid('setFrozenColumns');
-           $("#grid").trigger('reloadGrid');
-           grid.saveColumnConfiguration();
-           $(this).dialog("close");
-         }},
-         {
-         text: gettext("Cancel"),
-         click: function() { $(this).dialog("close"); }
-         },
-         {
-         text: gettext("Reset"),
-         click: function() {
-           var result = {};
-           result[reportkey] = null;
-           if (typeof url_prefix != 'undefined')
-             var url = url_prefix + '/settings/';
-           else
-             var url = '/settings/';
-           $.ajax({
-            url: url,
-            type: 'POST',
-            contentType: 'application/json; charset=utf-8',
-            data: JSON.stringify(result),
-            success: function() {window.location.href = window.location.href;},
-            error: function (result, stat, errorThrown) {
-              $('#popup').html(result.responseText).dialog({
-                title: gettext("Error saving report settings"),
-                autoOpen: true,
-                resizable: false,
-                width: 'auto',
-                height: 'auto'
-              });
-              }
-            });
-          }
-         }
-         ]
-       });
-    $("#configure").multiselect({
-      collapsableGroups: false,
-      sortable: true,
-      showEmptyGroups: true,
-      locale: $("html")[0].lang,
-      searchField: false
+
+    row0 = row0.replace('placeholder0',val0s);
+    row0 = row0.replace('placeholder1',val0a);
+    if (pivot) {
+      row1 = row1.replace('placeholder0',val1s);
+      row1 = row1.replace('placeholder1',val1a);
+    }
+
+    $('#popup').html(''+
+      '<div class="modal-dialog">'+
+        '<div class="modal-content">'+
+          '<div class="modal-header">'+
+            '<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>'+
+            '<h4 class="modal-title">'+gettext("Customize")+'</h4>'+
+          '</div>'+
+          '<div class="modal-body">'+
+            row0 +
+            row1 +
+            row2 +
+          '</div>' +
+          '<div class="modal-footer">'+
+            '<input type="submit" id="okCustbutton" role="button" class="btn btn-danger pull-left" value="'+gettext("OK")+'">'+
+            '<input type="submit" id="cancelCustbutton" role="button" class="btn btn-primary pull-right" data-dismiss="modal" value="'+gettext('Cancel')+'">'+
+            '<input type="submit" id="resetCustbutton" role="button" class="btn btn-primary pull-right" value="'+gettext('Reset')+'">'+
+          '</div>'+
+        '</div>'+
+      '</div>' )
+    .modal('show');
+
+    var Rows = document.getElementById("Rows");
+    var DroppointRows = document.getElementById("DroppointRows");
+    Sortable.create(Rows, {
+      group: {
+        name: 'Rows',
+        put: ['DroppointRows']
+      },
+      animation: 100
+    });
+    Sortable.create(DroppointRows, {
+      group: {
+        name: 'DroppointRows',
+        put: ['Rows']
+      },
+      animation: 100
+    });
+
+    if (pivot) {
+      var Crosses = document.getElementById("Crosses");
+      var DroppointCrosses = document.getElementById("DroppointCrosses");
+      Sortable.create(Crosses, {
+        group: {
+          name: 'Crosses',
+          put: ['DroppointCrosses']
+        },
+        animation: 100
       });
+      Sortable.create(DroppointCrosses, {
+        group: {
+          name: 'DroppointCrosses',
+          put: ['Crosses']
+        },
+        animation: 100
+      });
+    }
+
+    $('#resetCustbutton').on('click', function() {
+      var result = {};
+      result[reportkey] = null;
+      if (typeof url_prefix != 'undefined')
+        var url = url_prefix + '/settings/';
+      else
+        var url = '/settings/';
+      $.ajax({
+       url: url,
+       type: 'POST',
+       contentType: 'application/json; charset=utf-8',
+       data: JSON.stringify(result),
+       success: function() {window.location.href = window.location.href;},
+       error: function (result, stat, errorThrown) {
+         $('#popup').html('<div class="modal-dialog" style="width: auto">'+
+             '<div class="modal-content">'+
+             '<div class="modal-header">'+
+               '<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true" class="fa fa-times"></span></button>'+
+               '<h4 class="modal-title">{% trans "Error retrieving data" %}</h4>'+
+             '</div>'+
+             '<div class="modal-body">'+
+               '<p>'+result.responseText + "  " + stat + errorThrown+'</p>'+
+             '</div>'+
+             '<div class="modal-footer">'+
+             '</div>'+
+           '</div>'+
+           '</div>' ).modal('show');
+         }
+       });
+     });
+
+    $('#okCustbutton').on('click', function() {
+      var colModel = $("#grid")[0].p.colModel;
+      var perm = [];
+      var hiddenrows = [];
+      if (colModel[0].name == "cb") perm.push(0);
+      cross_idx = [];
+      if (!graph)
+        $("#grid").jqGrid('destroyFrozenColumns');
+
+      $('#Rows li').each(function() {
+        val = parseInt(this.id,10);
+        if (val < 100)
+        {
+            $("#grid").jqGrid("showCol", colModel[val].name);
+            perm.push(val);
+         }
+      });
+
+      $('#DroppointRows li').each(function() {
+        val = parseInt(this.id,10);
+        if (val < 100)
+        {
+          hiddenrows.push(val);
+          if (pivot)
+            $("#grid").jqGrid('setColProp', colModel[val].name, {frozen:false});
+          $("#grid").jqGrid("hideCol", colModel[val].name);
+         }
+      });
+
+      $('#Crosses li').each(function() {
+        val = parseInt(this.id,10);
+        if (val >= 100)
+        {
+          cross_idx.push(val-100);
+         }
+      });
+
+      var numfrozen = 0;
+      if (pivot)
+      {
+        var firstnonfrozen = 0;
+        for (var i in colModel)
+          if ("counter" in colModel[i])
+            numfrozen = i+1;
+          else
+            perm.push(parseInt(i,10));
+      }
+      else
+        numfrozen = parseInt($("#frozen").val())
+      for (var i in hiddenrows)
+        perm.push(hiddenrows[i]);
+      $("#grid").jqGrid("remapColumns", perm, true);
+      var skipped = 0;
+      for (var i in colModel)
+        if (colModel[i].name != "rn" && colModel[i].name != "cb" && colModel[i].counter != null)
+          $("#grid").jqGrid('setColProp', colModel[i].name, {frozen:i-skipped<numfrozen});
+        else
+          skipped++;
+      if (!graph)
+        $("#grid").jqGrid('setFrozenColumns');
+      $("#grid").trigger('reloadGrid');
+      grid.saveColumnConfiguration();
+      $('#popup').modal("hide");
+    });
   },
 
   // Save the customized column configuration
@@ -543,16 +641,21 @@ var grid = {
       contentType: 'application/json; charset=utf-8',
       data: JSON.stringify(result),
       error: function (result, stat, errorThrown) {
-        $('#popup').html(result.responseText)
-          .dialog({
-            title: gettext("Error saving report settings"),
-            autoOpen: true,
-            resizable: false,
-            width: 'auto',
-            height: 'auto'
-          });
-        }
-      });
+        $('#popup').html('<div class="modal-dialog" style="width: auto">'+
+            '<div class="modal-content">'+
+            '<div class="modal-header">'+
+              '<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true" class="fa fa-times"></span></button>'+
+              '<h4 class="modal-title">{% trans "Error saving report settings" %}</h4>'+
+            '</div>'+
+            '<div class="modal-body">'+
+              '<p>'+result.responseText + "  " + stat + errorThrown+'</p>'+
+            '</div>'+
+            '<div class="modal-footer">'+
+            '</div>'+
+          '</div>'+
+          '</div>' ).modal('show');
+      }
+    });
   },
 
   //This function is called when a cell is just being selected in an editable
@@ -595,7 +698,7 @@ var grid = {
       $('#popup').html('<div class="modal-dialog">'+
           '<div class="modal-content">'+
             '<div class="modal-header">'+
-              '<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true" class="fa fa-times"></span></button>'+
+              '<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>'+
               '<h4 class="modal-title">'+gettext("Export CSV or Excel file")+'</h4>'+
             '</div>'+
             '<div class="modal-body">'+
@@ -614,7 +717,6 @@ var grid = {
       $('#popup').html('<div class="modal-dialog">'+
           '<div class="modal-content">'+
             '<div class="modal-header">'+
-              '<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true" class="fa fa-times"></span></button>'+
               '<h4 class="modal-title">'+gettext("Export CSV or Excel file")+'</h4>'+
             '</div>'+
             '<div class="modal-body">'+
@@ -688,7 +790,7 @@ var grid = {
 
             if (params == $('#horizonoriginal').val())
               // No changes to the settings. Close the popup.
-              $('#timebuckets').modal('hide');
+              $(this).modal('hide');
             else {
               // Ajax request to update the horizon preferences
               $.ajax({
@@ -728,7 +830,7 @@ var grid = {
      $('#popup').html('<div class="modal-dialog">'+
              '<div class="modal-content">'+
                '<div class="modal-header">'+
-                 '<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true" class="fa fa-times"></span></button>'+
+                 '<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true" class="fa fa-times"></span></button>'+
                  '<h4 class="modal-title">'+gettext('Delete data')+'</h4>'+
                '</div>'+
                '<div class="modal-body">'+
@@ -776,7 +878,7 @@ var grid = {
      $('#popup').html('<div class="modal-dialog">'+
              '<div class="modal-content">'+
                '<div class="modal-header">'+
-                 '<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true" class="fa fa-times"></span></button>'+
+                 '<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true" class="fa fa-times"></span></button>'+
                  '<h4 class="modal-title">'+gettext("Copy data")+'</h4>'+
                  '</div>'+
                  '<div class="modal-body">'+
@@ -817,7 +919,6 @@ var grid = {
   showFilter: function()
   {
     if ($('#filter').hasClass("disabled")) return;
- //   $('#timebuckets,#popup').dialog().dialog('close');
     $('.modal').modal('hide');
     jQuery("#grid").jqGrid('searchGrid', {
       closeOnEscape: true,
@@ -996,7 +1097,7 @@ var openbravo = {
      $('#popup').html('<div class="modal-dialog">'+
            '<div class="modal-content">'+
              '<div class="modal-header">'+
-               '<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true" class="fa fa-times"></span></button>'+
+               '<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true" class="fa fa-times"></span></button>'+
                '<h4 class="modal-title">'+gettext("export")+'</h4>'+
              '</div>'+
              '<div class="modal-body">'+
@@ -1124,15 +1225,20 @@ var dashboard = {
           window.location.href = window.location.href;
       },
       error: function (result, stat, errorThrown) {
-        $('#popup').html(result.responseText)
-          .dialog({      // TODO Replace this dialog with a modal
-            title: gettext("Error saving report settings"),
-            autoOpen: true,
-            resizable: false,
-            width: 'auto',
-            height: 'auto'
-          });
-        }
+        $('#popup').html('<div class="modal-dialog" style="width: auto">'+
+            '<div class="modal-content">'+
+            '<div class="modal-header">'+
+              '<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true" class="fa fa-times"></span></button>'+
+              '<h4 class="modal-title">{% trans "Error saving report settings" %}</h4>'+
+            '</div>'+
+            '<div class="modal-body">'+
+              '<p>'+result.responseText + "  " + stat + errorThrown+'</p>'+
+            '</div>'+
+            '<div class="modal-footer">'+
+            '</div>'+
+          '</div>'+
+          '</div>' ).modal('show');
+      }
       });
   },
 
@@ -1553,7 +1659,7 @@ function import_show(url)
   $('#popup').html('<div class="modal-dialog">'+
       '<div class="modal-content">'+
         '<div class="modal-header">'+
-          '<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true" class="fa fa-times"></span></button>'+
+          '<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>'+
           '<h4 class="modal-title">'+ gettext("Import CSV or Excel file") +'</h4>'+
         '</div>'+
         '<div class="modal-body">'+
@@ -2044,8 +2150,8 @@ var tour = {
     $('#popup').removeClass("fade in").addClass("tourguide").html('<div class="modal-dialog" id="tourModal" role="dialog" style="width: 390px; position: absolute; bottom: 10px; left: auto; right: 15px;">'+
         '<div class="modal-content">'+
         '<div class="modal-header">'+
-          '<button type="button" id="tourcancelbutton" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true" class="fa fa-times"></span></button>'+
-          '<h4 id="modalTitle" class="modal-title alert alert-info">'+ gettext("Guided tour") + '</h4>'+
+          '<h4 id="modalTitle" class="modal-title alert alert-info">'+ gettext("Guided tour") +
+          '<button type="button" id="tourcancelbutton" class="close" data-dismiss="modal" aria-hidden="true">×</button>'+'</h4>'+
         '</div>'+
         '<div class="modal-body" id="tourmodalbody" style="padding-bottom:20px;">'+
             tourdata[tour.chapter]['description']+
