@@ -34,7 +34,8 @@ from django.views.generic import View
 from freppledb.boot import getAttributeFields
 from freppledb.common.report import GridFieldText, GridReport
 from freppledb.common.report import GridFieldLastModified, GridFieldChoice
-from freppledb.common.report import GridFieldNumber, GridFieldBool, GridFieldInteger
+from freppledb.common.report import GridFieldNumber, GridFieldBool
+from freppledb.common.report import GridFieldCurrency, GridFieldInteger
 from freppledb.common.models import Comment, Parameter, BucketDetail
 from freppledb.forecast.models import Forecast, ForecastPlan
 from freppledb.input.models import Buffer, Location, Calendar, CalendarBucket, Demand
@@ -204,6 +205,9 @@ class DRP(GridReport):
     GridFieldText('location', title=_('location'), field_name="buffer__location__name", formatter='detail', extra="role:'input/location'"),
     GridFieldText('buffer', title=_('buffer'), field_name="buffer", key=True, formatter='detail', extra="role:'input/buffer'", hidden=True),
     GridFieldInteger('leadtime', title=_('lead time'), extra="formatoptions:{defaultValue:''}, summaryType:'max'"),
+    GridFieldCurrency('price', title=_('price'), field_name="buffer__item__price",
+      extra="formatoptions:{defaultValue:'', prefix:'%s', suffix:'%s'}, summaryType:'max'" % settings.CURRENCY),
+    GridFieldNumber('stockoutrisk', title=_('stockout risk'), extra="formatoptions:{defaultValue:''}, summaryType:'max'"),
     GridFieldInteger('localforecast', title=_('local forecast'), extra="formatoptions:{defaultValue:''}, summaryType:'sum'"),
     GridFieldInteger('dependentdemand', title=_('dependent demand'), extra="formatoptions:{defaultValue:''}, summaryType:'sum'"),
     GridFieldInteger('safetystock', title=_('safety stock'), extra="formatoptions:{defaultValue:''}, summaryType:'sum'"),
