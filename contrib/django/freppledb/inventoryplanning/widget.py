@@ -23,9 +23,9 @@ class StockoutRiskWidget(Widget):
   name = "stockoutrisk"
   title = _("stockout risk")
   tooltip = _("Display how well the current inventory position covers the forecasted demand")
-  permissions = (("view_problem_report", "Can view problem report"),)
+  permissions = (('view_distribution_report', 'Can view distribution report'),)
   asynchronous = True
-  url = '/drp/?entity=demand&name=late&sord=asc&sidx=startdate'
+  url = '/inventoryplanning/drp/?sidx=stockoutrisk&sord=desc'
   green = 10
   yellow = 20
 
@@ -53,7 +53,10 @@ class StockoutRiskWidget(Widget):
     $("#invAnalysis").next().find("tbody tr").each(function() {
       var row = [];
       $("td", this).each(function() {
-        row.push(parseInt($(this).html()));
+        if (row.length == 0)
+          row.push($(this).html());
+        else
+          row.push(parseInt($(this).html()));
         });
       data.push(row);
       if (row[1] > skucount) skucount = row[1];
@@ -81,7 +84,9 @@ class StockoutRiskWidget(Widget):
         })
       .on("mouseout", function(){
         $("#invanalysis_tooltip").css("display", "none")
-        });
+        })
+      .append("svg:a")
+      .attr("xlink:href", function(d) {return url_prefix + "/inventoryplanning/drp/?sidx=stockoutrisk&sord=desc&buffer__location__name=" + admin_escape(d[0]);});
 
     // Green SKUs
     bar.append("rect")
@@ -130,7 +135,7 @@ class StockoutRiskWidget(Widget):
     result = [
       '<div id="invanalysis_tooltip" class="tooltip-inner" style="display: none; z-index:10000; position:absolute;"></div>',
       '<svg class="chart" id="invAnalysis" style="width:100%; height: 250px;"></svg>',
-      '<table style="display:none"><thead>'
+      '<table style="display:none"><thead>',
       '<tr><th>location</th><th>total</th>',
         '<th>%s (&lt; %s%%)</th>' % (force_text(_("green")), green),
         '<th>%s (&gt;= %s%% and &lt; %s%%)</th>' % (force_text(_("yellow")), green, yellow),
