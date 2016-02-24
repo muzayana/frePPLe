@@ -845,6 +845,18 @@ class GridReport(View):
           # Pick up the mode from the session
           mode = request.session.get('mode', 'graph')
       is_popup = '_popup' in request.GET
+      if 'sord' in request.GET:
+        sord = request.GET.get('sord')
+      elif prefs:
+        sord = prefs.get('sord', reportclass.default_sort[1])
+      else:
+        sord = reportclass.default_sort[1]
+      if 'sidx' in request.GET:
+        sidx = request.GET.get('sidx')
+      elif prefs:
+        sidx = prefs.get('sidx', reportclass.rows[reportclass.default_sort[0]].name)
+      else:
+        sidx = reportclass.rows[reportclass.default_sort[0]].name
       context = {
         'reportclass': reportclass,
         'title': (args and args[0] and _('%(title)s for %(entity)s') % {'title': force_text(reportclass.title), 'entity': force_text(args[0])}) or reportclass.title,
@@ -856,8 +868,8 @@ class GridReport(View):
         'object_id': args and quote(args[0]) or None,
         'preferences': prefs,
         'page': prefs and prefs.get('page', 1) or 1,
-        'sord': prefs and prefs.get('sord', request.GET.get('sord', 'asc')) or request.GET.get('sord', 'asc'),
-        'sidx': prefs and prefs.get('sidx', request.GET.get('sidx', '')) or request.GET.get('sidx', ''),
+        'sord': sord,
+        'sidx': sidx,
         'is_popup': is_popup,
         'filters': reportclass.getQueryString(request) or (prefs and prefs.get('filter', None)),
         'args': args,
