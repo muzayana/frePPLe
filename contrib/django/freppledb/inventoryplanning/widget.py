@@ -13,9 +13,6 @@ from urllib.parse import urlencode
 from django.db import DEFAULT_DB_ALIAS, connections
 from django.http import HttpResponse
 from django.utils.encoding import force_text
-from django.utils.html import escape
-from django.utils.http import urlquote
-from django.utils.text import capfirst
 from django.utils.translation import ugettext_lazy as _
 
 from freppledb.common.middleware import _thread_locals
