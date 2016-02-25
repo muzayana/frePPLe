@@ -314,14 +314,14 @@ var grid = {
     var row0 = ""+
       '<div class="row">' +
       '<div class="col-xs-6">' +
-        '<div class="panel panel-default"><div class="panel-heading">Selected Columns</div>' +
+        '<div class="panel panel-default"><div class="panel-heading">'+ gettext("Selected options") + '</div>' +
           '<div class="panel-body">' +
             '<ul class="list-group" id="Rows" style="height: 160px; overflow-y: scroll;">placeholder0</ul>' +
           '</div>' +
         '</div>'+
       '</div>' +
       '<div class="col-xs-6">' +
-        '<div class="panel panel-default"><div class="panel-heading">Available Columns</div>' +
+        '<div class="panel panel-default"><div class="panel-heading">' + gettext("Available options") + '</div>' +
           '<div class="panel-body">' +
             '<ul class="list-group" id="DroppointRows" style="height: 160px; overflow-y: scroll;">placeholder1</ul>' +
           '</div>' +
@@ -362,7 +362,7 @@ var grid = {
         '<div class="col-xs-6">' +
           '<div class="panel panel-default">' +
             '<div class="panel-heading">' +
-              'Selected for Cross' +
+              gettext('Selected Cross') +
             '</div>' +
             '<div class="panel-body">' +
               '<ul class="list-group" id="Crosses" style="height: 160px; overflow-y: scroll;">placeholder0</ul>' +
@@ -372,7 +372,7 @@ var grid = {
         '<div class="col-xs-6">' +
           '<div class="panel panel-default">' +
             '<div class="panel-heading">' +
-              'Available for Cross' +
+              gettext('Available Cross') +
             '</div>' +
             '<div class="panel-body">' +
               '<ul class="list-group" id="DroppointCrosses" style="height: 160px; overflow-y: scroll;">placeholder1</ul>' +
@@ -394,8 +394,9 @@ var grid = {
     {
       // Add selection of number of frozen columns
       row2 = '<div class="row"><div class="col-xs-12">' +
-        "Frozen columns <input type='number' id='frozen' min='0' max='4' step='1'>" +
-        '</div></div>';
+        gettext("Frozen columns") +
+        "<input type='number' id='frozen' min='0' max='4' step='1'>" +
+       '</div></div>';
     }
 
     row0 = row0.replace('placeholder0',val0s);
@@ -409,7 +410,9 @@ var grid = {
       '<div class="modal-dialog">'+
         '<div class="modal-content">'+
           '<div class="modal-header">'+
-            '<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>'+
+            '<button type="button" class="close" data-dismiss="modal" aria-label=' + gettext("Close") + '>' +
+              '<span aria-hidden="true">&times;</span>' +
+            '</button>'+
             '<h4 class="modal-title">'+gettext("Customize")+'</h4>'+
           '</div>'+
           '<div class="modal-body">'+
@@ -1149,13 +1152,15 @@ var openbravo = {
 
 var dashboard = {
   dragAndDrop: function() {
-    $(".cockpitcolumn").sortable({
-      connectWith: ".cockpitcolumn",
-      handle: ".panel-heading",
-      cancel: ".panel-toggle",
-      placeholder: "panel-placeholder",
-      stop: dashboard.save
+
+    $(".cockpitcolumn").each( function() {
+      Sortable.create($(this)[ 0 ], {
+        group: "test",
+        animation: 100
       });
+    });
+
+      //stop: dashboard.save
     $(".panel-toggle").click(function() {
       var icon = $(this);
       icon.toggleClass("fa-minus fa-plus");
@@ -1427,8 +1432,8 @@ var dashboard = {
 
     // Build new content
     var newelements = '<div class="row" data-cockpit-row="' + newname + '">' +
-      '<div class="col-md-11 ui-sortable"><h1 style="float: left">' + newname + '</h1></div>' +
-      '<div class="col-md-1 ui-sortable"><h1 class="pull-right">' +
+      '<div class="col-md-11"><h1 style="float: left">' + newname + '</h1></div>' +
+      '<div class="col-md-1"><h1 class="pull-right">' +
       '<button class="btn btn-xs btn-primary" onclick="dashboard.customize(\'' + newname + '\')" data-toggle="tooltip" data-placement="top" data-original-title="' + gettext("customize") + '"><span class="fa fa-wrench"></span></button>' +
       '</h1></div>' +
       '</div>' +
