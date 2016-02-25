@@ -644,14 +644,21 @@ function addSelected(entity)
      contentType: 'application/json; charset=utf-8',
      data: JSON.stringify({"freppledb.planningboard": {"rows": r}}),
      error: function (result, stat, errorThrown) {
-       $('#popup').html(result.responseText)
-         .dialog({
-           title: gettext("Error saving report settings"),
-           autoOpen: true,
-           resizable: false,
-           width: 'auto',
-           height: 'auto'
-         });
+       $('#popup').html('<div class="modal-dialog">'+
+	         '<div class="modal-content">'+
+	           '<div class="modal-header">'+
+	             '<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true" class="fa fa-times"></span></button>'+
+	             '<h4 class="modal-title alert alert-danger">'+ gettext("Error saving report settings")+'</h4>'+
+	           '</div>'+
+	           '<div class="modal-body">'+
+	             '<p>'+result.responseText+'</p>'+
+	           '</div>'+
+	           '<div class="modal-footer">'+
+	             '<input type="submit" id="cancelbutton" role="button" class="btn btn-primary pull-right" data-dismiss="modal" value="'+gettext('Close')+'">'+
+	           '</div>'+
+	         '</div>'+
+	     '</div>' )
+	     .modal('show');
        }
      });
 }
@@ -1037,14 +1044,21 @@ function resetBoard()
     contentType: 'application/json; charset=utf-8',
     data: JSON.stringify({"freppledb.planningboard": {"rows": []}}),
     error: function (result, stat, errorThrown) {
-      $('#popup').html(result.responseText)
-        .dialog({
-          title: gettext("Error saving report settings"),
-          autoOpen: true,
-          resizable: false,
-          width: 'auto',
-          height: 'auto'
-        });
+      $('#popup').html('<div class="modal-dialog">'+
+             '<div class="modal-content">'+
+               '<div class="modal-header">'+
+                 '<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true" class="fa fa-times"></span></button>'+
+                 '<h4 class="modal-title alert alert-danger">'+ gettext("Error saving report settings")+'</h4>'+
+               '</div>'+
+               '<div class="modal-body">'+
+                 '<p>'+result.responseText+'</p>'+
+               '</div>'+
+               '<div class="modal-footer">'+
+                 '<input type="submit" id="cancelbutton" role="button" class="btn btn-primary pull-right" data-dismiss="modal" value="'+gettext('Close')+'">'+
+               '</div>'+
+             '</div>'+
+         '</div>' )
+         .modal('show');
       }
     });
 }

@@ -97,7 +97,7 @@ var upload = {
                           '<h4 class="modal-title alert alert-danger">'+ gettext("Error saving data")+'</h4>'+
                         '</div>'+
                         '<div class="modal-body">'+
-                          '<p>'+interpolate(result.responseText)+'</p>'+
+                          '<p>'+result.responseText+'</p>'+
                         '</div>'+
                         '<div class="modal-footer">'+
                           '<input type="submit" id="cancelbutton" role="button" class="btn btn-primary pull-right" data-dismiss="modal" value="'+gettext('Close')+'">'+
@@ -1101,7 +1101,7 @@ var openbravo = {
                '<h4 class="modal-title">'+gettext("export")+'</h4>'+
              '</div>'+
              '<div class="modal-body">'+
-               '<p>'+interpolate(gettext("export selected records to openbravo"))+'</p>'+
+               '<p>'+gettext("export selected records to openbravo")+'</p>'+
              '</div>'+
              '<div class="modal-footer">'+
                '<input type="submit" id="button_export" role="button" class="btn btn-danger pull-left" value="'+gettext('Confirm')+'">'+
