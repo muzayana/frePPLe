@@ -986,7 +986,6 @@ Forecast::Metrics Forecast::Seasonal::generateForecast  // TODO No outlier detec
     }
 
     // Better than earlier iterations?
-    best_smape = error_smape;
     if (error < best_error)
     {
       best_error = error;
@@ -997,7 +996,7 @@ Forecast::Metrics Forecast::Seasonal::generateForecast  // TODO No outlier detec
       best_T_i = T_i;
       for (unsigned short i = 0; i < period; ++i)
         best_S_i[i] = S_i[i];
-      }
+    }
 
     // Add Levenberg - Marquardt damping factor
     //if (alfa < max_alfa && alfa > min_alfa)
@@ -1058,10 +1057,13 @@ Forecast::Metrics Forecast::Seasonal::generateForecast  // TODO No outlier detec
   }
 
   if (period > fcst->getForecastSkip())
+  {
     // Correction on the error: we counted less buckets. We now
     // proportionally increase the error to account for this and have a
     // value that can be compared with the other forecast methods.
-    best_smape *= (count - fcst->getForecastSkip()) / (count - period);
+    best_smape *= (count - fcst->getForecastSkip());
+    best_smape /= (count - period);
+  }
 
   // Restore best results
   alfa = best_alfa;
