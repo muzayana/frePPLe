@@ -51,7 +51,7 @@
 <div id="detail9context" class="ContextMenu"><ul class="ui-menu ui-widget ui-widget-content ui-corner-all ui-state-default">
 <li class="ui-menu-item"><a id="{{request.prefix}}/demandplan/?demand__startswith={value}&amp;o=5a&amp;plandate__gte={startdate}&amp;plandate__lt={enddate}">{% trans 'detail'|capfirst %}</a></li>
 </ul></div>
-{% if mode == "graph" %}<div id="tooltip" role="tooltip" class="ui-tooltip ui-widget ui-corner-all ui-widget-content" style="display: none; position: absolute;"/>
+{% if mode == "graph" %}<div id="tooltip" role="tooltip" class="popover" style="display: none; position: absolute;"/></div>
 {% endif %}{% endblock %}
 
 {% block tools %}{% if args.0 %}{% tabs "forecast.forecast" %}{% endif %}{{block.super}}{% endblock %}
@@ -387,13 +387,13 @@ function crosses (cellvalue, options, rowdata)
     {
       case 0: // Total orders
         if (cellvalue[cross_idx[i]] != 0.0)
-          result += cellvalue[cross_idx[i]] + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail0'></span><br>";
+          result += cellvalue[cross_idx[i]] + "<span class='context cross fa fa-caret-square-o-right' role='detail0'></span><br>";
         else
           result += '0.0<br>';
         break;
       case 1: // Open orders
         if (cellvalue[cross_idx[i]] != 0.0)
-          result += cellvalue[cross_idx[i]] + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail1'></span><br>";
+          result += cellvalue[cross_idx[i]] + "<span class='context fa fa-caret-square-o-right' role='detail1'></span><br>";
         else
           result += '0.0<br>';
         break;
@@ -435,7 +435,7 @@ function crosses (cellvalue, options, rowdata)
         if (cellvalue[11] == 1)
         {
           if (cellvalue[cross_idx[i]] != 0.0)
-            result += (Math.round(cellvalue[cross_idx[i]]*10)/10) + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail9'></span><br>";
+            result += (Math.round(cellvalue[cross_idx[i]]*10)/10) + "<span class='context cross fa fa-caret-square-o-right' role='detail9'></span><br>";
           else
             result += '0<br>';
         }
