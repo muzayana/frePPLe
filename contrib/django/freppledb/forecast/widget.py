@@ -11,12 +11,189 @@
 from datetime import datetime
 from urllib.parse import urlencode
 
+from django.conf import settings
 from django.db import connections
 from django.http import HttpResponse
 from django.utils.html import escape
 from django.utils.translation import ugettext_lazy as _
 
 from freppledb.common.dashboard import Dashboard, Widget
+
+
+class ForecastWidget(Widget):
+  '''
+  Forecast overview graph
+  '''
+  name = "forecast"
+  title = _("forecast")
+  tooltip = _("Show the value of all sales order and forecast")
+  permissions = (("view_forecast_report", "Can view forecast report"),)
+  asynchronous = True
+  history = 12
+  future = 12
+
+  def args(self):
+    return "?%s" % urlencode({'history': self.history, 'future': self.future})
+
+  javascript = '''
+    var margin_y = 50;  // Width allocated for the Y-axis
+    var margin_x = 60;  // Height allocated for the X-axis
+    var svg = d3.select("#forecast");
+    var svgrectangle = document.getElementById("forecast").getBoundingClientRect();
+
+    // Collect the data
+    var domain_x = [];
+    var data = [];
+    var max_val = 0;
+    $("#forecast").next().find("tr").each(function() {
+      var row = [];
+      $("td", this).each(function() {
+        if (row.length == 0) {
+          domain_x.push($(this).html());
+          row.push($(this).html());
+        }
+        else {
+          var val = parseFloat($(this).html());
+          row.push(val);
+          if (val > max_val)
+            max_val = val;
+        }
+      });
+      data.push(row);
+    });
+
+    // Define axis
+    var x = d3.scale.ordinal()
+      .domain(domain_x)
+      .rangeRoundBands([0, svgrectangle['width'] - margin_y - 10], 0);
+    var x_width = svgrectangle['width'] / data.length;
+    var y = d3.scale.linear()
+      .range([svgrectangle['height'] - margin_x - 10, 0])
+      .domain([0, max_val]);
+    var y_zero = y(0);
+
+    var bar = svg.selectAll("g")
+     .data(data)
+     .enter()
+     .append("g")
+     .attr("transform", function(d, i) { return "translate(" + ((i) * x.rangeBand() + margin_y) + ",10)"; });
+
+    // Draw x-axis
+    var xAxis = d3.svg.axis().scale(x)
+        .orient("bottom").ticks(5);
+
+    svg.append("g")
+      .attr("transform", "translate(" + margin_y  + ", " + (svgrectangle['height'] - margin_x) +" )")
+      .attr("class", "x axis")
+      .call(xAxis)
+      .selectAll("text")
+      .style("text-anchor", "end")
+      .attr("dx", "-.75em")
+      .attr("dy", "-.25em")
+      .attr("transform", "rotate(-90)" );
+
+    // Draw y-axis
+    var yAxis = d3.svg.axis().scale(y)
+        .orient("left")
+        .ticks(5)
+        .tickFormat(d3.format("s"));
+    svg.append("g")
+      .attr("transform", "translate(" + margin_y + ", 10 )")
+      .attr("class", "y axis")
+      .call(yAxis);
+
+    // Draw the closed orders
+    bar.append("rect")
+      .attr("y", function(d) {return y(d[2]-d[3]);})
+      .attr("height", function(d) {return y_zero - y(d[2]-d[3]);})
+      .attr("rx","1")
+      .attr("width", x_width - 4)
+      .style("fill", "#FFC000");
+
+    // Draw the open orders
+    bar.append("rect")
+      .attr("y", function(d) {return y(d[2]);})
+      .attr("height", function(d) {return y(d[3]) - y(d[2]);})
+      .attr("rx","1")
+      .attr("width", x_width - 4)
+      .style("fill", "#828915");
+
+    // Draw invisible rectangles for the hoverings
+    bar.append("rect")
+      .attr("height", svgrectangle['height'] - 10 - margin_x)
+      .attr("width", x.rangeBand())
+      .attr("fill-opacity", 0)
+      .on("mouseover", function(d) {
+        $("#forecast_tooltip").css("display", "block").html(
+          d[0] + "<br>%s"
+          + d[1] + "%s forecast<br>%s"
+          + (d[2]-d[3]) + "%s closed sales orders<br>%s"
+          + d[3] + "%s open sales orders");
+        })
+      .on("mousemove", function(){
+        $("#forecast_tooltip").css("top", (event.clientY+5) + "px").css("left", (event.clientX+5) + "px");
+        })
+      .on("mouseout", function(){
+        $("#forecast_tooltip").css("display", "none");
+        });
+
+    // Draw the forecast line
+    var line = d3.svg.line()
+      .x(function(d) { return x(d[0]) + x.rangeBand() / 2; })
+      .y(function(d) { return y(d[1]); });
+
+    svg.append("svg:path")
+      .attr("transform", "translate(" + margin_y + ", 10 )")
+      .attr('class', 'graphline')
+      .attr("stroke","#8BBA00")
+      .attr("d", line(data));
+    ''' % (settings.CURRENCY[0], settings.CURRENCY[1], settings.CURRENCY[0], settings.CURRENCY[1], settings.CURRENCY[0], settings.CURRENCY[1])
+
+  @classmethod
+  def render(cls, request=None):
+    cursor = connections[request.database].cursor()
+    try:
+      cursor.execute("SELECT value FROM common_parameter where name='currentdate'")
+      curdate = datetime.strptime(cursor.fetchone()[0], "%Y-%m-%d %H:%M:%S")
+    except:
+      curdate = datetime.now().replace(microsecond=0)
+    history = int(request.GET.get('history', cls.history))
+    future = int(request.GET.get('future', cls.future))
+    result = [
+      '<svg class="chart" id="forecast" style="width:100%; height: 100%"></svg>',
+      '<table style="display:none">'
+      ]
+    query = '''
+      select common_bucketdetail.name, round(fcst), round(orderstotal), round(ordersopen)
+      from
+        (
+        select
+          startdate,
+          sum(greatest(forecasttotalvalue,0)) fcst,
+          sum(greatest(orderstotalvalue + coalesce(ordersadjustmentvalue,0),0)) orderstotal,
+          sum(greatest(ordersopenvalue,0)) ordersopen
+        from forecastplan
+        inner join forecast
+          on forecastplan.forecast_id = forecast.name
+        where forecast.planned = true
+          and startdate < %s + interval '%s month'
+          and startdate > %s - interval '%s month'
+        group by startdate
+        ) recs
+      inner join common_bucketdetail
+        on common_bucketdetail.bucket_id = 'month' and common_bucketdetail.startdate = recs.startdate
+      order by recs.startdate
+      '''
+    cursor.execute(query, (curdate, future, curdate, history))
+    for res in cursor.fetchall():
+      result.append('<tr><td class="name">%s</td><td>%.1f</td><td>%.1f</td><td>%.1f</td></tr>' % (
+        escape(res[0]), res[1], res[2], res[3]
+        ))
+    result.append('</table>')
+    result.append('<div id="forecast_tooltip" class="tooltip-inner" style="display: none; z-index:10000; position:fixed"></div>')
+    return HttpResponse('\n'.join(result))
+
+Dashboard.register(ForecastWidget)
 
 
 class ForecastAccuracyWidget(Widget):
@@ -27,6 +204,7 @@ class ForecastAccuracyWidget(Widget):
   forecast quantity.
 
   TODO: SQL query contains a hardcoded assumption on monthly time buckets
+  TODO: SQL query considers planned forecasts, while error may only relevant at specific levels
   '''
   name = "forecast_error"
   title = _("Forecast error")
@@ -138,7 +316,11 @@ class ForecastAccuracyWidget(Widget):
           greatest(forecasttotal,0) fcst,
           greatest(orderstotal + coalesce(ordersadjustment,0),0) orders
         from forecastplan
-        where startdate < %s and startdate > %s - interval '%s month'
+        inner join forecast
+          on forecastplan.forecast_id = forecast.name
+        where startdate < %s
+          and startdate > %s - interval '%s month'
+          and forecast.planned = true
         ) recs
       inner join common_bucketdetail
         on common_bucketdetail.bucket_id = 'month' and common_bucketdetail.startdate = recs.startdate

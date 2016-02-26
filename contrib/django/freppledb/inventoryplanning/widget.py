@@ -79,8 +79,7 @@ class StockoutRiskWidget(Widget):
           .html(d[0] + "<br>" + d[2] + " " + titles[2] + "<br>" + d[3] + " " + titles[3] + "<br>" + d[4] + " " + titles[4]);
         })
       .on("mousemove", function(){
-        var pos = $("#invAnalysis").offset();
-        $("#invanalysis_tooltip").css("top", (event.pageY-pos.top+$("#invAnalysis").height())+"px").css("left",(event.pageX-pos.left)+"px");
+        $("#invanalysis_tooltip").css("top", (event.clientY+5) + "px").css("left", (event.clientX+5) + "px");
         })
       .on("mouseout", function(){
         $("#invanalysis_tooltip").css("display", "none")
@@ -133,7 +132,7 @@ class StockoutRiskWidget(Widget):
       db = DEFAULT_DB_ALIAS
     cursor = connections[db].cursor()
     result = [
-      '<div id="invanalysis_tooltip" class="tooltip-inner" style="display: none; z-index:10000; position:absolute;"></div>',
+      '<div id="invanalysis_tooltip" class="tooltip-inner" style="display: none; z-index:10000; position:fixed;"></div>',
       '<svg class="chart" id="invAnalysis" style="width:100%; height: 250px;"></svg>',
       '<table style="display:none"><thead>',
       '<tr><th>location</th><th>total</th>',
