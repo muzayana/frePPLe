@@ -65,22 +65,22 @@ def measure(param, loglevel):
     Iterations=15,
     Skip=5,
     SingleExponential_minAlfa=0.01,
-    SingleExponential_maxAlfa=0.8,
+    SingleExponential_maxAlfa=0.65,
     DoubleExponential_minAlfa=0.01,
     DoubleExponential_maxAlfa=0.8,
     DoubleExponential_minGamma=0.01,
     DoubleExponential_maxGamma=0.8,
     DoubleExponential_dampenTrend=0.8,
     Seasonal_minAlfa=0.02,
-    Seasonal_maxAlfa=0.25,
+    Seasonal_maxAlfa=0.8,
     Seasonal_minBeta=0.02,
-    Seasonal_maxBeta=0.25,
-    Seasonal_gamma=0.03,
+    Seasonal_maxBeta=0.10,
+    Seasonal_gamma=0.10,
     Seasonal_minPeriod=2,
     Seasonal_maxPeriod=15,
-    Seasonal_minAutocorrelation=0.5,
-    Seasonal_maxAutocorrelation=0.8,
-    Seasonal_dampenTrend=0.7,
+    Seasonal_minAutocorrelation=0.45,
+    Seasonal_maxAutocorrelation=0.60,
+    Seasonal_dampenTrend=0.8,
     Outlier_maxDeviation=2
     )
 
@@ -191,11 +191,9 @@ def measure(param, loglevel):
 
 # ACTUAL TEST
 result = measure(0, 2)
-if round(result[0]['1'] / result[1]['1'], 2) > 9.70:
+if round(result[0]['1'] / result[1]['1'], 2) > 9.04:
   raise Exception("Failure: Short term forecast error is higher than expected.")
-if round(result[0]['total'] / result[1]['total'], 2) > 18.80:
-  raise Exception("Failure: Long term forecast error is higher than expected.")
-if round(result[0]['total'] / result[1]['total'], 2) > 14.08:
+if round(result[0]['total'] / result[1]['total'], 2) > 13.51:
   raise Exception("Failure: Long term forecast error is higher than expected.")
 print("Forecast errors are matching our expected scrore.")
 
