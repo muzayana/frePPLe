@@ -256,7 +256,7 @@ class ForecastAccuracyWidget(Widget):
       .attr("width", x.rangeBand())
       .attr("fill-opacity", 0)
       .on("mouseover", function(d) { $("#fcst_tooltip").css("display", "block").html(d[0] + " " + d[1] + "%") })
-      .on("mousemove", function(){ $("#fcst_tooltip").css("top", (event.pageY-10)+"px").css("left",(event.pageX+10)+"px"); })
+      .on("mousemove", function(){ $("#fcst_tooltip").css("top", (event.clientY+5)+"px").css("left",(event.clientX+5)+"px"); })
       .on("mouseout", function(){ $("#fcst_tooltip").css("display", "none") });
 
     // Draw x-axis
@@ -334,7 +334,7 @@ class ForecastAccuracyWidget(Widget):
         escape(res[0]), res[1]
         ))
     result.append('</table>')
-    result.append('<div id="fcst_tooltip" style="display: none; z-index:10; position:absolute; color:black">etrere</div>')
+    result.append('<div id="fcst_tooltip" class="tooltip-inner" style="display: none; z-index:10000; position:fixed"></div>')
     return HttpResponse('\n'.join(result))
 
 Dashboard.register(ForecastAccuracyWidget)
