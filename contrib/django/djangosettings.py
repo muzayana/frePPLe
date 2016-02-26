@@ -401,6 +401,7 @@ DEFAULT_DASHBOARD = [
   ]},
   { 'rowname': 'Sales', 'cols': [
     {'width':9, 'widgets':[
+      ("forecast", {"history": 12, "future": 12}),
       ("late_orders",{"limit":20}),
       ("short_orders",{"limit":20}),
     ]},

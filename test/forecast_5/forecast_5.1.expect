@@ -180,10 +180,10 @@
 					<total>1</total>
 				</bucket>
 				<bucket xsi:type="demand_forecastbucket">
-					<quantity>1</quantity>
+					<quantity>2</quantity>
 					<start>2009-02-01T00:00:00</start>
 					<end>2009-03-01T00:00:00</end>
-					<total>1</total>
+					<total>2</total>
 				</bucket>
 				<bucket xsi:type="demand_forecastbucket">
 					<quantity>1</quantity>
@@ -192,10 +192,10 @@
 					<total>1</total>
 				</bucket>
 				<bucket xsi:type="demand_forecastbucket">
-					<quantity>1</quantity>
+					<quantity>2</quantity>
 					<start>2009-04-01T00:00:00</start>
 					<end>2009-05-01T00:00:00</end>
-					<total>1</total>
+					<total>2</total>
 				</bucket>
 				<bucket xsi:type="demand_forecastbucket">
 					<quantity>1</quantity>
@@ -236,10 +236,10 @@
 					<total>43</total>
 				</bucket>
 				<bucket xsi:type="demand_forecastbucket">
-					<quantity>43</quantity>
+					<quantity>42</quantity>
 					<start>2009-03-01T00:00:00</start>
 					<end>2009-04-01T00:00:00</end>
-					<total>43</total>
+					<total>42</total>
 				</bucket>
 				<bucket xsi:type="demand_forecastbucket">
 					<quantity>43</quantity>
@@ -342,16 +342,16 @@
 					<total>20</total>
 				</bucket>
 				<bucket xsi:type="demand_forecastbucket">
-					<quantity>31</quantity>
+					<quantity>30</quantity>
 					<start>2009-04-01T00:00:00</start>
 					<end>2009-05-01T00:00:00</end>
-					<total>31</total>
+					<total>30</total>
 				</bucket>
 				<bucket xsi:type="demand_forecastbucket">
-					<quantity>22</quantity>
+					<quantity>20</quantity>
 					<start>2009-05-01T00:00:00</start>
 					<end>2009-06-01T00:00:00</end>
-					<total>22</total>
+					<total>20</total>
 				</bucket>
 				<bucket xsi:type="demand_forecastbucket">
 					<quantity>0</quantity>
