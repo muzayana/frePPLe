@@ -1155,7 +1155,10 @@ var dashboard = {
 
     $(".cockpitcolumn").each( function() {
       Sortable.create($(this)[ 0 ], {
-        group: "test",
+        onEnd: function (e) {
+          dashboard.save();
+        },
+        group: "widgets",
         animation: 100
       });
     });
