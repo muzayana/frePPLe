@@ -194,48 +194,10 @@ void InventoryPlanningSolver::solve(void* v)
     logger << "End inventory planning solver" << endl;
 }
 
-
-void InventoryPlanningSolver::solve(const Buffer* b, void* v)
-{
-  short loglevel = getLogLevel();
-  if (loglevel > 1)
-    logger << "Inventory planning solver on buffer " << b << endl;
-
-  // Inventory planning parameters of this buffer
-  double leadtime_deviation = b->getDoubleProperty("leadtime_deviation", 0.0);
-  double demand_deviation = b->getDoubleProperty("demand_deviation", 0.0);
-  string roq_type = b->getStringProperty("roq_type", "combined");
-  string ss_type = b->getStringProperty("ss_type", "combined");
-  bool nostock = b->getBoolProperty("nostock", false);
-  if (nostock)
-  {
-    roq_type = "nostock";
-    ss_type = "nostock";
-  }
-  double roq_min_qty = b->getDoubleProperty("roq_min_qty", 1);
-  double roq_max_qty = b->getDoubleProperty("roq_max_qty", DBL_MAX);
-  Duration roq_min_poc = static_cast<long>(b->getDoubleProperty("roq_min_poc", 0) * 86400);
-  Duration roq_max_poc = static_cast<long>(b->getDoubleProperty("roq_max_poc", 10 * 365) * 86400);
-  double roq_multiple = b->getDoubleProperty("roq_multiple", 1);
-  string distname = b->getStringProperty("distribution", "Automatic");
-  distribution dist = matchDistributionName(distname);
-  double service_level = b->getDoubleProperty("service_level", 0.0);
-  if (service_level < 0)
-    service_level = 0;
-  if (service_level >= 100)
-    service_level = 99.99;
-  double ss_min_qty = b->getDoubleProperty("ss_min_qty", 0);
-  double ss_max_qty = b->getDoubleProperty("ss_max_qty", DBL_MAX);
-  double ss_multiple = b->getDoubleProperty("ss_multiple", 1);
-  Duration ss_min_poc = static_cast<long>(b->getDoubleProperty("ss_min_poc", 0) * 86400);
-  Duration ss_max_poc = static_cast<long>(b->getDoubleProperty("ss_max_poc", 3650) * 86400);
-  double price = 0.0;
-  if (b->getItem())
-    price = b->getItem()->getPrice();
-
-  // Get the lead time from the operation replenishing this buffer
-  Duration leadtime;
-  Operation *oper = b->getProducingOperation();
+Duration InventoryPlanningSolver::getBufferLeadTime(const Buffer* b) {
+	Duration leadtime;
+	short loglevel = getLogLevel();
+	Operation *oper = b->getProducingOperation();
   if (!oper)
   {
     if (loglevel > 1)
@@ -294,6 +256,50 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
     // After all special cases, the normal case of an operation with a fixed duration
     leadtime = static_cast<OperationFixedTime*>(oper)->getDuration();
 
+  return leadtime;
+}
+
+void InventoryPlanningSolver::solve(const Buffer* b, void* v)
+{
+  short loglevel = getLogLevel();
+  if (loglevel > 1)
+    logger << "Inventory planning solver on buffer " << b << endl;
+
+  // Inventory planning parameters of this buffer
+  double leadtime_deviation = b->getDoubleProperty("leadtime_deviation", 0.0);
+  double demand_deviation = b->getDoubleProperty("demand_deviation", 0.0);
+  string roq_type = b->getStringProperty("roq_type", "combined");
+  string ss_type = b->getStringProperty("ss_type", "combined");
+  bool nostock = b->getBoolProperty("nostock", false);
+  if (nostock)
+  {
+    roq_type = "nostock";
+    ss_type = "nostock";
+  }
+  double roq_min_qty = b->getDoubleProperty("roq_min_qty", 1);
+  double roq_max_qty = b->getDoubleProperty("roq_max_qty", DBL_MAX);
+  Duration roq_min_poc = static_cast<long>(b->getDoubleProperty("roq_min_poc", 0) * 86400);
+  Duration roq_max_poc = static_cast<long>(b->getDoubleProperty("roq_max_poc", 10 * 365) * 86400);
+  double roq_multiple = b->getDoubleProperty("roq_multiple", 1);
+  string distname = b->getStringProperty("distribution", "Automatic");
+  distribution dist = matchDistributionName(distname);
+  double service_level = b->getDoubleProperty("service_level", 0.0);
+  if (service_level < 0)
+    service_level = 0;
+  if (service_level >= 100)
+    service_level = 99.99;
+  double ss_min_qty = b->getDoubleProperty("ss_min_qty", 0);
+  double ss_max_qty = b->getDoubleProperty("ss_max_qty", DBL_MAX);
+  double ss_multiple = b->getDoubleProperty("ss_multiple", 1);
+  Duration ss_min_poc = static_cast<long>(b->getDoubleProperty("ss_min_poc", 0) * 86400);
+  Duration ss_max_poc = static_cast<long>(b->getDoubleProperty("ss_max_poc", 3650) * 86400);
+  double price = 0.0;
+  if (b->getItem())
+    price = b->getItem()->getPrice();
+
+  // Get the lead time from the operation replenishing this buffer
+  Duration leadtime = getBufferLeadTime(b);
+
   // Report parameter settings
   if (loglevel > 1)
   {
@@ -332,6 +338,7 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
 
   // Prepare the calendars to retrieve the results
   Calendar *roq_calendar = NULL;
+  Operation *oper = b->getProducingOperation();
   if (oper)
     roq_calendar = oper->getSizeMinimumCalendar();
   if (!roq_calendar)
@@ -729,6 +736,66 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
     const_cast<Buffer*>(b)->setMinimumCalendar(NULL);
   const_cast<Buffer*>(b)->setMinimumCalendar(ss_calendar);
 }
+
+
+double InventoryPlanningSolver::computeStockOutProbability(const Buffer* b){
+
+	Duration leadtime = getBufferLeadTime(b);
+	Date currentDate = Plan::instance().getCurrent();
+	double stockOutProbability, maxStockOutProbability = 0;
+
+
+	for (Calendar::EventIterator tmp(cal, currentDate, true);;
+		++tmp)
+	{
+		Date bucketStart;
+		Date bucketEnd = tmp.getDate();
+		
+		// We are before current, let's move on
+		if (bucketEnd <= currentDate) {
+			bucketStart = bucketEnd;
+			continue;
+		}
+
+		// We perform the bucket where the leadtime falls and then we stop
+		if (bucketStart >= currentDate + leadtime)
+			break;
+
+		// on_hand at the end of the bucket
+		double on_hand = b->getOnHand(bucketEnd);
+		// If on-hand at end of bucket is 0, no need to go further
+		// StockOut probability is 100% whatever the demand is
+		if (on_hand = 0) {
+			return 1;
+		}	
+
+		double demand = 0;
+		//for the current bucket, we need to find out the demand
+		for (Buffer::flowplanlist::const_iterator i = b->getFlowPlans().begin();
+			i != b->getFlowPlans().end(); ++i) {
+				// Only consider consumption
+				if (i->getEventType() != 1 || i->getQuantity() >= 0)
+					continue;
+				// Calculate quantity or remaining quantity if current date is not at the beginning of month
+				if (i->getDate() >= max(bucketStart,currentDate) &&  i->getDate() < bucketEnd)
+					demand -= i->getQuantity();
+		}
+
+		// If there is no demand for that bucket, the stockout probability is 0%
+		// so we can go to next bucket
+		if (demand = 0)
+			continue;
+		else
+			// on_hand is the TSL so ROP = TSL-1 and ROQ = 1
+			stockOutProbability = 1 - calculateFillRate(demand,demand,int(on_hand)-1,1,AUTOMATIC);
+		maxStockOutProbability = max(maxStockOutProbability,stockOutProbability);
+
+		bucketStart = bucketEnd;
+	}
+
+	return maxStockOutProbability;
+}
+
 
 
 /************************************************************************************************************

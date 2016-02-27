@@ -149,6 +149,8 @@ class InventoryPlanningSolver : public Solver
 
     virtual void solve(void* = NULL);
     virtual void solve(const Buffer*,void* = NULL);
+	virtual double computeStockOutProbability(const Buffer*);
+	virtual Duration getBufferLeadTime(const Buffer*);
 
     template<class Cls> static inline void registerFields(MetaClass* m)
     {
@@ -164,6 +166,8 @@ class InventoryPlanningSolver : public Solver
   static distribution chooseDistribution(double mean, double variance);
   static int calulateStockLevel(double mean, double variance, int roq, double fillRateMinimum, double fillRateMaximum, bool minimumStrongest, distribution dist);
   static double calculateFillRate(double mean, double variance, int rop, int roq, distribution dist);
+  
+  
 };
 
 
