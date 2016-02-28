@@ -68,9 +68,9 @@ function reslistfmt(cellvalue, options, row)
 treeGridModel: 'adjacency',
 ExpandColumn: 'depth',
 treeIcons: {
-  plus:'ui-icon-circle-triangle-e',
-  minus:'ui-icon-circle-triangle-s',
-  leaf:'ui-icon-radio-off'
+  plus:'fa-caret-right',
+  minus:'fa-caret-left',
+  leaf:'fa-leaf'
   },
 tree_root_level: 0,
 treeReader: {
@@ -89,7 +89,6 @@ resizeStop: gantt.redraw,
 <span id="move_in" onclick="gantt.zoom(1,-86400000)" title="{% filter capfirst|force_escape %}{% trans 'move in' context 'Gantt' %}{% endfilter %}" class="fa fa-backward fa-lg"></span>&nbsp;&nbsp;
 <span id="move_out" onclick="gantt.zoom(1,86400000)" title="{% filter capfirst|force_escape %}{% trans 'move out' context 'Gantt' %}{% endfilter %}" class="fa fa-forward fa-lg"></span>&nbsp;&nbsp;
 <span id="reset" onclick="gantt.reset()" title="{% trans 'reset'|capfirst|force_escape %}" class="fa fa-stop fa-lg"></span>
-<span onclick="grid.showCustomize(false)" title="{% trans 'customize'|capfirst|force_escape %}" class="fa fa-wrench fa-lg"></span>
 {% endblock %}
 
 {% block tools %}{% tabs "input.demand" %}{% endblock %}
