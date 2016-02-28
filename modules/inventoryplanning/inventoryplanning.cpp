@@ -740,9 +740,15 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
 
 double InventoryPlanningSolver::computeStockOutProbability(const Buffer* b){
 
+	short loglevel = getLogLevel();
+	if (loglevel > 1)
+		logger << "Computing stockout probability on buffer " << b << endl;
+
+
 	Duration leadtime = getBufferLeadTime(b);
 	Date currentDate = Plan::instance().getCurrent();
 	double stockOutProbability, maxStockOutProbability = 0;
+	double demand = 0;
 
 
 	for (Calendar::EventIterator tmp(cal, currentDate, true);;
@@ -750,7 +756,7 @@ double InventoryPlanningSolver::computeStockOutProbability(const Buffer* b){
 	{
 		Date bucketStart;
 		Date bucketEnd = tmp.getDate();
-		
+
 		// We are before current, let's move on
 		if (bucketEnd <= currentDate) {
 			bucketStart = bucketEnd;
@@ -761,34 +767,42 @@ double InventoryPlanningSolver::computeStockOutProbability(const Buffer* b){
 		if (bucketStart >= currentDate + leadtime)
 			break;
 
-		// on_hand at the end of the bucket
-		double on_hand = b->getOnHand(bucketEnd);
+		// on_hand at the end of the bucket or at the leadtime
+		double on_hand = b->getOnHand(min(bucketEnd,currentDate+leadtime));
 		// If on-hand at end of bucket is 0, no need to go further
 		// StockOut probability is 100% whatever the demand is
-		if (on_hand = 0) {
+		if (on_hand <= 0) {
 			return 1;
 		}	
 
-		double demand = 0;
 		//for the current bucket, we need to find out the demand
 		for (Buffer::flowplanlist::const_iterator i = b->getFlowPlans().begin();
 			i != b->getFlowPlans().end(); ++i) {
 				// Only consider consumption
 				if (i->getEventType() != 1 || i->getQuantity() >= 0)
 					continue;
-				// Calculate quantity or remaining quantity if current date is not at the beginning of month
-				if (i->getDate() >= max(bucketStart,currentDate) &&  i->getDate() < bucketEnd)
+				// Calculate quantity or remaining quantity if current date is not at the beginning of month until leadtime
+				if (i->getDate() >= max(bucketStart,currentDate) &&  i->getDate() < min(bucketEnd,currentDate+leadtime))
 					demand -= i->getQuantity();
 		}
 
-		// If there is no demand for that bucket, the stockout probability is 0%
+		// If there is no demand so far, the stockout probability is 0%
 		// so we can go to next bucket
 		if (demand = 0)
 			continue;
 		else
 			// on_hand is the TSL so ROP = TSL-1 and ROQ = 1
 			stockOutProbability = 1 - calculateFillRate(demand,demand,int(on_hand)-1,1,AUTOMATIC);
+
+
+		if (loglevel > 2)
+			logger << "Stockout probability for bucket starting on " << bucketStart << " : " << stockOutProbability << endl;
+
+
 		maxStockOutProbability = max(maxStockOutProbability,stockOutProbability);
+
+		if (loglevel > 2)
+			logger << "Greatest stockout probability so far : " << maxStockOutProbability << endl;
 
 		bucketStart = bucketEnd;
 	}
