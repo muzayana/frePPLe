@@ -848,13 +848,19 @@ class GridReport(View):
       if 'sord' in request.GET:
         sord = request.GET.get('sord')
       elif prefs:
-        sord = prefs.get('sord', reportclass.default_sort[1])
+        sord = prefs.get(
+          'sord',
+          reportclass.default_sort[1] if reportclass.default_sort else None
+          )
       else:
         sord = reportclass.default_sort[1] if reportclass.default_sort else None
       if 'sidx' in request.GET:
         sidx = request.GET.get('sidx')
       elif prefs:
-        sidx = prefs.get('sidx', reportclass.rows[reportclass.default_sort[0]].name)
+        sidx = prefs.get(
+          'sidx',
+          reportclass.rows[reportclass.default_sort[0]].name if reportclass.default_sort else None
+          )
       else:
         sidx = reportclass.rows[reportclass.default_sort[0]].name if reportclass.default_sort else None
       context = {
