@@ -49,7 +49,12 @@ int InventoryPlanningSolver::initialize()
   x.supportgetattro();
   x.supportsetattro();
   x.supportcreate(create);
-  x.addMethod("solve", Solver::solve, METH_NOARGS, "run the solver");
+  x.addMethod(
+    "computeStockoutProbability",
+    computeStockoutProbability,
+    METH_VARARGS,
+    "compute the risk of a stockout within the lead time"
+    );
   const_cast<MetaClass*>(metadata)->pythonClass = x.type_object();
   return x.typeReady();
 }
@@ -194,10 +199,11 @@ void InventoryPlanningSolver::solve(void* v)
     logger << "End inventory planning solver" << endl;
 }
 
-Duration InventoryPlanningSolver::getBufferLeadTime(const Buffer* b) {
-	Duration leadtime;
-	short loglevel = getLogLevel();
-	Operation *oper = b->getProducingOperation();
+Duration InventoryPlanningSolver::getBufferLeadTime(const Buffer* b)
+{
+  Duration leadtime;
+  short loglevel = getLogLevel();
+  Operation *oper = b->getProducingOperation();
   if (!oper)
   {
     if (loglevel > 1)
@@ -740,76 +746,103 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
 
 double InventoryPlanningSolver::computeStockOutProbability(const Buffer* b){
 
-	short loglevel = getLogLevel();
-	if (loglevel > 1)
-		logger << "Computing stockout probability on buffer " << b << endl;
+  short loglevel = getLogLevel();
+  if (loglevel > 1)
+    logger << "Computing stockout probability on buffer " << b << endl;
 
 
-	Duration leadtime = getBufferLeadTime(b);
-	Date currentDate = Plan::instance().getCurrent();
-	double stockOutProbability, maxStockOutProbability = 0;
-	double demand = 0;
+  Duration leadtime = getBufferLeadTime(b);
+  Date currentDate = Plan::instance().getCurrent();
+  double stockOutProbability, maxStockOutProbability = 0;
+  double demand = 0;
 
 
-	for (Calendar::EventIterator tmp(cal, currentDate, true);;
-		++tmp)
-	{
-		Date bucketStart;
-		Date bucketEnd = tmp.getDate();
+  Date bucketStart;
+  for (Calendar::EventIterator tmp(cal, currentDate, true);;
+    ++tmp)
+  {
+    Date bucketEnd = tmp.getDate();
 
-		// We are before current, let's move on
-		if (bucketEnd <= currentDate) {
-			bucketStart = bucketEnd;
-			continue;
-		}
+    // We are before current, let's move on
+    if (bucketEnd <= currentDate)
+    {
+      bucketStart = bucketEnd;
+      continue;
+    }
 
-		// We perform the bucket where the leadtime falls and then we stop
-		if (bucketStart >= currentDate + leadtime)
-			break;
+    // We perform the bucket where the leadtime falls and then we stop
+    if (bucketStart >= currentDate + leadtime)
+      break;
 
-		// on_hand at the end of the bucket or at the leadtime
-		double on_hand = b->getOnHand(min(bucketEnd,currentDate+leadtime));
-		// If on-hand at end of bucket is 0, no need to go further
-		// StockOut probability is 100% whatever the demand is
-		if (on_hand <= 0) {
-			return 1;
-		}	
+    // on_hand at the end of the bucket or at the leadtime
+    double on_hand = b->getOnHand(min(bucketEnd,currentDate+leadtime));
+    // If on-hand at end of bucket is 0, no need to go further
+    // StockOut probability is 100% whatever the demand is
+    if (on_hand <= 0) {
+      return 1;
+    }
 
-		//for the current bucket, we need to find out the demand
-		for (Buffer::flowplanlist::const_iterator i = b->getFlowPlans().begin();
-			i != b->getFlowPlans().end(); ++i) {
-				// Only consider consumption
-				if (i->getEventType() != 1 || i->getQuantity() >= 0)
-					continue;
-				// Calculate quantity or remaining quantity if current date is not at the beginning of month until leadtime
-				if (i->getDate() >= max(bucketStart,currentDate) &&  i->getDate() < min(bucketEnd,currentDate+leadtime))
-					demand -= i->getQuantity();
-		}
+    //for the current bucket, we need to find out the demand
+    for (Buffer::flowplanlist::const_iterator i = b->getFlowPlans().begin();
+      i != b->getFlowPlans().end(); ++i) {
+        // Only consider consumption
+        if (i->getEventType() != 1 || i->getQuantity() >= 0)
+          continue;
+        // Calculate quantity or remaining quantity if current date is not at the beginning of month until leadtime
+        if (i->getDate() >= max(bucketStart,currentDate) &&  i->getDate() < min(bucketEnd,currentDate+leadtime))
+          demand -= i->getQuantity();
+    }
 
-		// If there is no demand so far, the stockout probability is 0%
-		// so we can go to next bucket
-		if (demand = 0)
-			continue;
-		else
-			// on_hand is the TSL so ROP = TSL-1 and ROQ = 1
-			stockOutProbability = 1 - calculateFillRate(demand,demand,int(on_hand)-1,1,AUTOMATIC);
-
-
-		if (loglevel > 2)
-			logger << "Stockout probability for bucket starting on " << bucketStart << " : " << stockOutProbability << endl;
+    // If there is no demand so far, the stockout probability is 0%
+    // so we can go to next bucket
+    if (demand = 0)
+      continue;
+    else
+      // on_hand is the TSL so ROP = TSL-1 and ROQ = 1
+      stockOutProbability = 1 - calculateFillRate(demand,demand,int(on_hand)-1,1,AUTOMATIC);
 
 
-		maxStockOutProbability = max(maxStockOutProbability,stockOutProbability);
+    if (loglevel > 2)
+      logger << "Stockout probability for bucket starting on " << bucketStart << " : " << stockOutProbability << endl;
 
-		if (loglevel > 2)
-			logger << "Greatest stockout probability so far : " << maxStockOutProbability << endl;
 
-		bucketStart = bucketEnd;
-	}
+    maxStockOutProbability = max(maxStockOutProbability,stockOutProbability);
 
-	return maxStockOutProbability;
+    if (loglevel > 2)
+      logger << "Greatest stockout probability so far : " << maxStockOutProbability << endl;
+
+    bucketStart = bucketEnd;
+  }
+
+  return maxStockOutProbability;
 }
 
+
+PyObject* InventoryPlanningSolver::computeStockoutProbability(PyObject *self, PyObject *args)
+{
+  // Parse the argument
+  PyObject *buf = NULL;
+  if (args && !PyArg_ParseTuple(args, "|O:computeStockoutRisk", &buf))
+    return NULL;
+  if (buf && !PyObject_TypeCheck(buf, Buffer::metadata->pythonClass))
+  {
+    PyErr_SetString(PythonDataException, "solve(d) argument must be a buffer");
+    return NULL;
+  }
+
+  try
+  {
+    InventoryPlanningSolver *solver = static_cast<InventoryPlanningSolver*>(self);
+    return Py_BuildValue(
+      "d", solver->computeStockOutProbability(static_cast<Buffer*>(buf))
+      );
+  }
+  catch(...)
+  {
+    PythonType::evalException();
+    return NULL;
+  }
+}
 
 
 /************************************************************************************************************
@@ -832,26 +865,26 @@ int InventoryPlanningSolver::calulateStockLevel(
   double fillRateMaximum, bool minimumStrongest, distribution dist
   )
 {
-	/* Checks that the fill rates are between 0 and 1*/
-	if (fillRateMinimum < 0)
-		fillRateMinimum = 0;
+  /* Checks that the fill rates are between 0 and 1*/
+  if (fillRateMinimum < 0)
+    fillRateMinimum = 0;
 
-	if (fillRateMaximum > 1)
-		fillRateMaximum = 1;
-	// TODO Below code is definitely not optimal, we might think of coding a dichotomical approach
-	// or think of a formula giving the stock level based on the fill rate without iterating
-	unsigned int rop = static_cast<int>(floor(mean));
-	double fillRate;
+  if (fillRateMaximum > 1)
+    fillRateMaximum = 1;
+  // TODO Below code is definitely not optimal, we might think of coding a dichotomical approach
+  // or think of a formula giving the stock level based on the fill rate without iterating
+  unsigned int rop = static_cast<int>(floor(mean));
+  double fillRate;
 
   // Compute the fill rate, either based on the average inventory or based on the safety stock only
   while ((fillRate = calculateFillRate(mean, variance, rop, service_level_on_average_inventory ? roq : 1, dist)) < fillRateMinimum)
     ++rop;
 
-	// Now we are sure the that lower bound is respected, what about the upper bound
-	if (minimumStrongest == true || fillRate <= fillRateMaximum)
-		return rop;
-	else
-		return rop - 1;
+  // Now we are sure the that lower bound is respected, what about the upper bound
+  if (minimumStrongest == true || fillRate <= fillRateMaximum)
+    return rop;
+  else
+    return rop - 1;
 }
 
 
@@ -865,13 +898,13 @@ distribution InventoryPlanningSolver::chooseDistribution(
   if (mean >= 20)
     return NORMAL;
 
-	double varianceToMean = variance/mean;
-	if (varianceToMean > 1.1)
+  double varianceToMean = variance/mean;
+  if (varianceToMean > 1.1)
     /* If the variance to mean ratio is greater than 1.1, we switch to negative binomial */
-		return NEGATIVE_BINOMIAL;
+    return NEGATIVE_BINOMIAL;
   else
     /* Else apply a Poisson distribution. */
-		return POISSON;
+    return POISSON;
 }
 
 
@@ -888,10 +921,10 @@ double InventoryPlanningSolver::calculateFillRate(
   double mean, double variance, int rop, int roq, distribution dist
   )
 {
-	if (mean <= 0)
-		return 1;
+  if (mean <= 0)
+    return 1;
 
-	if (dist == AUTOMATIC)
+  if (dist == AUTOMATIC)
     dist = chooseDistribution(mean, variance);
 
   if (dist == POISSON)
@@ -902,11 +935,11 @@ double InventoryPlanningSolver::calculateFillRate(
       // faster.
       return NormalDistribution::calculateFillRate(mean, variance, rop, roq);
     else
-		  return PoissonDistribution::calculateFillRate(mean, rop, roq);
-	}
-	else if (dist == NORMAL)
-		return NormalDistribution::calculateFillRate(mean, variance, rop, roq);
-	else if (dist == NEGATIVE_BINOMIAL)
+      return PoissonDistribution::calculateFillRate(mean, rop, roq);
+  }
+  else if (dist == NORMAL)
+    return NormalDistribution::calculateFillRate(mean, variance, rop, roq);
+  else if (dist == NEGATIVE_BINOMIAL)
   {
     if (mean >= 20)
       // A negative binomial distribution is very close to a normal distribution
@@ -914,9 +947,9 @@ double InventoryPlanningSolver::calculateFillRate(
       // faster.
       return NormalDistribution::calculateFillRate(mean, variance, rop, roq);
     else
-		  return NegativeBinomialDistribution::calculateFillRate(mean, variance, rop, roq);
-	}
-	else
+      return NegativeBinomialDistribution::calculateFillRate(mean, variance, rop, roq);
+  }
+  else
     throw DataException("Invalid distribution");
 }
 

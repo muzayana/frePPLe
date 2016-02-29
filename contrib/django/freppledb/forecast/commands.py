@@ -898,10 +898,8 @@ def generate_plan():
         exportForecastFull(cursor)
 
   if not 'noevaluation' in os.environ and with_inventoryplanning:
-    from freppledb.inventoryplanning.management.commands.frepple_updatestockposition import updateStockPosition
-    print("\nStart calculating stock position at", datetime.now().strftime("%H:%M:%S"))
-    updateStockPosition(database=db)
-    print("End calculating stock position at", datetime.now().strftime("%H:%M:%S"))
+    from freppledb.inventoryplanning.commands import computeStockoutProbability
+    computeStockoutProbability(database=db)
 
   if 'odoo_write' in os.environ:
     from freppledb.odoo.commands import odoo_write
