@@ -762,7 +762,7 @@ double InventoryPlanningSolver::computeStockOutProbability(const Buffer* b){
 
 
   Date bucketStart;
-  for (Calendar::EventIterator tmp(cal, currentDate, true);;
+  for (Calendar::EventIterator tmp(cal, Date::infinitePast, true);;
     ++tmp)
   {
     Date bucketEnd = tmp.getDate();
