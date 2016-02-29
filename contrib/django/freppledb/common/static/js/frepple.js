@@ -2159,11 +2159,11 @@ var tour = {
     $('#timebuckets').modal('hide');
     $.jgrid.hideModal("#searchmodfbox_grid");
 
-    $('#popup').removeClass("fade in").addClass("tourguide").html('<div class="modal-dialog" id="tourModal" role="dialog" style="width: 390px; position: absolute; bottom: 10px; left: auto; right: 15px;">'+
+    $('#popup').removeClass("in").addClass("tourguide").html('<div class="modal-dialog" id="tourModal" role="dialog" style="width: 390px; position: absolute; bottom: 10px; left: auto; right: 15px;">'+
         '<div class="modal-content">'+
         '<div class="modal-header">'+
           '<h4 id="modalTitle" class="modal-title alert alert-info">'+ gettext("Guided tour") +
-          '<button type="button" id="tourcancelbutton" class="close" data-dismiss="modal" aria-hidden="true">×</button>'+'</h4>'+
+          '<button type="button" id="tourcancelbutton" class="close" data-dismiss="modal" aria-hidden="true"><span class="fa fa-times"</button>'+'</h4>'+
         '</div>'+
         '<div class="modal-body" id="tourmodalbody" style="padding-bottom:20px;">'+
             tourdata[tour.chapter]['description']+
@@ -2291,8 +2291,7 @@ var tour = {
       $("#tourprevious").prop('disabled', false);
     // Next button
     if ((tour.chapter >= tourdata.length-1) && (tour.step >= tourdata[tour.chapter]['steps'].length-1))
-      {$("#tournext").prop('disabled', true);
-    console.log("chapter");}
+      $("#tournext").prop('disabled', true);
     else
       $("#tournext").prop('disabled', false);
     // Autoplay
