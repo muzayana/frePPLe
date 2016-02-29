@@ -49,6 +49,7 @@ int InventoryPlanningSolver::initialize()
   x.supportgetattro();
   x.supportsetattro();
   x.supportcreate(create);
+  x.addMethod("solve", Solver::solve, METH_NOARGS, "run the solver");
   x.addMethod(
     "computeStockoutProbability",
     computeStockoutProbability,

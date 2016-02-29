@@ -499,7 +499,6 @@ def computeStockoutProbability(database=DEFAULT_DB_ALIAS):
       [
         (solver.computeStockoutProbability(b) * 100, b.name)
         for b in frepple.buffers()
-        if getattr(b, "ip_flag", False)
       ]
       )
 
