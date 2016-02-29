@@ -753,9 +753,12 @@ double InventoryPlanningSolver::computeStockOutProbability(const Buffer* b){
 
 
   Duration leadtime = getBufferLeadTime(b);
+  Duration oneSecond = 1;
   Date currentDate = Plan::instance().getCurrent();
   double stockOutProbability, maxStockOutProbability = 0;
-  double demand = 0;
+  double sumForecast = 0;
+
+  double standardDeviation = b->getDoubleProperty("demand_deviation", -1);
 
 
   Date bucketStart;
@@ -772,35 +775,60 @@ double InventoryPlanningSolver::computeStockOutProbability(const Buffer* b){
     }
 
     // We perform the bucket where the leadtime falls and then we stop
-    if (bucketStart >= currentDate + leadtime)
+    if (bucketStart > currentDate + leadtime)
       break;
 
-    // on_hand at the end of the bucket or at the leadtime
-    double on_hand = b->getOnHand(min(bucketEnd,currentDate+leadtime));
+    // on_hand at the end of the bucket, we have to remove one second otherwise bucketEnd is the first second of following bucket
+    double on_hand = b->getOnHand(bucketEnd-oneSecond);
     // If on-hand at end of bucket is 0, no need to go further
-    // StockOut probability is 100% whatever the demand is
+    // StockOut probability is 100% whatever the demand is for that buffer
     if (on_hand <= 0) {
       return 1;
     }
 
+	bool lastBucket = (currentDate + leadtime < bucketEnd && currentDate + leadtime >= bucketStart);
+
     //for the current bucket, we need to find out the demand
+	double bucketForecast = 0;
     for (Buffer::flowplanlist::const_iterator i = b->getFlowPlans().begin();
       i != b->getFlowPlans().end(); ++i) {
-        // Only consider consumption
+        
+		  // Only consider consumption
         if (i->getEventType() != 1 || i->getQuantity() >= 0)
           continue;
-        // Calculate quantity or remaining quantity if current date is not at the beginning of month until leadtime
-        if (i->getDate() >= max(bucketStart,currentDate) &&  i->getDate() < min(bucketEnd,currentDate+leadtime))
-          demand -= i->getQuantity();
-    }
 
-    // If there is no demand so far, the stockout probability is 0%
-    // so we can go to next bucket
-    if (demand = 0)
-      continue;
-    else
-      // on_hand is the TSL so ROP = TSL-1 and ROQ = 1
-      stockOutProbability = 1 - calculateFillRate(demand,demand,int(on_hand)-1,1,AUTOMATIC);
+		// Only consider (net) forecast, not demand
+		const FlowPlan *fp = static_cast<const FlowPlan*>(&*i);
+        Demand * dmd = fp->getOperationPlan()->getDemand();
+        if (dmd && dmd->getType() == *DemandDefault::metadata) {
+			continue;
+		}
+
+
+		if (i->getDate() >= bucketStart && i->getDate() < bucketEnd)
+			bucketForecast -= i->getQuantity();
+
+	}
+
+	// No forecast for this bucket, let's continue as this one will have no impact on the result
+	if (bucketForecast == 0)
+		continue;
+
+	// Special case for the last period, we need to pick the forecast 
+	// for the whole bucket and use the prorata value from the bucket 
+	// start until the leadtime
+	if (lastBucket) {
+	  bucketForecast = bucketForecast*(currentDate + leadtime - bucketStart)/(bucketEnd - bucketStart);
+	}
+
+	//Add bucket forecast to total demand
+	sumForecast += bucketForecast;
+
+	// If standard deviation is not calculated for that buffer, we use variance to mean = 1
+	double variance = (standardDeviation == -1) ? sumForecast : standardDeviation*standardDeviation;
+    // on_hand is the TSL so ROP = TSL-1 and ROQ = 1
+    stockOutProbability = 1 - 
+		calculateFillRate(sumForecast, variance,int(on_hand)-1,1,AUTOMATIC);
 
 
     if (loglevel > 2)
