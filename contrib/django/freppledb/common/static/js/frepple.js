@@ -797,7 +797,7 @@ var grid = {
 
             if (params == $('#horizonoriginal').val())
               // No changes to the settings. Close the popup.
-              $(this).modal('hide');
+              $("#timebuckets").modal('hide');
             else {
               // Ajax request to update the horizon preferences
               $.ajax({
