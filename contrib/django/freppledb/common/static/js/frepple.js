@@ -345,9 +345,9 @@ var grid = {
       {
         if (colModel[i].frozen) maxfrozen = parseInt(i,10) + 1 - skipped;
         if (!colModel[i].hidden) {
-          val0s += '<li id="' + (i) + '"  class="list-group-item">' + colModel[i].label + '</li>';
+          val0s += '<li id="' + (i) + '"  class="list-group-item" style="cursor: move;">' + colModel[i].label + '</li>';
         } else {
-          val0a += '<li id="' + (i) + '"  class="list-group-item">' + colModel[i].label + '</li>';
+          val0a += '<li id="' + (i) + '"  class="list-group-item" style="cursor: move;">' + colModel[i].label + '</li>';
         }
       }
       else
@@ -382,12 +382,12 @@ var grid = {
       '</div>';
       for (var j in cross_idx)
       {
-        val1s += '<li class="list-group-item" id="' + (100+parseInt(cross_idx[j],10)) + '">' + cross[cross_idx[j]]['name'] + '</li>';
+        val1s += '<li class="list-group-item" id="' + (100+parseInt(cross_idx[j],10)) + '" style="cursor: move;">' + cross[cross_idx[j]]['name'] + '</li>';
       }
       for (var j in cross)
       {
         if (cross_idx.indexOf(parseInt(j,10)) > -1) continue;
-        val1a += '<li class="list-group-item" id="' + (100 + parseInt(j,10) ) + '">' + cross[j]['name'] + '</li>';
+        val1a += '<li class="list-group-item" id="' + (100 + parseInt(j,10) ) + '" style="cursor: move;">' + cross[j]['name'] + '</li>';
       }
     }
     else
@@ -395,7 +395,7 @@ var grid = {
       // Add selection of number of frozen columns
       row2 = '<div class="row"><div class="col-xs-12">' +
         gettext("Frozen columns") +
-        "<input type='number' id='frozen' min='0' max='4' step='1'>" +
+        '&nbsp;&nbsp;<input type="number" id="frozen" style="text-align: center;" min="0" max="4" step="1" value="' + maxfrozen + '">' +
        '</div></div>';
     }
 
@@ -797,7 +797,7 @@ var grid = {
 
             if (params == $('#horizonoriginal').val())
               // No changes to the settings. Close the popup.
-              $(this).modal('hide');
+              $("#timebuckets").modal('hide');
             else {
               // Ajax request to update the horizon preferences
               $.ajax({

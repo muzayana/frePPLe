@@ -387,13 +387,13 @@ function crosses (cellvalue, options, rowdata)
     {
       case 0: // Total orders
         if (cellvalue[cross_idx[i]] != 0.0)
-          result += cellvalue[cross_idx[i]] + "<span class='context cross fa fa-caret-square-o-right' role='detail0'></span><br>";
+          result += cellvalue[cross_idx[i]] + "<span class='context cross fa fa-caret-right' role='detail0'></span><br>";
         else
           result += '0.0<br>';
         break;
       case 1: // Open orders
         if (cellvalue[cross_idx[i]] != 0.0)
-          result += cellvalue[cross_idx[i]] + "<span class='context fa fa-caret-square-o-right' role='detail1'></span><br>";
+          result += cellvalue[cross_idx[i]] + "<span class='context fa fa-caret-right' role='detail1'></span><br>";
         else
           result += '0.0<br>';
         break;
@@ -435,7 +435,7 @@ function crosses (cellvalue, options, rowdata)
         if (cellvalue[11] == 1)
         {
           if (cellvalue[cross_idx[i]] != 0.0)
-            result += (Math.round(cellvalue[cross_idx[i]]*10)/10) + "<span class='context cross fa fa-caret-square-o-right' role='detail9'></span><br>";
+            result += (Math.round(cellvalue[cross_idx[i]]*10)/10) + "<span class='context cross fa fa-caret-right' role='detail9'></span><br>";
           else
             result += '0<br>';
         }
