@@ -753,6 +753,8 @@ double InventoryPlanningSolver::computeStockOutProbability(const Buffer* b){
 
 
   Duration leadtime = getBufferLeadTime(b);
+  if (loglevel > 1)
+    logger << "leadtime for " << b << " : " << leadtime << endl;
   Duration oneSecond = 1;
   Date currentDate = Plan::instance().getCurrent();
   double stockOutProbability, maxStockOutProbability = 0;
@@ -773,10 +775,13 @@ double InventoryPlanningSolver::computeStockOutProbability(const Buffer* b){
       bucketStart = bucketEnd;
       continue;
     }
-
-    // We perform the bucket where the leadtime falls and then we stop
+	
+	// We perform the bucket where the leadtime falls and then we stop
     if (bucketStart > currentDate + leadtime)
       break;
+
+	if (loglevel > 1)
+      logger << "Calculating stockout probability for bucket " << bucketStart << " --> " << bucketEnd << endl;
 
     // on_hand at the end of the bucket, we have to remove one second otherwise bucketEnd is the first second of following bucket
     double on_hand = b->getOnHand(bucketEnd-oneSecond);
@@ -787,6 +792,9 @@ double InventoryPlanningSolver::computeStockOutProbability(const Buffer* b){
     }
 
 	bool lastBucket = (currentDate + leadtime < bucketEnd && currentDate + leadtime >= bucketStart);
+
+	if (loglevel > 1 && lastBucket)
+      logger << "This is the last bucket as the leadtime falls in this bucket" << endl;
 
     //for the current bucket, we need to find out the demand
 	double bucketForecast = 0;
@@ -810,19 +818,29 @@ double InventoryPlanningSolver::computeStockOutProbability(const Buffer* b){
 
 	}
 
+	if (loglevel > 1)
+      logger << "Forecast for this bucket : " << bucketForecast << endl;
+
 	// No forecast for this bucket, let's continue as this one will have no impact on the result
-	if (bucketForecast == 0)
+	if (bucketForecast == 0) {
+		bucketStart = bucketEnd;
 		continue;
+	}
 
 	// Special case for the last period, we need to pick the forecast 
 	// for the whole bucket and use the prorata value from the bucket 
 	// start until the leadtime
 	if (lastBucket) {
 	  bucketForecast = bucketForecast*(currentDate + leadtime - bucketStart)/(bucketEnd - bucketStart);
+	  if (loglevel > 1)
+      logger << "Corrected forecast for this bucket as this is the last one : " << bucketForecast << endl;
 	}
 
 	//Add bucket forecast to total demand
 	sumForecast += bucketForecast;
+
+	if (loglevel > 1)
+      logger << "Total Forecast since plan current bucket : " << sumForecast << endl;
 
 	// If standard deviation is not calculated for that buffer, we use variance to mean = 1
 	double variance = (standardDeviation == -1) ? sumForecast : standardDeviation*standardDeviation;
@@ -831,13 +849,13 @@ double InventoryPlanningSolver::computeStockOutProbability(const Buffer* b){
 		calculateFillRate(sumForecast, variance,int(on_hand)-1,1,AUTOMATIC);
 
 
-    if (loglevel > 2)
+    if (loglevel > 1)
       logger << "Stockout probability for bucket starting on " << bucketStart << " : " << stockOutProbability << endl;
 
 
     maxStockOutProbability = max(maxStockOutProbability,stockOutProbability);
 
-    if (loglevel > 2)
+    if (loglevel > 1)
       logger << "Greatest stockout probability so far : " << maxStockOutProbability << endl;
 
     bucketStart = bucketEnd;
