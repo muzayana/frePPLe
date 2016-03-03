@@ -602,6 +602,7 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
     double ss = 0.0;
     if (service_level > 0 && (ss_type == "combined" || ss_type == "calculated" || firstBucket))
     {
+      /*
       // We compute the service level with the minimum of the replenishment
       // lead time and the expected time to consume the ROQ quantity.
       // This is used to consider situations with multiple replenishments
@@ -609,6 +610,8 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
       Duration tmp_leadtime = demand_roq_poc ? static_cast<long>(roq / demand_roq_poc * 86400) : 0L;
       if (leadtime < tmp_leadtime)
         tmp_leadtime = leadtime;
+      */
+      Duration tmp_leadtime = leadtime;
       double tmp = calulateStockLevel(
         // Argument 1: demand over the "risk period", which is the max of the
         // lead time and the time between replenishments.
