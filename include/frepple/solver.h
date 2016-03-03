@@ -1115,14 +1115,17 @@ class OperatorMoveOut : public Solver
     {
       friend class OperatorMoveOut;
       public:
-	      /** A pointer to a command manager that takes care of the commit and
-	        * rollback of all actions.
-	        */
-	      CommandManager* cmds;
+        /** A pointer to a command manager that takes care of the commit and
+          * rollback of all actions.
+          */
+        CommandManager* cmds;
 
         /** Constructor. */
         OperatorMoveOutData(OperatorMoveOut* s, int c)
           : sol(s), cluster(c) {}
+
+        /** Destructor. */
+        virtual ~OperatorMoveOutData() {}
 
         static void runme(void *args)
         {

@@ -207,7 +207,6 @@ DECLARE_EXPORT void OperatorMoveOut::OperatorMoveOutData::commit()
 
 DECLARE_EXPORT void OperatorMoveOut::solve(const Operation* oper, void* v)
 {
-  OperatorMoveOutData* data = static_cast<OperatorMoveOutData*>(v);
   bool firstmsg = true;
 
   // Compute the threshold date
@@ -237,7 +236,6 @@ DECLARE_EXPORT void OperatorMoveOut::solve(const Operation* oper, void* v)
 
 DECLARE_EXPORT void OperatorMoveOut::solve(const Resource* res, void* v)
 {
-  OperatorMoveOutData* data = static_cast<OperatorMoveOutData*>(v);
   if (getLogLevel() > 0)
     logger << "  Solving resource " << res << endl;
 }
@@ -245,7 +243,6 @@ DECLARE_EXPORT void OperatorMoveOut::solve(const Resource* res, void* v)
 
 DECLARE_EXPORT void OperatorMoveOut::solve(const Buffer* buf, void* v)
 {
-  OperatorMoveOutData* data = static_cast<OperatorMoveOutData*>(v);
   if (getLogLevel() > 0)
     logger << "  Solving buffer " << buf << endl;
 

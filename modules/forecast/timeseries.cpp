@@ -115,7 +115,6 @@ void Forecast::generateFutureValues(
   // Evaluate each forecast method
   double best_error = DBL_MAX;
   int best_method = -1;
-  bool forced_method = false;
   try
   {
     for (int i=0; i<numberOfMethods; ++i)
@@ -130,7 +129,6 @@ void Forecast::generateFutureValues(
         deviation = res.standarddeviation;
         if (res.force)
         {
-          forced_method = true;
           deviation = res.standarddeviation;
           break;
         }
@@ -1209,7 +1207,6 @@ Forecast::Metrics Forecast::Croston::generateForecast
   unsigned int between_demands = 1;
   alfa = min_alfa;
   double delta = (max_alfa - min_alfa) / (Forecast::getForecastIterations()-1);
-  bool withoutOutliers = false;
   for (; iteration < Forecast::getForecastIterations(); ++iteration)
   {
     // Loop over the outliers 'scan'/0 and 'filter'/1 modes
