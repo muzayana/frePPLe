@@ -1780,6 +1780,7 @@
 {"model": "common.parameter", "pk": "plan.loglevel", "fields": {"value": "0", "description": "Controls the verbosity of the planning log file. Accepted values are 0(silent - default), 1 and 2 (verbose)"}}, 
 {"model": "common.parameter", "pk": "plan.planSafetyStockFirst", "fields": {"value": "false", "description": "Controls whether safety stock is planned before or after the demand. Accepted values are false (default) and true"}}, 
 {"model": "common.parameter", "pk": "plan.rotateResources", "fields": {"value": "true", "description": "When set to true, the algorithm will better distribute the demand across alternate suboperations instead of using the preferred operation"}}, 
+{"model": "common.parameter", "pk": "plan.calendar", "fields": {"value": "", "description": "Specifies a calendar with dates to which the plan is aligned"}},
 {"model": "common.parameter", "pk": "planningboard.port", "fields": {"value": "8001", "description": "Port number of the planning board"}}, 
 {"model": "common.parameter", "pk": "quoting.service_location", "fields": {"value": "localhost:8001", "description": "HTTP location of the web service, formatted as address:port"}}, 
 {"model": "common.bucket", "pk": "day", "fields": {"level": 5, "description": "Daily time buckets"}}, 
