@@ -783,14 +783,6 @@ double InventoryPlanningSolver::computeStockOutProbability(const Buffer* b){
 	if (loglevel > 1)
       logger << "Calculating stockout probability for bucket " << bucketStart << " --> " << bucketEnd << endl;
 
-    // on_hand at the end of the bucket, we have to remove one second otherwise bucketEnd is the first second of following bucket
-    double on_hand = b->getOnHand(bucketEnd-oneSecond);
-    // If on-hand at end of bucket is 0, no need to go further
-    // StockOut probability is 100% whatever the demand is for that buffer
-    if (on_hand <= 0) {
-      return 1;
-    }
-
 	bool lastBucket = (currentDate + leadtime < bucketEnd && currentDate + leadtime >= bucketStart);
 
 	if (loglevel > 1 && lastBucket)
@@ -826,6 +818,14 @@ double InventoryPlanningSolver::computeStockOutProbability(const Buffer* b){
 		bucketStart = bucketEnd;
 		continue;
 	}
+
+	// on_hand at the end of the bucket, we have to remove one second otherwise bucketEnd is the first second of following bucket
+    double on_hand = b->getOnHand(bucketEnd-oneSecond);
+    // If on-hand at end of bucket is 0, no need to go further
+    // StockOut probability is 100% whatever the demand is for that buffer
+    if (on_hand <= 0) {
+      return 1;
+    }
 
 	// Special case for the last period, we need to pick the forecast 
 	// for the whole bucket and use the prorata value from the bucket 
