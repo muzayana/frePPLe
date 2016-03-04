@@ -36,7 +36,7 @@ class DataLoadTest(TestCase):
     if not isinstance(response, StreamingHttpResponse):
       raise Exception("expected a streaming response")
     for i in response.streaming_content:
-      if b'"records":54,' in i:   # Different between Enterprise Edition and Community Edition
+      if b'"records":55,' in i:   # Different between Enterprise Edition and Community Edition
         return
     self.fail("Didn't find expected number of parameters")
 
