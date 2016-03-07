@@ -203,7 +203,6 @@ def horizon(request):
   if request.method != 'POST':
     raise Http404('Only post requests allowed')
   form = HorizonForm(request.POST)
-  print(request.POST)
   if not form.is_valid():
     raise Http404('Invalid form data')
   try:
