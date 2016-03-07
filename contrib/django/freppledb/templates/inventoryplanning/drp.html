@@ -1395,7 +1395,7 @@ $(function() {
 		  {% endif %}
 		  &nbsp;&nbsp;<span class="caret"></span>
 		</button>
-		<ul class="dropdown-menu col-xs-12" aria-labelledby="grouping" id="grouping_ul" name="grouping_ul">
+		<ul class="dropdown-menu" aria-labelledby="grouping" id="grouping_ul" name="grouping_ul">
 		   <li><a name="itemlocation">{% trans "no grouping"|capfirst %}</a></li>
 		   <li><a name="item">{% trans "group by item"|capfirst %}</a></li>
 		   <li><a name="location">{% trans "group by location"|capfirst %}</a></li>
@@ -1440,7 +1440,7 @@ $(function() {
 		  <div class="dropdown dropdown-submit-input" style="display: inline;">
 		    <button class="btn btn-primary dropdown-toggle form-control disabled"  id="actions" name="actions" value="{% trans 'no'|capfirst %}" type="button" data-toggle="dropdown">{% trans "select action"|capfirst %}&nbsp;&nbsp;<span class="caret"></span>
 		    </button>
-		    <ul class="dropdown-menu col-xs-12" aria-labelledby="actions" id="actionsul" name="actionsul">
+		    <ul class="dropdown-menu" aria-labelledby="actions" id="actionsul" name="actionsul">
 		      {% if openbravo %}
 		       <li><a onclick="openbravo.IncrementalExport(jQuery('#transactiongrid'),'all');">{% filter capfirst %}{% trans "incremental export to openbravo" %}{% endfilter %}</a></li>
 		      {% else %}
