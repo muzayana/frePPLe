@@ -189,12 +189,14 @@ class DetailReport(GridReport):
   title = _("Demand plan detail")
   basequeryset = Demand.objects.extra(select={'forecast': "select name from forecast where out_demand.demand like forecast.name || ' - %%'"})
   model = Demand
+  basequeryset = Demand.objects.all()
   permissions = (("view_demand_report", "Can view demand report"),)
   frozenColumns = 0
   editable = False
   multiselect = False
   rows = (
-    GridFieldText('demand', title=_('demand'), key=True, editable=False, formatter='detail', extra="role:'input/demand'"),
+    GridFieldInteger('id', title=_('id'), key=True,editable=False, hidden=True),
+    GridFieldText('demand', title=_('demand'), editable=False, formatter='detail', extra="role:'input/demand'"),
     GridFieldText('item', title=_('item'), editable=False, formatter='detail', extra="role:'input/item'"),
     GridFieldText('customer', title=_('customer'), editable=False, formatter='detail', extra="role:'input/customer'"),
     GridFieldNumber('quantity', title=_('quantity'), editable=False),
