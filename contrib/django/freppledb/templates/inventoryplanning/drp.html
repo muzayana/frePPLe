@@ -1358,7 +1358,7 @@ function setCommentType(t)
 }
 
 
-$(function() { 
+$(function() {
   {% if preferences.name and not args %}selectRow("{{ preferences.name|escapejs }}");
   {% elif args.1 %}selectRow("{{ args.0|escapejs }}@{{ args.1|escapejs }}");{% endif %}
   selectTab("{% if preferences.showtab %}{{ preferences.showtab }}{% else %}plan{% endif %}");
@@ -1379,6 +1379,22 @@ $(function() {
     $("#grouping").html($(this).text() + ' <span class="caret"></span>');
     changeGrouping();
   });
+
+  var resizeoptions={
+      handleSelector: "#resize-handle",
+      resizeWidth: false,
+      resizeHeight: true,
+      onDrag: function (e, $el, opt) {$("#grid").setGridHeight($('#content-main').height()-52);},
+  }
+  $("#resize-handle").css({'visibility':'visible', 'transform':'scale(3,0.8)', 'position':'relative'});
+  $("#content-main").resizable({
+    handleSelector: "#resize-handle",
+    resizeWidth: false,
+    resizeHeight: true,
+    onDrag: function (e, $el, opt) {$("#grid").setGridHeight($('#content-main').height()-52);},
+    onDragEnd: function (e, $el, opt) {grid.saveColumnConfiguration();}
+  });
+
 });
 
 </script>
