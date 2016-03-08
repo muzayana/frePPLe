@@ -1207,7 +1207,7 @@ class DRPitemlocation(View):
     # Assure the operationplan identifiers remain unique
     cursor = connections[request.database].cursor()
     cursor.execute('''
-      selec
+      select
         coalesce(max(ids.max_id), 1) + 1
       from (
         select max(id) as max_id from purchase_order
@@ -1962,4 +1962,4 @@ class DRPitemlocation(View):
     # frepple.item(name=tmp, action='R')
 
     # Return the new plan
-    return resul
+    return result
