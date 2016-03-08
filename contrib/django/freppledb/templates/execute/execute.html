@@ -238,7 +238,7 @@
       resizeWidth: false,
       resizeHeight: true,
       onDrag: function (e, $el, opt) {$("#grid").setGridHeight($('#content-main').height()-52);},
-      onDragEnd: function (e, $el, opt) {}
+      onDragEnd: function (e, $el, opt) {grid.saveColumnConfiguration();}
     });
 
   });
