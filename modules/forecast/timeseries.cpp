@@ -261,10 +261,20 @@ Forecast::Metrics Forecast::MovingAverage::generateForecast
     // Check outliers
     if (outliers == 0)
     {
-      standarddeviation = sqrt(standarddeviation / (count-1));
-      maxdeviation /= standarddeviation;
-      // Don't repeat if there are no outliers
-      if (maxdeviation < Forecast::Forecast_maxDeviation) break;
+      if (count > 1)
+      {
+        standarddeviation = sqrt(standarddeviation / (count-1));
+        maxdeviation /= standarddeviation;
+        // Don't repeat if there are no outliers
+        if (maxdeviation < Forecast::Forecast_maxDeviation) break;
+      }
+      else
+      {
+        // Single data point - never an outlier
+        standarddeviation = sqrt(standarddeviation);
+        maxdeviation = 0.0;
+        break;
+      }
     }
   } // End loop: 'scan' or 'filter' mode for outliers
 
