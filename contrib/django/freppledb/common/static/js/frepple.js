@@ -1292,11 +1292,19 @@ var dashboard = {
 
     $(".cockpitcolumn").each( function() {
       Sortable.create($(this)[ 0 ], {
-        onEnd: function (e) {
-          dashboard.save();
-        },
         group: "widgets",
-        animation: 100
+        handle: ".panel-heading",
+        animation: 100,
+        onEnd: function (e) { dashboard.save();}
+      });
+    });
+
+    $("#workarea").each( function() {
+      Sortable.create($(this)[ 0 ], {
+        group: "cockpit",
+        handle: "h1",
+        animation: 100,
+        onEnd: function (e) { dashboard.save();}
       });
     });
 
@@ -1511,6 +1519,7 @@ var dashboard = {
       // Update
       $("[data-cockpit-row='" + rowname + "'] .col-md-11 h1").text(newname);
       $("[data-cockpit-row='" + rowname + "'] h1 button").attr("onclick", "dashboard.customize('" + newname + "')");
+      $("[data-cockpit-row='" + rowname + "'] .horizontal-form").attr("id", newname);
       $("[data-cockpit-row='" + rowname + "']").attr("data-cockpit-row", newname);
     }
 
@@ -1519,7 +1528,7 @@ var dashboard = {
     var colindex = 0;
     var lastcol = null;
     // Loop over existing columns
-    $("[data-cockpit-row='" + rowname + "'] .cockpitcolumn").each(function() {
+    $("[id='" + rowname + "'] .cockpitcolumn").each(function() {
       if (colindex < newlayout.length)
       {
         // Resize existing column
@@ -1567,17 +1576,18 @@ var dashboard = {
 	// Make sure name is unique
 	var newname = $("#id_name").val();
 	var cnt = 2;
-	while ($("[data-cockpit-row='" + newname + "']").length > 1)
+	while ($("[data-cockpit-row='" + newname + "']").length >= 1)
       newname = $("#id_name").val() + ' - ' + (cnt++);
 
+	  console.log($("[data-cockpit-row='" + newname + "']").length +" "+newname);
     // Build new content
     var newelements = '<div class="row" data-cockpit-row="' + newname + '">' +
       '<div class="col-md-11"><h1 style="float: left">' + newname + '</h1></div>' +
       '<div class="col-md-1"><h1 class="pull-right">' +
-      '<button class="btn btn-xs btn-primary" onclick="dashboard.customize(\'' + newname + '\')" data-toggle="tooltip" data-placement="top" data-original-title="' + gettext("customize") + '"><span class="fa fa-wrench"></span></button>' +
+        '<button class="btn btn-xs btn-primary" onclick="dashboard.customize(\'' + newname + '\')" data-toggle="tooltip" data-placement="top" data-original-title="' + gettext("customize") + '"><span class="fa fa-wrench"></span></button>' +
       '</h1></div>' +
-      '</div>' +
-      '<div class="row" data-cockpit-row="' + newname + '">';
+
+      '<div class="horizontal-form" id="' + newname + '">';
     var newlayout = $("#id_layout").text().split("-");
     var newwidget = $("#newwidgetname").text();
     for (var i = 0; i < newlayout.length; i++)
@@ -1587,7 +1597,7 @@ var dashboard = {
         newelements += '<div class="panel panel-default" data-cockpit-widget="' + newwidget + '"></div>';
       newelements += '</div>';
     }
-    newelements += '</div></div>';
+    newelements += '</div></div></div>';
 
     // Insert in page
     if (position_above)
