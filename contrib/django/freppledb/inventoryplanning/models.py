@@ -162,7 +162,7 @@ class InventoryPlanningOutput(models.Model):
   localforecastvalue = models.DecimalField(_('local forecast value'), max_digits=15, decimal_places=4, null=True)
   dependentdemandvalue = models.DecimalField(_('dependent demand value'), max_digits=15, decimal_places=4, null=True)
   totaldemandvalue = models.DecimalField(_('total demand value'), max_digits=15, decimal_places=4, null=True)
-  # TODO stockoutrisk = models.DecimalField(_('stockout risk'), max_digits=15, decimal_places=4, null=True)
+  stockoutrisk = models.DecimalField(_('stockout risk'), max_digits=15, decimal_places=4, null=True)
   
   def __str__(self):
     return self.buffer.name

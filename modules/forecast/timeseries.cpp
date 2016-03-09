@@ -115,7 +115,6 @@ void Forecast::generateFutureValues(
   // Evaluate each forecast method
   double best_error = DBL_MAX;
   int best_method = -1;
-  bool forced_method = false;
   try
   {
     for (int i=0; i<numberOfMethods; ++i)
@@ -130,7 +129,6 @@ void Forecast::generateFutureValues(
         deviation = res.standarddeviation;
         if (res.force)
         {
-          forced_method = true;
           deviation = res.standarddeviation;
           break;
         }
@@ -287,11 +285,26 @@ void Forecast::MovingAverage::applyForecast
 (Forecast* forecast, const Date buckets[], unsigned int bucketcount)
 {
   // Loop over all buckets and set the forecast to a constant value
-  for (unsigned int i = 1; i < bucketcount; ++i)
-    forecast->setTotalQuantity(
-      DateRange(buckets[i-1], buckets[i]),
-      avg > 0.0 ? avg : 0.0
-    );
+  if (forecast->discrete)
+  {
+    double carryover = 0.0;
+    for (unsigned int i = 1; i < bucketcount; ++i)
+    {
+      carryover += avg;
+      double val = ceil(carryover - 0.5);
+      carryover -= val;
+      forecast->setTotalQuantity(
+        DateRange(buckets[i-1], buckets[i]),
+        val > 0.0 ? val : 0.0
+      );
+    }
+  }
+  else
+    for (unsigned int i = 1; i < bucketcount; ++i)
+      forecast->setTotalQuantity(
+        DateRange(buckets[i-1], buckets[i]),
+        avg > 0.0 ? avg : 0.0
+      );
 }
 
 
@@ -475,11 +488,26 @@ void Forecast::SingleExponential::applyForecast
 (Forecast* forecast, const Date buckets[], unsigned int bucketcount)
 {
   // Loop over all buckets and set the forecast to a constant value
-  for (unsigned int i = 1; i < bucketcount; ++i)
-    forecast->setTotalQuantity(
-      DateRange(buckets[i-1], buckets[i]),
-      f_i > 0.0 ? f_i : 0.0
-    );
+  if (forecast->discrete)
+  {
+    double carryover = 0.0;
+    for (unsigned int i = 1; i < bucketcount; ++i)
+    {
+      carryover += f_i;
+      double val = ceil(carryover - 0.5);
+      carryover -= val;
+      forecast->setTotalQuantity(
+        DateRange(buckets[i-1], buckets[i]),
+        val > 0.0 ? val : 0.0
+      );
+    }
+  }
+  else
+    for (unsigned int i = 1; i < bucketcount; ++i)
+      forecast->setTotalQuantity(
+        DateRange(buckets[i-1], buckets[i]),
+        f_i > 0.0 ? f_i : 0.0
+      );
 }
 
 
@@ -727,16 +755,32 @@ void Forecast::DoubleExponential::applyForecast
 (Forecast* forecast, const Date buckets[], unsigned int bucketcount)
 {
   // Loop over all buckets and set the forecast to a linearly changing value
-  for (unsigned int i = 1; i < bucketcount; ++i)
+  if (forecast->discrete)
   {
-    constant_i += trend_i;
-    trend_i *= dampenTrend; // Reduce slope in the future
-    if (constant_i > 0)
+    double carryover = 0.0;
+    for (unsigned int i = 1; i < bucketcount; ++i)
+    {
+      constant_i += trend_i;
+      trend_i *= dampenTrend; // Reduce slope in the future
+      carryover += constant_i;
+      double val = ceil(carryover - 0.5);
+      carryover -= val;
+      forecast->setTotalQuantity(
+        DateRange(buckets[i-1], buckets[i]),
+        val > 0.0 ? val : 0.0
+      );
+    }
+  }
+  else
+    for (unsigned int i = 1; i < bucketcount; ++i)
+    {
+      constant_i += trend_i;
+      trend_i *= dampenTrend; // Reduce slope in the future
       forecast->setTotalQuantity(
         DateRange(buckets[i-1], buckets[i]),
         constant_i > 0.0 ? constant_i : 0.0
       );
-  }
+    }
 }
 
 
@@ -866,7 +910,7 @@ Forecast::Metrics Forecast::Seasonal::generateForecast  // TODO No outlier detec
     initial_S_i[i] = 0.0;
   }
   T_i_initial /= period;
-  L_i_initial = L_i_initial / period - period / 2 * T_i_initial;
+  L_i_initial = L_i_initial / period;
   unsigned short cyclecount = 0;
   for (unsigned int i = 0; i + period <= count; i += period)
   {
@@ -884,6 +928,7 @@ Forecast::Metrics Forecast::Seasonal::generateForecast  // TODO No outlier detec
   // Iterations
   double L_i_prev;
   unsigned int iteration = 1, boundarytested = 0;
+  double cyclesum;
   for (; iteration <= Forecast::getForecastIterations(); ++iteration)
   {
     // Initialize variables
@@ -892,36 +937,42 @@ Forecast::Metrics Forecast::Seasonal::generateForecast  // TODO No outlier detec
     d_T_d_alfa = d_T_d_beta = 0.0;
     L_i = L_i_initial;
     T_i = T_i_initial;
+    cyclesum = 0.0;
     for (unsigned short i = 0; i < period; ++i)
     {
       S_i[i] = initial_S_i[i];
       d_S_d_alfa[i] = 0.0;
       d_S_d_beta[i] = 0.0;
+      if (i) cyclesum += history[i-1];
     }
 
     // Calculate the forecast and forecast error.
     // We also compute the sums required for the Marquardt optimization.
+    unsigned int prevcycleindex = period - 1;
     cycleindex = 0;
     for (unsigned int i = period; i <= count; ++i)
     {
       // Base calculations
       L_i_prev = L_i;
-      if (S_i[cycleindex] > ROUNDING_ERROR)
-        L_i = alfa * history[i-1] / S_i[cycleindex] + (1 - alfa) * (L_i + T_i);
-      else
-        L_i = (1 - alfa) * (L_i + T_i);
+      cyclesum += history[i-1];
+      if (i > period) cyclesum -= history[i-1-period];
+      // Textbook approach for Holt-Winters multiplicative method:
+      // L_i = alfa * history[i-1] / S_i[prevcycleindex] + (1 - alfa) * (L_i + T_i);
+      // FrePPLe uses a variation to compute the constant component.
+      // The alternative gives more stable and intuitive results for data that show variability.
+      L_i = alfa * cyclesum / period + (1 - alfa) * (L_i + T_i);
+      if (L_i < 0) L_i = 0.0;
       T_i = beta * (L_i - L_i_prev) + (1 - beta) * T_i;
-      double factor = - S_i[cycleindex];
+      double factor = - S_i[prevcycleindex];
       if (L_i)
-        S_i[cycleindex] = gamma * history[i-1] / L_i + (1 - gamma) * S_i[cycleindex];
-      if (S_i[cycleindex] < 0.0)
-        S_i[cycleindex] = 0.0;
+        S_i[prevcycleindex] = gamma * history[i-1] / L_i + (1 - gamma) * S_i[prevcycleindex];
+      if (S_i[prevcycleindex] < 0.0)
+        S_i[prevcycleindex] = 0.0;
 
-      // Rescale the seasonal indexes to add up to 1
-      factor = period / (period + factor + S_i[cycleindex]);
-      if (factor)
-        for (unsigned short i2 = 0; i2 < period; ++i2)
-          S_i[i2] /= factor;
+      // Rescale the seasonal indexes to add up to "period"
+      factor = period / (period + factor + S_i[prevcycleindex]);
+      for (unsigned short i2 = 0; i2 < period; ++i2)
+        S_i[i2] *= factor;
 
       if (i == count) break;
       // Calculations for the delta of the parameters
@@ -929,34 +980,24 @@ Forecast::Metrics Forecast::Seasonal::generateForecast  // TODO No outlier detec
       d_L_d_beta_prev = d_L_d_beta;
       d_T_d_alfa_prev = d_T_d_alfa;
       d_T_d_beta_prev = d_T_d_beta;
-      d_S_d_alfa_prev = d_S_d_alfa[cycleindex];
-      d_S_d_beta_prev = d_S_d_beta[cycleindex];
-      if (S_i[cycleindex] > ROUNDING_ERROR)
-      {
-        d_L_d_alfa = history[i-1] / S_i[cycleindex]
-           - alfa * history[i-1] / S_i[cycleindex] /  S_i[cycleindex] * d_S_d_alfa_prev
-           - (L_i + T_i)
-           + (1 - alfa) * (d_L_d_alfa_prev + d_T_d_alfa_prev);
-        d_L_d_beta = - alfa * history[i-1] / S_i[cycleindex] /  S_i[cycleindex] * d_S_d_beta_prev
-          + (1 - alfa) * (d_L_d_beta_prev + d_T_d_beta_prev);
-      }
-      else
-      {
-        d_L_d_alfa = - (L_i + T_i)
-           + (1 - alfa) * (d_L_d_alfa_prev + d_T_d_alfa_prev);
-        d_L_d_beta = (1 - alfa) * (d_L_d_beta_prev + d_T_d_beta_prev);
-      }
+      d_S_d_alfa_prev = d_S_d_alfa[prevcycleindex];
+      d_S_d_beta_prev = d_S_d_beta[prevcycleindex];
+      d_L_d_alfa = cyclesum / period
+        - (L_i + T_i)
+        + (1 - alfa) * (d_L_d_alfa_prev + d_T_d_alfa_prev);
+      d_L_d_beta = (1 - alfa) * (d_L_d_beta_prev + d_T_d_beta_prev);
+
       if (L_i > ROUNDING_ERROR)
       {
-        d_S_d_alfa[cycleindex] = - gamma * history[i-1] / L_i / L_i * d_L_d_alfa_prev
+        d_S_d_alfa[prevcycleindex] = - gamma * history[i-1] / L_i / L_i * d_L_d_alfa_prev
           + (1 - gamma) * d_S_d_alfa_prev;
-        d_S_d_beta[cycleindex] = - gamma * history[i-1] / L_i / L_i * d_L_d_beta_prev
+        d_S_d_beta[prevcycleindex] = - gamma * history[i-1] / L_i / L_i * d_L_d_beta_prev
           + (1 - gamma) * d_S_d_beta_prev;
       }
       else
       {
-        d_S_d_alfa[cycleindex] = (1 - gamma) * d_S_d_alfa_prev;
-        d_S_d_beta[cycleindex] = (1 - gamma) * d_S_d_beta_prev;
+        d_S_d_alfa[prevcycleindex] = (1 - gamma) * d_S_d_alfa_prev;
+        d_S_d_beta[prevcycleindex] = (1 - gamma) * d_S_d_beta_prev;
       }
       d_T_d_alfa = beta * (d_L_d_alfa - d_L_d_alfa_prev)
         + (1 - beta) * d_T_d_alfa_prev;
@@ -983,10 +1024,10 @@ Forecast::Metrics Forecast::Seasonal::generateForecast  // TODO No outlier detec
         }
       }
       if (++cycleindex >= period) cycleindex = 0;
+      if (++prevcycleindex >= period) prevcycleindex = 0;
     }
 
     // Better than earlier iterations?
-    best_smape = error_smape;
     if (error < best_error)
     {
       best_error = error;
@@ -997,7 +1038,7 @@ Forecast::Metrics Forecast::Seasonal::generateForecast  // TODO No outlier detec
       best_T_i = T_i;
       for (unsigned short i = 0; i < period; ++i)
         best_S_i[i] = S_i[i];
-      }
+    }
 
     // Add Levenberg - Marquardt damping factor
     //if (alfa < max_alfa && alfa > min_alfa)
@@ -1058,16 +1099,20 @@ Forecast::Metrics Forecast::Seasonal::generateForecast  // TODO No outlier detec
   }
 
   if (period > fcst->getForecastSkip())
+  {
     // Correction on the error: we counted less buckets. We now
     // proportionally increase the error to account for this and have a
     // value that can be compared with the other forecast methods.
-    best_smape *= (count - fcst->getForecastSkip()) / (count - period);
+    best_smape *= (count - fcst->getForecastSkip());
+    best_smape /= (count - period);
+  }
 
   // Restore best results
   alfa = best_alfa;
   beta = best_beta;
   L_i = best_L_i;
   T_i = best_T_i;
+
   for (unsigned short i = 0; i < period; ++i)
     S_i[i] = best_S_i[i];
 
@@ -1097,18 +1142,36 @@ void Forecast::Seasonal::applyForecast
 (Forecast* forecast, const Date buckets[], unsigned int bucketcount)
 {
   // Loop over all buckets and set the forecast to a linearly changing value
-  for (unsigned int i = 1; i < bucketcount; ++i)
+  if (forecast->discrete)
   {
-    L_i += T_i;
-    T_i *= dampenTrend; // Reduce slope in the future
-    double fcst = L_i * S_i[cycleindex];
-    if (L_i * S_i[cycleindex] > 0)
+    double carryover = 0.0;
+    for (unsigned int i = 1; i < bucketcount; ++i)
+    {
+      L_i += T_i;
+      T_i *= dampenTrend; // Reduce slope in the future
+      carryover += L_i * S_i[cycleindex];
+      double val = ceil(carryover - 0.5);
+      carryover -= val;
       forecast->setTotalQuantity(
         DateRange(buckets[i-1], buckets[i]),
-        fcst > 0.0 ? fcst : 0.0
+        val > 0.0 ? val : 0.0
       );
-    if (++cycleindex >= period) cycleindex = 0;
+      if (++cycleindex >= period) cycleindex = 0;
+    }
   }
+  else
+    for (unsigned int i = 1; i < bucketcount; ++i)
+    {
+      L_i += T_i;
+      T_i *= dampenTrend; // Reduce slope in the future
+      double fcst = L_i * S_i[cycleindex];
+      if (L_i * S_i[cycleindex] > 0)
+        forecast->setTotalQuantity(
+          DateRange(buckets[i-1], buckets[i]),
+          fcst > 0.0 ? fcst : 0.0
+        );
+      if (++cycleindex >= period) cycleindex = 0;
+    }
 }
 
 
@@ -1144,7 +1207,6 @@ Forecast::Metrics Forecast::Croston::generateForecast
   unsigned int between_demands = 1;
   alfa = min_alfa;
   double delta = (max_alfa - min_alfa) / (Forecast::getForecastIterations()-1);
-  bool withoutOutliers = false;
   for (; iteration < Forecast::getForecastIterations(); ++iteration)
   {
     // Loop over the outliers 'scan'/0 and 'filter'/1 modes
@@ -1259,11 +1321,26 @@ void Forecast::Croston::applyForecast
 (Forecast* forecast, const Date buckets[], unsigned int bucketcount)
 {
   // Loop over all buckets and set the forecast to a constant value
-  for (unsigned int i = 1; i < bucketcount; ++i)
-    forecast->setTotalQuantity(
-      DateRange(buckets[i-1], buckets[i]),
-      f_i > 0.0 ? f_i : 0.0
-    );
+  if (forecast->discrete)
+  {
+    double carryover = 0.0;
+    for (unsigned int i = 1; i < bucketcount; ++i)
+    {
+      carryover += f_i;
+      double val = ceil(carryover - 0.5);
+      carryover -= val;
+      forecast->setTotalQuantity(
+        DateRange(buckets[i-1], buckets[i]),
+        val > 0.0 ? val : 0.0
+      );
+    }
+  }
+  else
+    for (unsigned int i = 1; i < bucketcount; ++i)
+      forecast->setTotalQuantity(
+        DateRange(buckets[i-1], buckets[i]),
+        f_i > 0.0 ? f_i : 0.0
+      );
 }
 
 }       // end namespace

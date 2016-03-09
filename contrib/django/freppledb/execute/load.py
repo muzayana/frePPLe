@@ -48,16 +48,31 @@ class loadData(object):
 
   def loadParameter(self):
     print('Importing parameters...')
-    # Current date
-    try:
-      self.cursor.execute("SELECT value FROM common_parameter where name='currentdate'")
-      d = self.cursor.fetchone()
-      frepple.settings.current = datetime.strptime(d[0], "%Y-%m-%d %H:%M:%S")
-    except:
+    self.cursor.execute('''
+      SELECT name, value
+      FROM common_parameter
+      where name in ('currentdate', 'plan.calendar')
+      ''')
+    default_current_date = True
+    for rec in self.cursor.fetchall():
+      if rec[0] == 'currentdate':
+        try:
+          frepple.settings.current = datetime.strptime(rec[1], "%Y-%m-%d %H:%M:%S")
+          default_current_date = False
+        except:
+          pass
+      elif rec[0] == 'plan.calendar' and rec[1]:
+        frepple.settings.calendar = frepple.calendar(name=rec[1])
+        print('Bucketized planning using calendar %s' % rec[1])
+    if default_current_date:
       frepple.settings.current = datetime.now().replace(microsecond=0)
-      print('Using system clock as current date: %s' % frepple.settings.current)
     print('Current date: %s' % frepple.settings.current)
-    # Assure the operationplan ids will be unique
+
+
+  def finalize(self):
+    # Assure the operationplan ids will be unique.
+    # We call this method only at the end, as calling it earlier gives a slower
+    # performance to load operationplans
     self.cursor.execute('''
       select
         coalesce(max(ids.max_id), 1) + 1
@@ -335,7 +350,8 @@ class loadData(object):
     self.cursor.execute('''
       SELECT
         supplier_id, item_id, location_id, sizeminimum, sizemultiple,
-        cost, priority, effective_start, effective_end, source, leadtime
+        cost, priority, effective_start, effective_end, source, leadtime,
+        resource_id, resource_qty
       FROM itemsupplier %s
       ORDER BY supplier_id, item_id, location_id, priority desc
       ''' % self.filter_where)
@@ -350,7 +366,10 @@ class loadData(object):
         if i[1] != curitemname:
           curitemname = i[1]
           curitem = frepple.item(name=curitemname)
-        curitemsupplier = frepple.itemsupplier(supplier=cursupplier, item=curitem, source=i[9], leadtime=i[10] or 0)
+        curitemsupplier = frepple.itemsupplier(
+          supplier=cursupplier, item=curitem, source=i[9],
+          leadtime=i[10] or 0, resource_qty=i[12]
+          )
         if i[2]:
           curitemsupplier.location = frepple.location(name=i[2])
         if i[3]:
@@ -365,6 +384,8 @@ class loadData(object):
           curitemsupplier.effective_start = i[7]
         if i[8]:
           curitemsupplier.effective_end = i[8]
+        if i[11]:
+          curitemsupplier.resource = frepple.resource(name=i[11])
       except Exception as e:
         print("Error:", e)
     print('Loaded %d item suppliers in %.2f seconds' % (cnt, time() - starttime))
@@ -377,7 +398,8 @@ class loadData(object):
     self.cursor.execute('''
       SELECT
         origin_id, item_id, location_id, sizeminimum, sizemultiple,
-        cost, priority, effective_start, effective_end, source, leadtime
+        cost, priority, effective_start, effective_end, source,
+        leadtime, resource_id, resource_qty
       FROM itemdistribution %s
       ORDER BY origin_id, item_id, location_id, priority desc
       ''' % self.filter_where)
@@ -392,7 +414,10 @@ class loadData(object):
         if i[1] != curitemname:
           curitemname = i[1]
           curitem = frepple.item(name=curitemname)
-        curitemdistribution = frepple.itemdistribution(origin=curorigin, item=curitem, source=i[9], leadtime=i[10] or 0)
+        curitemdistribution = frepple.itemdistribution(
+          origin=curorigin, item=curitem, source=i[9],
+          leadtime=i[10] or 0, resource_qty=i[12]
+          )
         if i[2]:
           curitemdistribution.destination = frepple.location(name=i[2])
         if i[3]:
@@ -407,6 +432,8 @@ class loadData(object):
           curitemdistribution.effective_start = i[7]
         if i[8]:
           curitemdistribution.effective_end = i[8]
+        if i[11]:
+          curitemdistribution.resource = frepple.resource(name=i[11])
       except Exception as e:
         print("Error:", e)
     print('Loaded %d item itemdistributions in %.2f seconds' % (cnt, time() - starttime))
@@ -725,7 +752,7 @@ class loadData(object):
         location_id, id, reference, item_id, supplier_id, quantity, startdate, enddate, status, source
       FROM purchase_order
       WHERE status <> 'closed' %s
-      ORDER BY location_id, id ASC
+      ORDER BY id ASC
       ''' % self.filter_and)
     for i in self.cursor.fetchall():
       cnt += 1
@@ -753,7 +780,7 @@ class loadData(object):
         enddate, consume_material, status, source
       FROM distribution_order
       WHERE status <> 'closed' %s
-      ORDER BY destination_id, id ASC
+      ORDER BY id ASC
       ''' % self.filter_and)
     for i in self.cursor.fetchall():
       cnt += 1
@@ -836,18 +863,19 @@ class loadData(object):
     self.loadOperations()
     self.loadSuboperations()
     self.loadItems()
-    self.loadItemSuppliers()
-    self.loadItemDistributions()
     self.loadBuffers()
     self.loadSetupMatrices()
     self.loadResources()
     self.loadResourceSkills()
+    self.loadItemSuppliers()
+    self.loadItemDistributions()
     self.loadFlows()
     self.loadLoads()
     self.loadOperationPlans()
     self.loadPurchaseOrders()
     self.loadDistributionOrders()
     self.loadDemand()
+    self.finalize()
 
     # Close the database connection
     self.cursor.close()

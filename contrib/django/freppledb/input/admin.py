@@ -88,10 +88,9 @@ data_site.register(Customer, Customer_admin)
 class ItemSupplier_inline(MultiDBTabularInline):
   model = ItemSupplier
   fk_name = 'item'
-  raw_id_fields = ('supplier','location')
+  raw_id_fields = ('supplier', 'location', 'resource')
   extra = 0
   exclude = ('source',)
-
 
 
 class Supplier_admin(MultiDBModelAdmin):
@@ -130,7 +129,7 @@ data_site.register(Item, Item_admin)
 class ItemSupplier_admin(MultiDBModelAdmin):
   model = ItemSupplier
   save_on_top = True
-  raw_id_fields = ('item', 'supplier')
+  raw_id_fields = ('item', 'supplier', 'resource')
   exclude = ('source',)
   tabs = [
     {"name": 'edit', "label": _("edit"), "view": "admin:input_itemsupplier_change", "permissions": "input.change_itemsupplier"},
@@ -144,7 +143,7 @@ data_site.register(ItemSupplier, ItemSupplier_admin)
 class ItemDistribution_admin(MultiDBModelAdmin):
   model = ItemDistribution
   save_on_top = True
-  raw_id_fields = ('item',)
+  raw_id_fields = ('item', 'resource')
   exclude = ('source',)
   tabs = [
     {"name": 'edit', "label": _("edit"), "view": "admin:input_itemdistribution_change", "permissions": "input.change_itemdistribution"},
@@ -165,6 +164,7 @@ class SubOperation_inline(MultiDBTabularInline):
 
 class Flow_inline(MultiDBTabularInline):
   model = Flow
+  fields = ('thebuffer', 'operation', 'quantity', 'type', 'effective_start', 'effective_end')
   raw_id_fields = ('operation', 'thebuffer',)
   extra = 0
   exclude = ('source',)
@@ -196,10 +196,9 @@ class Operation_admin(MultiDBModelAdmin):
   save_on_top = True
   inlines = [ SubOperation_inline, Flow_inline, Load_inline, ]
   fieldsets = (
-    (None, {'fields': ('name', 'type', 'location', 'description', ('category', 'subcategory'))}),
+    (None, {'fields': ('name', 'type', 'location', 'description', 'category', 'subcategory')}),
     (_('Planning parameters'), {
       'fields': ('fence', 'posttime', 'sizeminimum', 'sizemultiple', 'sizemaximum', 'cost', 'duration', 'duration_per', 'search'),
-        'classes': ('collapse',)
        }),
     )
   tabs = [
@@ -228,15 +227,16 @@ class Buffer_admin(MultiDBModelAdmin):
   raw_id_fields = ('location', 'item', 'minimum_calendar', 'producing', 'owner', )
   fieldsets = (
     (None, {
-      'fields': (('name'), ('item', 'location'), 'description', 'owner', ('category', 'subcategory'))}),
+      'fields': ('name', 'item', 'location', 'description', 'owner', 'category', 'subcategory')}),
     (_('Inventory'), {
-      'fields': ('onhand',)}),
+      'fields': ('onhand',)
+      }),
     (_('Planning parameters'), {
       'fields': ('type', 'minimum', 'minimum_calendar', 'producing'),
-      'classes': ('collapse',)},),
+      }),
     (_('Planning parameters for procurement buffers'), {
       'fields': ('leadtime', 'fence', 'min_inventory', 'max_inventory', 'min_interval', 'max_interval', 'size_minimum', 'size_multiple', 'size_maximum'),
-      'classes': ('collapse',)},),
+      }),
     )
   save_on_top = True
   inlines = [ Flow_inline, ]
@@ -399,7 +399,7 @@ class Demand_admin(MultiDBModelAdmin):
       )}),
     (_('Planning parameters'), {'fields': (
       'operation', 'minshipment', 'maxlateness'
-      ), 'classes': ('collapse') }),
+      )}),
     )
   save_on_top = True
   tabs = [

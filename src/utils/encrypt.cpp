@@ -54,7 +54,7 @@ string Decryptor::base64(const unsigned char *input, int length)
   bmem = BIO_new(BIO_s_mem());
   b64 = BIO_push(b64, bmem);
   BIO_write(b64, input, length);
-  BIO_flush(b64);
+  (void)BIO_flush(b64);
   BIO_get_mem_ptr(b64, &bptr);
   string x( bptr->data, bptr->length-1);
   BIO_free_all(b64);

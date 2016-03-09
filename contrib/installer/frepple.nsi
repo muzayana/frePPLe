@@ -24,7 +24,7 @@
 
 ; Main definitions
 !define PRODUCT_NAME "frePPLe"
-!define PRODUCT_VERSION "3.0.1"
+!define PRODUCT_VERSION "3.1.beta"
 !define PRODUCT_PUBLISHER "frePPLe"
 !define PRODUCT_WEB_SITE "http://frepple.com"
 !define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\frepple.exe"
@@ -131,8 +131,8 @@ Page custom FinishOpen FinishLeave
 !insertmacro MUI_LANGUAGE "TradChinese"
 
 ;Version Information
-VIProductVersion "3.0.0.0"
-VIAddVersionKey /LANG=${LANG_ENGLISH} FileVersion "3.0.0.0"
+VIProductVersion "3.1.0.0"
+VIAddVersionKey /LANG=${LANG_ENGLISH} FileVersion "3.1.0.0"
 VIAddVersionKey /LANG=${LANG_ENGLISH} ProductName "frePPLe enterprise edition installer"
 VIAddVersionKey /LANG=${LANG_ENGLISH} Comments "frePPLe enterprise edition installer"
 VIAddVersionKey /LANG=${LANG_ENGLISH} CompanyName "frePPLe"
@@ -213,6 +213,7 @@ Section "Application" SecAppl
   ; Copy application, dll and libraries
   SetOutPath "$INSTDIR\bin"
   File "..\bin\frepple.exe"
+  File "..\bin\frepple.pyd"
   !insertmacro InstallLib DLL NOTSHARED NOREBOOT_NOTPROTECTED "..\bin\frepple.dll" "$INSTDIR\bin\frepple.dll" "$SYSDIR"
 
   ; Copy modules
@@ -245,6 +246,8 @@ Section "Application" SecAppl
   CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME} ${PRODUCT_VERSION}\Start frePPLe server.lnk" "$INSTDIR\bin\freppleserver.exe"
   CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME} ${PRODUCT_VERSION}\Open configuration folder.lnk" "$INSTDIR\bin\custom"
   CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME} ${PRODUCT_VERSION}\Open log folder.lnk" "$LOCALAPPDATA\${PRODUCT_NAME}\${PRODUCT_VERSION}"
+  SetOutPath "$INSTDIR\bin"
+  CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME} ${PRODUCT_VERSION}\Open command window.lnk" "$SYSDIR\cmd.exe"
 
   ; Pick up the installation parameters
   ReadINIStr $6 "$PLUGINSDIR\parameters.ini" "Field 8" "State"  # Language
@@ -318,7 +321,7 @@ Section "Application" SecAppl
   FileWrite $R4 "    'NAME': '$1',  # Database name $\r$\n"
   FileWrite $R4 "    'USER': '$2',  # Database user.$\r$\n"
   FileWrite $R4 "    'PASSWORD': '$3', # Password of the database user.$\r$\n"
-  FileWrite $R4 "    'HOST': '$4',     # Set to empty string for localhost.$\r$\n"
+  FileWrite $R4 "    'HOST': '$4',     # Set to 'localhost' if the database is running on this machine.$\r$\n"
   FileWrite $R4 "    'PORT': '$5',     # Set to empty string for default port number.$\r$\n"
   FileWrite $R4 "    'OPTIONS': {},  # Backend specific configuration parameters.$\r$\n"
   FileWrite $R4 "    'TEST': {$\r$\n"
@@ -575,6 +578,7 @@ Section Uninstall
   Delete "$SMPROGRAMS\${PRODUCT_NAME} ${PRODUCT_VERSION}\Stop service.lnk"
   Delete "$SMPROGRAMS\${PRODUCT_NAME} ${PRODUCT_VERSION}\Open configuration folder.lnk"
   Delete "$SMPROGRAMS\${PRODUCT_NAME} ${PRODUCT_VERSION}\Open log folder.lnk"
+  Delete "$SMPROGRAMS\${PRODUCT_NAME} ${PRODUCT_VERSION}\Open command window.lnk"
 
   ; Remove the folder in start menu
   RMDir "$SMPROGRAMS\${PRODUCT_NAME} ${PRODUCT_VERSION}"

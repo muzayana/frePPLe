@@ -91,8 +91,8 @@ class QuoteReport(GridReport):
 
   @classmethod
   def extra_context(reportclass, request, *args, **kwargs):
-    return {
-      'form': createQuoteForm(request.database)
+    return { 
+      'form': createQuoteForm(request.database),
       }
 
 
@@ -126,19 +126,29 @@ def InfoView(request, action):
       data = request.GET['name']
       conn.request("POST", '/demand/' + iri_to_uri(urlquote(data, '')) + "?status=open&persist=1")
     elif action == 'inquiry' or action == 'quote':
-      data = '\r\n'.join([
-        '--' + BOUNDARY,
-        'Content-Disposition: form-data; name="xmldata"',
-        '',
-        request.body.decode(request.encoding or settings.DEFAULT_CHARSET),
-        '--' + BOUNDARY + '--',
-        ''
-        ]).encode('utf-8')
-      headers = {
-        "Content-type": 'multipart/form-data; boundary=%s; charset=utf-8' % BOUNDARY,
-        "content-length": len(data)
-        }
-      conn.request("POST", "/%s" % action, data, headers)
+      # validate some fields
+      import xml.etree.ElementTree as ET
+      xml_root=ET.fromstring(request.body.decode(request.encoding or settings.DEFAULT_CHARSET))
+      if float(xml_root[0][0].find('quantity').text) <= 0:
+        raise Exception('Invalid Quantity')
+      elif float(xml_root[0][0].find('minshipment').text) <= 0:
+        raise Exception('Invalid Minimum shipment')
+      elif float(xml_root[0][0].find('maxlateness').text) < 0:
+        raise Exception('Invalid Maximum lateness')
+      else:
+        data = '\r\n'.join([
+          '--' + BOUNDARY,
+          'Content-Disposition: form-data; name="xmldata"',
+          '',
+          request.body.decode(request.encoding or settings.DEFAULT_CHARSET),
+          '--' + BOUNDARY + '--',
+          ''
+          ]).encode('utf-8')
+        headers = {
+          "Content-type": 'multipart/form-data; boundary=%s; charset=utf-8' % BOUNDARY,
+          "content-length": len(data)
+          }
+        conn.request("POST", "/%s" % action, data, headers)
     else:
       raise Exception('Invalid action')
     response = conn.getresponse()

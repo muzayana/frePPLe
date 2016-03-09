@@ -64,8 +64,9 @@ DECLARE_EXPORT ItemSupplier::~ItemSupplier()
 }
 
 
-DECLARE_EXPORT ItemSupplier::ItemSupplier() : loc(NULL),
-  size_minimum(1.0), size_multiple(0.0), cost(0.0), firstOperation(NULL)
+DECLARE_EXPORT ItemSupplier::ItemSupplier() :
+  loc(NULL), size_minimum(1.0), size_multiple(0.0), cost(0.0),
+  firstOperation(NULL), res(NULL), res_qty(1.0)
 {
   initType(metadata);
 
@@ -74,8 +75,9 @@ DECLARE_EXPORT ItemSupplier::ItemSupplier() : loc(NULL),
 }
 
 
-DECLARE_EXPORT ItemSupplier::ItemSupplier(Supplier* s, Item* r, int u)
-  : loc(NULL), size_minimum(1.0), size_multiple(0.0), cost(0.0), firstOperation(NULL)
+DECLARE_EXPORT ItemSupplier::ItemSupplier(Supplier* s, Item* r, int u) :
+  loc(NULL), size_minimum(1.0), size_multiple(0.0), cost(0.0),
+  firstOperation(NULL), res(NULL), res_qty(1.0)
 {
   setSupplier(s);
   setItem(r);
@@ -87,8 +89,9 @@ DECLARE_EXPORT ItemSupplier::ItemSupplier(Supplier* s, Item* r, int u)
 }
 
 
-DECLARE_EXPORT ItemSupplier::ItemSupplier(Supplier* s, Item* r, int u, DateRange e)
-  : loc(NULL), size_minimum(1.0), size_multiple(0.0), cost(0.0), firstOperation(NULL)
+DECLARE_EXPORT ItemSupplier::ItemSupplier(Supplier* s, Item* r, int u, DateRange e) :
+  loc(NULL), size_minimum(1.0), size_multiple(0.0), cost(0.0),
+  firstOperation(NULL), res(NULL), res_qty(1.0)
 {
   setSupplier(s);
   setItem(r);
@@ -256,9 +259,14 @@ DECLARE_EXPORT OperationItemSupplier::OperationItemSupplier(
   setLocation(b->getLocation());
   setSource(i->getSource());
   setCost(i->getCost());
+  setFence(i->getFence());
   setHidden(true);
-  FlowEnd* fl = new FlowEnd(this, b, 1);
+  new FlowEnd(this, b, 1);
   initType(metadata);
+
+  // Optionally, create a load
+  if (i->getResource())
+    new LoadDefault(this, i->getResource(), i->getResourceQuantity());
 
   // Insert in the list of ItemSupplier operations.
   // We keep the list sorted by the operation name.
@@ -301,7 +309,7 @@ OperationItemSupplier::~OperationItemSupplier()
       while (i->nextOperation != this && i->nextOperation)
         i = i->nextOperation;
       if (!i)
-        throw LogicException("ItemSupplier operation list corrupted");
+        logger << "Error: ItemSupplier operation list corrupted" << endl;
       else
         i->nextOperation = nextOperation;
     }
@@ -312,6 +320,59 @@ OperationItemSupplier::~OperationItemSupplier()
 DECLARE_EXPORT Buffer* OperationItemSupplier::getBuffer() const
 {
   return getFlows().begin()->getBuffer();
+}
+
+
+DECLARE_EXPORT void OperationItemSupplier::trimExcess() const
+{
+  // This method can only trim operations not loading a resource
+  if (getLoads().begin() != getLoads().end())
+    return;
+
+  for (Operation::flowlist::const_iterator fliter = getFlows().begin();
+    fliter != getFlows().end(); ++fliter)
+  {
+    if (fliter->getQuantity() <= 0)
+      // Strange, shouldn't really happen
+      continue;
+    FlowPlan* candidate = NULL;
+    double curmin = 0;
+    double oh = 0;
+
+    for (Buffer::flowplanlist::const_iterator flplniter = fliter->getBuffer()->getFlowPlans().begin();
+      flplniter != fliter->getBuffer()->getFlowPlans().end();
+      ++flplniter)
+    {
+      // For any operationplan we get the onhand when its successor
+      // replenishment arrives. If that onhand is higher than the minimum
+      // onhand value we can resize it.
+      // This is only valid in unconstrained plans and when there are
+      // no upstream activities.
+      if (flplniter->getEventType() == 3)
+        curmin = flplniter->getMin();
+      else if (flplniter->getEventType() == 1)
+      {
+        const FlowPlan* flpln = static_cast<const FlowPlan*>(&*flplniter);
+        if (flpln->getQuantity() > 0 && !flpln->getOperationPlan()->getLocked() && (!candidate || candidate->getDate() != flpln->getDate()))
+        {
+          if (candidate && oh > curmin)
+          {
+            // This candidate can now be resized
+            candidate->setQuantity(candidate->getQuantity() - oh + curmin, false);
+            candidate = NULL;
+          }
+          else if (flpln->getOperation() == this)
+            candidate = const_cast<FlowPlan*>(flpln);
+          else
+            candidate = NULL;
+        }
+      }
+      oh = flplniter->getOnhand();
+    }
+    if (candidate && oh > curmin)
+      // Resize the last candidate at the end of the horizon
+      candidate->setQuantity(candidate->getQuantity() - oh + curmin, false);
+  }
 }
 
 
@@ -438,7 +499,7 @@ extern "C" PyObject* OperationItemSupplier::createOrder(
   // Finally, create the operationplan
   OperationPlan *opplan = oper->createOperationPlan(qty, start, end);
   if (id)
-    opplan->setIdentifier(id);
+    opplan->setRawIdentifier(id);  // We can use this fast method because we call activate later
   if (status)
     opplan->setStatus(status);
   // Reset quantity after the status update to assure that

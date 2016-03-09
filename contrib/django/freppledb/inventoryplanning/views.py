@@ -22,7 +22,6 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q, Min, Max
 from django.db import connections, transaction
 from django.db.models.fields.related import RelatedField
-from django.db.models.expressions import RawSQL
 from django.forms.models import modelform_factory
 from django.http import Http404, JsonResponse
 from django.http.response import StreamingHttpResponse, HttpResponse, HttpResponseServerError
@@ -35,12 +34,16 @@ from django.views.generic import View
 from freppledb.boot import getAttributeFields
 from freppledb.common.report import GridFieldText, GridReport
 from freppledb.common.report import GridFieldLastModified, GridFieldChoice
-from freppledb.common.report import GridFieldNumber, GridFieldBool, GridFieldInteger
+from freppledb.common.report import GridFieldNumber, GridFieldBool
+from freppledb.common.report import GridFieldCurrency, GridFieldInteger
 from freppledb.common.models import Comment, Parameter, BucketDetail
 from freppledb.forecast.models import Forecast, ForecastPlan
-from freppledb.input.models import Buffer, Location, Calendar, CalendarBucket, Demand
-from freppledb.input.models import Item, DistributionOrder, PurchaseOrder, ItemSupplier, ItemDistribution
+from freppledb.input.models import Buffer, Location, Calendar, CalendarBucket
+from freppledb.input.models import Demand, Supplier, OperationPlan, ItemSupplier
+from freppledb.input.models import DistributionOrder, PurchaseOrder, Item, ItemDistribution
 from freppledb.inventoryplanning.models import InventoryPlanning, InventoryPlanningOutput
+from freppledb.output.models import FlowPlan
+from freppledb.output.models import OperationPlan as OperationPlanOut
 
 import logging
 logger = logging.getLogger(__name__)
@@ -88,6 +91,14 @@ class Replanner:
       frepple_bckt.value = bckt.value
       if bckt.startdate >= self.current_date and bckt.startdate < self.horizon_future:
         self.fcst_buckets.append(bckt.startdate)
+
+    # Plan calendar
+    tmp2 = Parameter.getValue('plan.calendar', db, None)
+    if tmp2:
+      if tmp2 == tmp:
+        frepple.settings.calendar = self.frepple_calendar
+      else:
+        raise Exception("The parameters plan.calendar and forecast.calendar must be equal")
 
     # Forecast solver
     cursor = connections[db].cursor()
@@ -156,6 +167,9 @@ class InventoryPlanningList(GridReport):
 
   rows = (
     GridFieldText('buffer', title=_('buffer'), field_name="buffer__name", key=True, formatter='detail', extra="role:'input/buffer'"),
+    GridFieldText('description', title=_('description'), field_name="buffer__item__description"),
+    GridFieldText('category', title=_('category'), field_name="buffer__item__category"),
+    GridFieldText('subcategory', title=_('subcategory'), field_name="buffer__item__subcategory"),
     GridFieldChoice('roq_type', title=_('ROQ type'),
       choices=InventoryPlanning.calculationtype, extra="formatoptions:{defaultValue:''}"),
     GridFieldNumber('roq_min_qty', title=_('ROQ minimum quantity'), extra="formatoptions:{defaultValue:''}"),
@@ -202,6 +216,9 @@ class DRP(GridReport):
     GridFieldText('location', title=_('location'), field_name="buffer__location__name", formatter='detail', extra="role:'input/location'"),
     GridFieldText('buffer', title=_('buffer'), field_name="buffer", key=True, formatter='detail', extra="role:'input/buffer'", hidden=True),
     GridFieldInteger('leadtime', title=_('lead time'), extra="formatoptions:{defaultValue:''}, summaryType:'max'"),
+    GridFieldCurrency('price', title=_('price'), field_name="buffer__item__price",
+      extra="formatoptions:{defaultValue:'', prefix:'%s', suffix:'%s'}, summaryType:'max'" % settings.CURRENCY),
+    GridFieldNumber('stockoutrisk', title=_('stockout risk'), extra="formatoptions:{defaultValue:''}, summaryType:'max'"),
     GridFieldInteger('localforecast', title=_('local forecast'), extra="formatoptions:{defaultValue:''}, summaryType:'sum'"),
     GridFieldInteger('dependentdemand', title=_('dependent demand'), extra="formatoptions:{defaultValue:''}, summaryType:'sum'"),
     GridFieldInteger('safetystock', title=_('safety stock'), extra="formatoptions:{defaultValue:''}, summaryType:'sum'"),
@@ -213,6 +230,9 @@ class DRP(GridReport):
     GridFieldInteger('opentransfers', title=_('open transfers'), extra="formatoptions:{defaultValue:''}, summaryType:'sum'"),
     GridFieldInteger('proposedpurchases', title=_('proposed purchases'), extra="formatoptions:{defaultValue:''}, summaryType:'sum'"),
     GridFieldInteger('proposedtransfers', title=_('proposed transfers'), extra="formatoptions:{defaultValue:''}, summaryType:'sum'"),
+    GridFieldText('description', title=_('description'), field_name="buffer__item__description"),
+    GridFieldText('category', title=_('category'), field_name="buffer__item__category"),
+    GridFieldText('subcategory', title=_('subcategory'), field_name="buffer__item__subcategory"),
     )
 
   @classmethod
@@ -319,7 +339,6 @@ class DRP(GridReport):
         sortcol, sortdir = reportclass.get_sort(request).split(' ')
         sortrow = reportclass.rows[int(sortcol)-1]
         aggregate = "sum" if isinstance(sortrow, (GridFieldNumber, GridFieldInteger)) else "max"
-        print("loc fr", sortrow.field_name)
         if sortrow.field_name.find("__") < 0:
             # location grouping 1: field in the outinventoryplanning table
             q = q.extra(
@@ -829,7 +848,7 @@ class DRPitemlocation(View):
       raise Http404('Only ajax requests allowed')
     errors = []
 
-    if True: #try:
+    try:
       # Unescape special characters in the argument, which is encoded django-admin style.
       itemlocation = unquote(arg)
 
@@ -850,10 +869,10 @@ class DRPitemlocation(View):
         factor = 1.0
 
       # Recompute the plan
+      DRP.getBuckets(request)
       newplan = self.replan(ip, editvalue, data, request, simulate)
       if simulate:
         return JsonResponse(newplan)
-
 
       # Save all changes to the database
       if not simulate:
@@ -1012,14 +1031,18 @@ class DRPitemlocation(View):
                 fcst.method = val
                 fcst.save(using=request.database)
             if request.user.has_perm('inventoryplanning.change_inventoryplanning'):
-              ip.roq_type = param.get('roq_type', None)
+              val = param.get('roq_type', '')
+              if val != '':
+                ip.roq_type = val;
               val = param.get('roq_min_qty', '')
               if val != '':
                 ip.roq_min_qty = float(val)
               val = param.get('roq_min_poc', '')
               if val != '':
                 ip.roq_min_poc = float(val)
-              ip.ss_type = param.get('ss_type', None)
+              val = param.get('ss_type', '')
+              if val != '':
+                ip.ss_type = val;
               val = param.get('ss_min_qty', '')
               if val != '':
                 ip.ss_min_qty = float(val)
@@ -1140,8 +1163,8 @@ class DRPitemlocation(View):
             else:
               errors.append("Invalid comment data")
 
-    #except Exception as e:
-    #  errors.append(str(e))
+    except Exception as e:
+      errors.append(str(e))
 
     if errors:
       logger.error("Error saving DRP updates: %s" % "".join(errors))
@@ -1181,6 +1204,25 @@ class DRPitemlocation(View):
     if not replanner:
       replanners[request.database] = replanner = Replanner(request.database)
 
+    # Assure the operationplan identifiers remain unique
+    cursor = connections[request.database].cursor()
+    cursor.execute('''
+      select
+        coalesce(max(ids.max_id), 1) + 1
+      from (
+        select max(id) as max_id from purchase_order
+          where status is not null and status <> 'proposed'
+        union all
+        select max(id) as max_id from distribution_order
+          where status is not null and status <> 'proposed'
+        union all
+        select max(id) as max_id from operationplan
+          where status is not null and status <> 'proposed'
+        ) ids
+      ''')
+    d = cursor.fetchone()
+    frepple.settings.id = d[0]
+
     # Build a small model in memory to replan
     frepple.settings.current = replanner.current_date
     tmp = '%s simulating %s at %s' % (request.database, itemlocation, datetime.now())
@@ -1213,7 +1255,7 @@ class DRPitemlocation(View):
         frepple_itemsupplier.effective_start = i.effective_start
       if i.effective_end:
         frepple_itemsupplier.effective_end = i.effective_end
-    for i in ItemDistribution.objects.all().using(request.database).filter(item=ip.buffer.item.name):
+    for i in ItemDistribution.objects.all().using(request.database).filter(item__lft__lte=ip.buffer.item.lft, item__rght__gte=ip.buffer.item.rght):
       frepple_itemdistribution = frepple.itemdistribution(
         origin=frepple.location(name=i.origin.name),
         destination=frepple.location(name=i.location.name) if i.location else None,
@@ -1495,7 +1537,7 @@ class DRPitemlocation(View):
       if val:
         frepple_buf.ss_max_poc = val
       val = changes['parameters'].get('nostock', None)
-      if val:
+      if val is not None:
         frepple_buf.nostock = val
       val = changes['parameters'].get('roq_type', None)
       if val:
@@ -1585,6 +1627,95 @@ class DRPitemlocation(View):
           j.forecastconsumed = i.consumed
           break
 
+    if not simulate:
+      # Save inventory planning results
+
+      # Save forecast plan
+      for j in db_forecastplan:
+        j.save(using=request.database)
+
+      # Remove previous proposed transactions
+      OperationPlanOut.objects.all().using(request.database).filter(
+        id__in=[
+          d['id'] for d in DistributionOrder.objects.all().using(request.database).filter(
+            item=ip.buffer.item.name,
+            destination=ip.buffer.location.name
+            ).values('id')
+        ])
+      OperationPlanOut.objects.all().using(request.database).filter(
+        id__in=[
+          d['id'] for d in PurchaseOrder.objects.all().using(request.database).filter(
+            item=ip.buffer.item.name,
+            location_id=ip.buffer.location.name
+            ).values('id')
+        ])
+      DistributionOrder.objects.all().using(request.database).filter(
+        item=ip.buffer.item.name,
+        destination=ip.buffer.location.name,
+        status='proposed'
+        ).delete()
+      PurchaseOrder.objects.all().using(request.database).filter(
+        item=ip.buffer.item.name,
+        location_id=ip.buffer.location.name,
+        status='proposed'
+        ).delete()
+      # TODO also remove from out_operationplan in case the item is manufactured
+
+      # Remove previous inventory profile
+      FlowPlan.objects.using(request.database).filter(thebuffer=itemlocation).delete()
+
+      # TODO save also resource plans of involved resources
+
+      # Save new proposed transactions and inventory profile
+      for fl in frepple_buf.flowplans:
+        frepple_operationplan = fl.operationplan
+        OperationPlanOut(
+            id=frepple_operationplan.id,
+            operation=frepple_operationplan.operation.name,
+            quantity=frepple_operationplan.quantity,
+            unavailable=frepple_operationplan.unavailable,
+            startdate=frepple_operationplan.start,
+            enddate=frepple_operationplan.end,
+            criticality=frepple_operationplan.criticality,
+            locked=frepple_operationplan.locked
+            ).save(using=request.database)
+        FlowPlan(
+          thebuffer=itemlocation,
+          operationplan_id=frepple_operationplan.id,
+          quantity=fl.quantity,
+          flowdate=fl.date,
+          onhand=fl.onhand
+          ).save(using=request.database)
+        if frepple_operationplan.status != 'proposed':
+          continue
+        if isinstance(frepple_operationplan.operation, frepple.operation_itemsupplier):
+          PurchaseOrder(
+            id=frepple_operationplan.id,
+            reference=frepple_operationplan.reference,
+            item_id=ip.buffer.item.name,
+            location_id=fl.buffer.location.name,
+            supplier_id=frepple_operationplan.operation.itemsupplier.supplier.name,
+            quantity=frepple_operationplan.quantity,
+            startdate=str(frepple_operationplan.start),
+            enddate=str(frepple_operationplan.end),
+            status="proposed",
+            criticality=frepple_operationplan.criticality
+            ).save(using=request.database)
+        elif isinstance(frepple_operationplan.operation, frepple.operation_itemdistribution):
+          DistributionOrder(
+            id=frepple_operationplan.id,
+            reference=frepple_operationplan.reference,
+            item_id=ip.buffer.item.name,
+            destination_id=fl.buffer.location.name,
+            origin_id=frepple_operationplan.operation.origin.location.name,
+            quantity=frepple_operationplan.quantity,
+            startdate=str(frepple_operationplan.start),
+            enddate=str(frepple_operationplan.end),
+            status="proposed",
+            criticality=frepple_operationplan.criticality
+            ).save(using=request.database)
+        # else: TODO save manufacturing operation plans
+
     # Collect the forecast results
     # We aggregate the low-level results into the requested reporting buckets
     agg_buckets_query = BucketDetail.objects.using(request.database).filter(
@@ -1671,9 +1802,9 @@ class DRPitemlocation(View):
         else:
           forecastconsumed = 0
         agg_bucket_idx += 1
-      if agg_bucket_idx >= len(agg_buckets):
+      if agg_bucket_idx >= len(agg_buckets) or agg_buckets[agg_bucket_idx].startdate >= request.report_enddate:
           break
-    if agg_bucket_idx < len(agg_buckets):
+    if agg_bucket_idx < len(agg_buckets) and agg_buckets[agg_bucket_idx].startdate < request.report_enddate:
       result["forecast"].append({
         'bucket': agg_buckets[agg_bucket_idx].name,
         'orderstotal': int(orderstotal),
@@ -1699,18 +1830,18 @@ class DRPitemlocation(View):
     for fl in frepple_buf.flowplans:
       if fl.date < agg_buckets[agg_bucket_idx].startdate:
         continue
-      if fl.date > agg_buckets[agg_bucket_idx].enddate:
-        while False: #fl.date > agg_buckets[agg_bucket_idx+1].startdate:
+      if fl.date >= agg_buckets[agg_bucket_idx].enddate:
+        while fl.date > agg_buckets[agg_bucket_idx+1].enddate:
           result["plan"].append({
             "bucket": agg_buckets[agg_bucket_idx].name,
-            "startoh": start_oh,
+            "startoh": round(start_oh),
             "dmdlocal": 0,
             "dmddependent": 0,
             "dmdtotal": 0,
             "supplyconfirmed": 0,
             "supplyproposed": 0,
             "supply": 0,
-            "endoh": start_oh,
+            "endoh": round(start_oh),
             "roq": getBucket(roq_cal_buckets, agg_buckets[agg_bucket_idx].startdate, False) or 1,
             "roqoverride": getBucket(roq_cal_buckets, agg_buckets[agg_bucket_idx].startdate, True),
             "ss": getBucket(ss_cal_buckets, agg_buckets[agg_bucket_idx].startdate, False) or 0,
@@ -1723,14 +1854,14 @@ class DRPitemlocation(View):
         end_oh = start_oh + supply_confirmed + supply_proposed - demand_local - demand_dependent
         result["plan"].append({
           "bucket": agg_buckets[agg_bucket_idx].name,
-          "startoh": start_oh,
-          "dmdlocal": demand_local,
-          "dmddependent": demand_dependent,
-          "dmdtotal": demand_local + demand_dependent,
-          "supplyconfirmed": supply_confirmed,
-          "supplyproposed": supply_proposed,
-          "supply": supply_confirmed + supply_proposed,
-          "endoh": end_oh,
+          "startoh": round(start_oh),
+          "dmdlocal": round(demand_local),
+          "dmddependent": round(demand_dependent),
+          "dmdtotal": round(demand_local) + round(demand_dependent),
+          "supplyconfirmed": round(supply_confirmed),
+          "supplyproposed": round(supply_proposed),
+          "supply": round(supply_confirmed) + round(supply_proposed),
+          "endoh": round(end_oh),
           "roq": getBucket(roq_cal_buckets, agg_buckets[agg_bucket_idx].startdate, False) or 1,
           "roqoverride": getBucket(roq_cal_buckets, agg_buckets[agg_bucket_idx].startdate, True),
           "ss": getBucket(ss_cal_buckets, agg_buckets[agg_bucket_idx].startdate, False) or 0,
@@ -1740,7 +1871,7 @@ class DRPitemlocation(View):
         start_oh = end_oh
         demand_local = demand_dependent = supply_confirmed = supply_proposed = 0
         agg_bucket_idx += 1
-        if agg_bucket_idx >= len(agg_buckets):
+        if agg_bucket_idx >= len(agg_buckets) or agg_buckets[agg_bucket_idx].startdate >= request.report_enddate:
           break
       if fl.quantity > 0:
         if fl.operationplan.status == 'confirmed':
@@ -1788,17 +1919,17 @@ class DRPitemlocation(View):
           "lastmodified": str(datetime.now())
           })
     # Empty buckets at the end of the plan
-    while agg_bucket_idx < len(agg_buckets):
+    while agg_bucket_idx < len(agg_buckets) and agg_buckets[agg_bucket_idx].startdate < request.report_enddate:
       result["plan"].append({
         "bucket": agg_buckets[agg_bucket_idx].name,
-        "startoh": start_oh,
+        "startoh": round(start_oh),
         "dmdlocal": 0,
         "dmddependent": 0,
         "dmdtotal": 0,
         "supplyconfirmed": 0,
         "supplyproposed": 0,
         "supply": 0,
-        "endoh": start_oh,
+        "endoh": round(start_oh),
         "roq": getBucket(roq_cal_buckets, agg_buckets[agg_bucket_idx].startdate, False),
         "roqoverride": getBucket(roq_cal_buckets, agg_buckets[agg_bucket_idx].startdate, True),
         "ss": getBucket(ss_cal_buckets, agg_buckets[agg_bucket_idx].startdate, False),
@@ -1822,13 +1953,13 @@ class DRPitemlocation(View):
     frepple_itemdistribution = frepple_demand = frepple_location = None
     frepple_operationplan = i = j = fl = None
     gc.collect()
-    frepple.demand(name=tmp, action='R')
-    frepple.buffer(name=tmp, action='R')
-    frepple.calendar(name="ROQ for %s" % tmp, action='R')
-    frepple.calendar(name="SS for %s" % tmp, action='R')
-    frepple.operation(name="%s dependent demand" % tmp, action='R')
-    frepple.operation(name="%s local demand" % tmp, action='R')
-    frepple.item(name=tmp, action='R')
+    # frepple.demand(name=tmp, action='R')
+    # frepple.buffer(name=tmp, action='R')
+    # frepple.calendar(name="ROQ for %s" % tmp, action='R')
+    # frepple.calendar(name="SS for %s" % tmp, action='R')
+    # frepple.operation(name="%s dependent demand" % tmp, action='R')
+    # frepple.operation(name="%s local demand" % tmp, action='R')
+    # frepple.item(name=tmp, action='R')
 
     # Return the new plan
     return result

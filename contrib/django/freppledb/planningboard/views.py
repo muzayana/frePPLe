@@ -15,10 +15,9 @@ from django.conf import settings
 from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import render
 from django.utils.translation import ugettext_lazy as _
-from django.views.generic import TemplateView
 from django.views.decorators.cache import never_cache
 
-from freppledb.common.models import Parameter
+from freppledb.common.models import Parameter, Bucket
 
 
 # Validity duration of a login token
@@ -38,5 +37,6 @@ def Board(request):
     "token": hashlib.sha256(message.encode('utf-8')).hexdigest(),
     "port": int(Parameter.getValue("planningboard.port", request.database, 8001)),
     "title": _("Planning board"),
-    "preferences": prefs
+    "preferences": prefs,
+    "bucketnames": Bucket.objects.order_by('-level').values_list('name', flat=True),
     })

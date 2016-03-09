@@ -22,18 +22,24 @@
   }
 
   $(function() {
-    {% if mode == "graph" %}graph.header();
-    {% endif %}$("#units").buttonset();
-    $("#unitsmode").click(function() {updateScreen("value");});
-    $("#valuemode").click(function() {updateScreen("units");});
+    {% if mode == "graph" %}graph.header();{% endif %}
+
+    $("#unitsmode").on('click', function() {console.log("units"); updateScreen("units");});
+    $("#valuemode").on('click', function() {console.log("value"); updateScreen("value");});
   })
 </script>
 {% endblock %}
 
-{% block extra_toolicons %}<form style="display: inline"><span id="units">
-<input type="radio" id="unitsmode" name="units" value="value" {% if not "units" in preferences or preferences.units == 'value' %}checked{% endif %}><label for="unitsmode"><span title="{% trans "display value"|capfirst|force_escape %}" class="fa fa-dollar fa-lg" style="color:#4c3000"></span></label>
-<input type="radio" id="valuemode" name="units" value="units" {% if "units" in preferences and preferences.units == 'units' %}checked{% endif %}><label for="valuemode"><span title="{% trans "display units"|capfirst|force_escape %}" class="fa fa-truck fa-lg" style="color:#4c3000"></span></label>
-</span></form>&nbsp;&nbsp;{% endblock %}
+{% block extra_toolicons %}
+<div class="btn-group" role="group">
+	<button data-toggle="tooltip" data-placement="top" title="" class="btn btn-xs btn-primary{% if not "units" in preferences or preferences.units == 'value' %} active{% endif %}" type="radio" id="valuemode" name="units" value="value" data-original-title="Display value">
+	      <label for="valuemode" style="margin-bottom: 2px;"><span title="{% trans "display value"|capfirst|force_escape %}" class="fa fa-dollar"></span></label>
+	</button>
+	<button data-toggle="tooltip" data-placement="top" title="" class="btn btn-xs btn-primary{% if "units" in preferences and preferences.units == 'units' %} active{% endif %}" type="radio" id="unitsmode" name="units" value="units" data-original-title="Display quantity">
+	      <label for="unitsmode" style="margin-bottom: 2px;"><span title="{% trans "display units"|capfirst|force_escape %}" class="fa fa-truck"></span></label>
+	</button>
+</div>&nbsp;
+{% endblock %}
 
 {% block contextmenus %}
 <div id="detail0context" class="ContextMenu"><ul class="ui-menu ui-widget ui-widget-content ui-corner-all ui-state-default">
@@ -45,7 +51,7 @@
 <div id="detail9context" class="ContextMenu"><ul class="ui-menu ui-widget ui-widget-content ui-corner-all ui-state-default">
 <li class="ui-menu-item"><a id="{{request.prefix}}/demandplan/?demand__startswith={value}&amp;o=5a&amp;plandate__gte={startdate}&amp;plandate__lt={enddate}">{% trans 'detail'|capfirst %}</a></li>
 </ul></div>
-{% if mode == "graph" %}<div id="tooltip" role="tooltip" class="ui-tooltip ui-widget ui-corner-all ui-widget-content" style="display: none; position: absolute;"/>
+{% if mode == "graph" %}<div id="tooltip" role="tooltip" class="popover" style="display: none; position: absolute;"/></div>
 {% endif %}{% endblock %}
 
 {% block tools %}{% if args.0 %}{% tabs "forecast.forecast" %}{% endif %}{{block.super}}{% endblock %}
@@ -381,13 +387,13 @@ function crosses (cellvalue, options, rowdata)
     {
       case 0: // Total orders
         if (cellvalue[cross_idx[i]] != 0.0)
-          result += cellvalue[cross_idx[i]] + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail0'></span><br>";
+          result += cellvalue[cross_idx[i]] + "<span class='context cross fa fa-caret-right' role='detail0'></span><br>";
         else
           result += '0.0<br>';
         break;
       case 1: // Open orders
         if (cellvalue[cross_idx[i]] != 0.0)
-          result += cellvalue[cross_idx[i]] + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail1'></span><br>";
+          result += cellvalue[cross_idx[i]] + "<span class='context fa fa-caret-right' role='detail1'></span><br>";
         else
           result += '0.0<br>';
         break;
@@ -429,7 +435,7 @@ function crosses (cellvalue, options, rowdata)
         if (cellvalue[11] == 1)
         {
           if (cellvalue[cross_idx[i]] != 0.0)
-            result += (Math.round(cellvalue[cross_idx[i]]*10)/10) + "<span class='context cross ui-icon ui-icon-triangle-1-e' role='detail9'></span><br>";
+            result += (Math.round(cellvalue[cross_idx[i]]*10)/10) + "<span class='context cross fa fa-caret-right' role='detail9'></span><br>";
           else
             result += '0<br>';
         }

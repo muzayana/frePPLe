@@ -50,6 +50,12 @@ int InventoryPlanningSolver::initialize()
   x.supportsetattro();
   x.supportcreate(create);
   x.addMethod("solve", Solver::solve, METH_NOARGS, "run the solver");
+  x.addMethod(
+    "computeStockoutProbability",
+    computeStockoutProbability,
+    METH_VARARGS,
+    "compute the risk of a stockout within the lead time"
+    );
   const_cast<MetaClass*>(metadata)->pythonClass = x.type_object();
   return x.typeReady();
 }
@@ -151,9 +157,10 @@ void InventoryPlanningSolver::solve(void* v)
       plan_qty = d->getMinShipment();
 
     // Create a delivery operationplan for the remaining quantity
-    deliveryoper->createOperationPlan(
+    OperationPlan* deli = deliveryoper->createOperationPlan(
       plan_qty, Date::infinitePast, d->getDue(), &*d, NULL, 0, true
       );
+    deli->activate();
   }
 
   // Step 3: Solve buffer by buffer, ordered by level
@@ -193,6 +200,71 @@ void InventoryPlanningSolver::solve(void* v)
     logger << "End inventory planning solver" << endl;
 }
 
+Duration InventoryPlanningSolver::getBufferLeadTime(const Buffer* b)
+{
+  Duration leadtime;
+  short loglevel = getLogLevel();
+  Operation *oper = b->getProducingOperation();
+  if (!oper)
+  {
+    if (loglevel > 1)
+      logger << "   No replenishing operation defined" << endl;
+    // Setting an axtremely long lead time, which results in a huge
+    // safety stock that covers the entire horizon.
+    leadtime = 999L * 86400L;
+  }
+  else if (oper->getType() == *OperationAlternate::metadata)
+  {
+    // Alternate operation: Take the lead time of the preferred operation
+    int curPrio = INT_MAX;
+    for (Operation::Operationlist::const_iterator
+      sub = oper->getSubOperations().begin();
+      sub != oper->getSubOperations().end();
+      ++sub)
+      {
+        if ((*sub)->getPriority() < curPrio && (
+          (*sub)->getOperation()->getType() == *OperationFixedTime::metadata
+          || (*sub)->getOperation()->getType() == *OperationItemDistribution::metadata
+          || (*sub)->getOperation()->getType() == *OperationItemSupplier::metadata
+          ))
+        {
+          leadtime = static_cast<OperationFixedTime*>((*sub)->getOperation())->getDuration();
+          curPrio = (*sub)->getPriority();
+        }
+      }
+  }
+  else if (oper->getType() == *OperationSplit::metadata)
+  {
+    // Split operation: Take the lead time of the longest operation
+    for (Operation::Operationlist::const_iterator
+      sub = oper->getSubOperations().begin();
+      sub != oper->getSubOperations().end();
+      ++sub)
+      {
+        if ((*sub)->getOperation()->getType() != *OperationFixedTime::metadata
+          || (*sub)->getOperation()->getType() != *OperationItemDistribution::metadata
+          || (*sub)->getOperation()->getType() != *OperationItemSupplier::metadata
+          )
+        {
+          Duration tmp = static_cast<OperationFixedTime*>((*sub)->getOperation())->getDuration();
+          if (tmp > leadtime)
+            leadtime = tmp;
+        }
+      }
+  }
+  else if (
+    oper->getType() != *OperationFixedTime::metadata
+    && oper->getType() != *OperationItemDistribution::metadata
+    && oper->getType() != *OperationItemSupplier::metadata
+    )
+    // Using a lead time of 0
+    logger << "   Replenishing operation should be of type fixed_time" << endl;
+  else
+    // After all special cases, the normal case of an operation with a fixed duration
+    leadtime = static_cast<OperationFixedTime*>(oper)->getDuration();
+
+  return leadtime;
+}
 
 void InventoryPlanningSolver::solve(const Buffer* b, void* v)
 {
@@ -233,20 +305,7 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
     price = b->getItem()->getPrice();
 
   // Get the lead time from the operation replenishing this buffer
-  Duration leadtime;
-  Operation *oper = b->getProducingOperation();
-  if (!oper)
-  {
-    if (loglevel > 1)
-      logger << "   No replenishing operation defined" << endl;
-    return;
-  }
-  else if (oper->getType() != *OperationFixedTime::metadata
-    && oper->getType() != *OperationItemDistribution::metadata
-    && oper->getType() != *OperationItemSupplier::metadata)
-    logger << "   Replenishing operation should be of type fixed_time" << endl; // TODO Make more generic
-  else
-    leadtime = static_cast<OperationFixedTime*>(oper)->getDuration();
+  Duration leadtime = getBufferLeadTime(b);
 
   // Report parameter settings
   if (loglevel > 1)
@@ -285,7 +344,10 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
     ss_min_qty = ss_multiple;
 
   // Prepare the calendars to retrieve the results
-  Calendar *roq_calendar = oper->getSizeMinimumCalendar();
+  Calendar *roq_calendar = NULL;
+  Operation *oper = b->getProducingOperation();
+  if (oper)
+    roq_calendar = oper->getSizeMinimumCalendar();
   if (!roq_calendar)
     // Automatically association based on the calendar name.
     roq_calendar = Calendar::find("ROQ for " + b->getName());
@@ -540,6 +602,7 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
     double ss = 0.0;
     if (service_level > 0 && (ss_type == "combined" || ss_type == "calculated" || firstBucket))
     {
+      /*
       // We compute the service level with the minimum of the replenishment
       // lead time and the expected time to consume the ROQ quantity.
       // This is used to consider situations with multiple replenishments
@@ -547,6 +610,8 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
       Duration tmp_leadtime = demand_roq_poc ? static_cast<long>(roq / demand_roq_poc * 86400) : 0L;
       if (leadtime < tmp_leadtime)
         tmp_leadtime = leadtime;
+      */
+      Duration tmp_leadtime = leadtime;
       double tmp = calulateStockLevel(
         // Argument 1: demand over the "risk period", which is the max of the
         // lead time and the time between replenishments.
@@ -671,12 +736,162 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
   }
 
   // Associate the new or updated created calendars
-  if (oper->getSizeMinimumCalendar())
-    oper->setSizeMinimumCalendar(NULL);
-  oper->setSizeMinimumCalendar(roq_calendar);
+  if (oper)
+  {
+    if (oper->getSizeMinimumCalendar())
+      oper->setSizeMinimumCalendar(NULL);
+    oper->setSizeMinimumCalendar(roq_calendar);
+  }
   if (b->getMinimumCalendar())
     const_cast<Buffer*>(b)->setMinimumCalendar(NULL);
   const_cast<Buffer*>(b)->setMinimumCalendar(ss_calendar);
+}
+
+
+double InventoryPlanningSolver::computeStockOutProbability(const Buffer* b){
+
+  short loglevel = getLogLevel();
+  if (loglevel > 1)
+    logger << "Computing stockout probability on buffer " << b << endl;
+
+
+  Duration leadtime = getBufferLeadTime(b);
+  if (loglevel > 1)
+    logger << "leadtime for " << b << " : " << leadtime << endl;
+  Duration oneSecond = 1;
+  Date currentDate = Plan::instance().getCurrent();
+  double stockOutProbability, maxStockOutProbability = 0;
+  double sumForecast = 0;
+
+  double standardDeviation = b->getDoubleProperty("demand_deviation", -1);
+
+
+  Date bucketStart;
+  for (Calendar::EventIterator tmp(cal, Date::infinitePast, true);;
+    ++tmp)
+  {
+    Date bucketEnd = tmp.getDate();
+
+    // We are before current, let's move on
+    if (bucketEnd <= currentDate)
+    {
+      bucketStart = bucketEnd;
+      continue;
+    }
+	
+	// We perform the bucket where the leadtime falls and then we stop
+    if (bucketStart > currentDate + leadtime)
+      break;
+
+	if (loglevel > 1)
+      logger << "Calculating stockout probability for bucket " << bucketStart << " --> " << bucketEnd << endl;
+
+	bool lastBucket = (currentDate + leadtime < bucketEnd && currentDate + leadtime >= bucketStart);
+
+	if (loglevel > 1 && lastBucket)
+      logger << "This is the last bucket as the leadtime falls in this bucket" << endl;
+
+    //for the current bucket, we need to find out the demand
+	double bucketForecast = 0;
+    for (Buffer::flowplanlist::const_iterator i = b->getFlowPlans().begin();
+      i != b->getFlowPlans().end(); ++i) {
+        
+		  // Only consider consumption
+        if (i->getEventType() != 1 || i->getQuantity() >= 0)
+          continue;
+
+		// Only consider (net) forecast, not demand
+		const FlowPlan *fp = static_cast<const FlowPlan*>(&*i);
+        Demand * dmd = fp->getOperationPlan()->getDemand();
+        if (dmd && dmd->getType() == *DemandDefault::metadata) {
+			continue;
+		}
+
+
+		if (i->getDate() >= bucketStart && i->getDate() < bucketEnd)
+			bucketForecast -= i->getQuantity();
+
+	}
+
+	if (loglevel > 1)
+      logger << "Forecast for this bucket : " << bucketForecast << endl;
+
+	// No forecast for this bucket, let's continue as this one will have no impact on the result
+	if (bucketForecast == 0) {
+		bucketStart = bucketEnd;
+		continue;
+	}
+
+	// on_hand at the end of the bucket, we have to remove one second otherwise bucketEnd is the first second of following bucket
+    double on_hand = b->getOnHand(bucketEnd-oneSecond);
+    // If on-hand at end of bucket is 0, no need to go further
+    // StockOut probability is 100% whatever the demand is for that buffer
+    if (on_hand <= 0) {
+      return 1;
+    }
+
+	// Special case for the last period, we need to pick the forecast 
+	// for the whole bucket and use the prorata value from the bucket 
+	// start until the leadtime
+	if (lastBucket) {
+	  bucketForecast = bucketForecast*(currentDate + leadtime - bucketStart)/(bucketEnd - bucketStart);
+	  if (loglevel > 1)
+      logger << "Corrected forecast for this bucket as this is the last one : " << bucketForecast << endl;
+	}
+
+	//Add bucket forecast to total demand
+	sumForecast += bucketForecast;
+
+	if (loglevel > 1)
+      logger << "Total Forecast since plan current bucket : " << sumForecast << endl;
+
+	// If standard deviation is not calculated for that buffer, we use variance to mean = 1
+	double variance = (standardDeviation == -1) ? sumForecast : standardDeviation*standardDeviation;
+    // on_hand is the TSL so ROP = TSL-1 and ROQ = 1
+    stockOutProbability = 1 - 
+		calculateFillRate(sumForecast, variance,int(on_hand)-1,1,AUTOMATIC);
+
+
+    if (loglevel > 1)
+      logger << "Stockout probability for bucket starting on " << bucketStart << " : " << stockOutProbability << endl;
+
+
+    maxStockOutProbability = max(maxStockOutProbability,stockOutProbability);
+
+    if (loglevel > 1)
+      logger << "Greatest stockout probability so far : " << maxStockOutProbability << endl;
+
+    bucketStart = bucketEnd;
+  }
+
+  return maxStockOutProbability;
+}
+
+
+PyObject* InventoryPlanningSolver::computeStockoutProbability(PyObject *self, PyObject *args)
+{
+  // Parse the argument
+  PyObject *buf = NULL;
+  if (args && !PyArg_ParseTuple(args, "|O:computeStockoutRisk", &buf))
+    return NULL;
+  if (buf && !PyObject_TypeCheck(buf, Buffer::metadata->pythonClass))
+  {
+    PyErr_SetString(PythonDataException, "solve(d) argument must be a buffer");
+    return NULL;
+  }
+
+  try
+  {
+    InventoryPlanningSolver *solver = static_cast<InventoryPlanningSolver*>(self);
+    return Py_BuildValue(
+      "d", solver->computeStockOutProbability(static_cast<Buffer*>(buf))
+      );
+  }
+  catch(...)
+  {
+    PythonType::evalException();
+    return NULL;
+  }
 }
 
 
@@ -700,26 +915,26 @@ int InventoryPlanningSolver::calulateStockLevel(
   double fillRateMaximum, bool minimumStrongest, distribution dist
   )
 {
-	/* Checks that the fill rates are between 0 and 1*/
-	if (fillRateMinimum < 0)
-		fillRateMinimum = 0;
+  /* Checks that the fill rates are between 0 and 1*/
+  if (fillRateMinimum < 0)
+    fillRateMinimum = 0;
 
-	if (fillRateMaximum > 1)
-		fillRateMaximum = 1;
-	// TODO Below code is definitely not optimal, we might think of coding a dichotomical approach
-	// or think of a formula giving the stock level based on the fill rate without iterating
-	unsigned int rop = static_cast<int>(floor(mean));
-	double fillRate;
+  if (fillRateMaximum > 1)
+    fillRateMaximum = 1;
+  // TODO Below code is definitely not optimal, we might think of coding a dichotomical approach
+  // or think of a formula giving the stock level based on the fill rate without iterating
+  unsigned int rop = static_cast<int>(floor(mean));
+  double fillRate;
 
   // Compute the fill rate, either based on the average inventory or based on the safety stock only
   while ((fillRate = calculateFillRate(mean, variance, rop, service_level_on_average_inventory ? roq : 1, dist)) < fillRateMinimum)
     ++rop;
 
-	// Now we are sure the that lower bound is respected, what about the upper bound
-	if (minimumStrongest == true || fillRate <= fillRateMaximum)
-		return rop;
-	else
-		return rop - 1;
+  // Now we are sure the that lower bound is respected, what about the upper bound
+  if (minimumStrongest == true || fillRate <= fillRateMaximum)
+    return rop;
+  else
+    return rop - 1;
 }
 
 
@@ -733,13 +948,13 @@ distribution InventoryPlanningSolver::chooseDistribution(
   if (mean >= 20)
     return NORMAL;
 
-	double varianceToMean = variance/mean;
-	if (varianceToMean > 1.1)
+  double varianceToMean = variance/mean;
+  if (varianceToMean > 1.1)
     /* If the variance to mean ratio is greater than 1.1, we switch to negative binomial */
-		return NEGATIVE_BINOMIAL;
+    return NEGATIVE_BINOMIAL;
   else
     /* Else apply a Poisson distribution. */
-		return POISSON;
+    return POISSON;
 }
 
 
@@ -756,10 +971,10 @@ double InventoryPlanningSolver::calculateFillRate(
   double mean, double variance, int rop, int roq, distribution dist
   )
 {
-	if (mean <= 0)
-		return 1;
+  if (mean <= 0)
+    return 1;
 
-	if (dist == AUTOMATIC)
+  if (dist == AUTOMATIC)
     dist = chooseDistribution(mean, variance);
 
   if (dist == POISSON)
@@ -770,11 +985,11 @@ double InventoryPlanningSolver::calculateFillRate(
       // faster.
       return NormalDistribution::calculateFillRate(mean, variance, rop, roq);
     else
-		  return PoissonDistribution::calculateFillRate(mean, rop, roq);
-	}
-	else if (dist == NORMAL)
-		return NormalDistribution::calculateFillRate(mean, variance, rop, roq);
-	else if (dist == NEGATIVE_BINOMIAL)
+      return PoissonDistribution::calculateFillRate(mean, rop, roq);
+  }
+  else if (dist == NORMAL)
+    return NormalDistribution::calculateFillRate(mean, variance, rop, roq);
+  else if (dist == NEGATIVE_BINOMIAL)
   {
     if (mean >= 20)
       // A negative binomial distribution is very close to a normal distribution
@@ -782,9 +997,9 @@ double InventoryPlanningSolver::calculateFillRate(
       // faster.
       return NormalDistribution::calculateFillRate(mean, variance, rop, roq);
     else
-		  return NegativeBinomialDistribution::calculateFillRate(mean, variance, rop, roq);
-	}
-	else
+      return NegativeBinomialDistribution::calculateFillRate(mean, variance, rop, roq);
+  }
+  else
     throw DataException("Invalid distribution");
 }
 

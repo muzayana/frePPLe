@@ -9,7 +9,7 @@
  source code or in the form of compiled binaries.
 -->
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
-  elementFormDefault="unqualified" attributeFormDefault="unqualified" version="3.0.1">
+  elementFormDefault="unqualified" attributeFormDefault="unqualified" version="3.1.beta">
   <!--
     This schema has no target namespace defined. It will adopt the namespace
     of the schema that is using it with an "include" statement.
@@ -323,7 +323,7 @@
       </xsd:extension>
     </xsd:complexContent>
   </xsd:complexType>
-  
+
   <xsd:complexType name="suboperation">
     <xsd:annotation>
       <xsd:documentation>
@@ -390,6 +390,9 @@
       <xsd:element name="priority" type="xsd:integer" />
       <xsd:element name="effective_start" type="xsd:dateTime" />
       <xsd:element name="effective_end" type="xsd:dateTime" />
+      <xsd:element name="resource" type="resource" />
+      <xsd:element name="resource_qty" type="positiveDouble" />
+      <xsd:element name="fence" type="xsd:duration" />
       <xsd:element name="booleanproperty" type="booleanproperty" />
       <xsd:element name="stringproperty" type="stringproperty" />
       <xsd:element name="doubleproperty" type="doubleproperty" />
@@ -402,6 +405,8 @@
     <xsd:attribute name="priority" type="xsd:integer" />
     <xsd:attribute name="effective_start" type="xsd:dateTime" />
     <xsd:attribute name="effective_end" type="xsd:dateTime" />
+    <xsd:attribute name="resource_qty" type="positiveDouble" />
+    <xsd:attribute name="fence" type="xsd:duration" />
     <xsd:attribute name="action" type="action" />
   </xsd:complexType>
 
@@ -430,6 +435,9 @@
       <xsd:element name="priority" type="xsd:integer" />
       <xsd:element name="effective_start" type="xsd:dateTime" />
       <xsd:element name="effective_end" type="xsd:dateTime" />
+      <xsd:element name="resource" type="resource" />
+      <xsd:element name="resource_qty" type="positiveDouble" />
+      <xsd:element name="fence" type="xsd:duration" />
       <xsd:element name="booleanproperty" type="booleanproperty" />
       <xsd:element name="stringproperty" type="stringproperty" />
       <xsd:element name="doubleproperty" type="doubleproperty" />
@@ -442,6 +450,8 @@
     <xsd:attribute name="priority" type="xsd:integer" />
     <xsd:attribute name="effective_start" type="xsd:dateTime" />
     <xsd:attribute name="effective_end" type="xsd:dateTime" />
+    <xsd:attribute name="resource_qty" type="positiveDouble" />
+    <xsd:attribute name="fence" type="xsd:duration" />
     <xsd:attribute name="action" type="action" />
   </xsd:complexType>
 

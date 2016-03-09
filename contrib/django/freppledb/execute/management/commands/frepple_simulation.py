@@ -228,7 +228,7 @@ class Command(BaseCommand):
         simulator.buckets += 1
 
         if verbosity > 0:
-          print("\nStart simulating bucket from %s to %s (%s out of %s)" % (strt, nd, idx, verbosity))#bckt_list_len))
+          print("\nStart simulating bucket from %s to %s (%s out of %s)" % (strt, nd, idx, bckt_list_len))
 
         # Update currentdate parameter
         param.value = strt.strftime("%Y-%m-%d %H:%M:%S")
@@ -564,7 +564,7 @@ class Simulator(object):
     for fl in oper.flows.all():
       if fl.quantity > 0 and not consume:
         continue
-      if fl.type in ('start', 'end'):
+      if fl.type in ('start', 'end') or not fl.type:
         if consume:
           fl.thebuffer.onhand += qty * fl.quantity
           fl.thebuffer.save(using=self.database)

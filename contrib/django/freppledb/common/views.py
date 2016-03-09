@@ -8,14 +8,12 @@
 # or in the form of compiled binaries.
 #
 
-import inspect
 import json
 
 from django.shortcuts import render_to_response
 from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.decorators import login_required
-from django.contrib.admin.utils import unquote, quote
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.contenttypes.models import ContentType
 from django.core.urlresolvers import reverse, resolve
@@ -41,6 +39,16 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+@staff_member_required
+def cockpit(request):
+  return render_to_response('index.html', {
+    'title': _('Cockpit'),
+    'bucketnames': Bucket.objects.order_by('-level').values_list('name', flat=True),
+    },
+    context_instance=RequestContext(request)
+    )
+
+
 def handler404(request):
   '''
   Custom error handler which redirects to the main page rather than displaying the 404 page.
@@ -50,7 +58,7 @@ def handler404(request):
     #. Translators: Translation included with Django
     force_text(_('Page not found') + ": " + request.prefix + request.get_full_path())
     )
-  return HttpResponseRedirect(request.prefix + "/data/")
+  return HttpResponseRedirect(request.prefix + "/")
 
 
 def handler500(request):
@@ -70,22 +78,17 @@ class PreferencesForm(forms.Form):
   language = forms.ChoiceField(
     label=_("Language"),
     initial="auto",
-    choices=User.languageList,
-    help_text=_("Language of the user interface"),
+    choices=User.languageList
     )
   pagesize = forms.IntegerField(
     label=_('Page size'),
     required=False,
-    initial=100,
-    min_value=25,
-    help_text=_('Number of records to display in a single page'),
+    initial=100
     )
-
   theme = forms.ChoiceField(
     label=_('Theme'),
     required=False,
     choices=[ (i, capfirst(i)) for i in settings.THEMES ],
-    help_text=_('Theme for the user interface'),
     )
   cur_password = forms.CharField(
     #. Translators: Translation included with Django
@@ -117,6 +120,10 @@ class PreferencesForm(forms.Form):
 
   def clean(self):
     newdata = super(PreferencesForm, self).clean()
+    if newdata.get('pagesize',0) > 10000:
+      raise forms.ValidationError("Maximum page size is 10000.")
+    if newdata.get('pagesize',25) < 25:
+      raise forms.ValidationError("Minimum page size is 25.")
     if newdata['cur_password']:
       if not self.user.check_password(newdata['cur_password']):
         #. Translators: Translation included with Django
@@ -167,11 +174,18 @@ def preferences(request):
       'theme': pref.theme,
       'pagesize': pref.pagesize,
       })
+  LANGUAGE = User.languageList[0][1]
+  for l in User.languageList:
+    if l[0] == request.user.language:
+      LANGUAGE = l[1]
   return render_to_response('common/preferences.html', {
      'title': _('My preferences'),
      'form': form,
      },
-     context_instance=RequestContext(request))
+     context_instance=RequestContext(request, {
+        'THEMES': settings.THEMES,
+        "LANGUAGE": LANGUAGE
+        }))
 
 
 class HorizonForm(forms.Form):
@@ -192,7 +206,6 @@ def horizon(request):
   if not form.is_valid():
     raise Http404('Invalid form data')
   try:
-    request.user.horizonstart = form.cleaned_data['horizonstart']
     request.user.horizonbuckets = form.cleaned_data['horizonbuckets']
     request.user.horizonstart = form.cleaned_data['horizonstart']
     request.user.horizonend = form.cleaned_data['horizonend']

@@ -80,9 +80,9 @@ in your company:
       pieces, and we have already received orders of 20 from the customer.
       Without the forecast netting the demand in January would be 120 pieces,
       which is (very likely) not correct.
-    | The netting solver will deduct the orders of 20 from the forecast.
+    | The netting solver will subtract the orders of 20 from the forecast resulting in a net forecast of 80.
       The total demand that is planned in January will then be equal to
-      100: 80 remaining net forecast + 20 orders.
+      100 corresponding to 80 from net forecast plus 20 from actual orders.
     | The netting algorithm has logic to match a demand with the most
       appropriate forecast at the right level in the customer and product
       hierarchies, and it can also consider netting in previous and subsequent

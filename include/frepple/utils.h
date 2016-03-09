@@ -53,6 +53,12 @@
 #endif
 #include "datetime.h"
 
+// A dummy function to suppress warnings about the unused variable PyDateTimeAPI.
+// Some of our source files do use it, some don't.
+inline bool unused_function() {
+  return PyDateTimeAPI == NULL;
+}
+
 // For compatibility with earlier Python releases
 #if PY_VERSION_HEX < 0x02050000 && !defined(PY_SSIZE_T_MIN)
 typedef int Py_ssize_t;
@@ -113,7 +119,7 @@ using namespace std;
 #include <config.h>
 #else
 // Define the version for (windows) compilers that don't use autoconf
-#define PACKAGE_VERSION "3.0.1"
+#define PACKAGE_VERSION "3.1.beta"
 #endif
 
 // Header for multithreading

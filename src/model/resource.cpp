@@ -79,6 +79,26 @@ int ResourceBuckets::initialize()
 }
 
 
+DECLARE_EXPORT void Resource::inspect(const string msg) const
+{
+  logger << "Inspecting resource " << getName() << ": ";
+  if (!msg.empty()) logger  << msg;
+  logger << endl;
+
+  for (loadplanlist::const_iterator oo = getLoadPlans().begin();
+    oo != getLoadPlans().end();
+    ++oo)
+  {
+    logger << "  " << oo->getDate()
+      << " qty:" << oo->getQuantity()
+      << ", oh:" << oo->getOnhand();
+    if (oo->getEventType() == 1)
+      logger <<  ", oper:" << static_cast<const LoadPlan*>(&*oo)->getOperationPlan()->getOperation();
+    logger << endl;
+  }
+}
+
+
 DECLARE_EXPORT void Resource::setMaximum(double m)
 {
   if (m < 0)
@@ -203,6 +223,19 @@ DECLARE_EXPORT Resource::~Resource()
 
   // The Load and ResourceSkill objects are automatically deleted by the
   // destructor of the Association list class.
+
+  // Clean up references on the itemsupplier and itemdistribution models
+  for (Item::iterator itm_iter = Item::begin(); itm_iter != Item::end(); ++itm_iter)
+  {
+    Item::supplierlist::const_iterator itmsup_iter = itm_iter->getSupplierIterator();
+    while (ItemSupplier* itmsup = itmsup_iter.next())
+      if (itmsup->getResource() == this)
+        itmsup->setResource(NULL);
+    Item::distributionIterator  itmdist_iter = itm_iter->getDistributionIterator();
+    while (ItemDistribution* itmdist = itmdist_iter.next())
+      if (itmdist->getResource() == this)
+        itmdist->setResource(NULL);
+  }
 }
 
 

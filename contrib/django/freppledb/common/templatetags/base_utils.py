@@ -14,7 +14,6 @@ import json
 from django.db import models
 from django.contrib.admin.utils import unquote
 from django.template import Library, Node, Variable, TemplateSyntaxError
-from django.template.loader import get_template
 from django.conf import settings
 from django.utils.translation import ugettext as _
 from django.utils.http import urlquote
@@ -49,8 +48,6 @@ class CrumbsNode(Node):
   {%block breadcrumbs%}<div class="breadcrumbs">{%crumbs%}</div>{%endblock%}
   '''
 
-  separator = '&nbsp;&nbsp;&nbsp;&nbsp;<i class="fa fa-caret-right"></i>&nbsp;&nbsp;&nbsp;&nbsp;'
-
   def render(self, context):
     try:
       req = context['request']
@@ -76,8 +73,7 @@ class CrumbsNode(Node):
       title = variable_title.resolve(context)
     except:
       title = req.get_full_path()
-    #. Translators: Translation included with Django
-    if title != _('Site administration'):
+    if title != _('Cockpit'):
       # Don't handle the cockpit screen in the crumbs
       try:
         # Check if the same title is already in the crumbs.
@@ -97,8 +93,8 @@ class CrumbsNode(Node):
           # Add the current URL to the stack
           cur.append( (
             title,
-            '<span>%s<a href="%s%s%s">%s</a></span>' % (
-              self.separator, req.prefix, urlquote(req.path),
+            '<li><a href="%s%s%s">%s</a></li>' % (
+              req.prefix, urlquote(req.path),
               req.GET and ('?' + iri_to_uri(req.GET.urlencode())) or '',
               str(escape(capfirst(title)))
               ),
@@ -194,7 +190,7 @@ class ModelTabs(Node):
         return ''
 
       # Render the admin class
-      result = ['<div class="frepple-tabs" id="tabs"><ul role="tablist">']
+      result = ['<div class="row"><div id="tabs" class="col-md-12 form-inline hor-align-right"><ul class="nav nav-tabs">']
       obj = context['object_id']
       active_tab = context.get('active_tab', 'edit')
       for tab in admn.tabs:
@@ -214,13 +210,13 @@ class ModelTabs(Node):
               continue
         # Append to the results
         result.append(
-          '<li %srole="tab"><a class="ui-tabs-anchor" href="%s%s">%s</a></li>' % (
-          'class="frepple-tabs-active" ' if active_tab == tab['name'] else '',
+          '<li %srole="presentation"><a class="ui-tabs-anchor" href="%s%s">%s</a></li>' % (
+          'class="active" ' if active_tab == tab['name'] else '',
           context['request'].prefix,
           reverse(tab['view'], args=(obj,)),
           force_text(tab['label']).capitalize()
           ))
-      result.append('</ul></div>')
+      result.append('</ul></div></div>')
       return '\n'.join(result)
     except:
       if settings.TEMPLATE_DEBUG:
@@ -241,40 +237,6 @@ def get_modeltabs(parser, token):
 
 get_modeltabs.is_safe = True
 register.tag('tabs', get_modeltabs)
-
-
-#
-# A tag to return HTML code for a database selector
-#
-
-class SelectDatabaseNode(Node):
-  r'''
-  A tag to return HTML code for a database selector.
-  '''
-  def render(self, context):
-    try:
-      req = context['request']
-    except:
-      return ''  # No request found in the context
-    if len(req.user.scenarios) <= 1:
-      return ''
-    s = ['<select id="database" name="%s" onchange="selectDatabase()">' % req.database ]
-    for i in req.user.scenarios:
-      if i == req.database:
-        s.append('<option value="%s" selected="selected">%s</option>' % (i, i))
-      else:
-        s.append('<option value="%s">%s</option>' % (i, i))
-    s.append('</select>')
-    return ''.join(s)
-
-  def __repr__(self):
-    return "<SelectDatabase Node>"
-
-
-def selectDatabase(parser, token):
-    return SelectDatabaseNode()
-
-register.tag('selectDatabase', selectDatabase)
 
 
 #
@@ -468,12 +430,15 @@ class DashboardNode(Node):
     context[self.hiddenvarname] = { i: j for i, j in reg.items() }
     context[self.varname] = []
     for i in mydashboard:
-      w = []
-      for j in i['widgets']:
-        if reg[j[0]].has_permission(req.user):
-          w.append(reg[j[0]](**j[1]))
-          context[self.hiddenvarname].pop(j[0], None)
-      context[self.varname].append( {'width': i['width'], 'widgets': w}  )
+      cols = []
+      for j in i['cols']:
+        widgets = []
+        for k in j['widgets']:
+          if k[0] in reg and reg[k[0]].has_permission(req.user):
+            widgets.append(reg[k[0]](**k[1]))
+            context[self.hiddenvarname].pop(k[0], None)
+        cols.append( {'width': j['width'], 'widgets': widgets}  )
+      context[self.varname].append( {'rowname': i['rowname'], 'cols': cols} )
     return ''
 
   def __repr__(self):

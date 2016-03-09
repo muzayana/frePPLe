@@ -60,6 +60,9 @@ class InventoryPlanningSolver : public Solver
 
     static bool service_level_on_average_inventory;
 
+    /** Python wrapper method for the stockout probability. */
+    static PyObject* computeStockoutProbability(PyObject*, PyObject*);
+
   public:
     static const Keyword tag_fixed_order_cost;
     static const Keyword tag_holding_cost;
@@ -150,6 +153,9 @@ class InventoryPlanningSolver : public Solver
     virtual void solve(void* = NULL);
     virtual void solve(const Buffer*,void* = NULL);
 
+    double computeStockOutProbability(const Buffer*);
+    Duration getBufferLeadTime(const Buffer*);
+
     template<class Cls> static inline void registerFields(MetaClass* m)
     {
       m->addPointerField<Cls, Calendar>(Tags::calendar, &Cls::getCalendar, &Cls::setCalendar);
@@ -164,6 +170,8 @@ class InventoryPlanningSolver : public Solver
   static distribution chooseDistribution(double mean, double variance);
   static int calulateStockLevel(double mean, double variance, int roq, double fillRateMinimum, double fillRateMaximum, bool minimumStrongest, distribution dist);
   static double calculateFillRate(double mean, double variance, int rop, int roq, distribution dist);
+  
+  
 };
 
 

@@ -412,7 +412,6 @@ class User(AbstractUser):
 
 @receiver(pre_delete, sender=User)
 def delete_user(sender, instance, **kwargs):
-  print(11111)
   raise PermissionDenied
 
 class UserPreference(models.Model):

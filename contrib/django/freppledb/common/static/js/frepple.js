@@ -3,17 +3,21 @@
 window.__admin_media_prefix__ = "/static/admin/";
 
 
+
 // Adjust the breadcrumbs such that it fits on a single line.
 // This function is called when the window is resized.
 function breadcrumbs_reflow()
 {
   var crumbs = $("#breadcrumbs");
-  var height_one_line = Math.ceil($("#cockpitcrumb").height()) + 1;
+  var height_one_line = Math.ceil($("#cockpitcrumb").height()) + 16;
+
   // Show all elements previously hidden
-  crumbs.children("span:hidden").show();
+  crumbs.children("li:hidden").show();
   // Hide the first crumbs till it all fits on a single line.
-  crumbs.children("span").each(function() {
-    if (crumbs.height() > height_one_line) $(this).hide();
+  var first = true;
+  crumbs.children("li").each(function() {
+    if (crumbs.height() > height_one_line && !first) $(this).hide();
+    first = false;
   });
 }
 
@@ -31,6 +35,133 @@ function admin_escape(n)
 }
 
 
+/// <reference path="jquery.js" />
+/*
+jquery-resizable
+Version 0.14 - 1/4/2015
+© 2015 Rick Strahl, West Wind Technologies
+www.west-wind.com
+Licensed under MIT License
+*/
+
+    $.fn.resizable = function fnResizable(options) {
+        var opt = {
+            // selector for handle that starts dragging
+            handleSelector: null,
+            // resize the width
+            resizeWidth: true,
+            // resize the height
+            resizeHeight: true,
+            // hook into start drag operation (event passed)
+            onDragStart: null,
+            // hook into stop drag operation (event passed)
+            onDragEnd: null,
+            // hook into each drag operation (event passed)
+            onDrag: null,
+            // disable touch-action on $handle
+            // prevents browser level actions like forward back gestures
+            touchActionNone: true
+        };
+        if (typeof options == "object") opt = $.extend(opt, options);
+
+        return this.each(function () {
+            var startPos, startTransition;
+
+            var $el = $(this);
+            var $handle = opt.handleSelector ? $(opt.handleSelector) : $el;
+
+            if (opt.touchActionNone)
+                $handle.css("touch-action", "none");
+
+            $el.addClass("resizable");
+            $handle.bind('mousedown.rsz touchstart.rsz', startDragging);
+
+            function noop(e) {
+                e.stopPropagation();
+                e.preventDefault();
+            };
+
+            function startDragging(e) {
+                startPos = getMousePos(e);
+                startPos.width = parseInt($el.width(), 10);
+                startPos.height = parseInt($el.height(), 10);
+
+                startTransition = $el.css("transition");
+                $el.css("transition", "none");
+
+                if (opt.onDragStart) {
+                    if (opt.onDragStart(e, $el, opt) === false)
+                        return;
+                }
+                opt.dragFunc = doDrag;
+
+                $(document).bind('mousemove.rsz', opt.dragFunc);
+                $(document).bind('mouseup.rsz', stopDragging);
+                if (window.Touch || navigator.maxTouchPoints) {
+                    $(document).bind('touchmove.rsz', opt.dragFunc);
+                    $(document).bind('touchend.rsz', stopDragging);
+                }
+                $(document).bind('selectstart.rsz', noop); // disable selection
+            }
+
+            function doDrag(e) {
+                var pos = getMousePos(e);
+
+                if (opt.resizeWidth) {
+                    var newWidth = startPos.width + pos.x - startPos.x;
+                    $el.width(newWidth);
+                }
+
+                if (opt.resizeHeight) {
+                    var newHeight = startPos.height + pos.y - startPos.y;
+                    $el.height(newHeight);
+                }
+
+                if (opt.onDrag)
+                    opt.onDrag(e, $el, opt);
+
+                //console.log('dragging', e, pos, newWidth, newHeight);
+            }
+
+            function stopDragging(e) {
+                e.stopPropagation();
+                e.preventDefault();
+
+                $(document).unbind('mousemove.rsz', opt.dragFunc);
+                $(document).unbind('mouseup.rsz', stopDragging);
+
+                if (window.Touch || navigator.maxTouchPoints) {
+                    $(document).unbind('touchmove.rsz', opt.dragFunc);
+                    $(document).unbind('touchend.rsz', stopDragging);
+                }
+                $(document).unbind('selectstart.rsz', noop);
+
+                // reset changed values
+                $el.css("transition", startTransition);
+
+                if (opt.onDragEnd)
+                    opt.onDragEnd(e, $el, opt);
+
+                return false;
+            }
+
+            function getMousePos(e) {
+                var pos = { x: 0, y: 0, width: 0, height: 0 };
+                if (typeof e.clientX === "number") {
+                    pos.x = e.clientX;
+                    pos.y = e.clientY;
+                } else if (e.originalEvent.touches) {
+                    pos.x = e.originalEvent.touches[0].clientX;
+                    pos.y = e.originalEvent.touches[0].clientY;
+                } else
+                    return null;
+
+                return pos;
+            }
+        });
+    }
+// end of jquery-resizable copy
+
 //----------------------------------------------------------------------------
 // A class to handle changes to a grid.
 //----------------------------------------------------------------------------
@@ -43,34 +174,28 @@ var upload = {
 
   undo : function ()
   {
-    if ($('#undo').hasClass("save_undo_button_inactive")) return;
+    if ($('#undo').hasClass("btn-primary")) return;
     $("#grid").trigger("reloadGrid");
     $("#grid").closest(".ui-jqgrid-bdiv").scrollTop(0);
-    $('#save').addClass("save_undo_button_inactive").removeClass("save_undo_button_active");
-    $('#undo').addClass("save_undo_button_inactive").removeClass("save_undo_button_active");
-    $('#delete_selected').addClass("ui-state-disabled").removeClass("bold");
-    $('#copy_selected').addClass("ui-state-disabled").removeClass("bold");
-    $('#actions').addClass("ui-selectmenu-disabled ui-state-disabled change_status_selectmenu_inactive")
-    .removeClass("change_status_selectmenu_active ui-state-enabled ui-selectmenu-enabled")
-    .prop('disabled', 'disabled');
+    $('#save, #undo').addClass("btn-primary").removeClass("btn-danger").prop('disabled', true);
+    $('#actions1').prop('disabled', true);
 
-    $('#filter').removeClass("ui-state-disabled");
+    $('#filter').prop('disabled', false);
     $(window).off('beforeunload', upload.warnUnsavedChanges);
   },
 
   select : function ()
   {
-    $('#filter').addClass("ui-state-disabled");
+    $('#filter').prop('disabled', true);
     $.jgrid.hideModal("#searchmodfbox_grid");
-    $('#save').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
-    $('#undo').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
+    $('#save, #undo').removeClass("btn-primary").addClass("btn-danger").prop('disabled', false);
     $(window).off('beforeunload', upload.warnUnsavedChanges);
     $(window).on('beforeunload', upload.warnUnsavedChanges);
   },
 
   save : function()
   {
-    if ($('#save').hasClass("save_undo_button_inactive")) return;
+    if ($('#save').hasClass("btn-primary")) return;
 
     // Pick up all changed cells. If a function "getData" is defined on the
     // page we use that, otherwise we use the standard functionality of jqgrid.
@@ -90,16 +215,23 @@ var upload = {
             upload.undo();
             },
           error: function (result, stat, errorThrown) {
-            $('#popup').html(result.responseText)
-              .dialog({
-                title: gettext("Error saving data"),
-                autoOpen: true,
-                resizable: false,
-                width: 'auto',
-                height: 'auto'
-              });
-            $('#timebuckets').dialog('close');
+              $('#timebuckets').modal('hide');
             $.jgrid.hideModal("#searchmodfbox_grid");
+              $('#popup').html('<div class="modal-dialog">'+
+                      '<div class="modal-content">'+
+                        '<div class="modal-header">'+
+                          '<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true" class="fa fa-times"></span></button>'+
+                          '<h4 class="modal-title alert alert-danger">'+ gettext("Error saving data")+'</h4>'+
+                        '</div>'+
+                        '<div class="modal-body">'+
+                          '<p>'+result.responseText+'</p>'+
+                        '</div>'+
+                        '<div class="modal-footer">'+
+                          '<input type="submit" id="cancelbutton" role="button" class="btn btn-primary pull-right" data-dismiss="modal" value="'+gettext('Close')+'">'+
+                        '</div>'+
+                      '</div>'+
+                  '</div>' )
+                  .modal('show');
             }
         });
   },
@@ -107,46 +239,46 @@ var upload = {
   validateSort: function(event)
   {
     if ($(this).attr('id') == 'grid_cb') return;
-    if ($('#save').hasClass("save_undo_button_inactive"))
+    if ($('#save').hasClass("btn-primary"))
       jQuery("#grid").jqGrid('resetSelection');
     else
     {
-      $('#popup').html("")
-        .dialog({
-          title: gettext("Save or cancel your changes first"),
-          autoOpen: true,
-          resizable: false,
-          width: 'auto',
-          height: 'auto',
-          buttons: [
-            {
-              text: gettext("Save"),
-              click: function() {
+      $('#timebuckets').modal('hide');
+      $.jgrid.hideModal("#searchmodfbox_grid");
+      $('#popup').html('<div class="modal-dialog">'+
+          '<div class="modal-content">'+
+          '<div class="modal-header">'+
+            '<h4 class="modal-title alert-warning">'+ gettext("Save or cancel your changes first") +'</h4>'+
+          '</div>'+
+          '<div class="modal-body">'+
+            '<p>'+""+'</p>'+
+          '</div>'+
+          '<div class="modal-footer">'+
+            '<input type="submit" id="savebutton" role="button" class="btn btn-primary pull-right" value="'+gettext('Save')+'">'+
+            '<input type="submit" id="cancelbutton" role="button" class="btn btn-primary pull-right" value="'+gettext('Cancel')+'">'+
+          '</div>'+
+        '</div>'+
+      '</div>' )
+      .modal('show');
+      $('#savebutton').on('click', function() {
                 upload.save();
-                $('#popup').dialog('close');
-                }
-            },
-            {
-              text: gettext("Cancel"),
-              click: function() {
+        $('#popup').modal('hide');
+      });
+      $('#cancelbutton').on('click', function() {
                 upload.undo();
-                $('#popup').dialog('close');
-                }
-            }
-            ]
+        $('#popup').modal('hide');
         });
       event.stopPropagation();
     }
   }
 }
 
-
 //----------------------------------------------------------------------------
 // Custom formatter functions for the grid cells.
 //----------------------------------------------------------------------------
 
 function opendetail(event) {
-  var database = $('#database').val();
+  var database = $('#database').prop('name');
   database = (database===undefined || database==='default') ? '' : '/' + database;
   var curlink = $(event.target).parent().attr('href');
   var objectid = $(event.target).parent().parent().text();
@@ -218,7 +350,7 @@ jQuery.extend($.fn.fmatter, {
     {
       var detail = dmds[i].split(" : ");
       if (result != '') result += ', ';
-      result += detail[0] + " : <span>" + detail[1] + "<span class='context fa fa-caret-right' role='demand'></span></span>"
+      result += detail[0] + " : <span>" + detail[1] + "<a href='/detail/input/demand/key/' onclick='opendetail(event)'><span class='leftpadding fa fa-caret-right' role='" + options.colModel.role + "'></span></a></span>"
     }
     return result;
   },
@@ -249,13 +381,13 @@ var grid = {
    // Function used to summarize by returning the last value
    summary_last: function(val, name, record)
    {
-	 return record[name];
+     return record[name];
    },
 
    // Function used to summarize by returning the first value
    summary_first: function(val, name, record)
    {
-	 return val || record[name];
+     return val || record[name];
    },
 
    setSelectedRow: function(id)
@@ -263,7 +395,7 @@ var grid = {
      if (grid.selected != undefined)
        $(this).jqGrid('setCell', grid.selected, 'select', null);
      grid.selected = id;
-     $(this).jqGrid('setCell', id, 'select', '<button onClick="opener.dismissRelatedLookupPopup(window, grid.selected);" class="ui-button ui-button-text-only ui-widget ui-state-default ui-corner-all"><span class="ui-button-text" style="font-size:66%">'+gettext('Select')+'</span></button>');
+     $(this).jqGrid('setCell', id, 'select', '<input type="checkbox" onClick="opener.dismissRelatedLookupPopup(window, grid.selected);" class="btn btn-primary" style="width: 18px; height: 18px;" data-toggle="tooltip" title="'+gettext('Click to select record')+'"></input>');
    },
 
    runAction: function(next_action) {
@@ -278,10 +410,9 @@ var grid = {
       jQuery("#grid").jqGrid("setCell", sel[i], "status", newstatus, "dirty-cell");
       jQuery("#grid").jqGrid("setRowData", sel[i], false, "edited");
     };
-
-    $("#actions").prop("selectedIndex",0);
-    $('#save').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
-    $('#undo').removeClass("save_undo_button_inactive").addClass("save_undo_button_active");
+    $("#actions1").html($("#actionsul").children().first().text() + '  <span class="caret"></span>');
+    $('#save').removeClass("btn-primary").addClass("btn-danger").prop("disabled",false);
+    $('#undo').removeClass("btn-primary").addClass("btn-danger").prop("disabled",false);
    },
 
   // Renders the cross list in a pivot grid
@@ -302,13 +433,37 @@ var grid = {
   // Render the customization popup window
   showCustomize: function (pivot)
   {
-    $.jgrid.hideModal("#searchmodfbox_grid");
-    val = "<select id='configure' multiple='multiple' class='multiselect' name='fields' style='width:440px; height:200px; margin:10px; padding:10px'>" +
-    "<optgroup label='Rows'>";
     var colModel = $("#grid")[0].p.colModel;
     var maxfrozen = 0;
     var skipped = 0;
     var graph = false;
+
+    var row0 = ""+
+      '<div class="row">' +
+      '<div class="col-xs-6">' +
+        '<div class="panel panel-default"><div class="panel-heading">'+ gettext("Selected options") + '</div>' +
+          '<div class="panel-body">' +
+            '<ul class="list-group" id="Rows" style="height: 160px; overflow-y: scroll;">placeholder0</ul>' +
+          '</div>' +
+        '</div>'+
+      '</div>' +
+      '<div class="col-xs-6">' +
+        '<div class="panel panel-default"><div class="panel-heading">' + gettext("Available options") + '</div>' +
+          '<div class="panel-body">' +
+            '<ul class="list-group" id="DroppointRows" style="height: 160px; overflow-y: scroll;">placeholder1</ul>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+
+    row1= "";
+    row2= "";
+
+    var val0s = ""; //selected columns
+    var val0a = ""; //available columns
+    var val1s = ""; //selected columns
+    var val1a = ""; //available columns
+
     for (var i in colModel)
     {
       if (colModel[i].name == 'graph')
@@ -316,146 +471,222 @@ var grid = {
       else if (colModel[i].name != "rn" && colModel[i].name != "cb" && colModel[i].counter != null && colModel[i].label != '' && !('alwayshidden' in colModel[i]))
       {
         if (colModel[i].frozen) maxfrozen = parseInt(i,10) + 1 - skipped;
-        val += "<option value='" + (i) + "'";
-        if (!colModel[i].hidden) val += " selected='selected'";
-        if (colModel[i].key) val += " disabled='disabled'";
-        val += ">" + colModel[i].label + "</option>";
+        if (!colModel[i].hidden) {
+          val0s += '<li id="' + (i) + '"  class="list-group-item" style="cursor: move;">' + colModel[i].label + '</li>';
+        } else {
+          val0a += '<li id="' + (i) + '"  class="list-group-item" style="cursor: move;">' + colModel[i].label + '</li>';
+        }
       }
       else
         skipped++;
     }
-    val += "</optgroup>";
+
     if (pivot)
     {
       // Add list of crosses
-      val += "<optgroup label='Crosses'>";
+      var row1 = ''+
+      '<div class="row">' +
+        '<div class="col-xs-6">' +
+          '<div class="panel panel-default">' +
+            '<div class="panel-heading">' +
+              gettext('Selected Cross') +
+            '</div>' +
+            '<div class="panel-body">' +
+              '<ul class="list-group" id="Crosses" style="height: 160px; overflow-y: scroll;">placeholder0</ul>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="col-xs-6">' +
+          '<div class="panel panel-default">' +
+            '<div class="panel-heading">' +
+              gettext('Available Cross') +
+            '</div>' +
+            '<div class="panel-body">' +
+              '<ul class="list-group" id="DroppointCrosses" style="height: 160px; overflow-y: scroll;">placeholder1</ul>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
       for (var j in cross_idx)
       {
-        val += "<option value='" + (100+parseInt(cross_idx[j],10)) + "' selected='selected'";
-        val += ">" + cross[cross_idx[j]]['name'] + "</option>";
+        val1s += '<li class="list-group-item" id="' + (100+parseInt(cross_idx[j],10)) + '" style="cursor: move;">' + cross[cross_idx[j]]['name'] + '</li>';
       }
       for (var j in cross)
       {
         if (cross_idx.indexOf(parseInt(j,10)) > -1) continue;
-        val += "<option value='" + (100+parseInt(j,10)) + "'";
-        val += ">" + cross[j]['name'] + "</option>";
+        val1a += '<li class="list-group-item" id="' + (100 + parseInt(j,10) ) + '" style="cursor: move;">' + cross[j]['name'] + '</li>';
       }
-      val += "</optgroup></select>";
     }
     else
     {
       // Add selection of number of frozen columns
-      val += "</select>Frozen columns <select id='frozen'>";
-      for (var i = 0; i <= 4; i++)
-        if (i == maxfrozen)
-          val += "<option value'" + i + "' selected='selected'>" + i + "</option>";
-        else
-          val += "<option value'" + i + "'>" + i + "</option>";
-      val += "</select>";
+      row2 = '<div class="row"><div class="col-xs-12">' +
+        gettext("Frozen columns") +
+        '&nbsp;&nbsp;<input type="number" id="frozen" style="text-align: center;" min="0" max="4" step="1" value="' + maxfrozen + '">' +
+       '</div></div>';
     }
-    $('#popup').html(val).dialog({
-       title: gettext("Customize"),
-       width: 465,
-       height: 'auto',
-       autoOpen: true,
-       resizable: false,
-       buttons: [{
-         text: gettext("OK"),
-         click: function() {
-           var colModel = $("#grid")[0].p.colModel;
-           var perm = [];
-           var hiddenrows = [];
-           if (colModel[0].name == "cb") perm.push(0);
-           cross_idx = [];
-           if (!graph)
-             $("#grid").jqGrid('destroyFrozenColumns');
-           $('#configure option').each(function() {
-             val = parseInt(this.value,10);
-             if (val < 100)
-             {
-               if (this.selected)
-               {
-                 $("#grid").jqGrid("showCol", colModel[val].name);
-                 perm.push(val);
-               }
-               else
-               {
-                 hiddenrows.push(val);
-                 if (pivot)
-                   $("#grid").jqGrid('setColProp', colModel[val].name, {frozen:false});
-                 $("#grid").jqGrid("hideCol", colModel[val].name);
-               }
-             }
-             else if (this.selected)
-               cross_idx.push(val-100);
-           });
-           var numfrozen = 0;
-           if (pivot)
-           {
-             var firstnonfrozen = 0;
-             for (var i in colModel)
-               if ("counter" in colModel[i])
-                 numfrozen = i+1;
-               else
-                 perm.push(parseInt(i,10));
-           }
-           else
-             numfrozen = parseInt($("#frozen :selected").text())
-           for (var i in hiddenrows)
-             perm.push(hiddenrows[i]);
-           $("#grid").jqGrid("remapColumns", perm, true);
-           var skipped = 0;
-           for (var i in colModel)
-             if (colModel[i].name != "rn" && colModel[i].name != "cb" && colModel[i].counter != null)
-               $("#grid").jqGrid('setColProp', colModel[i].name, {frozen:i-skipped<numfrozen});
-             else
-               skipped++;
-           if (!graph)
-             $("#grid").jqGrid('setFrozenColumns');
-           $("#grid").trigger('reloadGrid');
-           grid.saveColumnConfiguration();
-           $(this).dialog("close");
-         }},
-         {
-         text: gettext("Cancel"),
-         click: function() { $(this).dialog("close"); }
-         },
-         {
-         text: gettext("Reset"),
-         click: function() {
-           var result = {};
-           result[reportkey] = null;
-           if (typeof url_prefix != 'undefined')
-             var url = url_prefix + '/settings/';
-           else
-             var url = '/settings/';
-           $.ajax({
-            url: url,
-            type: 'POST',
-            contentType: 'application/json; charset=utf-8',
-            data: JSON.stringify(result),
-            success: function() {window.location.href = window.location.href;},
-            error: function (result, stat, errorThrown) {
-              $('#popup').html(result.responseText).dialog({
-                title: gettext("Error saving report settings"),
-                autoOpen: true,
-                resizable: false,
-                width: 'auto',
-                height: 'auto'
-              });
-              }
-            });
-          }
-         }
-         ]
-       });
-    $("#configure").multiselect({
-      collapsableGroups: false,
-      sortable: true,
-      showEmptyGroups: true,
-      locale: $("html")[0].lang,
-      searchField: false
+
+    row0 = row0.replace('placeholder0',val0s);
+    row0 = row0.replace('placeholder1',val0a);
+    if (pivot) {
+      row1 = row1.replace('placeholder0',val1s);
+      row1 = row1.replace('placeholder1',val1a);
+    }
+
+    $('#popup').html(''+
+      '<div class="modal-dialog">'+
+        '<div class="modal-content">'+
+          '<div class="modal-header">'+
+            '<button type="button" class="close" data-dismiss="modal" aria-label=' + gettext("Close") + '>' +
+              '<span aria-hidden="true">&times;</span>' +
+            '</button>'+
+            '<h4 class="modal-title">'+gettext("Customize")+'</h4>'+
+          '</div>'+
+          '<div class="modal-body">'+
+            row0 +
+            row1 +
+            row2 +
+          '</div>' +
+          '<div class="modal-footer">'+
+            '<input type="submit" id="okCustbutton" role="button" class="btn btn-danger pull-left" value="'+gettext("OK")+'">'+
+            '<input type="submit" id="cancelCustbutton" role="button" class="btn btn-primary pull-right" data-dismiss="modal" value="'+gettext('Cancel')+'">'+
+            '<input type="submit" id="resetCustbutton" role="button" class="btn btn-primary pull-right" value="'+gettext('Reset')+'">'+
+          '</div>'+
+        '</div>'+
+      '</div>' )
+    .modal('show');
+
+    var Rows = document.getElementById("Rows");
+    var DroppointRows = document.getElementById("DroppointRows");
+    Sortable.create(Rows, {
+      group: {
+        name: 'Rows',
+        put: ['DroppointRows']
+      },
+      animation: 100
+    });
+    Sortable.create(DroppointRows, {
+      group: {
+        name: 'DroppointRows',
+        put: ['Rows']
+      },
+      animation: 100
+    });
+
+    if (pivot) {
+      var Crosses = document.getElementById("Crosses");
+      var DroppointCrosses = document.getElementById("DroppointCrosses");
+      Sortable.create(Crosses, {
+        group: {
+          name: 'Crosses',
+          put: ['DroppointCrosses']
+        },
+        animation: 100
       });
+      Sortable.create(DroppointCrosses, {
+        group: {
+          name: 'DroppointCrosses',
+          put: ['Crosses']
+        },
+        animation: 100
+      });
+    }
+
+    $('#resetCustbutton').on('click', function() {
+      var result = {};
+      result[reportkey] = null;
+      if (typeof url_prefix != 'undefined')
+        var url = url_prefix + '/settings/';
+      else
+        var url = '/settings/';
+      $.ajax({
+       url: url,
+       type: 'POST',
+       contentType: 'application/json; charset=utf-8',
+       data: JSON.stringify(result),
+       success: function() {window.location.href = window.location.href;},
+       error: function (result, stat, errorThrown) {
+         $('#popup').html('<div class="modal-dialog" style="width: auto">'+
+             '<div class="modal-content">'+
+             '<div class="modal-header">'+
+               '<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true" class="fa fa-times"></span></button>'+
+               '<h4 class="modal-title">{% trans "Error retrieving data" %}</h4>'+
+             '</div>'+
+             '<div class="modal-body">'+
+               '<p>'+result.responseText + "  " + stat + errorThrown+'</p>'+
+             '</div>'+
+             '<div class="modal-footer">'+
+             '</div>'+
+           '</div>'+
+           '</div>' ).modal('show');
+         }
+       });
+     });
+
+    $('#okCustbutton').on('click', function() {
+      var colModel = $("#grid")[0].p.colModel;
+      var perm = [];
+      var hiddenrows = [];
+      if (colModel[0].name == "cb") perm.push(0);
+      cross_idx = [];
+      if (!graph)
+        $("#grid").jqGrid('destroyFrozenColumns');
+
+      $('#Rows li').each(function() {
+        val = parseInt(this.id,10);
+        if (val < 100)
+        {
+            $("#grid").jqGrid("showCol", colModel[val].name);
+            perm.push(val);
+         }
+      });
+
+      $('#DroppointRows li').each(function() {
+        val = parseInt(this.id,10);
+        if (val < 100)
+        {
+          hiddenrows.push(val);
+          if (pivot)
+            $("#grid").jqGrid('setColProp', colModel[val].name, {frozen:false});
+          $("#grid").jqGrid("hideCol", colModel[val].name);
+         }
+      });
+
+      $('#Crosses li').each(function() {
+        val = parseInt(this.id,10);
+        if (val >= 100)
+        {
+          cross_idx.push(val-100);
+         }
+      });
+
+      var numfrozen = 0;
+      if (pivot)
+      {
+        var firstnonfrozen = 0;
+        for (var i in colModel)
+          if ("counter" in colModel[i])
+            numfrozen = i+1;
+          else
+            perm.push(parseInt(i,10));
+      }
+      else
+        numfrozen = parseInt($("#frozen").val())
+      for (var i in hiddenrows)
+        perm.push(hiddenrows[i]);
+      $("#grid").jqGrid("remapColumns", perm, true);
+      var skipped = 0;
+      for (var i in colModel)
+        if (colModel[i].name != "rn" && colModel[i].name != "cb" && colModel[i].counter != null)
+          $("#grid").jqGrid('setColProp', colModel[i].name, {frozen:i-skipped<numfrozen});
+        else
+          skipped++;
+      if (!graph)
+        $("#grid").jqGrid('setFrozenColumns');
+      $("#grid").trigger('reloadGrid');
+      grid.saveColumnConfiguration();
+      $('#popup').modal("hide");
+    });
   },
 
   // Save the customized column configuration
@@ -540,16 +771,21 @@ var grid = {
       contentType: 'application/json; charset=utf-8',
       data: JSON.stringify(result),
       error: function (result, stat, errorThrown) {
-        $('#popup').html(result.responseText)
-          .dialog({
-            title: gettext("Error saving report settings"),
-            autoOpen: true,
-            resizable: false,
-            width: 'auto',
-            height: 'auto'
-          });
-        }
-      });
+        $('#popup').html('<div class="modal-dialog" style="width: auto">'+
+            '<div class="modal-content">'+
+            '<div class="modal-header">'+
+              '<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true" class="fa fa-times"></span></button>'+
+              '<h4 class="modal-title">{% trans "Error saving report settings" %}</h4>'+
+            '</div>'+
+            '<div class="modal-body">'+
+              '<p>'+result.responseText + "  " + stat + errorThrown+'</p>'+
+            '</div>'+
+            '<div class="modal-footer">'+
+            '</div>'+
+          '</div>'+
+          '</div>' ).modal('show');
+      }
+    });
   },
 
   //This function is called when a cell is just being selected in an editable
@@ -559,20 +795,30 @@ var grid = {
   afterEditCell: function (rowid, cellname, value, iRow, iCol)
   {
   var colmodel = $(this).jqGrid('getGridParam', 'colModel')[iCol];
+  icons = {
+      time: 'fa fa-clock-o',
+      date: 'fa fa-calendar',
+      up: 'fa fa-chevron-up',
+      down: 'fa fa-chevron-down',
+      previous: 'fa fa-chevron-left',
+      next: 'fa fa-chevron-right',
+      today: 'fa fa-bullseye',
+      clear: 'fa fa-trash',
+      close: 'fa fa-remove'
+    };
+
   if (colmodel.formatter == 'date')
   {
     if (colmodel.formatoptions['srcformat'] == "Y-m-d")
-      $("#" + iRow + '_' + cellname).datepicker({
-        showOtherMonths: true, selectOtherMonths: true,
-        dateFormat: "yy-mm-dd", changeMonth:true,
-        changeYear:true, yearRange: "c-1:c+5"
-        });
+      $("#" + iRow + '_' + cellname).on('focusin', function() {
+        $(this).parent().css({'position': 'relative', 'overflow': 'visible'});
+        $(this).datetimepicker({format: 'YYYY-MM-DD', useCurrent: false, calendarWeeks: true, icons, locale: document.documentElement.lang, widgetPositioning: {horizontal: 'auto', vertical: (iRow < 11 ?'bottom':'auto')}});
+      });
     else
-      $("#" + iRow + '_' + cellname).datepicker({
-        showOtherMonths: true, selectOtherMonths: true,
-        dateFormat: "yy-mm-dd 00:00:00", changeMonth:true,
-        changeYear:true, yearRange: "c-1:c+5"
-        });
+      $("#" + iRow + '_' + cellname).on('focusin', function() {
+        $(this).parent().css({'position': 'relative', 'overflow': 'visible'});
+        $(this).datetimepicker({format: 'YYYY-MM-DD HH:mm:ss', useCurrent: false, calendarWeeks: true, icons, locale: document.documentElement.lang, widgetPositioning: {horizontal: 'auto', vertical: (iRow < 11 ?'bottom':'auto')}});
+      });
   }
   else
 	$("#" + iRow + '_' + cellname).select();
@@ -580,78 +826,100 @@ var grid = {
 
   showExport: function(only_list)
   {
+    $('#timebuckets').modal('hide');
+    $.jgrid.hideModal("#searchmodfbox_grid");
     // The argument is true when we show a "list" report.
     // It is false for "table" reports.
     if (only_list)
-      $('#popup').html(
-        gettext("Export format") + '&nbsp;&nbsp;:&nbsp;&nbsp;<select name="csvformat" id="csvformat">' +
-        '<option value="spreadsheetlist" selected="selected">' + gettext("Spreadsheet list") + '</option>' +
-        '<option value="csvlist">' + gettext("CSV list") +'</option></select>'
-        );
+      $('#popup').html('<div class="modal-dialog" style="width: 350px;">'+
+          '<div class="modal-content">'+
+            '<div class="modal-header">'+
+              '<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>'+
+              '<h4 class="modal-title">'+gettext("Export CSV or Excel file")+'</h4>'+
+            '</div>'+
+            '<div class="modal-body">'+
+              '<label class="control-label">' + gettext("Export format") +
+                '<div class="radio" name="csvformat" id="csvformat" value="spreadsheetlist">' +
+                  '&nbsp;&nbsp;&nbsp;&nbsp;<label><input type="radio" name="csvformat" value="spreadsheetlist" checked="">' + gettext("Spreadsheet list") + '</label></br>' +
+                  '&nbsp;&nbsp;&nbsp;&nbsp;<label><input type="radio" name="csvformat" value="csvlist">' + gettext("CSV list") + '</label></br>' +
+                '</div>' +
+              '</label>' +
+            '</div>'+
+            '<div class="modal-footer">'+
+              '<input type="submit" id="exportbutton" role="button" class="btn btn-danger pull-left" value="'+gettext('Export')+'">'+
+              '<input type="submit" id="cancelbutton" role="button" class="btn btn-primary pull-right" data-dismiss="modal" value="'+gettext('Cancel')+'">'+
+            '</div>'+
+          '</div>'+
+      '</div>' )
+      .modal('show');
     else
-        $('#popup').html(
-        gettext("Export format") + '&nbsp;&nbsp;:&nbsp;&nbsp;<select name="csvformat" id="csvformat">' +
-        '<option value="spreadsheettable" selected="selected">' + gettext("Spreadsheet table") + '</option>' +
-        '<option value="spreadsheetlist">' + gettext("Spreadsheet list") + '</option>' +
-        '<option value="csvtable">' + gettext("CSV table") +'</option>'+
-        '<option value="csvlist">' + gettext("CSV list") +'</option></select>'
-        );
-    $('#popup').dialog({
-        title: gettext("Export CSV or Excel file"),
-        autoOpen: true, resizable: false, width: 390, height: 'auto',
-        buttons: [
-          {
-            text: gettext("Export"),
-            click: function() {
-              // Fetch the report data
-              var url = (location.href.indexOf("#") != -1 ? location.href.substr(0,location.href.indexOf("#")) : location.href);
-              if (location.search.length > 0)
-                // URL already has arguments
-                url += "&format=" + $('#csvformat').val();
-              else if (url.charAt(url.length - 1) == '?')
-                // This is the first argument for the URL, but we already have a question mark at the end
-                url += "format=" + $('#csvformat').val();
-              else
-                // This is the first argument for the URL
-                url += "?format=" + $('#csvformat').val();
-              // Append current filter and sort settings to the URL
-              var postdata = $("#grid").jqGrid('getGridParam', 'postData');
-              url +=  "&" + jQuery.param(postdata);
-              // Open the window
-              window.open(url,'_blank');
-              $('#popup').dialog().dialog('close');
-            }
+      $('#popup').html('<div class="modal-dialog" style="width: 350px;">'+
+          '<div class="modal-content">'+
+            '<div class="modal-header">'+
+              '<h4 class="modal-title">'+gettext("Export CSV or Excel file")+'</h4>'+
+            '</div>'+
+            '<div class="modal-body">'+
+              '<label class="control-label">' + gettext("Export format") +
+                '<div class="radio" name="csvformat" id="csvformat" value="spreadsheettable">' +
+                  '&nbsp;&nbsp;&nbsp;&nbsp;<label><input type="radio" name="csvformat" value="spreadsheettable" checked="">' + gettext("Spreadsheet table") + '</label></br>' +
+                  '&nbsp;&nbsp;&nbsp;&nbsp;<label><input type="radio" name="csvformat" value="spreadsheetlist">' + gettext("Spreadsheet list") + '</label></br>' +
+                  '&nbsp;&nbsp;&nbsp;&nbsp;<label><input type="radio" name="csvformat" value="csvtable">' + gettext("CSV table") + '</label></br>' +
+                  '&nbsp;&nbsp;&nbsp;&nbsp;<label><input type="radio" name="csvformat" value="csvlist">' + gettext("CSV list") + '</label></br>' +
+                '</div>' +
+              '</label>' +
+            '</div>'+
+            '<div class="modal-footer">'+
+              '<input type="submit" id="exportbutton" role="button" class="btn btn-danger pull-left" value="'+gettext('Export')+'">'+
+              '<input type="submit" id="cancelbutton" role="button" class="btn btn-primary pull-right" data-dismiss="modal" value="'+gettext('Cancel')+'">'+
+            '</div>'+
+          '</div>'+
+      '</div>' )
+      .modal('show');
+    $('#exportbutton').on('click', function() {
+      // Fetch the report data
+      var url = (location.href.indexOf("#") != -1 ? location.href.substr(0,location.href.indexOf("#")) : location.href);
+      if (location.search.length > 0)
+        // URL already has arguments
+        url += "&format=" + $('#csvformat').val();
+      else if (url.charAt(url.length - 1) == '?')
+        // This is the first argument for the URL, but we already have a question mark at the end
+        url += "format=" + $('#csvformat input:radio:checked').val();
+      else
+        // This is the first argument for the URL
+        url += "?format=" + $('#csvformat input:radio:checked').val();
+      // Append current filter and sort settings to the URL
+      var postdata = $("#grid").jqGrid('getGridParam', 'postData');
+      url +=  "&" + jQuery.param(postdata);
+      // Open the window
+      window.open(url,'_blank');
+      $('#popup').modal('hide');
+    })
           },
-          {
-            text: gettext("Cancel"),
-            click: function() { $(this).dialog("close"); }
-          }
-          ]
-        });
-    $('#timebuckets').dialog().dialog('close');
-    $.jgrid.hideModal("#searchmodfbox_grid");
-  },
+
 
   // Display time bucket selection dialog
   showBucket: function()
   {
     // Show popup
-    $('#popup').dialog().dialog('close');
+    $('#popup').modal('hide');
     $.jgrid.hideModal("#searchmodfbox_grid");
-    $( "#horizonstart" ).datepicker({
-        showOtherMonths: true, selectOtherMonths: true,
-        changeMonth:true, changeYear:true, yearRange: "c-1:c+5", dateFormat: 'yy-mm-dd'
+    icons = {
+      time: 'fa fa-clock-o',
+      date: 'fa fa-calendar',
+      up: 'fa fa-clock-o',
+      down: 'fa fa-chevron-down',
+      previous: 'fa fa-chevron-left',
+      next: 'fa fa-chevron-right',
+      today: 'fa fa-bullseye',
+      clear: 'fa fa-trash',
+      close: 'fa fa-remove'
+    };
+    $( "#horizonstart" ).datetimepicker({format: 'YYYY-MM-DD', calendarWeeks: true, icons, locale: document.documentElement.lang});
+    $( "#horizonend" ).datetimepicker({format: 'YYYY-MM-DD', calendarWeeks: true, icons, locale: document.documentElement.lang});
+    $("#horizonstart").on("dp.change", function (selected) {
+      $("#horizonend").data("DateTimePicker").minDate(selected.date);
       });
-    $( "#horizonend" ).datepicker({
-        showOtherMonths: true, selectOtherMonths: true,
-        changeMonth:true, changeYear:true, yearRange: "c-1:c+5", dateFormat: 'yy-mm-dd'
-      });
-    $('#timebuckets').dialog({
-       autoOpen: true, resizable: false, width: 390,
-       buttons: [
-         {
-           text: gettext("OK"),
-           click: function() {
+    $( "#okbutton" ).on('click', function() {
             // Compare old and new parameters
             var params = $('#horizonbuckets').val() + '|' +
               $('#horizonstart').val() + '|' +
@@ -659,9 +927,10 @@ var grid = {
               ($('#horizontype').is(':checked') ? "True" : "False") + '|' +
               $('#horizonlength').val() + '|' +
               $('#horizonunit').val();
+
             if (params == $('#horizonoriginal').val())
               // No changes to the settings. Close the popup.
-              $(this).dialog('close');
+              $("#timebuckets").modal('hide');
             else {
               // Ajax request to update the horizon preferences
               $.ajax({
@@ -680,21 +949,14 @@ var grid = {
                 });
             // Reload the report
             window.location.href = window.location.href;
-            }
-           }
+            }});
+    $('#timebuckets').modal('show');
          },
-         {
-           text: gettext("Cancel"),
-           click: function() { $(this).dialog("close"); }
-         }
-         ]
-      });
-  },
 
   //Display dialog for copying or deleting records
   showDelete : function()
   {
-    if ($('#delete_selected').hasClass("ui-state-disabled")) return;
+    if ($('#delete_selected').hasClass("disabled")) return;
     var sel = jQuery("#grid").jqGrid('getGridParam','selarrrow');
     if (sel.length == 1)
     {
@@ -703,119 +965,101 @@ var grid = {
     }
     else if (sel.length > 0)
     {
-     $('#popup').html(
-       interpolate(gettext('You are about to delete %s objects AND ALL RELATED RECORDS!'), [sel.length], false)
-       ).dialog({
-         title: gettext("Delete data"),
-         autoOpen: true,
-         resizable: false,
-         width: 'auto',
-         height: 'auto',
-         buttons: [
-           {
-             text: gettext("Confirm"),
-             click: function() {
+     $('#timebuckets').modal('hide');
+     $.jgrid.hideModal("#searchmodfbox_grid");
+     $('#popup').html('<div class="modal-dialog">'+
+             '<div class="modal-content">'+
+               '<div class="modal-header">'+
+                 '<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true" class="fa fa-times"></span></button>'+
+                 '<h4 class="modal-title">'+gettext('Delete data')+'</h4>'+
+               '</div>'+
+               '<div class="modal-body">'+
+                 '<p>'+interpolate(gettext('You are about to delete %s objects AND ALL RELATED RECORDS!'), [sel.length], false)+'</p>'+
+               '</div>'+
+               '<div class="modal-footer">'+
+                 '<input type="submit" id="delbutton" role="button" class="btn btn-danger pull-left" value="'+gettext('Confirm')+'">'+
+                 '<input type="submit" id="cancelbutton" role="button" class="btn btn-primary pull-right" data-dismiss="modal" value="'+gettext('Cancel')+'">'+
+               '</div>'+
+             '</div>'+
+         '</div>' )
+         .modal('show');
+     $('#delbutton').on('click', function() {
                $.ajax({
                  url: location.pathname,
                  data: JSON.stringify([{'delete': sel}]),
                  type: "POST",
                  contentType: "application/json",
                  success: function () {
-                   $("#delete_selected").addClass("ui-state-disabled").removeClass("bold");
-                   $("#copy_selected").addClass("ui-state-disabled").removeClass("bold");
+               $("#delete_selected").prop("disabled", true).removeClass("bold");
+               $("#copy_selected").prop("disabled", true).removeClass("bold");
                    $('.cbox').prop("checked", false);
                    $('#cb_grid.cbox').prop("checked", false);
                    $("#grid").trigger("reloadGrid");
-                   $('#popup').dialog('close');
+               $('#popup').modal('hide');
                    },
                  error: function (result, stat, errorThrown) {
-                   $('#popup').html(result.responseText)
-                     .dialog({
-                       title: gettext("Error deleting data"),
-                       autoOpen: true,
-                       resizable: true,
-                       width: 'auto',
-                       height: 'auto'
-                     });
-                   $('#timebuckets').dialog('close');
-                   $.jgrid.hideModal("#searchmodfbox_grid");
+               $('#popup .modal-body p').html(result.responseText);
+               $('#popup .modal-title').addClass("alert alert-danger").html(gettext("Error deleting data"));
+               $('#delbutton').prop("disabled", true).hide();
                    }
-               });
+           })
+         })
              }
            },
-           {
-             text: gettext("Cancel"),
-             click: function() { $(this).dialog("close"); }
-           }
-           ]
-       });
-     $('#timebuckets').dialog().dialog('close');
-     $.jgrid.hideModal("#searchmodfbox_grid");
-   }
-  },
 
   showCopy: function()
   {
-   if ($('#copy_selected').hasClass("ui-state-disabled")) return;
+   if ($('#copy_selected').hasClass("disabled")) return;
    var sel = jQuery("#grid").jqGrid('getGridParam','selarrrow');
    if (sel.length > 0)
    {
-     $('#popup').html(
-       interpolate(gettext('You are about to duplicate %s objects'), [sel.length], false)
-       ).dialog({
-         title: gettext("Copy data"),
-         autoOpen: true,
-         resizable: false,
-         width: 'auto',
-         height: 'auto',
-         buttons: [
-           {
-             text: gettext("Confirm"),
-             click: function() {
+     $('#timebuckets').modal('hide');
+     $.jgrid.hideModal("#searchmodfbox_grid");
+     $('#popup').html('<div class="modal-dialog">'+
+             '<div class="modal-content">'+
+               '<div class="modal-header">'+
+                 '<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true" class="fa fa-times"></span></button>'+
+                 '<h4 class="modal-title">'+gettext("Copy data")+'</h4>'+
+                 '</div>'+
+                 '<div class="modal-body">'+
+                   '<p>'+interpolate(gettext('You are about to duplicate %s objects'), [sel.length], false)+'</p>'+
+                   '</div>'+
+                   '<div class="modal-footer">'+
+                     '<input type="submit" id="copybutton" role="button" class="btn btn-danger pull-left" value="'+gettext('Confirm')+'">'+
+                     '<input type="submit" id="cancelbutton" role="button" class="btn btn-primary pull-right" data-dismiss="modal" value="'+gettext('Cancel')+'">'+
+                   '</div>'+
+                 '</div>'+
+             '</div>' )
+     .modal('show');
+     $('#copybutton').on('click', function() {
                $.ajax({
                  url: location.pathname,
                  data: JSON.stringify([{'copy': sel}]),
                  type: "POST",
                  contentType: "application/json",
                  success: function () {
-                   $("#delete_selected").addClass("ui-state-disabled").removeClass("bold");
-                   $("#copy_selected").addClass("ui-state-disabled").removeClass("bold");
+           $("#delete_selected").prop("disabled", true).removeClass("bold");
+           $("#copy_selected").prop("disabled", true).removeClass("bold");
                    $('.cbox').prop("checked", false);
                    $('#cb_grid.cbox').prop("checked", false);
                    $("#grid").trigger("reloadGrid");
-                   $('#popup').dialog().dialog('close');
+           $('#popup').modal('hide');
                    },
                  error: function (result, stat, errorThrown) {
-                   $('#popup').html(result.responseText)
-                     .dialog({
-                       title: gettext("Error copying data"),
-                       autoOpen: true,
-                       resizable: true,
-                       width: 'auto',
-                       height: 'auto'
-                     });
-                   $('#timebuckets').dialog().dialog('close');
-                   $.jgrid.hideModal("#searchmodfbox_grid");
+           $('#popup .modal-body p').html(result.responseText);
+           $('#popup .modal-title').addClass("alert alert-danger").html(gettext("Error copying data"));
+           $('#copybutton').prop("disabled", true).hide();
                    }
-               });
-             }
-           },
-           {
-             text: gettext("Cancel"),
-             click: function() { $(this).dialog("close"); }
-           }
-           ]
-       });
-     $('#timebuckets').dialog().dialog('close');
-     $.jgrid.hideModal("#searchmodfbox_grid");
+       })
+     })
    }
   },
 
   // Display filter dialog
   showFilter: function()
   {
-    if ($('#filter').hasClass("ui-state-disabled")) return;
-    $('#timebuckets,#popup').dialog().dialog('close');
+    if ($('#filter').hasClass("disabled")) return;
+    $('.modal').modal('hide');
     jQuery("#grid").jqGrid('searchGrid', {
       closeOnEscape: true,
       multipleSearch:true,
@@ -919,20 +1163,15 @@ var grid = {
     var sel = jQuery("#grid").jqGrid('getGridParam','selarrrow').length;
     if (sel > 0)
     {
-      $("#copy_selected").removeClass("ui-state-disabled").addClass("bold");
-      $("#delete_selected").removeClass("ui-state-disabled").addClass("bold");
-      $("#actions").removeClass("ui-selectmenu-disabled ui-state-disabled change_status_selectmenu_inactive")
-      .addClass("change_status_selectmenu_active ui-state-enabled ui-selectmenu-enabled")
-      .prop('disabled', false);
+      $("#copy_selected").prop('disabled', false).addClass("bold");
+      $("#delete_selected").prop('disabled', false).addClass("bold");
+      $("#actions1").prop('disabled', false);
     }
     else
     {
-      $("#copy_selected").addClass("ui-state-disabled").removeClass("bold");
-      $("#delete_selected").addClass("ui-state-disabled").removeClass("bold");
-      $("#actions")
-      .addClass("ui-selectmenu-disabled ui-state-disabled change_status_selectmenu_inactive")
-      .removeClass("change_status_selectmenu_active ui-state-enabled ui-selectmenu-enabled")
-      .prop('disabled', 'disabled');
+      $("#copy_selected").prop('disabled', true).removeClass("bold");
+      $("#delete_selected").prop('disabled', true).removeClass("bold");
+      $("#actions1").prop('disabled', true);
     }
   },
 
@@ -940,22 +1179,16 @@ var grid = {
   {
     if ($(this).is(':checked'))
     {
-      $("#copy_selected").removeClass("ui-state-disabled").addClass("bold");
-      $("#delete_selected").removeClass("ui-state-disabled").addClass("bold");
-      $("#actions").removeClass("ui-selectmenu-disabled ui-state-disabled change_status_selectmenu_inactive")
-      .removeClass("ui-selectmenu-disabled ui-state-disabled change_status_selectmenu_inactive")
-      .addClass("change_status_selectmenu_active ui-state-enabled ui-selectmenu-enabled")
-      .prop('disabled', false);
+      $("#copy_selected").prop('disabled', false).addClass("bold");
+      $("#delete_selected").prop('disabled', false).addClass("bold");
+      $("#actions1").prop('disabled', false);
       $('.cbox').prop("checked", true);
     }
     else
     {
-      $("#copy_selected").addClass("ui-state-disabled").removeClass("bold");
-      $("#delete_selected").addClass("ui-state-disabled").removeClass("bold");
-      $("#actions")
-      .addClass("ui-selectmenu-disabled ui-state-disabled change_status_selectmenu_inactive")
-      .removeClass("change_status_selectmenu_active ui-state-enabled ui-selectmenu-enabled")
-      .prop('disabled', 'disabled');
+      $("#copy_selected").prop('disabled', true).removeClass("bold");
+      $("#delete_selected").prop('disabled', true).removeClass("bold");
+      $("#actions1").prop('disabled', true);
       $('.cbox').prop("checked", false);
     }
   },
@@ -999,19 +1232,26 @@ var openbravo = {
 		  return;
 
 	  // Send to the server for upload into openbravo
-	  $('#popup')
-	  .html(gettext("Export selected records to openbravo"))
-	  .dialog({
-	    title: gettext("Export"),
-	    autoOpen: true, resizable: false, width: 390, height: 'auto', modal: true,
-	    buttons: [
-	      {
-	        text: gettext("Export"),
-	        id: 'button_export',
-	        click: function() {
-
-	          $('#popup').html(gettext("Connecting to openbravo..."));
-	          // Send the update to the server
+     $('#timebuckets').modal('hide');
+     $.jgrid.hideModal("#searchmodfbox_grid");
+     $('#popup').html('<div class="modal-dialog">'+
+           '<div class="modal-content">'+
+             '<div class="modal-header">'+
+               '<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true" class="fa fa-times"></span></button>'+
+               '<h4 class="modal-title">'+gettext("export")+'</h4>'+
+             '</div>'+
+             '<div class="modal-body">'+
+               '<p>'+gettext("export selected records to openbravo")+'</p>'+
+             '</div>'+
+             '<div class="modal-footer">'+
+               '<input type="submit" id="button_export" role="button" class="btn btn-danger pull-left" value="'+gettext('Confirm')+'">'+
+               '<input type="submit" id="cancelbutton" role="button" class="btn btn-primary pull-right" data-dismiss="modal" value="'+gettext('Cancel')+'">'+
+             '</div>'+
+           '</div>'+
+       '</div>' )
+       .modal('show');
+      $('#button_export').on('click', function() {
+      $('#popup .modal-body p').html(gettext("connecting to openbravo..."));
 	          var database = $('#database').val();
 	          database = (database===undefined || database==='default') ? '' : '/' + database;
 	          $.ajax({
@@ -1020,16 +1260,9 @@ var openbravo = {
 	               type: "POST",
 	               contentType: "application/json",
 	               success: function () {
-	                 $('#popup').html(gettext("Export successful"))
-	                   .dialog({
-	                     autoOpen: true,
-	                     resizable: false,
-	                     width: 'auto',
-	                     height: 'auto',
-	                     model: false
-	                   });
-	                 $('#button_close').find('.ui-button-text').text(gettext('Close'));
-	                 $('#button_export').removeClass("ui-state-default").addClass("ui-state-disabled").prop('disabled', 'disabled');
+             $('#popup .modal-body p').html(gettext("Export successful"))
+             $('#cancelbutton').val(gettext('Close'));
+             $('#button_export').removeClass("btn-primary").prop('disabled', true);
 	                 // Mark selected rows as "approved" if the original status was "proposed".
 	                 for (var i in sel)
 	                 {
@@ -1039,21 +1272,14 @@ var openbravo = {
 	                 }
 	               },
 	               error: function (result, stat, errorThrown) {
-                     fmts = ngettext("Error during export")
-	                 $('#popup').html(gettext("Error during export") + ':' + result.responseText);
-	                 $('#button_export').find('.ui-button-text').text(gettext('Retry'));
+               fmts = ngettext("Error during export");
+               $('#popup .modal-title').addClass('alert alert-danger').html(gettext("Error during export"));
+             $('#popup .modal-body p').html(gettext("Error during export") + ':' + result.responseText);
+             $('#button_export').text(gettext('retry'));
 	               }
 	           });
-	        }
-	      },
-	      {
-	        text: gettext("Cancel"),
-	        id: 'button_close',
-	        click: function() { $(this).dialog("close"); }
-	      }
-	      ]
 	  });
-	  $("#actions").prop("selectedIndex",0);
+     $("#actions1").html($("#actionsul").children().first().text() + '  <span class="caret"></span>');
   }
 };
 
@@ -1062,192 +1288,334 @@ var openbravo = {
 //----------------------------------------------------------------------------
 
 var dashboard = {
-  save : function(extra)
-  {
-    // Loop over all columns
-    var columns = [];
-    var width = 0;
-    $(".column").each(function() {
-       var widgets = [];
-       // Loop over all widgets
-       $(this).find(".portlet-config").each(function() {
-         widgets.push( [$(this).attr("data-name"), {}] );
-       });
-       var x = $(this).css('width');
-       x = parseInt(x.substring(0, x.length - 2));
-       width += x;
-       columns.push({'width': x, 'widgets': widgets});
+  dragAndDrop: function() {
+
+    $(".cockpitcolumn").each( function() {
+      Sortable.create($(this)[ 0 ], {
+        group: "widgets",
+        handle: ".panel-heading",
+        animation: 100,
+        onEnd: function (e) { dashboard.save();}
+      });
     });
-    // Convert column width to a percentage
-    for (var i = 0; i < columns.length; i++)
-      columns[i]['width'] = Math.round(columns[i]['width'] * 100.0 / width) + "%";
-    // Adding an extra widget
-    if ($.type(extra) === "string")
-      columns[columns.length-1]['widgets'].push( [extra,{}] );
-    // Send the results to the server
+
+    $("#workarea").each( function() {
+      Sortable.create($(this)[ 0 ], {
+        group: "cockpit",
+        handle: "h1",
+        animation: 100,
+        onEnd: function (e) { dashboard.save();}
+      });
+    });
+
+      //stop: dashboard.save
+    $(".panel-toggle").click(function() {
+      var icon = $(this);
+      icon.toggleClass("fa-minus fa-plus");
+      icon.closest(".panel").find(".panel-body").toggle();
+      });
+    $(".panel-close").click(function() {
+      $(this).closest(".panel").remove();
+      dashboard.save();
+      });
+  },
+
+  save : function(reload)
+  {
+    // Loop over all rows
+    var results = [];
+    $("[data-cockpit-row]").each(function() {
+      var rowname = $(this).attr("data-cockpit-row");
+      var cols = [];
+      // Loop over all columns in the row
+      $(".cockpitcolumn", this).each(function() {
+        var width = 12;
+        if ($(this).hasClass("col-md-12"))
+          width = 12;
+        else if ($(this).hasClass("col-md-11"))
+          width = 11;
+        else if ($(this).hasClass("col-md-10"))
+          width = 10;
+        else if ($(this).hasClass("col-md-9"))
+          width = 9;
+        else if ($(this).hasClass("col-md-8"))
+          width = 8;
+        else if ($(this).hasClass("col-md-7"))
+          width = 7;
+        else if ($(this).hasClass("col-md-6"))
+          width = 6;
+        else if ($(this).hasClass("col-md-5"))
+          width = 5;
+        else if ($(this).hasClass("col-md-4"))
+          width = 4;
+        else if ($(this).hasClass("col-md-3"))
+          width = 3;
+        else if ($(this).hasClass("col-md-2"))
+          width = 2;
+        // Loop over all widgets in the column
+        var widgets = [];
+        $("[data-cockpit-widget]", this).each(function() {
+          widgets.push( [$(this).attr("data-cockpit-widget"),{}] );
+        });
+        cols.push( {'width': width, 'widgets': widgets});
+      });
+      if (cols.length > 0)
+        results.push( {'rowname': rowname, 'cols': cols});
+    });
+
+    // Send to the server
     if (typeof url_prefix != 'undefined')
-      var url = url_prefix + '/settings/';
-    else
-      var url = '/settings/';
+        var url = url_prefix + '/settings/';
+      else
+        var url = '/settings/';
     $.ajax({
       url: url,
       type: 'POST',
       contentType: 'application/json; charset=utf-8',
-      data: JSON.stringify({"freppledb.common.cockpit": columns}),
-      success: function() {
-        // Reload page if a widget was added
-        if ($.type(extra) === "string")
+      data: JSON.stringify({"freppledb.common.cockpit": results}),
+      success: function () {
+        if ($.type(reload) === "string")
           window.location.href = window.location.href;
-        },
+      },
       error: function (result, stat, errorThrown) {
-        $('#popup').html(result.responseText)
-          .dialog({
-            title: gettext("Error saving report settings"),
-            autoOpen: true,
-            resizable: false,
-            width: 'auto',
-            height: 'auto'
-          });
-        }
+        $('#popup').html('<div class="modal-dialog" style="width: auto">'+
+            '<div class="modal-content">'+
+            '<div class="modal-header">'+
+              '<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true" class="fa fa-times"></span></button>'+
+              '<h4 class="modal-title">{% trans "Error saving report settings" %}</h4>'+
+            '</div>'+
+            '<div class="modal-body">'+
+              '<p>'+result.responseText + "  " + stat + errorThrown+'</p>'+
+            '</div>'+
+            '<div class="modal-footer">'+
+            '</div>'+
+          '</div>'+
+          '</div>' ).modal('show');
+      }
       });
   },
 
-  customize: function()
+  customize: function(rowname)
   {
-    var txt = '<table style="text-align:center">' +
-      '<tr><td><label for="layout1"><div class="customlayout" style="width:50px"></div></label><br/>' +
-      '<input id="layout1" type="radio" name="layout" value="100"></td>' +
-      '<td><label for="layout2"><div class="customlayout" style="width:25px"></div><div class="customlayout" style="width:25px"></div></label><br/>' +
-      '<input id="layout2" type="radio" name="layout" value="50,50"></td>' +
-      '<td><label for="layout3"><div class="customlayout" style="width:33px"></div><div class="customlayout" style="width:17px"></div></label><br/>' +
-      '<input id="layout3" type="radio" name="layout" value="66,33"></td></tr>' +
-      '<tr><td><label for="layout4"><div class="customlayout" style="width:17px"></div><div class="customlayout" style="width:16px"></div><div class="customlayout" style="width:17px"></div></label><br/>' +
-      '<input id="layout4" type="radio" name="layout" value="34,33,33"></td>' +
-      '<td><label for="layout5"><div class="customlayout" style="width:20px"></div><div class="customlayout" style="width:15px"></div><div class="customlayout" style="width:15px"></div></label><br/>' +
-      '<input id="layout5" type="radio" name="layout" value="40,30,30"></td>' +
-      '<td><label for="layout6"><div class="customlayout" style="width:25px"></div><div class="customlayout" style="width:12px"></div><div class="customlayout" style="width:13px"></div></label><br/>' +
-      '<input id="layout6" type="radio" name="layout" value="50,25,25"></td></tr>' +
-      '</table><br/>' +
-      gettext('Add') + '&nbsp;&nbsp;<select name="add"><option value=""></option>';
-    for (i in hiddenwidgets)
-      txt += '<option value="' + hiddenwidgets[i][0] + '">' + hiddenwidgets[i][1] + "</option>";
-    txt += '</select>';
-    $('#popup')
-      .html(txt)
-      .dialog({
-        title: gettext("Customize"),
-        width: 'auto',
-        height: 'auto',
-        autoOpen: true,
-        resizable: false,
-        buttons: [
-            {
-              text: gettext("OK"),
-              click: function() {
-                var sel = $('#popup input[name=layout]:checked').val();
-                if (sel !== undefined)
-                {
-                  // A layout was selected
-                  sel = sel.split(",");
-                  var lastcol;
-                  var count = -1;
-                  $(".column").each(function(idx) {
-                    if (idx >= sel.length)
-                    {
-                      // Remove column
-                      $(this).find(".portlet").each(function() {$(lastcol).append($(this));});
-                      $(this).remove();
-                    }
-                    else
-                    {
-                      // Resize column
-                      $(this).css('width',sel[idx] + '%');
-                      lastcol = this;
-                    }
-                    count = idx;
-                    });
-                  while (count < sel.length-1)
-                  {
-                    // Add column
-                    count += 1;
-                    $(lastcol).after('<div class="column ui-sortable" style="width:' + sel[count] + '%"></div>');
-                    $(".column").sortable({
-                      connectWith: ".column",
-                      handle: ".portlet-header",
-                      cancel: ".portlet-toggle",
-                      placeholder: "portlet-placeholder ui-corner-all",
-                      stop: dashboard.save
-                    });
-                  }
-                }
-                var sel = $('#popup option:selected').val();
-                if (sel != '')
-                  dashboard.save(sel);
-                else
-                  dashboard.save();
-                $(this).dialog("close");
-              }
-            },
-            {
-              text: gettext("Reset"),
-              click: function() {
-                if (typeof url_prefix != 'undefined')
-                  var url = url_prefix + '/settings/';
-                else
-                  var url = '/settings/';
-                $.ajax({
-                  url: url,
-                  type: 'POST',
-                  contentType: 'application/json; charset=utf-8',
-                  data: JSON.stringify({"freppledb.common.cockpit": ""}),
-                  success: function() {
-                    // Reload page
-                    window.location.href = window.location.href;
-                     },
-                  error: function (result, stat, errorThrown) {
-                    $('#popup').html(result.responseText)
-                      .dialog({
-                        title: gettext("Error saving report settings"),
-                        autoOpen: true,
-                        resizable: false,
-                        width: 'auto',
-                        height: 'auto'
-                      });
-                    }
-                  });
-                $(this).dialog("close");
-                }
-            },
-            {
-              text: gettext("Cancel"),
-              click: function() { $(this).dialog("close"); }
-            }
-            ]
-        });
-  }
-}
+    // Detect the current layout of this row
+    var layout = "";
+    $("[data-cockpit-row='" + rowname + "'] .cockpitcolumn").each(function() {
+      if (layout != "")
+        layout += " - ";
+      if ($(this).hasClass("col-md-12"))
+        layout += "100%";
+      else if ($(this).hasClass("col-md-11"))
+        layout += "92%";
+      else if ($(this).hasClass("col-md-10"))
+        layout += "83%";
+      else if ($(this).hasClass("col-md-9"))
+        layout += "75%";
+      else if ($(this).hasClass("col-md-8"))
+        layout += "67%";
+      else if ($(this).hasClass("col-md-7"))
+        layout += "58%";
+      else if ($(this).hasClass("col-md-6"))
+        layout += "50%";
+      else if ($(this).hasClass("col-md-5"))
+        layout += "42%";
+      else if ($(this).hasClass("col-md-4"))
+        layout += "33%";
+      else if ($(this).hasClass("col-md-3"))
+        layout += "25%";
+      else if ($(this).hasClass("col-md-2"))
+        layout += "17%";
+      });
 
-//----------------------------------------------------------------------------
-// Code for customized autocomplete widget.
-// The customization creates unselectable categories and selectable list
-// items.
-//----------------------------------------------------------------------------
+    var txt = '<div class="modal-dialog">' +
+      '<div class="modal-content">' +
+        '<div class="modal-header">' +
+          '<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>' +
+          '<h4 class="modal-title">' + gettext("Customize a dashboard row") + '</h4>' +
+        '</div>' +
+      '<div class="modal-body">' +
+        '<form class="form-horizontal">' +
 
-$.widget( "custom.catcomplete", $.ui.autocomplete, {
-  _renderItem: function( ul, item) {
-    if (item.value == undefined)
-      return $( "<li class='ui-autocomplete-category' style='border-top: 1px; border-top-style: solid; border-top-color: #222; text-align:center;'>" + item.label + "</li>" ).appendTo( ul );
-    else
-      return $( "<li></li>" )
-      .data( "item.autocomplete", item )
-      .append( $( "<a></a>" ).text( item.value ) )
-      .appendTo( ul );
+         '<div class="form-group">' +
+       '<label class="col-md-3 control-label" for="id_name">' + gettext("Name") + ':</label>' +
+       '<div class="col-md-9">' +
+       '<input id="id_name" class="form-control" type="text" value="' + rowname + '">' +
+         '</div></div>' +
+
+         '<div class="form-group">' +
+       '<label class="col-md-3 control-label" for="id_layout2">' + gettext("Layout") + ':</label>' +
+       '<div class="col-md-9 dropdown dropdown-submit-input">' +
+     '<button class="btn btn-default dropdown-toggle" id="id_layout2" name="layout" type="button" data-toggle="dropdown" aria-haspopup="true">' +
+       '<span id="id_layout">' + layout + '</span>&nbsp;<span class="caret"></span>' +
+     '</button>' +
+     '<ul class="dropdown-menu" aria-labelledby="id_layout" id="id_layoutul">' +
+     '<li class="dropdown-header">' + gettext("Single column") + '</li>' +
+     '<li><a onclick="dashboard.setlayout(this)">100%</a></li>' +
+     '<li class="divider"></li>' +
+     '<li class="dropdown-header">' + gettext("Two columns") + '</li>' +
+     '<li><a onclick="dashboard.setlayout(this)">75% - 25%</a></li>' +
+     '<li><a onclick="dashboard.setlayout(this)">67% - 33%</a></li>' +
+     '<li><a onclick="dashboard.setlayout(this)">50% - 50%</a></li>' +
+     '<li><a onclick="dashboard.setlayout(this)">33% - 67%</a></li>' +
+     '<li><a onclick="dashboard.setlayout(this)">25% - 75%</a></li>' +
+     '<li class="divider"></li>' +
+     '<li class="dropdown-header">' + gettext("Three columns") + '</li>' +
+     '<li><a onclick="dashboard.setlayout(this)">50% - 25% - 25%</a></li>' +
+     '<li><a onclick="dashboard.setlayout(this)">33% - 33% - 33%</a></li>' +
+     '<li class="divider"></li>' +
+     '<li class="dropdown-header">' + gettext("Four columns") + '</li>' +
+     '<li><a onclick="dashboard.setlayout(this)">25% - 25% - 25% - 25%</a></li>' +
+     '</ul></div>' +
+       '</div>' +
+
+         '<div class="form-group">' +
+       '<label class="col-md-3 control-label" for="id_widget2">' + gettext("Add widget") + ':</label>' +
+       '<div class="col-md-9 dropdown dropdown-submit-input">' +
+     '<button class="btn btn-default dropdown-toggle" id="id_widget2" type="button" data-toggle="dropdown">' +
+     '<span id="id_widget">-</span>&nbsp;<span class="caret"></span>' +
+     '</button>' +
+     '<ul class="dropdown-menu col-sm-9" aria-labelledby="id_widget2" id="id_widgetul">';
+
+       var numwidgets = hiddenwidgets.length;
+       for (var i = 0; i < numwidgets; i++)
+         txt += '<li><a onclick="dashboard.setwidget(' + i + ')">' + hiddenwidgets[i][1] + '</a></li>';
+
+       txt +=
+     '</ul></div><span id="newwidgetname" style="display:none"></span>' +
+       '</div>' +
+
+     '</form></div>' +
+     '<div class="modal-footer">' +
+       '<input type="submit" role="button" onclick=\'dashboard.saveCustomization("' + rowname + '")\' class="btn btn-danger pull-left" value="' + gettext('Save') + '">' +
+       '<input type="submit" role="button" onclick=\'dashboard.deleteRow("' + rowname + '")\' class="btn btn-danger pull-left" value="' + gettext('Delete') + '">' +
+       '<input type="submit" role="button" onclick=\'$("#popup").modal("hide")\' class="btn btn-primary pull-right" data-dismiss="modal" value="' + gettext('Cancel') + '">' +
+       '<input type="submit" role="button" onclick=\'dashboard.addRow("' + rowname + '", false)\' class="btn btn-primary pull-right" value="' + gettext('Add new below') + '">' +
+       '<input type="submit" role="button" onclick=\'dashboard.addRow("' + rowname + '", true)\' class="btn btn-primary pull-right" value="' + gettext('Add new above') + '">' +
+     '</div>' +
+
+     '</div></div></div>';
+
+      $('#popup').html(txt).modal('show');
   },
 
+  setlayout: function(elem) {
+    $("#id_layout").text($(elem).text());
+  },
 
+  setwidget: function(idx) {
+    $("#id_widget").text(hiddenwidgets[idx][1]);
+    $("#newwidgetname").text(hiddenwidgets[idx][0]);
+  },
 
-});
+  saveCustomization: function(rowname) {
+	// Update the name
+    var newname = $("#id_name").val();
+    if (rowname != newname)
+    {
+      // Make sure name is unique
+      var cnt = 2;
+      while ($("[data-cockpit-row='" + newname + "']").length > 1)
+        newname = $("#id_name").val() + ' - ' + (cnt++);
 
+      // Update
+      $("[data-cockpit-row='" + rowname + "'] .col-md-11 h1").text(newname);
+      $("[data-cockpit-row='" + rowname + "'] h1 button").attr("onclick", "dashboard.customize('" + newname + "')");
+      $("[data-cockpit-row='" + rowname + "'] .horizontal-form").attr("id", newname);
+      $("[data-cockpit-row='" + rowname + "']").attr("data-cockpit-row", newname);
+    }
+
+    // Update the layout
+    var newlayout = $("#id_layout").text().split("-");
+    var colindex = 0;
+    var lastcol = null;
+    // Loop over existing columns
+    $("[id='" + rowname + "'] .cockpitcolumn").each(function() {
+      if (colindex < newlayout.length)
+      {
+        // Resize existing column
+        lastcol = this;
+        $(this).removeClass("col-md-1 col-md-2 col-md-3 col-md-4 col-md-5 col-md-6 col-md-7 col-md-8 col-md-9 col-md-10 col-md-11 col-md-12");
+        $(this).addClass("col-md-" + Math.round(0.12 * parseInt(newlayout[colindex])));
+      }
+      else
+      {
+        // Remove this column, after moving all widgets to the previous column
+        $("[data-cockpit-widget]", this).appendTo(lastcol);
+        $(this).remove();
+      }
+      colindex++;
+    });
+    while(colindex < newlayout.length)
+    {
+      // Adding extra columns
+      lastcol = $('<div class="cockpitcolumn col-md-' + Math.round(0.12 * parseInt(newlayout[colindex])) + ' col-sm-12"></div>').insertAfter(lastcol);
+      colindex++;
+    }
+
+    // Adding new widget
+    var newwidget = $("#newwidgetname").text();
+    if (newwidget != '')
+    {
+      $('<div class="panel panel-default" data-cockpit-widget="' + newwidget + '"></div>').appendTo(lastcol);
+      dashboard.save("true"); // Force reload of the page
+    }
+    else
+      dashboard.save();
+
+    // Almost done
+    dashboard.dragAndDrop();
+    $('#popup').modal('hide');
+  },
+
+  deleteRow: function(rowname) {
+    $("[data-cockpit-row='" + rowname + "']").remove();
+    dashboard.save();
+    $('#popup').modal('hide');
+  },
+
+  addRow: function(rowname, position_above) {
+	// Make sure name is unique
+	var newname = $("#id_name").val();
+	var cnt = 2;
+	while ($("[data-cockpit-row='" + newname + "']").length >= 1)
+      newname = $("#id_name").val() + ' - ' + (cnt++);
+
+	  console.log($("[data-cockpit-row='" + newname + "']").length +" "+newname);
+    // Build new content
+    var newelements = '<div class="row" data-cockpit-row="' + newname + '">' +
+      '<div class="col-md-11"><h1 style="float: left">' + newname + '</h1></div>' +
+      '<div class="col-md-1"><h1 class="pull-right">' +
+        '<button class="btn btn-xs btn-primary" onclick="dashboard.customize(\'' + newname + '\')" data-toggle="tooltip" data-placement="top" data-original-title="' + gettext("customize") + '"><span class="fa fa-wrench"></span></button>' +
+      '</h1></div>' +
+
+      '<div class="horizontal-form" id="' + newname + '">';
+    var newlayout = $("#id_layout").text().split("-");
+    var newwidget = $("#newwidgetname").text();
+    for (var i = 0; i < newlayout.length; i++)
+    {
+      newelements += '<div class="cockpitcolumn col-md-' + Math.round(0.12 * parseInt(newlayout[i])) + ' col-sm-12">';
+      if (i == 0 && newwidget != '')
+        newelements += '<div class="panel panel-default" data-cockpit-widget="' + newwidget + '"></div>';
+      newelements += '</div>';
+    }
+    newelements += '</div></div></div>';
+
+    // Insert in page
+    if (position_above)
+      $("[data-cockpit-row='" + rowname + "']").first().before($(newelements));
+    else
+      $("[data-cockpit-row='" + rowname + "']").last().after($(newelements));
+
+    // Almost done
+    if (newwidget != '')
+      // Force reload of the page when adding a widget
+      dashboard.save("true");
+    else
+      dashboard.save();
+    dashboard.dragAndDrop();
+    $('#popup').modal('hide');
+  }
+
+}
 
 //----------------------------------------------------------------------------
 // Code for handling the menu bar, context menu and active button.
@@ -1309,13 +1677,31 @@ $(function() {
   $.ajaxSetup({ cache: false });
 
   // Autocomplete search functionality
-  var database = $('#database').val();
+  var database = $('#database').attr('name');
   database = (database===undefined || database==='default') ? '' : '/' + database;
-  $("#search").catcomplete({
-    source: database + "/search/",
-    minLength: 2,
-    select: function( event, ui ) {
-      window.location.href = database + ui.item.url + admin_escape(ui.item.value) + "/";
+
+  var searchsource = new Bloodhound({
+    datumTokenizer: Bloodhound.tokenizers.obj.whitespace('value'),
+    queryTokenizer: Bloodhound.tokenizers.whitespace,
+    //prefetch: '/search/',
+    remote: {
+      url: database+'/search/?term=%QUERY',
+      wildcard: '%QUERY'
+    }
+  });
+  $('#search').typeahead({minLength: 2}, {
+    limit:100,
+    highlight: true,
+    name: 'search',
+    display: 'value',
+    source: searchsource,
+    templates: {
+      suggestion: function(data){
+        if (data.value === null)
+          return '<span><p style="margin-top: 5px; margin-bottom: 1px;">'+data.label+'</p><li  role="separator" class="divider"></li></span>';
+        else
+          return '<li><a href="'+ database + data.url + admin_escape(data.value) + '/" >' + data.value + '</a></li>';
+      },
     }
   });
 
@@ -1423,20 +1809,32 @@ function sameOrigin(url) {
 
 function import_show(url)
 {
-  $('#popup').html(
+  $('#timebuckets').modal('hide');
+  $.jgrid.hideModal("#searchmodfbox_grid");
+  $('#popup').html('<div class="modal-dialog">'+
+      '<div class="modal-content">'+
+        '<div class="modal-header">'+
+          '<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>'+
+          '<h4 class="modal-title">'+ gettext("Import CSV or Excel file") +'</h4>'+
+        '</div>'+
+        '<div class="modal-body">'+
     '<form id="uploadform">' +
-    gettext('Load an Excel file or a CSV-formatted text file.') + '<br/>' +
+            '<p>'+gettext('Load an Excel file or a CSV-formatted text file.') + '<br/>' +
     gettext('The first row should contain the field names.') + '<br/><br/>' +
-    '<input type="checkbox" name="erase" value="yes"/>&nbsp;&nbsp;' + gettext('First delete all existing records AND ALL RELATED TABLES') + '<br/><br/>' +
-    gettext('Data file') + ':<input type="file" id="csv_file" name="csv_file"/></form>' +
-    '<br/><div style="margin: 5px 0"><textarea id="uploadResponse" rows="10" style="display: none; width:100%; background-color: inherit; border: none" readonly="readonly"></textarea></div>'
-    ).dialog({
-      title: gettext("Import CSV or Excel file"),
-      autoOpen: true, resizable: false, width: 450, height: 'auto',
-      buttons: [
-        {
-          text: gettext("Import"),
-          click: function() {
+            '</p>'+
+            '<input type="checkbox"  autocomplete="off" name="erase" value="yes"/>&nbsp;&nbsp;' + gettext('First delete all existing records AND ALL RELATED TABLES') + '<br/><br/>' +
+            gettext('Data file') + ':<input type="file" id="csv_file" name="csv_file"/>'+
+          '</form>' +
+          '<br/><div style="margin: 5px 0"><textarea id="uploadResponse" rows="10" style="display: none; width:100%; background-color: inherit; border: none" readonly="readonly"></textarea></div>'  +
+        '</div>'+
+        '<div class="modal-footer">'+
+            '<input type="submit" id="importbutton" role="button" class="btn btn-danger pull-left" value="'+gettext('Import')+'">'+
+            '<input type="submit" id="cancelbutton" role="button" class="btn btn-primary pull-right" data-dismiss="modal" value="'+gettext('Cancel')+'">'+
+        '</div>'+
+      '</div>'+
+    '</div>' )
+  .modal('show');
+  $('#importbutton').on('click', function() {
             if ($("#csv_file").val() == "") return;
             $('#uploadResponse').css('display','block');
             $.ajax({
@@ -1460,16 +1858,9 @@ function import_show(url)
               contentType: false
               });
           }
-        },
-        {
-          text: gettext("Cancel"),
-          click: function() { $(this).dialog("close"); }
-        }
-        ]
-    });
-  $('#timebuckets').dialog().dialog('close');
-  $.jgrid.hideModal("#searchmodfbox_grid");
+  )
 }
+
 
 //----------------------------------------------------------------------------
 // This function returns all arguments in the current URL as a dictionary.
@@ -1496,14 +1887,19 @@ function getURLparameters()
 function selectDatabase()
 {
   // Find new database and current database
-  var el = $('#database');
-  var db = el.val();
-  var cur = el.attr('name');
+  var db = $(this).text();
+  var cur = $('#database').attr('name');
+
   // Change the location
   if (cur == db)
     return;
   else if (cur == 'default')
-    window.location.href = window.location.href.replace(window.location.pathname, "/"+db+window.location.pathname);
+  {
+    if (window.location.pathname == '/')
+      window.location.href = "/"+db+"/";
+    else
+      window.location.href = window.location.href.replace(window.location.pathname, "/"+db+window.location.pathname);
+  }
   else if (db == 'default')
     window.location.href = window.location.href.replace("/"+cur+"/", "/");
   else
@@ -1573,11 +1969,11 @@ var graph = {
         .append("div")
         .attr("id", "tooltip")
         .attr("role", "tooltip")
-        .attr("class", "ui-tooltip ui-widget ui-corner-all ui-widget-content")
+        .attr("class", "popover fade right in")
         .style("position", "absolute");
 
     // Update content and display
-    tt.html('<div class="ui-tooltip-content">' + txt + '</div>')
+    tt.html('' + txt)
       .style('display', 'block');
     graph.moveTooltip();
   },
@@ -1665,7 +2061,7 @@ var gantt = {
         var x1 = (bucketstart.getTime() - viewstart.getTime()) / 86400000 * scaling;
         var bucketend = new Date(bucketstart.getFullYear(), bucketstart.getMonth()+1, 1);
         var x2 = (bucketend.getTime() - viewstart.getTime()) / 86400000 * scaling;
-        result.push('<text class="svgheadertext" x="' + Math.floor((x1+x2)/2) + '" y="31">' + $.datepicker.formatDate("M", bucketstart) + '</text>');
+        result.push('<text class="svgheadertext" x="' + Math.floor((x1+x2)/2) + '" y="31">' + moment(bucketstart).format("MMM") + '</text>');
         if (bucketstart.getMonth() % 3 == 0)
         {
           var quarterend = new Date(bucketstart.getFullYear(), bucketstart.getMonth()+3, 1);
@@ -1687,7 +2083,7 @@ var gantt = {
       while (bucketstart < viewend)
       {
         result.push('<line class="time" x1="' + Math.floor(x) + '" y1="17" x2="' + Math.floor(x) + '" y2="34"/>');
-        result.push('<text class="svgheadertext" x="' + Math.floor(x + scaling*3.5) + '" y="31">' + $.datepicker.formatDate("mm-dd", bucketstart) + '</text>');
+        result.push('<text class="svgheadertext" x="' + Math.floor(x + scaling*3.5) + '" y="31">' + moment(bucketstart).format("MM-DD") + '</text>');
         x = x + scaling*7;
         bucketstart.setTime(bucketstart.getTime() + 86400000 * 7);
       }
@@ -1698,7 +2094,7 @@ var gantt = {
         bucketend = new Date(bucketstart.getFullYear(), bucketstart.getMonth()+1, 1);
         x2 = (bucketend.getTime() - viewstart.getTime()) / 86400000 * scaling;
         result.push('<line class="time" x1="' + Math.floor(x1) + '" y1="0" x2="' + Math.floor(x1) + '" y2="17"/>');
-        result.push('<text class="svgheadertext" x="' + Math.floor((x1+x2)/2) + '" y="13">' + $.datepicker.formatDate("M yy", bucketstart) + '</text>');
+        result.push('<text class="svgheadertext" x="' + Math.floor((x1+x2)/2) + '" y="13">' + moment(bucketstart).format("MMM YY") + '</text>');
         bucketstart = bucketend;
       }
     }
@@ -1710,7 +2106,7 @@ var gantt = {
       while (bucketstart < viewend)
       {
         result.push('<line class="time" x1="' + Math.floor(x) + '" y1="17" x2="' + Math.floor(x) + '" y2="34"/>');
-        result.push('<text class="svgheadertext" x="' + (x + scaling*7.0/2.0) + '" y="31">' + $.datepicker.formatDate("yy-mm-dd", bucketstart) + '</text>');
+        result.push('<text class="svgheadertext" x="' + (x + scaling*7.0/2.0) + '" y="31">' + moment(bucketstart).format("YY-MM-DD") + '</text>');
         x = x + scaling*7.0;
         bucketstart.setTime(bucketstart.getTime() + 86400000 * 7);
       }
@@ -1721,7 +2117,7 @@ var gantt = {
         bucketend = new Date(bucketstart.getFullYear(), bucketstart.getMonth()+1, 1);
         x2 = (bucketend.getTime() - viewstart.getTime()) / 86400000 * scaling;
         result.push('<line class="time" x1="' + Math.floor(x1) + '" y1="0" x2="' + Math.floor(x1) + '" y2="17"/>');
-        result.push('<text class="svgheadertext" x="' + Math.floor((x1+x2)/2) + '" y="13">' + $.datepicker.formatDate("M yy", bucketstart) + '</text>');
+        result.push('<text class="svgheadertext" x="' + Math.floor((x1+x2)/2) + '" y="13">' + moment(bucketstart).format("MMM YY") + '</text>');
         bucketstart = bucketend;
       }
     }
@@ -1734,13 +2130,13 @@ var gantt = {
         if (bucketstart.getDay() == 0)
         {
           result.push('<line class="time" x1="' + Math.floor(x) + '" y1="0" x2="' + Math.floor(x) + '" y2="34"/>');
-          result.push('<text class="svgheadertext" x="' + Math.floor(x + scaling*7/2) + '" y="13">' + $.datepicker.formatDate("yy-mm-dd", bucketstart) + '</text>');
+          result.push('<text class="svgheadertext" x="' + Math.floor(x + scaling*7/2) + '" y="13">' + moment(bucketstart).format("YY-MM-DD") + '</text>');
         }
         else
         {
           result.push('<line class="time" x1="' + Math.floor(x) + '" y1="17" x2="' + Math.floor(x) + '" y2="34"/>');
         }
-        result.push('<text class="svgheadertext" x="' + Math.floor(x + scaling/2) + '" y="31">' + $.datepicker.formatDate("d", bucketstart) + '</text>');
+        result.push('<text class="svgheadertext" x="' + Math.floor(x + scaling/2) + '" y="31">' + moment(bucketstart).format("DD") + '</text>');
         x = x + scaling;
         bucketstart.setDate(bucketstart.getDate()+1);
       }
@@ -1754,13 +2150,13 @@ var gantt = {
         if (bucketstart.getDay() == 0)
         {
           result.push('<line class="time" x1="' + Math.floor(x) + '" y1="0" x2="' + Math.floor(x) + '" y2="34"/>');
-          result.push('<text class="svgheadertext" x="' + Math.floor(x + scaling*7/2) + '" y="13">' + $.datepicker.formatDate("yy-mm-dd", bucketstart) + '</text>');
+          result.push('<text class="svgheadertext" x="' + Math.floor(x + scaling*7/2) + '" y="13">' + moment(bucketstart).format("YY-MM-DD") + '</text>');
         }
         else
         {
           result.push('<line class="time" x1="' + Math.floor(x) + '" y1="17" x2="' + Math.floor(x) + '" y2="34"/>');
         }
-        result.push('<text class="svgheadertext" x="' + Math.floor(x + scaling/2) + '" y="31">' + $.datepicker.formatDate("dd M", bucketstart) + '</text>');
+        result.push('<text class="svgheadertext" x="' + Math.floor(x + scaling/2) + '" y="31">' + moment(bucketstart).format("DD MM") + '</text>');
         x = x + scaling;
         bucketstart.setDate(bucketstart.getDate()+1);
       }
@@ -1774,11 +2170,11 @@ var gantt = {
         if (bucketstart.getDay() == 0)
         {
           result.push('<line class="time" x1="' + Math.floor(x) + '" y1="0" x2="' + Math.floor(x) + '" y2="34"/>');
-          result.push('<text class="svgheadertext" x="' + Math.floor(x + scaling*3.5) + '" y="13">' + $.datepicker.formatDate("yy-mm-dd", bucketstart) + '</text>');
+          result.push('<text class="svgheadertext" x="' + Math.floor(x + scaling*3.5) + '" y="13">' + moment(bucketstart).format("YY-MM-DD") + '</text>');
         }
         else
           result.push('<line class="time" x1="' + Math.floor(x) + '" y1="17" x2="' + Math.floor(x) + '" y2="34"/>');
-        result.push('<text class="svgheadertext" x="' + Math.floor(x + scaling/2) + '" y="31">' + $.datepicker.formatDate("D dd M", bucketstart) + '</text>');
+        result.push('<text class="svgheadertext" x="' + Math.floor(x + scaling/2) + '" y="31">' + moment(bucketstart).format("ddd DD MMM") + '</text>');
         x = x + scaling;
         bucketstart.setDate(bucketstart.getDate()+1);
       }
@@ -1792,7 +2188,7 @@ var gantt = {
         if (bucketstart.getHours() == 0)
         {
           result.push('<line class="time" x1="' + Math.floor(x) + '" y1="0" x2="' + Math.floor(x) + '" y2="34"/>');
-          result.push('<text class="svgheadertext" x="' + Math.floor(x + scaling/2) + '" y="13">' + $.datepicker.formatDate("D yy-mm-dd", bucketstart) + '</text>');
+          result.push('<text class="svgheadertext" x="' + Math.floor(x + scaling/2) + '" y="13">' + moment(bucketstart).format("ddd YY-MM-DD") + '</text>');
         }
         else
           result.push('<line class="time" x1="' + Math.floor(x) + '" y1="17" x2="' + Math.floor(x) + '" y2="34"/>');
@@ -1902,54 +2298,51 @@ var tour = {
   init: function()
   {
      // Display the main dialog of the tour
-     $("body").append( '<div id="tour" style="padding-bottom:20px; display:none">' +
+
+    $('#timebuckets').modal('hide');
+    $.jgrid.hideModal("#searchmodfbox_grid");
+
+    $('#popup').removeClass("in").addClass("tourguide").html('<div class="modal-dialog" id="tourModal" role="dialog" style="width: 390px; position: absolute; bottom: 10px; left: auto; right: 15px;">'+
+        '<div class="modal-content">'+
+        '<div class="modal-header">'+
+          '<h4 id="modalTitle" class="modal-title alert alert-info">'+ gettext("Guided tour") +
+          '<button type="button" id="tourcancelbutton" class="close" data-dismiss="modal" aria-hidden="true"><span class="fa fa-times"</button>'+'</h4>'+
+        '</div>'+
+        '<div class="modal-body" id="tourmodalbody" style="padding-bottom:20px;">'+
+            tourdata[tour.chapter]['description']+
+        '</div>'+
+        '<div class="modal-footer"><div class="btn-group control-form" role="group" aria-label="tour buttons">'+
+          '<button type="submit" id="tourprevious" role="button" class="btn btn-primary">'+'<span class="fa fa-step-backward"></span>&nbsp;'+gettext('Previous')+'</button>'+
+          '<button type="submit" id="playbutton" role="button" class="btn btn-primary">'+ gettext(tour.autoplay === 0 ? 'Play' : 'Pause')+ '&nbsp;<span class= ' + ((tour.autoplay === 0) ? '"fa fa-play"' : '"fa fa-pause"') + '></span></button>'+
+          '<button type="submit" id="tournext" role="button" class="btn btn-primary">'+gettext('Next')+'&nbsp;<span class="fa fa-step-forward"></span></button>'+
+        '</div></div>'+
+      '</div>'+
+    '</div>' )
+    .modal({
+      backdrop: 'static',
+      keyboard: false
+    })
+    .modal('show');
+    $('#tourmodalbody').append( '<div id="tour" style="padding-bottom:20px; display:none">' +
          tourdata[tour.chapter]['description']  + '<br/><br/><br/></div>');
-     $("#tour").dialog({
-      title: gettext("Guided tour"),
-      autoOpen: true,
-      resizable: false,
-      width: 390,
-      height: 'auto',
-      position: "right bottom",
-      modal: false,
-      dialogClass: "tourguide",
-      close: function() {
-          $('#tour').remove();
+    $('#tourprevious').on('click', function() {
+      tour.prev();
+    });
+    $('#playbutton').on('click', function() {
+      tour.toggleAutoplay();
+    });
+    $('#tournext').on('click', function() {
+      tour.next();
+    });
+    $('#tourcancelbutton').on('click', function() {
           $('#tourtooltip').remove();
-          tour.tooltip.css({ 'display' : 'none' }).html('');
-          tour.chapter = 0;
-          tour.step = 0;
-          tour.autoplay = false;
-          if (tour.timeout)
-          {
-            clearTimeout(tour.timeout);
-            tour.timeout = null;
-          }
-        },
-      buttons: [
-        {
-          id: "tourprevious",
-          text: gettext("Previous"),
-          icons: { primary: "ui-icon-seek-prev" },
-          click: tour.prev
-        },
-        {
-          text: (tour.autoplay != 0) ? gettext("Stop") : gettext("Play"),
-          icons: { primary: (tour.autoplay != 0) ? "ui-icon-pause" : "ui-icon-play" },
-          click: tour.toggleAutoplay
-        },
-        {
-          id: "tournext",
-          text: gettext("Next"),
-          icons: { primary: "ui-icon-seek-next" },
-          click: tour.next
-        }
-        ]
+      $('#tourModal').modal('hide');
       });
 
      // Create the tooltip
-     tour.tooltip = $('<div>',{id:'tourtooltip', class:'tourtooltip ui-dialog ui-widget ui-widget-content ui-corner-all ui-front', html:''}).css({
-       'display': 'none', 'overflow': 'visible'
+     tour.tooltip = $('<div>',{id:'tourtooltip', class:'popover', html:'<div class="popover" role="tooltip" style="margin-top:10px;"><div class="arrow"></div><h3 class="popover-title"></h3><div class="popover-content"></div></div>'})
+     .css({
+        'placement': 'top','display': 'none', 'overflow': 'visible'
      });
      $("body").append(tour.tooltip);
 
@@ -2036,14 +2429,14 @@ var tour = {
     $('#tour').html(tourdata[tour.chapter]['description'] + '<br/><br/>' + (tour.step+1) + " " + gettext("out of") + " " + tourdata[tour.chapter]['steps'].length);
     // Previous button
     if (tour.chapter == 0 && tour.step == 0)
-      $("#tourprevious").button("disable");
+      $("#tourprevious").prop('disabled', true);
     else
-      $("#tourprevious").button("enable");
+      $("#tourprevious").prop('disabled', false);
     // Next button
     if ((tour.chapter >= tourdata.length-1) && (tour.step >= tourdata[tour.chapter]['steps'].length-1))
-      $("#tournext").button("disable");
+      $("#tournext").prop('disabled', true);
     else
-      $("#tournext").button("enable");
+      $("#tournext").prop('disabled', false);
     // Autoplay
     if (tour.autoplay)
       tour.timeout = setTimeout(tour.next, tourdata[tour.chapter]['delay'] * 1000);
@@ -2056,18 +2449,14 @@ var tour = {
   {
     if (tour.autoplay > 0)
     {
-      var icn = $(".ui-icon-pause");
-      icn.toggleClass("ui-icon-pause ui-icon-play");
-      icn.next().html(gettext("Play"));
+      $("#playbutton").html(gettext('Play')+'&nbsp;<span class="fa fa-play"></span>');
       tour.autoplay = 0;
       clearTimeout(tour.timeout);
       tour.timeout = null;
     }
     else
     {
-      var icn = $(".ui-icon-play");
-      icn.toggleClass("ui-icon-play ui-icon-pause");
-      icn.next().html(gettext("Stop"));
+      $("#playbutton").html(gettext('Pause')+'&nbsp;<span class="fa fa-pause"></span>');
       tour.autoplay = 1;
       tour.next();
     }
@@ -2151,8 +2540,8 @@ var tour = {
         break;
 
       case 'L'  :
-        position = { 'left'  : (el - tw) - 10, 'top' : et + eh/2 - th/2 };
-        rightArrow.css({ right: '-9px' });
+        position = { 'left'  : (el - tw) - 17, 'top' : et + eh/2 - th/2 };
+        rightArrow.css({ top: '40%', right: '-9px' });
         tour.tooltip.prepend(rightArrow);
         break;
 
@@ -2164,7 +2553,7 @@ var tour = {
 
       case 'R'  :
         position = { 'left'  : (el + ew) + 10, 'top' : et + eh/2 - th/2 };
-        leftArrow.css({ left: '-9px' });
+        leftArrow.css({ top: '40%', left: '-9px' });
         tour.tooltip.prepend(leftArrow);
         break;
 

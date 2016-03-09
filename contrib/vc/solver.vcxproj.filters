@@ -47,5 +47,8 @@
     <ClCompile Include="..\..\src\solver\solverplan.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\solver\operatormove.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

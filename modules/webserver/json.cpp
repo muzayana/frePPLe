@@ -728,6 +728,8 @@ long JSONData::getLong() const
   {
     case JSON_NULL:
       return 0;
+    case JSON_BOOL:
+      return data_bool ? 1 : 0;
     case JSON_INT:
       return data_int;
     case JSON_LONG:
@@ -751,6 +753,8 @@ unsigned long JSONData::getUnsignedLong() const
   {
     case JSON_NULL:
       return 0;
+    case JSON_BOOL:
+      return data_bool ? 1 : 0;
     case JSON_INT:
       return data_int;
     case JSON_LONG:
@@ -774,6 +778,8 @@ Duration JSONData::getDuration() const
   {
     case JSON_NULL:
       return Duration(0L);
+    case JSON_BOOL:
+      return Duration(data_bool ? 1L : 0L);
     case JSON_INT:
       return data_int;
     case JSON_LONG:
@@ -797,6 +803,8 @@ int JSONData::getInt() const
   {
     case JSON_NULL:
       return 0;
+    case JSON_BOOL:
+      return data_bool ? 1 : 0;
     case JSON_INT:
       return data_int;
     case JSON_LONG:
@@ -820,6 +828,8 @@ double JSONData::getDouble() const
   {
     case JSON_NULL:
       return 0;
+    case JSON_BOOL:
+      return data_bool ? 1 : 0;
     case JSON_INT:
       return data_int;
     case JSON_LONG:
@@ -843,6 +853,8 @@ Date JSONData::getDate() const
   {
     case JSON_NULL:
       return Date();
+    case JSON_BOOL:
+      return data_bool ? Date::infinitePast : Date::infiniteFuture;
     case JSON_INT:
       return Date(data_int);
     case JSON_LONG:
@@ -867,6 +879,13 @@ const string& JSONData::getString() const
     case JSON_NULL:
       const_cast<JSONData*>(this)->data_string = "NULL";
       return data_string;
+    case JSON_BOOL:
+      {
+      ostringstream convert;
+      convert << data_bool;
+      const_cast<JSONData*>(this)->data_string = convert.str();
+      return data_string;
+      }
     case JSON_INT:
       {
       ostringstream convert;
@@ -910,6 +929,8 @@ bool JSONData::getBool() const
   {
     case JSON_NULL:
       return false;
+    case JSON_BOOL:
+      return data_bool;
     case JSON_INT:
       return data_int != 0;
     case JSON_LONG:
@@ -932,6 +953,7 @@ Object* JSONData::getObject() const
   switch (data_type)
   {
     case JSON_NULL:
+    case JSON_BOOL:
     case JSON_INT:
     case JSON_LONG:
     case JSON_UNSIGNEDLONG:

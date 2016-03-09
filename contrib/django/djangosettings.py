@@ -34,11 +34,19 @@ DATABASES = {
   'default': {
     'ENGINE': 'django.db.backends.postgresql_psycopg2',
     'NAME': 'frepple',
-    'USER': 'frepple',
-    'PASSWORD': 'frepple',
-    'HOST': '',     # Set to empty string for localhost.
-    'OPTIONS': {},  # Backend specific configuration parameters.
-    'PORT': '',     # Set to empty string for default.
+    'USER': 'frepple',     # Role name when using md5 authentication.
+                           # Leave as an empty string when using peer or
+                           # ident authencation.
+    'PASSWORD': 'frepple', # Role password when using md5 authentication.
+                           # Leave as an empty string when using peer or
+                           # ident authencation.
+    'HOST': '',            # When using TCP sockets specify the hostname,
+                           # the ip4 address or the ip6 address here.
+                           # Leave as an empty string to use Unix domain
+                           # socket ("local" lines in pg_hba.conf).
+    'PORT': '',            # Leave to empty string when using Unix domain sockets.
+                           # Specify the port number when using a TCP socket.
+    'OPTIONS': {},         # Backend specific configuration parameters.
     'TEST': {
       'NAME': 'test_frepple' # Database name used when running the test suite.
       }
@@ -46,11 +54,19 @@ DATABASES = {
   'scenario1': {
     'ENGINE': 'django.db.backends.postgresql_psycopg2',
     'NAME': 'scenario1',
-    'USER': 'frepple',
-    'PASSWORD': 'frepple',
-    'HOST': '',     # Set to empty string for localhost.
-    'OPTIONS': {},  # Backend specific configuration parameters.
-    'PORT': '',     # Set to empty string for default.
+    'USER': 'frepple',     # Role name when using md5 authentication.
+                           # Leave as an empty string when using peer or
+                           # ident authencation.
+    'PASSWORD': 'frepple', # Role password when using md5 authentication.
+                           # Leave as an empty string when using peer or
+                           # ident authencation.
+    'HOST': '',            # When using TCP sockets specify the hostname,
+                           # the ip4 address or the ip6 address here.
+                           # Leave as an empty string to use Unix domain
+                           # socket ("local" lines in pg_hba.conf).
+    'PORT': '',            # Leave to empty string when using Unix domain sockets.
+                           # Specify the port number when using a TCP socket.
+    'OPTIONS': {},         # Backend specific configuration parameters.
     'TEST': {
       'NAME': 'test_scenario1' # Database name used when running the test suite.
       }
@@ -58,11 +74,19 @@ DATABASES = {
   'scenario2': {
     'ENGINE': 'django.db.backends.postgresql_psycopg2',
     'NAME': 'scenario2',
-    'USER': 'frepple',
-    'PASSWORD': 'frepple',
-    'HOST': '',     # Set to empty string for localhost.
-    'OPTIONS': {},  # Backend specific configuration parameters.
-    'PORT': '',     # Set to empty string for default.
+    'USER': 'frepple',     # Role name when using md5 authentication.
+                           # Leave as an empty string when using peer or
+                           # ident authencation.
+    'PASSWORD': 'frepple', # Role password when using md5 authentication.
+                           # Leave as an empty string when using peer or
+                           # ident authencation.
+    'HOST': '',            # When using TCP sockets specify the hostname,
+                           # the ip4 address or the ip6 address here.
+                           # Leave as an empty string to use Unix domain
+                           # socket ("local" lines in pg_hba.conf).
+    'PORT': '',            # Leave to empty string when using Unix domain sockets.
+                           # Specify the port number when using a TCP socket.
+    'OPTIONS': {},         # Backend specific configuration parameters.
     'TEST': {
       'NAME': 'test_scenario2' # Database name used when running the test suite.
       }
@@ -70,11 +94,19 @@ DATABASES = {
   'scenario3': {
     'ENGINE': 'django.db.backends.postgresql_psycopg2',
     'NAME': 'scenario3',
-    'USER': 'frepple',
-    'PASSWORD': 'frepple',
-    'HOST': '',     # Set to empty string for localhost.
-    'OPTIONS': {},  # Backend specific configuration parameters.
-    'PORT': '',     # Set to empty string for default.
+    'USER': 'frepple',     # Role name when using md5 authentication.
+                           # Leave as an empty string when using peer or
+                           # ident authencation.
+    'PASSWORD': 'frepple', # Role password when using md5 authentication.
+                           # Leave as an empty string when using peer or
+                           # ident authencation.
+    'HOST': '',            # When using TCP sockets specify the hostname,
+                           # the ip4 address or the ip6 address here.
+                           # Leave as an empty string to use Unix domain
+                           # socket ("local" lines in pg_hba.conf).
+    'PORT': '',            # Leave to empty string when using Unix domain sockets.
+                           # Specify the port number when using a TCP socket.
+    'OPTIONS': {},         # Backend specific configuration parameters.
     'TEST': {
       'NAME': 'test_scenario3' # Database name used when running the test suite.
       }
@@ -176,9 +208,11 @@ INSTALLED_APPS = (
     'django.contrib.auth',
     'registration',  #for cloud registration
     'django.contrib.contenttypes',
+    'django_admin_bootstrapped',
     'django.contrib.admin',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'bootstrap3',
     'freppledb.boot',
     'freppledb.quoting',
     'freppledb.inventoryplanning',
@@ -240,11 +274,7 @@ REST_FRAMEWORK = {
   'DEFAULT_RENDERER_CLASSES': (
     'rest_framework.renderers.JSONRenderer',
     'freppledb.common.api.renderers.freppleBrowsableAPI',
-  ),
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
-#    'PAGE_SIZE': 100,                 # Default to 10
-    # Use Django's standard `django.contrib.auth` permissions,
-    # or allow read-only access for unauthenticated users.
+  )
 }
 
 import django.contrib.admindocs
@@ -346,47 +376,73 @@ CSV_CHARSET = 'utf-8' # locale.getdefaultlocale()[1]
 # If the list contains only a single value, the preferences screen will not
 # display users an option to choose the theme.
 THEMES = [
-  'grass', 'lemon', 'water', 'snow', 'strawberry', 'earth'
+  'earth', 'grass', 'lemon', 'odoo', 'orange', 'snow', 'strawberry', 'water'
   ]
 
 # A default user-group to which new users are automatically added
 DEFAULT_USER_GROUP = None
 
 # The default user interface theme
-DEFAULT_THEME = 'grass'
+DEFAULT_THEME = 'earth'
 
 # The default number of records to pull from the server as a page
 DEFAULT_PAGESIZE = 100
 
 # Configuration of the default dashboard
 DEFAULT_DASHBOARD = [
-  {'width':'50%', 'widgets':[
-    ("welcome",{}),
-    #("purchase_orders", {"fence1": 7, "fence2": 30}),
-    #("distribution_orders", {"fence1": 7, "fence2": 30}),
-    #("manufacturing_orders", {"fence1": 7, "fence2": 30}),
-    ("resource_queue",{"limit":20}),
-    ("purchase_queue",{"limit":20}),
-    ("shipping_queue",{"limit":20}),
+  { 'rowname': 'Welcome', 'cols': [
+    {'width':8, 'widgets':[
+      ("welcome",{}),
+      ("news",{}),
+    ]},
+    {'width':4, 'widgets':[
+      #("execute",{}),
+      ("recent_comments",{"limit":10}),
+      ("recent_actions",{"limit":10}),
+    ]},
   ]},
-  {'width':'25%', 'widgets':[
-    ("recent_actions",{"limit":10}),
-    ("recent_comments",{"limit":10}),
-    ("execute",{}),
-    ("alerts",{}),
-    ("late_orders",{"limit":20}),
-    ("short_orders",{"limit":20}),
-    ("purchase_order_analysis",{"limit":20}),
+  { 'rowname': 'Sales', 'cols': [
+    {'width':9, 'widgets':[
+      ("forecast", {"history": 12, "future": 12}),
+      ("late_orders",{"limit":20}),
+      ("short_orders",{"limit":20}),
+    ]},
+    {'width':3, 'widgets':[
+      ("demand_alerts", {}),
+      ("delivery_performance",{"green": 90, "yellow": 80}),
+      ("forecast_error",{"history":12}),
+    ]},
   ]},
-  {'width':'25%', 'widgets':[
-    ("news",{}),
-    ('resource_utilization',{"limit":5, "medium": 80, "high": 90}),
-    ("delivery_performance",{"green": 90, "yellow": 80}),
-    ("inventory_by_location",{"limit":5}),
-    ("inventory_by_item",{"limit":10}),
-    ("forecast_error",{"history":12}),
+  { 'rowname': 'Purchasing', 'cols': [
+    {'width':9, 'widgets':[
+      ("purchase_orders",{"fence1": 7, "fence2": 30}),
+      #("purchase_queue",{"limit":20}),
+      ("purchase_order_analysis",{"limit":20}),
+    ]},
+    {'width':3, 'widgets':[
+      ("inventory_by_location",{"limit":5}),
+      ("inventory_by_item",{"limit":10}),
+    ]},
   ]},
-  ]
+  { 'rowname': 'Distribution', 'cols': [
+    {'width':12, 'widgets':[
+      ("distribution_orders",{"fence1":7, "fence2": 30}),
+      #("shipping_queue",{"limit":20}),
+      ("stockoutrisk",{"green": 30, "yellow": 50}),
+    ]},
+  ]},
+  { 'rowname': 'Manufacturing', 'cols': [
+    {'width':9, 'widgets':[
+      ("manufacturing_orders",{"fence1":7, "fence2": 30}),
+      #("resource_queue",{"limit":20}),
+    ]},
+    {'width':3, 'widgets':[
+      ('capacity_alerts',{}),
+      ('resource_utilization',{"limit":5, "medium": 80, "high": 90}),
+    ]},
+  ]},
+]
+
 # The following settings are for the 2 factor email registration on the cloud setup
 ACCOUNT_ACTIVATION_DAYS = 7 # One-week activation window; you may, of course, use a different value.
 site = { 'id':1, 'domain':'127.0.0.1:8000', 'name':'frePPLe Cloud',}

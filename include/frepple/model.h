@@ -2038,6 +2038,11 @@ class OperationPlan
       assignIdentifier();
     }
 
+    void setRawIdentifier(unsigned long i)
+    {
+      id = i;
+    }
+
     /** Return the identifier. This method can return the lazy identifier 1. */
     unsigned long getRawIdentifier() const
     {
@@ -2049,9 +2054,8 @@ class OperationPlan
       */
     static void setIDCounter(unsigned long l)
     {
-      if (l < counterMin)
-        throw DataException("Can't decrement the operationplan id counter");
-      counterMin = l;
+      if (l > counterMin)
+        counterMin = l;
     }
 
     /** Return the next-id number. */
@@ -3654,6 +3658,32 @@ class ItemDistribution : public Object,
       HasLevel::triggerLazyRecomputation();
     }
 
+    /** Update the resource representing the supplier capacity. */
+    void setResource(Resource* r)
+    {
+      res = r;
+    }
+
+    /** Return the resource representing the distribution capacity. */
+    Resource* getResource() const
+    {
+      return res;
+    }
+
+    /** Update the resource capacity used per distributed unit. */
+    void setResourceQuantity(double d)
+    {
+      if (d < 0)
+        throw DataException("Resource_quantity must be positive");
+      res_qty = d;
+    }
+
+    /** Return the resource capacity used per distributed unit. */
+    double getResourceQuantity() const
+    {
+      return res_qty;
+    }
+
     /** Return the purchasing leadtime. */
     Duration getLeadTime() const
     {
@@ -3723,6 +3753,16 @@ class ItemDistribution : public Object,
       return OperationIterator(this);
     }
 
+    Duration getFence() const
+    {
+      return fence;
+    }
+
+    void setFence(Duration d)
+    {
+      fence = d;
+    }
+
     template<class Cls> static inline void registerFields(MetaClass* m)
     {
       m->addPointerField<Cls, Item>(Tags::item, &Cls::getItem, &Cls::setItem, MANDATORY + PARENT);
@@ -3735,6 +3775,9 @@ class ItemDistribution : public Object,
       m->addIntField<Cls>(Tags::priority, &Cls::getPriority, &Cls::setPriority, 1);
       m->addDateField<Cls>(Tags::effective_start, &Cls::getEffectiveStart, &Cls::setEffectiveStart);
       m->addDateField<Cls>(Tags::effective_end, &Cls::getEffectiveEnd, &Cls::setEffectiveEnd, Date::infiniteFuture);
+      m->addPointerField<Cls, Resource>(Tags::resource, &Cls::getResource, &Cls::setResource);
+      m->addDoubleField<Cls>(Tags::resource_qty, &Cls::getResourceQuantity, &Cls::setResourceQuantity, 1.0);
+      m->addDurationField<Cls>(Tags::fence, &Cls::getFence, &Cls::setFence);
       m->addIteratorField<Cls, OperationIterator, OperationItemDistribution>(Tags::operations, Tags::operation, &Cls::getOperations, DONT_SERIALIZE);
       HasSource::registerFields<Cls>(m);
     }
@@ -3760,6 +3803,15 @@ class ItemDistribution : public Object,
 
     /** Pointer to the next ItemDistribution for the same item. */
     ItemDistribution* next;
+
+    /** Resource to model distribution capacity. */
+    Resource *res;
+
+    /** Consumption on the distribution capacity resource. */
+    double res_qty;
+
+    /** Release fence for the distribution operation. */
+    Duration fence;
 };
 
 
@@ -4043,6 +4095,42 @@ class ItemSupplier : public Object,
       loc = l;
     }
 
+    /** Update the resource representing the supplier capacity. */
+    void setResource(Resource* r)
+    {
+      res = r;
+    }
+
+    /** Return the resource representing the supplier capacity. */
+    Resource* getResource() const
+    {
+      return res;
+    }
+
+    /** Update the resource capacity used per purchased unit. */
+    void setResourceQuantity(double d)
+    {
+      if (d < 0)
+        throw DataException("Resource_quantity must be positive");
+      res_qty = d;
+    }
+
+    /** Return the resource capacity used per purchased unit. */
+    double getResourceQuantity() const
+    {
+      return res_qty;
+    }
+
+    Duration getFence() const
+    {
+      return fence;
+    }
+
+    void setFence(Duration d)
+    {
+      fence = d;
+    }
+
     /** Return the purchasing lead time. */
     Duration getLeadTime() const
     {
@@ -4079,6 +4167,9 @@ class ItemSupplier : public Object,
       m->addIntField<Cls>(Tags::priority, &Cls::getPriority, &Cls::setPriority, 1);
       m->addDateField<Cls>(Tags::effective_start, &Cls::getEffectiveStart, &Cls::setEffectiveStart);
       m->addDateField<Cls>(Tags::effective_end, &Cls::getEffectiveEnd, &Cls::setEffectiveEnd, Date::infiniteFuture);
+      m->addPointerField<Cls, Resource>(Tags::resource, &Cls::getResource, &Cls::setResource);
+      m->addDoubleField<Cls>(Tags::resource_qty, &Cls::getResourceQuantity, &Cls::setResourceQuantity, 1.0);
+      m->addDurationField<Cls>(Tags::fence, &Cls::getFence, &Cls::setFence);
       HasSource::registerFields<Cls>(m);
     }
 
@@ -4103,6 +4194,15 @@ class ItemSupplier : public Object,
 
     /** Pointer to the head of the auto-generated purchase operation list.*/
     OperationItemSupplier* firstOperation;
+
+    /** Resource to model supplier capacity. */
+    Resource *res;
+
+    /** Consumption on the supplier capacity resource. */
+    double res_qty;
+
+    /** Release fence for the purchasing operation. */
+    Duration fence;
 };
 
 
@@ -4156,6 +4256,11 @@ class OperationItemDistribution : public OperationFixedTime
       * automatically and a data problem is also generated.
       */
     static PyObject* createOrder(PyObject*, PyObject*, PyObject*);
+
+    /** Scan and trim operationplans creating excess inventory in the
+      * buffer.
+      */
+    DECLARE_EXPORT void trimExcess() const;
 };
 
 
@@ -4217,6 +4322,11 @@ class OperationItemSupplier : public OperationFixedTime
       * and a data problem is also generated.
       */
     static PyObject* createOrder(PyObject*, PyObject*, PyObject*);
+
+    /** Scan and trim operationplans creating excess inventory in the
+      * buffer.
+      */
+    DECLARE_EXPORT void trimExcess() const;
 };
 
 
@@ -4311,6 +4421,9 @@ class Buffer : public HasHierarchy<Buffer>, public HasLevel,
     {
       tool = b;
     }
+
+    /** Debugging function. */
+    DECLARE_EXPORT void inspect(string msg = "") const;
 
     /** Return a pointer to the next buffer for the same item. */
     Buffer* getNextItemBuffer() const
@@ -5875,6 +5988,9 @@ class Resource : public HasHierarchy<Resource>,
       return loads;
     }
 
+    /** Debugging function. */
+    DECLARE_EXPORT void inspect(string msg = "") const;
+
     /** Returns a constant reference to the list of loads. It defines
       * which operations are using the resource.
       */
@@ -7286,13 +7402,16 @@ class Plan : public Plannable, public Object
     /** A getDescription of this plan. */
     string descr;
 
+    /** A calendar to which all operationplans will align. */
+    Calendar* cal;
+
     /** Pointer to the singleton plan object. */
     static DECLARE_EXPORT Plan* thePlan;
 
     /** The only constructor of this class is made private. An object of this
       * class is created by the instance() member function.
       */
-    Plan() : cur_Date(Date::now())
+    Plan() : cur_Date(Date::now()), cal(NULL)
     {
       initType(metadata);
     }
@@ -7338,6 +7457,18 @@ class Plan : public Plannable, public Object
       * detection for BeforeCurrent problems needs to be rerun.
       */
     DECLARE_EXPORT void setCurrent(Date);
+
+    /** Return the calendar to which operationplans are aligned. */
+    Calendar* getCalendar() const
+    {
+      return cal;
+    }
+
+    /** Set a calendar to align operationplans to. */
+    void setCalendar(Calendar* c)
+    {
+      cal = c;
+    }
 
     /** Returns the description of the plan. */
     string getDescription() const
@@ -7455,6 +7586,7 @@ class Plan : public Plannable, public Object
       m->addDateField<Plan>(Tags::current, &Plan::getCurrent, &Plan::setCurrent);
       m->addStringField<Plan>(Tags::logfile, &Plan::getLogFile, &Plan::setLogFile, "", DONT_SERIALIZE);
       m->addUnsignedLongField(Tags::id, &Plan::getOperationPlanID, &Plan::setOperationPlanID, 0, DONT_SERIALIZE);
+      m->addPointerField<Cls, Calendar>(Tags::calendar, &Cls::getCalendar, &Cls::setCalendar, DONT_SERIALIZE);
       Plannable::registerFields<Plan>(m);
       m->addIteratorField<Plan, Location::iterator, Location>(Tags::locations, Tags::location, &Plan::getLocations);
       m->addIteratorField<Plan, Customer::iterator, Customer>(Tags::customers, Tags::customer, &Plan::getCustomers);

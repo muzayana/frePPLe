@@ -33,7 +33,6 @@ DECLARE_EXPORT void SolverMRP::checkOperationCapacity
   bool backuplogconstraints = data.logConstraints;
   bool backupForceLate = data.state->forceLate;
   bool recheck, first;
-  double loadqty = 1.0;
 
   // Loop through all loadplans, and solve for the resource.
   // This may move an operationplan early or late.
@@ -52,7 +51,6 @@ DECLARE_EXPORT void SolverMRP::checkOperationCapacity
       data.state->q_operationplan = opplan;
       data.state->q_loadplan = &*h;
       data.state->q_qty = h->getQuantity();
-      loadqty = h->getQuantity();
       data.state->q_date = h->getDate();
       h->getLoad()->solve(*this,&data);
       if (opplan->getDates()!=orig)
@@ -527,10 +525,23 @@ DECLARE_EXPORT void SolverMRP::solve(const Operation* oper, void* v)
     data->planningDemand->getConstraints().top() :
     NULL;
 
-  // Subtract the post-operation time
+  // Subtract the post-operation time.
+  // Note that we subtract it BEFORE we have snapped the requirement date
+  // to our calendar.
   Date prev_q_date_max = data->state->q_date_max;
   data->state->q_date_max = data->state->q_date;
   data->state->q_date -= oper->getPostTime();
+
+  // Align the date to the specified calendar .
+  // This alignment is a soft constraint: q_date_max is already set earlier and
+  // remains unchanged at the true requirement date.
+  Calendar* alignment_cal = Plan::instance().getCalendar();
+  if (alignment_cal && !data->state->curDemand)
+  {
+    // Find the calendar event "at" or "just before" the requirement date
+    Calendar::EventIterator evt(alignment_cal, data->state->q_date + Duration(1L), false);
+    data->state->q_date = (--evt).getDate();
+  }
 
   // Create the operation plan.
   if (data->state->curOwnerOpplan)
@@ -873,11 +884,10 @@ DECLARE_EXPORT void SolverMRP::solve(const OperationAlternate* oper, void* v)
   while (a_qty > 0)
   {
     // Evaluate all alternates
-    bool plannedAlternate = false;
     double bestAlternateValue = DBL_MAX;
     double bestAlternateQuantity = 0;
     Operation* bestAlternateSelection = NULL;
-    double bestFlowPer;
+    double bestFlowPer = 1.0;
     Date bestQDate;
     for (Operation::Operationlist::const_iterator altIter
         = oper->getSubOperations().begin();
@@ -1049,7 +1059,6 @@ DECLARE_EXPORT void SolverMRP::solve(const OperationAlternate* oper, void* v)
 
         // Prepare for the next loop
         a_qty -= data->state->a_qty;
-        plannedAlternate = true;
 
         // As long as we get a positive reply we replan on this alternate
         if (data->state->a_qty > 0) nextalternate = false;

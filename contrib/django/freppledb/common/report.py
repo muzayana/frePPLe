@@ -31,6 +31,7 @@ import math
 import operator
 import json
 from io import StringIO, BytesIO
+import urllib
 from openpyxl import load_workbook, Workbook
 
 from django.apps import apps
@@ -52,7 +53,7 @@ from django.http import HttpResponseForbidden, HttpResponseNotAllowed
 from django.shortcuts import render
 from django.utils import translation, six
 from django.utils.decorators import method_decorator
-from django.utils.encoding import smart_str, iri_to_uri, force_text
+from django.utils.encoding import smart_str, force_text, force_str
 from django.utils.html import escape
 from django.utils.translation import ugettext as _
 from django.utils.formats import get_format
@@ -569,7 +570,8 @@ class GridReport(View):
       content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       content=output.getvalue()
       )
-    response['Content-Disposition'] = 'attachment; filename=%s.xlsx' % title
+    # Filename parameter is encoded as specified in rfc5987
+    response['Content-Disposition'] = "attachment; filename*=utf-8''%s.xlsx" % urllib.parse.quote(force_str(title))
     response['Cache-Control'] = "no-cache, no-store"
     return response
 
@@ -843,6 +845,24 @@ class GridReport(View):
           # Pick up the mode from the session
           mode = request.session.get('mode', 'graph')
       is_popup = '_popup' in request.GET
+      if 'sord' in request.GET:
+        sord = request.GET.get('sord')
+      elif prefs:
+        sord = prefs.get(
+          'sord',
+          reportclass.default_sort[1] if reportclass.default_sort else None
+          )
+      else:
+        sord = reportclass.default_sort[1] if reportclass.default_sort else None
+      if 'sidx' in request.GET:
+        sidx = request.GET.get('sidx')
+      elif prefs:
+        sidx = prefs.get(
+          'sidx',
+          reportclass.rows[reportclass.default_sort[0]].name if reportclass.default_sort else None
+          )
+      else:
+        sidx = reportclass.rows[reportclass.default_sort[0]].name if reportclass.default_sort else None
       context = {
         'reportclass': reportclass,
         'title': (args and args[0] and _('%(title)s for %(entity)s') % {'title': force_text(reportclass.title), 'entity': force_text(args[0])}) or reportclass.title,
@@ -854,8 +874,8 @@ class GridReport(View):
         'object_id': args and quote(args[0]) or None,
         'preferences': prefs,
         'page': prefs and prefs.get('page', 1) or 1,
-        'sord': prefs and prefs.get('sord', request.GET.get('sord', 'asc')) or request.GET.get('sord', 'asc'),
-        'sidx': prefs and prefs.get('sidx', request.GET.get('sidx', '')) or request.GET.get('sidx', ''),
+        'sord': sord,
+        'sidx': sidx,
         'is_popup': is_popup,
         'filters': reportclass.getQueryString(request) or (prefs and prefs.get('filter', None)),
         'args': args,
@@ -888,7 +908,8 @@ class GridReport(View):
         content_type='text/csv; charset=%s' % settings.CSV_CHARSET,
         streaming_content=reportclass._generate_csv_data(request, *args, **kwargs)
         )
-      response['Content-Disposition'] = 'attachment; filename=%s.csv' % iri_to_uri(reportclass.title.lower())
+      # Filename parameter is encoded as specified in rfc5987
+      response['Content-Disposition'] = "attachment; filename*=utf-8''%s.csv" % urllib.parse.quote(force_str(reportclass.title.lower()))
       response['Cache-Control'] = "no-cache, no-store"
       return response
     else:
@@ -1962,7 +1983,8 @@ class GridPivot(GridReport):
       content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       content=output.getvalue()
       )
-    response['Content-Disposition'] = 'attachment; filename=%s.xlsx' % reportclass.model._meta.model_name
+    # Filename parameter is encoded as specified in rfc5987
+    response['Content-Disposition'] = "attachment; filename*=utf-8''%s.xlsx" % urllib.parse.quote(force_str(reportclass.model._meta.model_name))
     response['Cache-Control'] = "no-cache, no-store"
     return response
 
@@ -2068,7 +2090,7 @@ def exportWorkbook(request):
     content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     content=output.getvalue()
     )
-  response['Content-Disposition'] = 'attachment; filename=frepple.xlsx'
+  response['Content-Disposition'] = 'attachment; filename="frepple.xlsx"'
   response['Cache-Control'] = "no-cache, no-store"
   return response
 

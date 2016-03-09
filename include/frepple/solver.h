@@ -32,7 +32,7 @@ namespace frepple
 class OperatorDelete : public Solver
 {
   public:
-	/** Constructor. */
+	  /** Constructor. */
     DECLARE_EXPORT OperatorDelete(CommandManager* c = NULL) : cmds(c)
     {
       initType(metadata);
@@ -935,7 +935,7 @@ class SolverMRP : public Solver
         /** An identifier of the cluster being replanned. Note that it isn't
           * always the complete cluster that is being planned.
           */
-        unsigned int cluster;
+        int cluster;
 
         /** Internal solver to remove material. */
         OperatorDelete *operator_delete;
@@ -1009,6 +1009,141 @@ class SolverMRP : public Solver
       return commands;
     }
 
+};
+
+
+/** This solver resolves infeasibilities in the plan by moving operationplans
+  * to later dates.
+  */
+class OperatorMoveOut : public Solver
+{
+  public:
+	  /** Constructor. */
+    DECLARE_EXPORT OperatorMoveOut()
+    {
+      initType(metadata);
+    }
+
+    /** Destructor. */
+    virtual DECLARE_EXPORT ~OperatorMoveOut() {}
+
+    /** Python method for running the solver. */
+    static PyObject* solve(PyObject*, PyObject*);
+
+    /** Propagate all shortages on buffers. */
+    DECLARE_EXPORT void solve(void *v = NULL);
+
+    /** Propagate the shortage on a single buffer. */
+    DECLARE_EXPORT void solve(const Buffer*, void* = NULL);
+
+    /** Propagate the shortage on a single resource. */
+    DECLARE_EXPORT void solve(const Resource*, void* = NULL);
+
+    /** Move all operationplans to start beyond the current date and the fence. */
+    DECLARE_EXPORT void solve(const Operation*, void* = NULL);
+
+    static int initialize();
+    static PyObject* create(PyTypeObject*, PyObject*, PyObject*);
+    virtual const MetaClass& getType() const {return *metadata;}
+    static DECLARE_EXPORT const MetaClass* metadata;
+
+    template<class Cls> static inline void registerFields(MetaClass* m)
+    {
+      m->addShortField<Cls>(Tags::constraints, &Cls::getConstraints, &Cls::setConstraints);
+    }
+
+    /** Update the constraints to be considered by this solver. */
+    void setConstraints(short i)
+    {
+      constrts = i;
+    }
+
+    /** Returns the constraints considered by the solver. */
+    short getConstraints() const
+    {
+      return constrts;
+    }
+
+    /** Returns true if this solver respects the operation release fences.
+      * The solver isn't allowed to create any operation plans within the
+      * release fence.
+      */
+    bool isFenceConstrained() const
+    {
+      return (constrts & SolverMRP::FENCE)>0;
+    }
+
+    /** Returns true if the solver respects the current time of the plan.
+      * The solver isn't allowed to create any operation plans in the past.
+      */
+    bool isLeadTimeConstrained() const
+    {
+      return (constrts & SolverMRP::LEADTIME)>0;
+    }
+
+    /** Returns true if the solver respects the material procurement
+      * constraints on procurement buffers.
+      */
+    bool isMaterialConstrained() const
+    {
+      return (constrts & SolverMRP::MATERIAL)>0;
+    }
+
+    /** Returns true if the solver respects capacity constraints. */
+    bool isCapacityConstrained() const
+    {
+      return (constrts & SolverMRP::CAPACITY)>0;
+    }
+
+    /** Returns true if any constraint is relevant for the solver. */
+    bool isConstrained() const
+    {
+      return constrts>0;
+    }
+
+    /** Return the best ranking demand this operationplan is pegged to.
+      * TODO Any slack in the supply path is ignored. 
+      */
+    DECLARE_EXPORT Demand* evaluateCandidate(const OperationPlan*);
+
+  private:
+    /** This variable stores the constraint which the solver should respect.
+      * By default all constraints are enabled. */
+    short constrts;
+
+    class OperatorMoveOutData : public CommandManager
+    {
+      friend class OperatorMoveOut;
+      public:
+        /** A pointer to a command manager that takes care of the commit and
+          * rollback of all actions.
+          */
+        CommandManager* cmds;
+
+        /** Constructor. */
+        OperatorMoveOutData(OperatorMoveOut* s, int c)
+          : sol(s), cluster(c) {}
+
+        /** Destructor. */
+        virtual ~OperatorMoveOutData() {}
+
+        static void runme(void *args)
+        {
+          OperatorMoveOutData* x = static_cast<OperatorMoveOutData*>(args);
+          x->commit();
+          delete x;
+        }
+
+        /** This function runs a single planning thread. */
+        virtual DECLARE_EXPORT void commit();
+
+      private:
+        /** Points to the solver. */
+        OperatorMoveOut* sol;
+
+        /** An identifier of the cluster being planned. */
+        unsigned int cluster;
+    };
 };
 
 
