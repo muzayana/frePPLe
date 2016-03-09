@@ -664,7 +664,7 @@ class OrderReport(GridReport):
   '''
   A list report to show demands.
   '''
-  template = 'input/demandlist.html'
+
   title = _("Demand List")
   model = Demand
   frozenColumns = 1
@@ -676,13 +676,16 @@ class OrderReport(GridReport):
       item__lft__gte=fcst.item.lft,
       item__lft__lt=fcst.item.rght,
       customer__lft__gte=fcst.customer.lft,
-      customer__lft__lt=fcst.customer.rght
+      customer__lft__lt=fcst.customer.rght,
+      location__lft__gte=fcst.location.lft,
+      location__lft__lt=fcst.location.rght
       )
 
   rows = (
     #. Translators: Translation included with Django
     GridFieldText('name', title=_('name'), key=True, formatter='detail', extra="role:'input/demand'"),
     GridFieldText('item', title=_('item'), field_name='item__name', formatter='detail', extra="role:'input/item'"),
+    GridFieldText('location', title=_('location'), field_name='location__name', formatter='detail', extra="role:'input/location'"),
     GridFieldText('customer', title=_('customer'), field_name='customer__name', formatter='detail', extra="role:'input/customer'"),
     GridFieldText('description', title=_('description')),
     GridFieldText('category', title=_('category')),
