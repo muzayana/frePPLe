@@ -78,13 +78,6 @@ $(function() {
 {% endif %}{{block.super}}
 {% endblock %}
 
-{% block contextmenus %}
-<div id="detailcontext" class="ContextMenu"><ul class="ui-menu ui-widget ui-widget-content ui-corner-all ui-state-default">
-<li class="ui-menu-item"><a id="{{request.prefix}}/loadplan/?theresource={value}&amp;startdate__lt={enddate}&amp;enddate__gte={startdate}">{% trans 'detail'|capfirst %}</a></li>
-<li class="ui-menu-item"><a id="{{request.prefix}}/resourcepegging/?theresource={value}&amp;startdate__lt={enddate}&amp;enddate__gte={startdate}">{% trans 'pegging'|capfirst %}</a></li>
-</ul></div>
-{% endblock %}
-
 {% block actions %}
 <span onclick="gantt.zoom(0.5,0)" class="fa fa-search-plus fa-lg" title="{% trans 'zoom in'|capfirst|force_escape %}"></span>&nbsp;&nbsp;
 <span onclick="gantt.zoom(1.5,0)" class="fa fa-search-minus fa-lg" title="{% trans 'zoom out'|capfirst|force_escape %}"></span>&nbsp;&nbsp;

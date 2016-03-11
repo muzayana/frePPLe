@@ -14,11 +14,6 @@ $(function(){ graph.header(); })
 </style>
 {% endblock %}
 
-{% block contextmenus %}
-<div id="detailcontext" class="ContextMenu"><ul class="ui-menu ui-widget ui-widget-content ui-corner-all ui-state-default">
-<li class="ui-menu-item"><a id="{{request.prefix}}/loadplan/{value}/?startdate__lt={enddate}&amp;enddate__gt={startdate}">{% trans 'detail'|capfirst %}</a></li>
-</ul></div>{% endblock %}
-
 {% block tools %}{% if args.0 %}{% tabs "input.resource" %}{% endif %}{{block.super}}{% endblock %}
 
 {% block before_table %}{% if args.0 %}
@@ -283,7 +278,11 @@ function crosses (cellvalue, options, rowdata)
     {
       case 3:
         if (cellvalue[3] != 0.0)
-          result += cellvalue[3] + "<span class='context cross fa fa-caret-right' role='detail'></span></br>";
+          result += cellvalue[3] + '<a href="{{request.prefix}}/loadplan/' +
+                                             admin_escape(rowdata['resource']) +
+                                             '/?startdate__lt=' + options['colModel']['enddate'] +
+                                             '&amp;enddate__gt=' + options['colModel']['startdate'] +
+                                             '">&nbsp;<span class="context cross fa fa-caret-right"></span></a><br/>';
         else
           result += '0.0</br>';
         break;

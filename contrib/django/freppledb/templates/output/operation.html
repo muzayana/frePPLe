@@ -7,20 +7,6 @@ $(function(){ graph.header(); })
 </script>{% endif %}
 {% endblock %}
 
-{% block contextmenus %}
-<div id="detail0context" class="ContextMenu"><ul class="ui-menu ui-widget ui-widget-content ui-corner-all ui-state-default">
-<li class="ui-menu-item"><a id="{{request.prefix}}/operationplan/{value}/?startdate__gte={startdate}&amp;startdate__lt={enddate}&amp;locked=1">{% trans 'detail'|capfirst %}</a></li>
-</ul></div>
-<div id="detail1context" class="ContextMenu"><ul class="ui-menu ui-widget ui-widget-content ui-corner-all ui-state-default">
-<li class="ui-menu-item"><a id="{{request.prefix}}/operationplan/{value}/?startdate__gte={startdate}&amp;startdate__lt={enddate}">{% trans 'detail'|capfirst %}</a></li>
-</ul></div>
-<div id="detail2context" class="ContextMenu"><ul class="ui-menu ui-widget ui-widget-content ui-corner-all ui-state-default">
-<li class="ui-menu-item"><a id="{{request.prefix}}/operationplan/{value}/?enddate__gte={startdate}&amp;enddate__lt={enddate}&amp;locked=1">{% trans 'detail'|capfirst %}</a></li>
-</ul></div>
-<div id="detail3context" class="ContextMenu"><ul class="ui-menu ui-widget ui-widget-content ui-corner-all ui-state-default">
-<li class="ui-menu-item"><a id="{{request.prefix}}/operationplan/{value}/?enddate__gte={startdate}&amp;enddate__lt={enddate}">{% trans 'detail'|capfirst %}</a></li>
-</ul></div>{% endblock %}
-
 {% block tools %}{% if args.0 %}{% tabs "input.operation" %}{% endif %}{{block.super}}{% endblock %}
 
 {% block before_table %}{% if args.0 %}
@@ -334,10 +320,51 @@ function crosses (cellvalue, options, rowdata)
 {
   var result = '';
   for (var i in cross_idx)
-    if (cellvalue[cross_idx[i]] != 0.0)
-      result += cellvalue[cross_idx[i]] + "<span class='context cross fa fa-caret-right' role='detail" + cross_idx[i] + "'></span><br/>";
-    else
-      result += '0.0</br>';
+    switch(cross_idx[i])
+    {
+      case 0:
+        if (cellvalue[0] != 0.0)
+		      result += cellvalue[0] + '<a href="{{request.prefix}}/operationplan/' +
+                                                               admin_escape(rowdata['operation']) +
+                                                               '/?startdate__gte=' + options['colModel']['startdate'] +
+                                                               '&amp;startdate__lt=' + options['colModel']['enddate'] +
+                                                               '&amp;locked=1">&nbsp;<span class="context cross fa fa-caret-right"></span></a><br/>';
+		    else
+		      result += '0.0</br>';
+        break;
+      case 1:
+			  if (cellvalue[1] != 0.0)
+			    result += cellvalue[1] +  '<a href="{{request.prefix}}/operationplan/' +
+                                                                  admin_escape(rowdata['operation']) +
+                                                                  '/?startdate__gte=' + options['colModel']['startdate'] +
+                                                                  '&amp;startdate__lt=' + options['colModel']['enddate'] +
+                                                                  '">&nbsp;<span class="context cross fa fa-caret-right"></span></a><br/>';
+			  else
+			    result += '0.0<br/>';
+			  break;
+	    case 2:
+			  if (cellvalue[2] != 0.0)
+			    result += cellvalue[2] +  '<a href="{{request.prefix}}/operationplan/' +
+                                                                  admin_escape(rowdata['operation']) +
+                                                                  '/?enddate__gte=' + options['colModel']['startdate'] +
+                                                                  '&amp;enddate__lt=' + options['colModel']['enddate'] +
+                                                                  '&amp;locked=1">&nbsp;<span class="context cross fa fa-caret-right"></span></a><br/>';
+			  else
+			    result += '0.0<br/>';
+			  break;
+      case 3:
+			  if (cellvalue[3] != 0.0)
+			    result += cellvalue[3] +  '<a href="{{request.prefix}}/operationplan/' +
+                                                                  admin_escape(rowdata['operation']) +
+                                                                  '/?enddate__gte=' + options['colModel']['startdate'] +
+                                                                  '&amp;enddate__lt=' + options['colModel']['enddate'] +
+                                                                  '">&nbsp;<span class="context cross fa fa-caret-right"></span></a><br/>';
+			  else
+			    result += '0.0<br/>';
+        break;
+      default:
+        result += cellvalue[cross_idx[i]] + '</br>';
+    }
   return result;
 };
 {% endif %}{% endblock %}
