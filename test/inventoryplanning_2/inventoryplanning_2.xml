@@ -1,0 +1,538 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<plan xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <name>Inventory planning test case</name>
+  <description>
+    This test verifies the inventory planning module which computes
+    the safety stocks and reorder quantities.
+  </description>
+  <current>2016-01-01T00:00:00</current>
+  <calendars>
+    <calendar name="months">
+      <buckets>
+        <bucket start="2015-01-01T00:00:00" end="2015-02-01T00:00:00" value="1"/>
+        <bucket start="2015-02-01T00:00:00" end="2015-03-01T00:00:00" value="1"/>
+        <bucket start="2015-03-01T00:00:00" end="2015-04-01T00:00:00" value="1"/>
+        <bucket start="2015-04-01T00:00:00" end="2015-05-01T00:00:00" value="1"/>
+        <bucket start="2015-05-01T00:00:00" end="2015-06-01T00:00:00" value="1"/>
+        <bucket start="2015-06-01T00:00:00" end="2015-07-01T00:00:00" value="1"/>
+        <bucket start="2015-07-01T00:00:00" end="2015-08-01T00:00:00" value="1"/>
+        <bucket start="2015-08-01T00:00:00" end="2015-09-01T00:00:00" value="1"/>
+        <bucket start="2015-09-01T00:00:00" end="2015-10-01T00:00:00" value="1"/>
+        <bucket start="2015-10-01T00:00:00" end="2015-11-01T00:00:00" value="1"/>
+        <bucket start="2015-11-01T00:00:00" end="2015-12-01T00:00:00" value="1"/>
+        <bucket start="2015-12-01T00:00:00" end="2016-01-01T00:00:00" value="1"/>
+        <bucket start="2016-01-01T00:00:00" end="2016-02-01T00:00:00" value="1"/>
+        <bucket start="2016-02-01T00:00:00" end="2016-03-01T00:00:00" value="1"/>
+        <bucket start="2016-03-01T00:00:00" end="2016-04-01T00:00:00" value="1"/>
+        <bucket start="2016-04-01T00:00:00" end="2016-05-01T00:00:00" value="1"/>
+        <bucket start="2016-05-01T00:00:00" end="2016-06-01T00:00:00" value="1"/>
+        <bucket start="2016-06-01T00:00:00" end="2016-07-01T00:00:00" value="1"/>
+        <bucket start="2016-07-01T00:00:00" end="2016-08-01T00:00:00" value="1"/>
+        <bucket start="2016-08-01T00:00:00" end="2016-09-01T00:00:00" value="1"/>
+        <bucket start="2016-09-01T00:00:00" end="2016-10-01T00:00:00" value="1"/>
+        <bucket start="2016-10-01T00:00:00" end="2016-11-01T00:00:00" value="1"/>
+        <bucket start="2016-11-01T00:00:00" end="2016-12-01T00:00:00" value="1"/>
+        <bucket start="2016-12-01T00:00:00" end="2017-01-01T00:00:00" value="1"/>                
+      </buckets>
+    </calendar>
+  </calendars>
+  
+  <items>
+    <item name="product with lead time 30">
+      <price>1</price>
+      <itemsuppliers>
+        <itemsupplier>
+          <supplier name="vendor" />
+          <leadtime>P30D</leadtime>
+        </itemsupplier>
+      </itemsuppliers>
+    </item>
+    <item name="product with lead time 60">
+      <price>1</price>      
+      <itemsuppliers>
+        <itemsupplier>
+          <supplier name="vendor" />
+          <leadtime>P60D</leadtime>
+        </itemsupplier>
+      </itemsuppliers>
+    </item>
+    <item name="product with lead time 90">
+      <price>1</price>
+      <itemsuppliers>
+        <itemsupplier>
+          <supplier name="vendor" />
+          <leadtime>P90D</leadtime>
+        </itemsupplier>
+      </itemsuppliers>
+    </item>    
+    <item name="product with lead time 120">
+      <price>1</price>
+      <itemsuppliers>
+        <itemsupplier>
+          <supplier name="vendor" />
+          <leadtime>P120D</leadtime>
+        </itemsupplier>
+      </itemsuppliers>
+    </item>
+  </items>    
+
+  
+  <buffers>
+    <buffer>
+      <name>product with lead time 30</name>
+      <item name="product with lead time 30"/>
+      <location name="factory"/>     
+    </buffer>
+    <buffer>
+      <name>product with lead time 60</name>
+      <item name="product with lead time 60"/>
+      <location name="factory"/>     
+    </buffer>
+    <buffer>
+      <name>product with lead time 90</name>
+      <item name="product with lead time 90"/>
+      <location name="factory"/>      
+    </buffer>
+    <buffer>
+      <name>product with lead time 120</name>
+      <item name="product with lead time 120"/>
+      <location name="factory"/>      
+    </buffer>            
+  </buffers>
+  
+  <demands>
+    <!-- Demand for item with lead time 30 -->    
+    <demand>
+      <name>Demand 30 - jan</name>
+      <due>2016-01-15T00:00:00</due>
+      <quantity>5</quantity>      
+      <item name="product with lead time 30"/>
+      <location name="factory"/>     
+    </demand>
+    <demand>
+      <name>Demand 30 - feb</name>
+      <due>2016-02-15T00:00:00</due>
+      <quantity>5</quantity>      
+      <item name="product with lead time 30"/>
+      <location name="factory"/>     
+    </demand>
+    <demand>
+      <name>Demand 30 - mar</name>
+      <due>2016-03-15T00:00:00</due>
+      <quantity>5</quantity>      
+      <item name="product with lead time 30"/>
+      <location name="factory"/>     
+    </demand>
+    <demand>
+      <name>Demand 30 - apr</name>
+      <due>2016-04-15T00:00:00</due>
+      <quantity>15</quantity>      
+      <item name="product with lead time 30"/>
+      <location name="factory"/>     
+    </demand>     
+    <demand>
+      <name>Demand 30 - may</name>
+      <due>2016-05-15T00:00:00</due>
+      <quantity>15</quantity>      
+      <item name="product with lead time 30"/>
+      <location name="factory"/>     
+    </demand>
+    <demand>
+      <name>Demand 30 - jun</name>
+      <due>2016-06-15T00:00:00</due>
+      <quantity>15</quantity>      
+      <item name="product with lead time 30"/>
+      <location name="factory"/>     
+    </demand>
+    <demand>
+      <name>Demand 30 - jul</name>
+      <due>2016-07-15T00:00:00</due>
+      <quantity>25</quantity>      
+      <item name="product with lead time 30"/>
+      <location name="factory"/>     
+    </demand>
+    <demand>
+      <name>Demand 30 - aug</name>
+      <due>2016-08-15T00:00:00</due>
+      <quantity>25</quantity>      
+      <item name="product with lead time 30"/>
+      <location name="factory"/>     
+    </demand>     
+    <demand>
+      <name>Demand 30 - sep</name>
+      <due>2016-09-15T00:00:00</due>
+      <quantity>25</quantity>      
+      <item name="product with lead time 30"/>
+      <location name="factory"/>     
+    </demand>
+    <demand>
+      <name>Demand 30 - oct</name>
+      <due>2016-10-15T00:00:00</due>
+      <quantity>35</quantity>      
+      <item name="product with lead time 30"/>
+      <location name="factory"/>     
+    </demand>
+    <demand>
+      <name>Demand 30 - nov</name>
+      <due>2016-11-15T00:00:00</due>
+      <quantity>35</quantity>      
+      <item name="product with lead time 30"/>
+      <location name="factory"/>     
+    </demand>
+    <demand>
+      <name>Demand 30 - dec</name>
+      <due>2016-12-15T00:00:00</due>
+      <quantity>35</quantity>      
+      <item name="product with lead time 30"/>
+      <location name="factory"/>     
+    </demand>     
+    <!-- Demand for item with lead time 60 -->    
+    <demand>
+      <name>Demand 60 - jan</name>
+      <due>2016-01-15T00:00:00</due>
+      <quantity>5</quantity>      
+      <item name="product with lead time 60"/>
+      <location name="factory"/>     
+    </demand>
+    <demand>
+      <name>Demand 60 - feb</name>
+      <due>2016-02-15T00:00:00</due>
+      <quantity>5</quantity>      
+      <item name="product with lead time 60"/>
+      <location name="factory"/>     
+    </demand>
+    <demand>
+      <name>Demand 60 - mar</name>
+      <due>2016-03-15T00:00:00</due>
+      <quantity>5</quantity>      
+      <item name="product with lead time 60"/>
+      <location name="factory"/>     
+    </demand>
+    <demand>
+      <name>Demand 60 - apr</name>
+      <due>2016-04-15T00:00:00</due>
+      <quantity>15</quantity>      
+      <item name="product with lead time 60"/>
+      <location name="factory"/>     
+    </demand>     
+    <demand>
+      <name>Demand 60 - may</name>
+      <due>2016-05-15T00:00:00</due>
+      <quantity>15</quantity>      
+      <item name="product with lead time 60"/>
+      <location name="factory"/>     
+    </demand>
+    <demand>
+      <name>Demand 60 - jun</name>
+      <due>2016-06-15T00:00:00</due>
+      <quantity>15</quantity>      
+      <item name="product with lead time 60"/>
+      <location name="factory"/>     
+    </demand>
+    <demand>
+      <name>Demand 60 - jul</name>
+      <due>2016-07-15T00:00:00</due>
+      <quantity>25</quantity>      
+      <item name="product with lead time 60"/>
+      <location name="factory"/>     
+    </demand>
+    <demand>
+      <name>Demand 60 - aug</name>
+      <due>2016-08-15T00:00:00</due>
+      <quantity>25</quantity>      
+      <item name="product with lead time 60"/>
+      <location name="factory"/>     
+    </demand>     
+    <demand>
+      <name>Demand 60 - sep</name>
+      <due>2016-09-15T00:00:00</due>
+      <quantity>25</quantity>      
+      <item name="product with lead time 60"/>
+      <location name="factory"/>     
+    </demand>
+    <demand>
+      <name>Demand 60 - oct</name>
+      <due>2016-10-15T00:00:00</due>
+      <quantity>35</quantity>      
+      <item name="product with lead time 60"/>
+      <location name="factory"/>     
+    </demand>
+    <demand>
+      <name>Demand 60 - nov</name>
+      <due>2016-11-15T00:00:00</due>
+      <quantity>35</quantity>      
+      <item name="product with lead time 60"/>
+      <location name="factory"/>     
+    </demand>
+    <demand>
+      <name>Demand 60 - dec</name>
+      <due>2016-12-15T00:00:00</due>
+      <quantity>35</quantity>      
+      <item name="product with lead time 60"/>
+      <location name="factory"/>     
+    </demand>     
+    <!-- Demand for item with lead time 90 -->    
+    <demand>
+      <name>Demand 90 - jan</name>
+      <due>2016-01-15T00:00:00</due>
+      <quantity>5</quantity>      
+      <item name="product with lead time 90"/>
+      <location name="factory"/>     
+    </demand>
+    <demand>
+      <name>Demand 90 - feb</name>
+      <due>2016-02-15T00:00:00</due>
+      <quantity>5</quantity>      
+      <item name="product with lead time 90"/>
+      <location name="factory"/>     
+    </demand>
+    <demand>
+      <name>Demand 90 - mar</name>
+      <due>2016-03-15T00:00:00</due>
+      <quantity>5</quantity>      
+      <item name="product with lead time 90"/>
+      <location name="factory"/>     
+    </demand>
+    <demand>
+      <name>Demand 90 - apr</name>
+      <due>2016-04-15T00:00:00</due>
+      <quantity>15</quantity>      
+      <item name="product with lead time 90"/>
+      <location name="factory"/>     
+    </demand>     
+    <demand>
+      <name>Demand 90 - may</name>
+      <due>2016-05-15T00:00:00</due>
+      <quantity>15</quantity>      
+      <item name="product with lead time 90"/>
+      <location name="factory"/>     
+    </demand>
+    <demand>
+      <name>Demand 90 - jun</name>
+      <due>2016-06-15T00:00:00</due>
+      <quantity>15</quantity>      
+      <item name="product with lead time 90"/>
+      <location name="factory"/>     
+    </demand>
+    <demand>
+      <name>Demand 90 - jul</name>
+      <due>2016-07-15T00:00:00</due>
+      <quantity>25</quantity>      
+      <item name="product with lead time 90"/>
+      <location name="factory"/>     
+    </demand>
+    <demand>
+      <name>Demand 90 - aug</name>
+      <due>2016-08-15T00:00:00</due>
+      <quantity>25</quantity>      
+      <item name="product with lead time 90"/>
+      <location name="factory"/>     
+    </demand>     
+    <demand>
+      <name>Demand 90 - sep</name>
+      <due>2016-09-15T00:00:00</due>
+      <quantity>25</quantity>      
+      <item name="product with lead time 90"/>
+      <location name="factory"/>     
+    </demand>
+    <demand>
+      <name>Demand 90 - oct</name>
+      <due>2016-10-15T00:00:00</due>
+      <quantity>35</quantity>      
+      <item name="product with lead time 90"/>
+      <location name="factory"/>     
+    </demand>
+    <demand>
+      <name>Demand 90 - nov</name>
+      <due>2016-11-15T00:00:00</due>
+      <quantity>35</quantity>      
+      <item name="product with lead time 90"/>
+      <location name="factory"/>     
+    </demand>
+    <demand>
+      <name>Demand 90 - dec</name>
+      <due>2016-12-15T00:00:00</due>
+      <quantity>35</quantity>      
+      <item name="product with lead time 30"/>
+      <location name="factory"/>     
+    </demand>     
+    <!-- Demand for item with lead time 120 -->    
+    <demand>
+      <name>Demand 120 - jan</name>
+      <due>2016-01-15T00:00:00</due>
+      <quantity>5</quantity>      
+      <item name="product with lead time 120"/>
+      <location name="factory"/>     
+    </demand>
+    <demand>
+      <name>Demand 120 - feb</name>
+      <due>2016-02-15T00:00:00</due>
+      <quantity>5</quantity>      
+      <item name="product with lead time 120"/>
+      <location name="factory"/>     
+    </demand>
+    <demand>
+      <name>Demand 120 - mar</name>
+      <due>2016-03-15T00:00:00</due>
+      <quantity>5</quantity>      
+      <item name="product with lead time 120"/>
+      <location name="factory"/>     
+    </demand>
+    <demand>
+      <name>Demand 120 - apr</name>
+      <due>2016-04-15T00:00:00</due>
+      <quantity>15</quantity>      
+      <item name="product with lead time 120"/>
+      <location name="factory"/>     
+    </demand>     
+    <demand>
+      <name>Demand 120 - may</name>
+      <due>2016-05-15T00:00:00</due>
+      <quantity>15</quantity>      
+      <item name="product with lead time 120"/>
+      <location name="factory"/>     
+    </demand>
+    <demand>
+      <name>Demand 120 - jun</name>
+      <due>2016-06-15T00:00:00</due>
+      <quantity>15</quantity>      
+      <item name="product with lead time 120"/>
+      <location name="factory"/>     
+    </demand>
+    <demand>
+      <name>Demand 120 - jul</name>
+      <due>2016-07-15T00:00:00</due>
+      <quantity>25</quantity>      
+      <item name="product with lead time 120"/>
+      <location name="factory"/>     
+    </demand>
+    <demand>
+      <name>Demand 120 - aug</name>
+      <due>2016-08-15T00:00:00</due>
+      <quantity>25</quantity>      
+      <item name="product with lead time 120"/>
+      <location name="factory"/>     
+    </demand>     
+    <demand>
+      <name>Demand 120 - sep</name>
+      <due>2016-09-15T00:00:00</due>
+      <quantity>25</quantity>      
+      <item name="product with lead time 120"/>
+      <location name="factory"/>     
+    </demand>
+    <demand>
+      <name>Demand 120 - oct</name>
+      <due>2016-10-15T00:00:00</due>
+      <quantity>35</quantity>      
+      <item name="product with lead time 120"/>
+      <location name="factory"/>     
+    </demand>
+    <demand>
+      <name>Demand 120 - nov</name>
+      <due>2016-11-15T00:00:00</due>
+      <quantity>35</quantity>      
+      <item name="product with lead time 120"/>
+      <location name="factory"/>     
+    </demand>
+    <demand>
+      <name>Demand 120 - dec</name>
+      <due>2016-12-15T00:00:00</due>
+      <quantity>35</quantity>      
+      <item name="product with lead time 120"/>
+      <location name="factory"/>     
+    </demand>     
+      </demands>
+
+<?python
+
+with open("output.1.xml", "wt", encoding='utf-8') as output:
+  
+  def run_ip_test(**kwargs):
+    # Update the item and buffer parameters
+    for it in frepple.items():
+      it.price = kwargs.get('price', 1)  
+    for buf in frepple.buffers():
+      buf.roq_min_qty = kwargs.get('roq_min_qty', 0)
+      buf.roq_max_qty = kwargs.get('roq_max_qty', 10000000)
+      buf.roq_multiple_qty = kwargs.get('roq_multiple_qty', 1)
+      buf.roq_min_poc = kwargs.get('roq_min_poc', 0)
+      buf.roq_max_poc = kwargs.get('roq_max_poc', 3650)
+      buf.leadtime_deviation = kwargs.get('leadtime_deviation', 0)
+      buf.demand_deviation = kwargs.get('demand_deviation', 10)
+      buf.demand_distribution = kwargs.get('demand_distribution', 0)
+      buf.service_level = kwargs.get('service_level', 95)
+      buf.ss_min_qty = kwargs.get('ss_min_qty', 0)
+      buf.ss_max_qty = kwargs.get('ss_max_qty', 10000000)
+      buf.ss_multiple_qty = kwargs.get('ss_multiple_qty', 1)
+      buf.ss_min_poc = kwargs.get('ss_min_poc', 0)
+      buf.ss_max_poc = kwargs.get('ss_max_poc', 3650)
+      buf.nostock = kwargs.get('nostock', False)
+      buf.roq_type = kwargs.get('roq_type', 'combined')
+      buf.ss_type = kwargs.get('ss_type', 'combined')
+  
+    # Run the inventory planning solver to compute the safety stock and reorder quantities
+    frepple.solver_inventoryplanning(
+      calendar=frepple.calendar(name='months'),
+      horizon_start=0,
+      horizon_end=365,
+      holding_cost=0.05,
+      fixed_order_cost=20,
+      loglevel=0,
+      ).solve()
+  
+    # Print the results  
+    print("", file=output)
+    print("Test:", file=output, end="")
+    for i in sorted(kwargs.keys()):
+      print(" %s:%s" % (i, kwargs[i]), file=output, end="")
+    print("", file=output)
+    for cal in frepple.calendars():
+      if cal.name == 'months':
+        continue
+      for bckt in cal.buckets:
+        print("\t%s:\t%s\t%s" % (cal.name, bckt.start.date(), bckt.value), file=output)
+    
+  # Changing the service level
+  run_ip_test(demand_deviation=10, price=1, service_level=80)  
+  run_ip_test(demand_deviation=10, price=1, service_level=90)
+  run_ip_test(demand_deviation=10, price=1, service_level=95)
+  run_ip_test(demand_deviation=10, price=1, service_level=98)
+
+  # Changing the cost
+  run_ip_test(demand_deviation=10, price=10, service_level=80)  
+  run_ip_test(demand_deviation=10, price=10, service_level=90)
+  run_ip_test(demand_deviation=10, price=10, service_level=95)
+  run_ip_test(demand_deviation=10, price=10, service_level=98)
+
+  # Changing the demand variability 
+  run_ip_test(demand_deviation=20, price=10, service_level=80)  
+  run_ip_test(demand_deviation=20, price=10, service_level=90)
+  run_ip_test(demand_deviation=20, price=10, service_level=95)
+  run_ip_test(demand_deviation=20, price=10, service_level=98)
+
+  # Setting a minimum safety stock constraint in quantity 
+  run_ip_test(demand_deviation=20, price=10, service_level=80, ss_min_qty=40)  
+  run_ip_test(demand_deviation=20, price=10, service_level=90, ss_min_qty=40)
+  run_ip_test(demand_deviation=20, price=10, service_level=95, ss_min_qty=40)
+  run_ip_test(demand_deviation=20, price=10, service_level=98, ss_min_qty=40)
+
+  # Setting a maximum safety stock constraint in quantity 
+  run_ip_test(demand_deviation=20, price=10, service_level=80, ss_max_qty=60)  
+  run_ip_test(demand_deviation=20, price=10, service_level=90, ss_max_qty=60)
+  run_ip_test(demand_deviation=20, price=10, service_level=95, ss_max_qty=60)
+  run_ip_test(demand_deviation=20, price=10, service_level=98, ss_max_qty=60)
+
+  # Setting a minimum reorder quantity constraint in quantity 
+  run_ip_test(demand_deviation=20, price=10, service_level=80, roq_min_qty=120)  
+  run_ip_test(demand_deviation=20, price=10, service_level=90, roq_min_qty=120)
+  run_ip_test(demand_deviation=20, price=10, service_level=95, roq_min_qty=120)
+  run_ip_test(demand_deviation=20, price=10, service_level=98, roq_min_qty=120)
+
+  # Setting a maximum reorder quantity constraint in quantity 
+  run_ip_test(demand_deviation=20, price=10, service_level=80, roq_max_qty=60)  
+  run_ip_test(demand_deviation=20, price=10, service_level=90, roq_max_qty=60)
+  run_ip_test(demand_deviation=20, price=10, service_level=95, roq_max_qty=60)
+  run_ip_test(demand_deviation=20, price=10, service_level=98, roq_max_qty=60)
+?>
+
+</plan>
