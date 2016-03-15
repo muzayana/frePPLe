@@ -113,7 +113,8 @@ class Replanner:
       elif key in ('forecast.DueWithinBucket',):
         kw[key[9:]] = value
       elif key in ('forecast.calendar',):
-        kw[key[9:]] = self.frepple_calendar
+        if not replanners:
+          kw[key[9:]] = self.frepple_calendar
       elif key in ('forecast.Iterations', 'forecast.loglevel', 'forecast.Skip'
                    'forecast.MovingAverage_order', 'forecast.Net_CustomerThenItemHierarchy',
                    'forecast.Net_MatchUsingDeliveryOperation', 'forecast.Net_NetEarly',
