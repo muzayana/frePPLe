@@ -778,7 +778,7 @@ double InventoryPlanningSolver::computeStockOutProbability(const Buffer* b){
       bucketStart = bucketEnd;
       continue;
     }
-	
+
 	// We perform the bucket where the leadtime falls and then we stop
     if (bucketStart > currentDate + leadtime)
       break;
@@ -795,7 +795,7 @@ double InventoryPlanningSolver::computeStockOutProbability(const Buffer* b){
 	double bucketForecast = 0;
     for (Buffer::flowplanlist::const_iterator i = b->getFlowPlans().begin();
       i != b->getFlowPlans().end(); ++i) {
-        
+
 		  // Only consider consumption
         if (i->getEventType() != 1 || i->getQuantity() >= 0)
           continue;
@@ -830,8 +830,8 @@ double InventoryPlanningSolver::computeStockOutProbability(const Buffer* b){
       return 1;
     }
 
-	// Special case for the last period, we need to pick the forecast 
-	// for the whole bucket and use the prorata value from the bucket 
+	// Special case for the last period, we need to pick the forecast
+	// for the whole bucket and use the prorata value from the bucket
 	// start until the leadtime
 	if (lastBucket) {
 	  bucketForecast = bucketForecast*(currentDate + leadtime - bucketStart)/(bucketEnd - bucketStart);
@@ -845,11 +845,12 @@ double InventoryPlanningSolver::computeStockOutProbability(const Buffer* b){
 	if (loglevel > 1)
       logger << "Total Forecast since plan current bucket : " << sumForecast << endl;
 
-	// If standard deviation is not calculated for that buffer, we use variance to mean = 1
-	double variance = (standardDeviation == -1) ? sumForecast : standardDeviation*standardDeviation;
+	// Assume variance to mean = 1 (as for a Poisson distribution).
+  // TODO: use the standard deviation measured on the demand history and scale it
+	//double variance = (standardDeviation == -1) ? sumForecast : standardDeviation*standardDeviation;
     // on_hand is the TSL so ROP = TSL-1 and ROQ = 1
-    stockOutProbability = 1 - 
-		calculateFillRate(sumForecast, variance,int(on_hand)-1,1,AUTOMATIC);
+    stockOutProbability = 1 -
+		calculateFillRate(sumForecast, sumForecast,int(on_hand)-1,1,AUTOMATIC);
 
 
     if (loglevel > 1)
@@ -921,20 +922,79 @@ int InventoryPlanningSolver::calulateStockLevel(
 
   if (fillRateMaximum > 1)
     fillRateMaximum = 1;
-  // TODO Below code is definitely not optimal, we might think of coding a dichotomical approach
-  // or think of a formula giving the stock level based on the fill rate without iterating
-  unsigned int rop = static_cast<int>(floor(mean));
-  double fillRate;
 
-  // Compute the fill rate, either based on the average inventory or based on the safety stock only
-  while ((fillRate = calculateFillRate(mean, variance, rop, service_level_on_average_inventory ? roq : 1, dist)) < fillRateMinimum)
-    ++rop;
+  // If the service level is based only on the ROP, we calculate as if
+  // the ROQ is 1.
+  if (!service_level_on_average_inventory)
+    roq = 1;
 
-  // Now we are sure the that lower bound is respected, what about the upper bound
-  if (minimumStrongest == true || fillRate <= fillRateMaximum)
-    return rop;
-  else
-    return rop - 1;
+  // Initialize interval for the ROP as [mean, mean + stddev]
+  // or [mean + stddev, mean + 2 * stddev].
+  // For a normal distribution this represents a fill rate range of
+  // [50%, 84%] or [84%, 97%].
+  double stddev = sqrt(variance);
+  int step = static_cast<int>(stddev);
+  if (!step) step = 1;
+  int rop_min = static_cast<int>(floor(mean + (fillRateMinimum>0.5 ? stddev : 0.0)));
+  double fillRate_min = calculateFillRate(mean, variance, rop_min, roq, dist);
+  int rop_max = static_cast<int>(floor(mean + (fillRateMinimum>0.5 ? 2 : 1) * stddev));
+  double fillRate_max = calculateFillRate(mean, variance, rop_max, roq, dist);
+
+  // Iterative loop until we find the ROP matching the minimum fill rate
+  while (true)
+  {
+    if (fillRate_min > fillRateMinimum)
+    {
+      // Need to change the lower boundary of the interval.
+      // Current min becomes the max.
+      rop_max = rop_min;
+      fillRate_max = fillRate_min;
+      rop_min -= step;
+      if (rop_min < 0)
+        rop_min = 0;
+      fillRate_min = calculateFillRate(mean, variance, rop_min, roq, dist);
+      if (fillRate_min > fillRateMinimum && rop_min == 0)
+        // Special case: rop of 0 already exceeds the desired value
+        return 0;
+    }
+    else if (fillRate_max < fillRateMinimum)
+    {
+      // Need to change the upper boundary of the interval.
+      // Current max becomes the min.
+      rop_min = rop_max;
+      fillRate_min = fillRate_max;
+      rop_max += step;
+      fillRate_max = calculateFillRate(mean, variance, rop_max, roq, dist);
+    }
+    else
+    {
+      // The value is inside the interval.
+      // Calculate the fillrate at the midpoint of the interval to reduce the interval.
+      int rop_middle = (rop_min + rop_max) / 2;
+      double fillRate_middle = calculateFillRate(mean, variance, rop_middle, roq, dist);
+      if (fillRate_middle > fillRateMinimum)
+      {
+        // Solution is in the lower half
+        rop_max = rop_middle;
+        fillRate_max = fillRate_middle;
+      }
+      else
+      {
+        // Solution is in the upper half
+        rop_min = rop_middle;
+        fillRate_min = fillRate_middle;
+      }
+      if (rop_max - rop_min <= 1)
+      {
+        // Stop iterating: Interval is now small enough.
+        if (fillRate_min > fillRateMinimum)
+          return (minimumStrongest ? rop_min : rop_max);
+        else
+          return (minimumStrongest ? rop_min : rop_max) + 1;
+      }
+    }
+  }
+  throw LogicException("Unreachable code reached");
 }
 
 
