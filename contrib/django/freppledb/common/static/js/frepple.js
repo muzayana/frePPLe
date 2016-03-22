@@ -880,7 +880,7 @@ var grid = {
       var url = (location.href.indexOf("#") != -1 ? location.href.substr(0,location.href.indexOf("#")) : location.href);
       if (location.search.length > 0)
         // URL already has arguments
-        url += "&format=" + $('#csvformat').val();
+        url += "&format=" + $('#csvformat input:radio:checked').val();
       else if (url.charAt(url.length - 1) == '?')
         // This is the first argument for the URL, but we already have a question mark at the end
         url += "format=" + $('#csvformat input:radio:checked').val();
@@ -894,7 +894,7 @@ var grid = {
       window.open(url,'_blank');
       $('#popup').modal('hide');
     })
-          },
+  },
 
 
   // Display time bucket selection dialog

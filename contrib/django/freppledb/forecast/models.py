@@ -14,7 +14,7 @@ from django.db import models, DEFAULT_DB_ALIAS
 from django.utils.translation import pgettext, ugettext_lazy as _
 
 from freppledb.common.models import AuditModel
-from freppledb.input.models import Customer, Operation, Item, Calendar, Demand, Location
+from freppledb.input.models import Customer, Operation, Item, Demand, Location
 
 
 class Forecast(AuditModel):

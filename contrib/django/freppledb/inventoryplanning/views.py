@@ -113,7 +113,8 @@ class Replanner:
       elif key in ('forecast.DueWithinBucket',):
         kw[key[9:]] = value
       elif key in ('forecast.calendar',):
-        kw[key[9:]] = self.frepple_calendar
+        if not replanners:
+          kw[key[9:]] = self.frepple_calendar
       elif key in ('forecast.Iterations', 'forecast.loglevel', 'forecast.Skip'
                    'forecast.MovingAverage_order', 'forecast.Net_CustomerThenItemHierarchy',
                    'forecast.Net_MatchUsingDeliveryOperation', 'forecast.Net_NetEarly',
@@ -1339,8 +1340,8 @@ class DRPitemlocation(View):
       ):
         frepple.operation_itemdistribution.createOrder(
           destination=frepple.location(name=do.destination.name) if do.destination else None,
-          id=do.id, reference=do.reference,
-          item=frepple_item,
+          #id=do.id,
+          reference=do.reference, item=frepple_item,
           origin=frepple.location(name=do.origin.name) if do.origin else None,
           quantity=do.quantity, start=do.startdate, end=do.enddate,
           consume_material=do.consume_material if do.consume_material != None else True,
@@ -1355,8 +1356,8 @@ class DRPitemlocation(View):
       ):
         frepple.operation_itemsupplier.createOrder(
           location=frepple.location(name=po.location.name) if po.location else None,
-          id=po.id, reference=po.reference,
-          item=frepple_item,
+          #id=po.id,
+          reference=po.reference, item=frepple_item,
           supplier=frepple.supplier(name=po.supplier.name) if po.supplier else None,
           quantity=po.quantity, start=po.startdate, end=po.enddate,
           status=po.status, source=po.source
