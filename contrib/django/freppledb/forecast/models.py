@@ -469,13 +469,13 @@ class Forecast(AuditModel):
               if parents[j].newForecastAdjustment:
                 if parents[j].forecastadjustment is None:
                   parents[j].forecastadjustment = i.forecastadjustment
-                  parents[j].forecastadjustmentvalue = i.forecastadjustment * i.forecast.item.price
+                  parents[j].forecastadjustmentvalue = i.forecastadjustmentvalue
                 else:
                   parents[j].forecastadjustment += i.forecastadjustment
-                  parents[j].forecastadjustmentvalue += i.forecastadjustment * i.forecast.item.price
+                  parents[j].forecastadjustmentvalue += i.forecastadjustmentvalue
               else:
-                parents[j].forecastadjustment -= delta
-                parents[j].forecastadjustmentvalue -= deltavalue
+                parents[j].forecastadjustment += i.forecastadjustment
+                parents[j].forecastadjustmentvalue += i.forecastadjustmentvalue
       else:
         # Case E: Divide the quantity evenly over all existing candidates
         factor = fcstadj / len(leafPlan)
@@ -578,13 +578,13 @@ class Forecast(AuditModel):
               if parents[j].newForecastAdjustment:
                 if parents[j].forecastadjustment is None:
                   parents[j].forecastadjustment = i.forecastadjustment
-                  parents[j].forecastadjustmentvalue = i.forecastadjustment * i.forecast.item.price
+                  parents[j].forecastadjustmentvalue = i.forecastadjustmentvalue
                 else:
                   parents[j].forecastadjustment += i.forecastadjustment
-                  parents[j].forecastadjustmentvalue += i.forecastadjustment * i.forecast.item.price
+                  parents[j].forecastadjustmentvalue += i.forecastadjustmentvalue
               else:
-                parents[j].forecastadjustment -= delta
-                parents[j].forecastadjustmentvalue -= deltavalue
+                parents[j].forecastadjustment += i.forecastadjustment
+                parents[j].forecastadjustmentvalue += i.forecastadjustmentvalue
       else:
         # Case E: Divide the quantity evenly over all existing candidates
         factor = fcstadj / len(leafPlan)
