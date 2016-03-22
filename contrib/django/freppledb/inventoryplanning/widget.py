@@ -47,6 +47,7 @@ class StockoutRiskWidget(Widget):
     var skucount = 0;
     var data = [];
     var titles = [];
+
     $("#invAnalysis").next().find("thead th").each(function() {
       titles.push($(this).html());
       });
@@ -83,20 +84,26 @@ class StockoutRiskWidget(Widget):
         })
       .on("mouseout", function(){
         $("#invanalysis_tooltip").css("display", "none")
-        })
-      .append("svg:a")
-      .attr("xlink:href", function(d) {return url_prefix + "/inventoryplanning/drp/?sidx=stockoutrisk&sord=desc&buffer__location__name=" + admin_escape(d[0]);});
-
+        });
     // Green SKUs
-    bar.append("rect")
+    bar.append("rect:a")
+      .attr("xlink:href", function(d) {
+        return url_prefix +
+        "/inventoryplanning/drp/?sidx=stockoutrisk&sord=desc&stockoutrisk__lte=%s''' % green + '''&buffer__location__name=" + admin_escape(d[0]);
+      }).append("rect")
       .attr("y", function(d) {return y(d[2]) + 10;})
       .attr("height", function(d) {return y_zero - y(d[2]);})
       .attr("rx","2")
       .attr("width", x_width - 2)
       .style("fill", "#828915");
 
+
     // Yellow SKUs
-    bar.append("rect")
+    bar.append("rect:a")
+      .attr("xlink:href", function(d) {
+        return url_prefix +
+        "/inventoryplanning/drp/?sidx=stockoutrisk&sord=desc&stockoutrisk__gt=%s''' % green + '''&stockoutrisk__lte=%s''' % yellow + '''&buffer__location__name=" + admin_escape(d[0]);
+      }).append("rect")
       .attr("y", function(d) {return y(d[2]+d[3]) + 10;})
       .attr("height", function(d) {return y(d[2]) - y(d[2]+d[3]);})
       .attr("rx","2")
@@ -104,7 +111,11 @@ class StockoutRiskWidget(Widget):
       .style("fill", "#FF9900");
 
     // Red SKUs
-    bar.append("rect")
+    bar.append("rect:a")
+      .attr("xlink:href", function(d) {
+        return url_prefix +
+        "/inventoryplanning/drp/?sidx=stockoutrisk&sord=desc&stockoutrisk__gt=%s''' % yellow + '''&buffer__location__name=" + admin_escape(d[0]);
+      }).append("rect")
       .attr("y", function(d) {return y(d[1]) + 10;})
       .attr("height", function(d) {return y(d[2]+d[3]) - y(d[1]);})
       .attr("rx","2")
@@ -114,9 +125,10 @@ class StockoutRiskWidget(Widget):
     // Location label
     bar.append("text")
       .attr("y", y_zero)
+      .attr("x", x_width/2)
       .text(function(d,i) { return d[0]; })
       .style("text-anchor", "end")
-      .attr("transform","rotate(90 " + (x_width/2 - 5) + "," + y_zero + ")");
+      .attr("transform","rotate(90 " + (x_width/2) + " " + y_zero + ")  ");
     '''
 
   def args(self):
@@ -136,8 +148,8 @@ class StockoutRiskWidget(Widget):
       '<svg class="chart" id="invAnalysis" style="width:100%; height: 250px;"></svg>',
       '<table style="display:none"><thead>',
       '<tr><th>location</th><th>total</th>',
-        '<th>%s (&lt; %s%%)</th>' % (force_text(_("green")), green),
-        '<th>%s (&gt;= %s%% and &lt; %s%%)</th>' % (force_text(_("yellow")), green, yellow),
+        '<th>%s (&lt;= %s%%)</th>' % (force_text(_("green")), green),
+        '<th>%s (&gt; %s%% and &lt;= %s%%)</th>' % (force_text(_("yellow")), green, yellow),
         '<th>%s (&gt;= %s%%)</th>' % (force_text(_("red")), yellow),
       '</tr></thead><tbody>' % ()
       ]
