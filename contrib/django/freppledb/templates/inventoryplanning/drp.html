@@ -531,7 +531,8 @@ function forecastfields() {
     '{{_("total orders")|capfirst}}<br/>' +
     '{{_("open orders")|capfirst}}<br/>' +
     '<span><strong>{{_("forecast baseline")|capfirst}}</strong></span><br/>' +
-    '<span class="editablepivotcol" style="line-height: 20px">{{_("forecast override")|capfirst}}</span><br/>';
+    '<span class="editablepivotcol" style="line-height: 20px">{{_("forecast override")|capfirst}}</span><br/>' +
+    '{{_("total forecast")|capfirst}}<br/>';
   {% else %}
 	  '{{_("total orders 3 years ago")|capfirst}}<br/>' +
 	  '<span style="line-height: 20px">{{_("orders adjustment 3 years ago")|capfirst}}</span><br/>' +
@@ -542,7 +543,8 @@ function forecastfields() {
 	  '{{_("total orders")|capfirst}}<br/>' +
 	  '{{_("open orders")|capfirst}}<br/>' +
 	  '<span><strong>{{_("forecast baseline")|capfirst}}</strong><br/>' +
-	  '<span style="line-height: 20px">{{_("forecast override")|capfirst}}</span><br/>';
+	  '<span style="line-height: 20px">{{_("forecast override")|capfirst}}</span><br/>' +
+	  '{{_("total forecast")|capfirst}}<br/>';
   {% endif %}
   return col;
 }
@@ -656,6 +658,7 @@ function forecastcell(cellvalue, options, rowObject) {
   {% else %}
   cellstring += Math.round(cell.forecastadjustment) + '<br>';
   {% endif %}
+  cellstring += cell.forecasttotal + '<br>';
   return cellstring;
 }
 
