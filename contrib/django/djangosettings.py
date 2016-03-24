@@ -33,7 +33,7 @@ SECRET_KEY = '%@mzit!i8b*$zc&6oev96=RANDOMSTRING'
 DATABASES = {
   'default': {
     'ENGINE': 'django.db.backends.postgresql_psycopg2',
-    'NAME': 'ipv2',
+    'NAME': 'frepple',
     'USER': 'frepple',     # Role name when using md5 authentication.
                            # Leave as an empty string when using peer or
                            # ident authencation.
@@ -51,9 +51,9 @@ DATABASES = {
       'NAME': 'test_frepple' # Database name used when running the test suite.
       }
     },
-  'tires': {
+  'scenario1': {
     'ENGINE': 'django.db.backends.postgresql_psycopg2',
-    'NAME': 'tires',
+    'NAME': 'scenario1',
     'USER': 'frepple',     # Role name when using md5 authentication.
                            # Leave as an empty string when using peer or
                            # ident authencation.
@@ -71,9 +71,9 @@ DATABASES = {
       'NAME': 'test_scenario1' # Database name used when running the test suite.
       }
     },
-  'polchem': {
+  'scenario2': {
     'ENGINE': 'django.db.backends.postgresql_psycopg2',
-    'NAME': 'polchem',
+    'NAME': 'scenario2',
     'USER': 'frepple',     # Role name when using md5 authentication.
                            # Leave as an empty string when using peer or
                            # ident authencation.
@@ -91,9 +91,9 @@ DATABASES = {
       'NAME': 'test_scenario2' # Database name used when running the test suite.
       }
     },
-  'scenario': {
+  'scenario3': {
     'ENGINE': 'django.db.backends.postgresql_psycopg2',
-    'NAME': 'ipv',
+    'NAME': 'scenario3',
     'USER': 'frepple',     # Role name when using md5 authentication.
                            # Leave as an empty string when using peer or
                            # ident authencation.
@@ -211,12 +211,11 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'bootstrap3',
     'freppledb.boot',
-    'saic',
     'freppledb.quoting',
     'freppledb.inventoryplanning',
     'freppledb.forecast',
     #'freppledb.odoo',
-    'freppledb.openbravo',
+    #'freppledb.openbravo',
     'freppledb.planningboard',
     'freppledb.input',
     'freppledb.output',
@@ -352,11 +351,11 @@ LOGGING = {
     'loggers': {
         # A handler to log all SQL queries.
         # The setting "DEBUG" also needs to be set to True higher up in this file.
-        'xdjango.db.backends': {
-            'handlers': ['console'],
-            'level': 'DEBUG',
-            'propagate': False,
-        },
+        #'django.db.backends': {
+        #    'handlers': ['console'],
+        #    'level': 'DEBUG',
+        #    'propagate': False,
+        #},
         'django': {
             'handlers': ['console'],
             'level': 'INFO',
