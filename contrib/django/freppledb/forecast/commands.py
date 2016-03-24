@@ -217,7 +217,7 @@ def generateBaseline(solver_fcst, cursor):
   cursor.execute('''select distinct startdate
      from calendarbucket
      where calendarbucket.calendar_id = %s
-       and startdate >= %s and startdate < %s
+       and enddate > %s and startdate < %s
      order by startdate
      ''', (
     fcst_calendar, frepple.settings.current,
@@ -237,7 +237,7 @@ def generateBaseline(solver_fcst, cursor):
        on forecastplan.forecast_id = forecast.name
        and calendarbucket.startdate = forecastplan.startdate
      where calendarbucket.startdate >= %s
-      and calendarbucket.startdate < %s
+      and calendarbucket.enddate < %s
       and forecast.planned = true
      order by forecast.name, calendarbucket.startdate
      ''', (
@@ -307,7 +307,7 @@ def applyForecastAdjustments(cursor):
      left outer join forecastplan
        on forecastplan.forecast_id = forecast.name
        and calendarbucket.startdate = forecastplan.startdate
-     where calendarbucket.enddate >= %s
+     where calendarbucket.enddate > %s
        and calendarbucket.startdate < %s
        and forecastplan.forecastadjustment is not null
        and forecastplan.forecastadjustment > 0
@@ -330,7 +330,7 @@ def loadForecastValues(cursor):
      left outer join forecastplan
        on forecastplan.forecast_id = forecast.name
        and calendarbucket.startdate = forecastplan.startdate
-     where calendarbucket.enddate >= %s
+     where calendarbucket.enddate > %s
        and calendarbucket.startdate < %s
        and forecastplan.forecasttotal > 0
        and forecast.planned = 't'
@@ -384,7 +384,7 @@ def exportForecastFull(cursor):
   cursor.execute('''update forecastplan
     set forecasttotal=0, forecastnet=0, forecastconsumed=0, ordersplanned=0, forecastplanned=0,
       forecasttotalvalue=0, forecastnetvalue=0, forecastconsumedvalue=0, ordersplannedvalue=0, forecastplannedvalue=0
-    where startdate >= %s
+    where enddate > %s
       and (forecasttotal<>0 or forecastnet<>0 or forecastconsumed<>0 or ordersplanned <> 0 or forecastplanned <> 0
         or forecasttotalvalue<>0 or forecastnetvalue<>0 or forecastconsumedvalue<>0 or ordersplannedvalue <> 0 or forecastplannedvalue <> 0)
     ''', (frepple.settings.current,))
@@ -394,7 +394,7 @@ def exportForecastFull(cursor):
   cursor.execute('''update forecastplan
     set forecastnet=0, forecastconsumed=0, ordersplanned=0, forecastplanned=0,
       forecastbaselinevalue=0, forecastnetvalue=0, forecastconsumedvalue=0, ordersplannedvalue=0, forecastplannedvalue=0
-    where startdate < %s
+    where enddate <= %s
       and (forecastnet<>0 or forecastconsumed<>0 or ordersplanned <> 0 or forecastplanned <> 0
         or forecastnetvalue<>0 or forecastconsumedvalue<>0 or ordersplannedvalue <> 0 or forecastplannedvalue <> 0)
     ''', (frepple.settings.current,))
