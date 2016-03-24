@@ -717,16 +717,24 @@ void InventoryPlanningSolver::solve(const Buffer* b, void* v)
     if (!ss_calendar_bucket || fabs(ss_calendar_bucket->getValue() - ss) > ROUNDING_ERROR)
     {
       if (ss_calendar_bucket)
+      {
         ss_calendar_bucket->setEnd(bucketstart);
-      ss_calendar_bucket = ss_calendar->addBucket(bucketstart, Date::infiniteFuture, ss);
+        ss_calendar_bucket = ss_calendar->addBucket(bucketstart, Date::infiniteFuture, ss);
+      }
+      else
+        ss_calendar_bucket = ss_calendar->addBucket(Date::infinitePast, Date::infiniteFuture, ss);
       ss_calendar_bucket->setSource(SOURCE_IP);
       ss_calendar_bucket->setPriority(999);
     }
     if (!roq_calendar_bucket || fabs(roq_calendar_bucket->getValue() - roq) > ROUNDING_ERROR)
     {
       if (roq_calendar_bucket)
+      {
         roq_calendar_bucket->setEnd(bucketstart);
-      roq_calendar_bucket = roq_calendar->addBucket(bucketstart, Date::infiniteFuture, roq);
+        roq_calendar_bucket = roq_calendar->addBucket(bucketstart, Date::infiniteFuture, roq);
+      }
+      else
+        roq_calendar_bucket = roq_calendar->addBucket(Date::infinitePast, Date::infiniteFuture, roq);
       roq_calendar_bucket->setSource(SOURCE_IP);
       roq_calendar_bucket->setPriority(999);
     }
