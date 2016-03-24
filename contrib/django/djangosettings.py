@@ -33,7 +33,7 @@ SECRET_KEY = '%@mzit!i8b*$zc&6oev96=RANDOMSTRING'
 DATABASES = {
   'default': {
     'ENGINE': 'django.db.backends.postgresql_psycopg2',
-    'NAME': 'frepple',
+    'NAME': 'ipv2',
     'USER': 'frepple',     # Role name when using md5 authentication.
                            # Leave as an empty string when using peer or
                            # ident authencation.
@@ -51,9 +51,9 @@ DATABASES = {
       'NAME': 'test_frepple' # Database name used when running the test suite.
       }
     },
-  'scenario1': {
+  'tires': {
     'ENGINE': 'django.db.backends.postgresql_psycopg2',
-    'NAME': 'scenario1',
+    'NAME': 'tires',
     'USER': 'frepple',     # Role name when using md5 authentication.
                            # Leave as an empty string when using peer or
                            # ident authencation.
@@ -71,9 +71,9 @@ DATABASES = {
       'NAME': 'test_scenario1' # Database name used when running the test suite.
       }
     },
-  'scenario2': {
+  'polchem': {
     'ENGINE': 'django.db.backends.postgresql_psycopg2',
-    'NAME': 'scenario2',
+    'NAME': 'polchem',
     'USER': 'frepple',     # Role name when using md5 authentication.
                            # Leave as an empty string when using peer or
                            # ident authencation.
@@ -91,9 +91,9 @@ DATABASES = {
       'NAME': 'test_scenario2' # Database name used when running the test suite.
       }
     },
-  'scenario3': {
+  'scenario': {
     'ENGINE': 'django.db.backends.postgresql_psycopg2',
-    'NAME': 'scenario3',
+    'NAME': 'ipv',
     'USER': 'frepple',     # Role name when using md5 authentication.
                            # Leave as an empty string when using peer or
                            # ident authencation.
@@ -207,23 +207,24 @@ CURRENCY=("","$")    # Prefix and suffix for currency strings
 INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
-    'django_admin_bootstrapped',
-    'django.contrib.admin',
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'bootstrap3',
     'freppledb.boot',
+    'saic',
     'freppledb.quoting',
     'freppledb.inventoryplanning',
     'freppledb.forecast',
     #'freppledb.odoo',
-    #'freppledb.openbravo',
+    'freppledb.openbravo',
     'freppledb.planningboard',
     'freppledb.input',
     'freppledb.output',
     'freppledb.execute',
     'freppledb.common',
     'rest_framework',
+    'django_admin_bootstrapped',
+    'django.contrib.admin',
 )
 
 # Custom attribute fields in the database
@@ -287,10 +288,28 @@ LOCALE_PATHS = (
     os.path.normpath(os.path.join(os.path.dirname(django.contrib.admindocs.__file__),'locale')),
 )
 
-TEMPLATE_DIRS = (
-    os.path.normpath(os.path.join(FREPPLE_APP,'freppledb','templates')),
-    os.path.normpath(os.path.join(FREPPLE_HOME,'templates')),
-)
+TEMPLATES_TODO = [ #to be used in the future, now interferes with middleware
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [
+            #os.path.normpath(os.path.join(FREPPLE_HOME,'templates')),
+        ],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                # Insert your TEMPLATE_CONTEXT_PROCESSORS here or use this
+                # list if you haven't customized them:
+                'django.contrib.auth.context_processors.auth',
+                'django.template.context_processors.debug',
+                'django.template.context_processors.i18n',
+                'django.template.context_processors.media',
+                'django.template.context_processors.static',
+                'django.template.context_processors.tz',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
 
 STATICFILES_DIRS = ()
 if os.path.isdir(os.path.normpath(os.path.join(FREPPLE_HOME,'static'))):
@@ -333,11 +352,11 @@ LOGGING = {
     'loggers': {
         # A handler to log all SQL queries.
         # The setting "DEBUG" also needs to be set to True higher up in this file.
-        #'django.db.backends': {
-        #    'handlers': ['console'],
-        #    'level': 'DEBUG',
-        #    'propagate': False,
-        #},
+        'xdjango.db.backends': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
         'django': {
             'handlers': ['console'],
             'level': 'INFO',
@@ -401,7 +420,7 @@ DEFAULT_DASHBOARD = [
   ]},
   { 'rowname': 'Sales', 'cols': [
     {'width':9, 'widgets':[
-      ("forecast", {"history": 12, "future": 12}),
+      ("forecast", {"history": 36, "future": 12}),
       ("late_orders",{"limit":20}),
       ("short_orders",{"limit":20}),
     ]},

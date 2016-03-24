@@ -84,12 +84,13 @@ def aggregateDemand(cursor):
         coalesce(sum(case when demand.status is null or demand.status = 'open' then (demand.quantity*ditem.price) else 0 end), 0) as ordersopenvalue
       from demand
       inner join item as ditem on demand.item_id = ditem.name
-      left outer join customer as dcustomer on demand.customer_id = dcustomer.name
+      --left outer join customer as dcustomer on demand.customer_id = dcustomer.name
       left outer join location as dlocation on demand.location_id = dlocation.name
       inner join item as fitem on ditem.lft between fitem.lft and fitem.rght
-      left outer join customer as fcustomer on dcustomer.lft between fcustomer.lft and fcustomer.rght
+      --left outer join customer as fcustomer on dcustomer.lft between fcustomer.lft and fcustomer.rght
       left outer join location as flocation on dlocation.lft between flocation.lft and flocation.rght
-      inner join forecast on fitem.name = forecast.item_id and fcustomer.name = forecast.customer_id and flocation.name = forecast.location_id
+      --inner join forecast on fitem.name = forecast.item_id and fcustomer.name = forecast.customer_id and flocation.name = forecast.location_id
+      inner join forecast on fitem.name = forecast.item_id and flocation.name = forecast.location_id
       inner join common_parameter on common_parameter.name = 'forecast.calendar'
       inner join calendarbucket
         on common_parameter.value = calendarbucket.calendar_id

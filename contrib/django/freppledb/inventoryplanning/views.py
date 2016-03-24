@@ -19,7 +19,7 @@ from django.contrib.admin.utils import unquote
 from django.contrib.admin.models import LogEntry, CHANGE
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Q, Min, Max
+from django.db.models import F, Q, Min, Max, Sum
 from django.db import connections, transaction
 from django.db.models.fields.related import RelatedField
 from django.forms.models import modelform_factory
@@ -272,15 +272,19 @@ class DRP(GridReport):
   @ classmethod
   def basequeryset(reportclass, request, args, kwargs):
     if args and args[0]:
+      # CASE 1: Single item to be shown
       return InventoryPlanningOutput.objects.all() \
         .filter(buffer__item__name=args[0]) \
         .select_related("buffer", "buffer__inventoryplanning", "buffer__item", "buffer__location")
     else:
       q = InventoryPlanningOutput.objects.all() \
         .select_related("buffer", "buffer__inventoryplanning", "buffer__item", "buffer__location")
-      if request.prefs and request.prefs.get("grouping", None) == 'item':
-        sortcol, sortdir = reportclass.get_sort(request).split(' ')
-        sortrow = reportclass.rows[int(sortcol)-1]
+      grouping = request.prefs.get("grouping", None) if request.prefs else 'itemlocation'
+      units_or_value = request.prefs.get('units', 'units') if request.prefs else 'units'
+      sortcol, sortdir = reportclass.get_sort(request).split(' ')
+      sortrow = reportclass.rows[int(sortcol)-1]
+      if grouping == 'item':
+        # CASE 2: Group results by item
         aggregate = "sum" if isinstance(sortrow, (GridFieldNumber, GridFieldInteger)) else "max"
         if sortrow.field_name.find("__") < 0:
             # item grouping 1: field in the outinventoryplanning table
@@ -336,9 +340,8 @@ class DRP(GridReport):
             )
         else:
           raise Exception("Item grouping not supported for this case")
-      elif request.prefs and request.prefs.get("grouping", None) == 'location':
-        sortcol, sortdir = reportclass.get_sort(request).split(' ')
-        sortrow = reportclass.rows[int(sortcol)-1]
+      elif grouping == 'location':
+        # CASE 3: Group results by location
         aggregate = "sum" if isinstance(sortrow, (GridFieldNumber, GridFieldInteger)) else "max"
         if sortrow.field_name.find("__") < 0:
             # location grouping 1: field in the outinventoryplanning table
@@ -394,6 +397,19 @@ class DRP(GridReport):
             )
         else:
           raise Exception("Location grouping not supported for this case")
+      elif grouping == 'itemlocation':
+        # CASE 4: No grouping
+        if units_or_value == "value":
+          print ("ZZZZZ")
+          q = q.annotate(
+            val=Sum(F(sortrow.field_name) * F("buffer__item__price"))
+            )
+          q = q.order_by(
+            '-val' if sortdir == "desc" else "val",
+            'buffer__location__name'
+            )          
+        else:
+          print ("oooo")
       return q
 
   @staticmethod

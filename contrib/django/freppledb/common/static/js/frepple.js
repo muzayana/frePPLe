@@ -1835,29 +1835,33 @@ function import_show(url)
     '</div>' )
   .modal('show');
   $('#importbutton').on('click', function() {
-            if ($("#csv_file").val() == "") return;
-            $('#uploadResponse').css('display','block');
-            $.ajax({
-              type: 'post',
-              url: typeof(url) != 'undefined' ? url : '',
-              cache: false,
-              data: new FormData($("#uploadform")[0]),
-              success: function (data) {
-                var el = $('#uploadResponse');
-                el.val(data);
-                el.scrollTop(el[0].scrollHeight - el.height());
-              },
-              xhrFields: {
-                onprogress: function (e) {
-                  var el = $('#uploadResponse');
-                  el.val(e.currentTarget.response);
-                  el.scrollTop(el[0].scrollHeight - el.height());
-                }
-              },
-              processData: false,
-              contentType: false
-              });
-          }
+    if ($("#csv_file").val() == "") return;
+    $('#uploadResponse').css('display','block');
+    $('#uploadform').css('display','none');
+    $.ajax({
+      type: 'post',
+      url: typeof(url) != 'undefined' ? url : '',
+      cache: false,
+      data: new FormData($("#uploadform")[0]),
+      success: function (data) {
+        var el = $('#uploadResponse');
+        el.val(data);
+        el.scrollTop(el[0].scrollHeight - el.height());
+        $('#cancelbutton').val(gettext('Close'));
+        $('#importbutton').hide();
+        $("#grid").trigger("reloadGrid");
+      },
+      xhrFields: {
+        onprogress: function (e) {
+          var el = $('#uploadResponse');
+          el.val(e.currentTarget.response);
+          el.scrollTop(el[0].scrollHeight - el.height());
+        }
+      },
+      processData: false,
+      contentType: false
+    });
+   }
   )
 }
 

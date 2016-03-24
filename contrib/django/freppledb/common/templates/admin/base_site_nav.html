@@ -4,7 +4,15 @@
 {% block extrahead %}{{block.super}}
 <script type="text/javascript">
 $(function() {
-   $(".selectdb li a").click(selectDatabase);
+  $(".selectdb li a").click(selectDatabase);
+
+  $("#nav-menu li.dropdown").mouseenter(
+      function() { if ( !$(this).hasClass("open") && window.innerWidth >= 768) $('.dropdown-toggle', this).dropdown('toggle');}
+  );
+  $("#nav-menu li.dropdown").mouseleave(
+      function() { if ($(this).hasClass("open") && window.innerWidth >= 768) $('.dropdown-toggle', this).dropdown('toggle');}
+  );
+
 });
 
 </script>
