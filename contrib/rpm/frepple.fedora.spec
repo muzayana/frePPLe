@@ -17,9 +17,9 @@ URL: http://www.frepple.com
 Source: http://downloads.sourceforge.net/%{name}/%{name}-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-XXXXXX)
 # Note on dependencies: Django is also required, but we need a custom install.
-Requires: xerces-c, openssl, httpd, mod_wsgi, python, python-cherrypy
+Requires: xerces-c, openssl, httpd, mod_wsgi, python, python-cherrypy, libpq
 Requires(pre): shadow-utils
-BuildRequires: python3-devel, automake, autoconf, libtool, xerces-c-devel, python3-sphinx
+BuildRequires: python3-devel, automake, autoconf, libtool, xerces-c-devel, python3-sphinx, libpq5-dev
 # Note: frePPLe requires a custom install of django and also some
 # additional python modules. Users install all these using the python packager "pip3"
 # BEFORE compiling frePPLe.
