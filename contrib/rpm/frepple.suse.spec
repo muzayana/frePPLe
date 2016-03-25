@@ -17,9 +17,12 @@ URL: http://www.frepple.com
 Source: http://downloads.sourceforge.net/%{name}/%{name}-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-XXXXXX)
 # Note on dependencies: Django is also required, but we need a custom install.
-Requires: xerces-c, openssl, httpd, mod_wsgi, python, python-cherrypy
+Requires: xerces-c, openssl, httpd, mod_wsgi, python, python-cherrypy, libpq
 Requires(pre): shadow-utils
-BuildRequires: python3-devel, automake, autoconf, libtool, libxerces-c-devel
+BuildRequires: python3-devel, automake, autoconf, libtool, libxerces-c-3_1, libxerces-c-devel, openssl, openssl-devel, libtool, make, automake, autoconf, doxygen, python3, python3-devel, gcc-c++, graphviz, rpm-build, git, libpq5, postgresql-devel
+
+
+
 # Note: frePPLe requires a custom install of django and also some
 # additional python modules. Users install all these using the python packager "pip3"
 # BEFORE compiling frePPLe.
@@ -56,7 +59,7 @@ Documentation subpackage for frePPLe - free Production PLanning.
 # Add frepple group.
 getent group frepple >/dev/null || groupadd -r frepple
 # Add the apache user to the new group
-usermod -a -G frepple apache
+usermod -a -G frepple wwwrun
 
 %prep
 %setup -q
@@ -145,5 +148,6 @@ rm -rf /var/log/frepple
 
 %files doc
 %defattr(-,root,root,-)
-%doc doc/_build/html
+%docdir /usr/share/doc/frepple/
+/usr/share/doc/frepple
 
