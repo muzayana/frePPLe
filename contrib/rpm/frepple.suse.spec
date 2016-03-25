@@ -17,7 +17,7 @@ URL: http://www.frepple.com
 Source: http://downloads.sourceforge.net/%{name}/%{name}-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-XXXXXX)
 # Note on dependencies: Django is also required, but we need a custom install.
-Requires: xerces-c, openssl, httpd, mod_wsgi, python, python-cherrypy, libpq
+Requires: xerces-c, openssl, httpd, mod_wsgi, python, python-cherrypy, libpq5
 Requires(pre): shadow-utils
 BuildRequires: python3-devel, automake, autoconf, libtool, libxerces-c-3_1, libxerces-c-devel, openssl, openssl-devel, libtool, make, automake, autoconf, doxygen, python3, python3-devel, gcc-c++, graphviz, rpm-build, git, libpq5, postgresql-devel
 
