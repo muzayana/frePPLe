@@ -72,34 +72,61 @@ def aggregateDemand(cursor):
   #      currently all periods in calendarbucket are used...
   starttime = time()
   cursor.execute('''
-     create temp table demand_history
-     on commit preserve rows
-     as
-      select forecast.name as forecast,
-        calendarbucket.startdate as startdate,
-        calendarbucket.enddate as enddate,
-        sum(demand.quantity) as orderstotal,
-        sum(case when demand.status is null or demand.status = 'open' then demand.quantity else 0 end) as ordersopen,
-        coalesce(sum(demand.quantity*ditem.price), 0) as orderstotalvalue,
-        coalesce(sum(case when demand.status is null or demand.status = 'open' then (demand.quantity*ditem.price) else 0 end), 0) as ordersopenvalue
-      from demand
-      inner join item as ditem on demand.item_id = ditem.name
-      --left outer join customer as dcustomer on demand.customer_id = dcustomer.name
-      left outer join location as dlocation on demand.location_id = dlocation.name
-      inner join item as fitem on ditem.lft between fitem.lft and fitem.rght
-      --left outer join customer as fcustomer on dcustomer.lft between fcustomer.lft and fcustomer.rght
-      left outer join location as flocation on dlocation.lft between flocation.lft and flocation.rght
-      --inner join forecast on fitem.name = forecast.item_id and fcustomer.name = forecast.customer_id and flocation.name = forecast.location_id
-      inner join forecast on fitem.name = forecast.item_id and flocation.name = forecast.location_id
-      inner join common_parameter on common_parameter.name = 'forecast.calendar'
-      inner join calendarbucket
-        on common_parameter.value = calendarbucket.calendar_id
-        and calendarbucket.startdate <= demand.due
-        and calendarbucket.enddate > demand.due
-      where demand.status in ('open','closed')
-      group by forecast.name, calendarbucket.startdate, calendarbucket.enddate
-     ''')
-  cursor.execute('''CREATE UNIQUE INDEX demand_history_idx ON demand_history (forecast, startdate)''')
+    create temporary table parent_child_price on commit preserve rows as
+    select product.name parent, item.name child, 0.00 price
+    from item product, item
+    where item.lft between product.lft and product.rght
+    and item.rght between product.lft and product.rght
+    and exists (select 1 from forecast where item_id = product.name)
+    ''')
+  cursor.execute('''
+    update parent_child_price
+    set price = (
+      select sum(coalesce(child.price,0))
+      from item parent, item child
+      where child.lft between parent.lft and parent.rght
+        and parent.name = parent_child_price.child
+      )''')
+  cursor.execute('''
+    create temporary table customers_customer on commit preserve rows as
+    select customers.name customers, customer.name customer
+    from customer customers, customer
+    where customer.lft between customers.lft and customers.rght
+    and exists (select 1 from forecast where customer_id = customers.name)
+    ''')
+  cursor.execute('''
+    create temporary table locations_location on commit preserve rows as
+    select locations.name locations, location.name as location
+    from location locations, location
+    where location.lft between locations.lft and locations.rght
+    and exists (select 1 from forecast where location_id = locations.name)
+    ''')
+  cursor.execute('''
+    create temporary table demand_history on commit preserve rows as
+    select forecast.name as forecast,
+    calendarbucket.startdate as startdate,
+    calendarbucket.enddate as enddate,
+    sum(demand.quantity) as orderstotal,
+    sum(case when demand.status = 'open' then demand.quantity else 0 end) as ordersopen,
+    coalesce(sum(demand.quantity*parent_child_price.price), 0) as orderstotalvalue,
+    coalesce(sum(case when demand.status = 'open' then (demand.quantity*parent_child_price.price) else 0 end), 0) as ordersopenvalue
+    from forecast
+    left outer join locations_location on forecast.location_id = locations_location.locations
+    left outer join customers_customer on forecast.customer_id = customers_customer.customers
+    inner join parent_child_price on parent_child_price.parent = forecast.item_id
+    inner join demand on demand.item_id = parent_child_price.child and demand.status in ('open','closed')
+      and demand.location_id = coalesce(locations_location.location,demand.location_id)
+      and demand.customer_id = coalesce(customers_customer.customer,demand.customer_id)
+    inner join common_parameter on common_parameter.name = 'forecast.calendar'
+    inner join calendarbucket on common_parameter.value = calendarbucket.calendar_id
+      and calendarbucket.startdate <= demand.due
+      and calendarbucket.enddate > demand.due
+    group by forecast.name, calendarbucket.startdate, calendarbucket.enddate
+    ''')
+  cursor.execute('create unique index demand_history_idx ON demand_history (forecast, startdate)')
+  cursor.execute('drop table locations_location')
+  cursor.execute('drop table customers_customer')
+  cursor.execute('drop table parent_child_price')
   print('Aggregate - temp table in %.2f seconds' % (time() - starttime))
 
   # Create all active history pairs
