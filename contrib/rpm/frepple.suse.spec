@@ -104,8 +104,8 @@ rm -rf $RPM_BUILD_ROOT%{_docdir}/%{name}
 # Remove .py script extension
 mv $RPM_BUILD_ROOT%{_bindir}/frepplectl.py $RPM_BUILD_ROOT%{_bindir}/frepplectl
 # Install apache configuration
-mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/httpd/conf.d
-install -m 644 -p contrib/rpm/httpd.conf $RPM_BUILD_ROOT%{_sysconfdir}/httpd/conf.d/z_frepple.conf
+mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/apache2/conf.d
+install -m 644 -p contrib/rpm/httpd.conf $RPM_BUILD_ROOT%{_sysconfdir}/apache2/conf.d/z_frepple.conf
 # Create log directory
 mkdir -p $RPM_BUILD_ROOT%{_localstatedir}/log/frepple
 # Update secret key in the configuration file
