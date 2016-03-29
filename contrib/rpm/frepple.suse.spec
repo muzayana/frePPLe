@@ -17,7 +17,7 @@ URL: http://www.frepple.com
 Source: http://downloads.sourceforge.net/%{name}/%{name}-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-XXXXXX)
 # Note on dependencies: Django is also required, but we need a custom install.
-Requires: libxerces-c-3_1, openssl, httpd, apache2-mod_wsgi-python3, apache2-mod_access, python3, libpq5, postgresql94-devel, postgresql94-server, postgresql94
+Requires: libxerces-c-3_1, openssl, httpd, apache2-mod_wsgi-python3, python3, libpq5, postgresql94-devel, postgresql94-server, postgresql94
 Requires(pre): shadow
 BuildRequires: python3-devel, automake, autoconf, libtool, libxerces-c-3_1, libxerces-c-devel, openssl, openssl-devel, libtool, make, automake, autoconf, doxygen, python3, python3-devel, gcc-c++, graphviz, rpm-build, git, libpq5, postgresql94-devel
 
@@ -37,7 +37,7 @@ BuildRequires: python3-devel, automake, autoconf, libtool, libxerces-c-3_1, libx
 #BuildRequires: python3-django, python3-django-rest-framework, python3-psycopg2
 
 #Apache2 needs these modules:
-#sudo a2enmod enable mod_access_compat mod_deflate
+#sudo a2enmod  apache2-mod_access enable mod_access_compat mod_deflate
 #sudo systemctl restart apache2
 
 %description
