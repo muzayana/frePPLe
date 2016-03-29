@@ -17,14 +17,17 @@ URL: http://www.frepple.com
 Source: http://downloads.sourceforge.net/%{name}/%{name}-%{version}.tar.gz
 BuildRoot: %(mktemp -ud %{_tmppath}/%{name}-%{version}-XXXXXX)
 # Note on dependencies: Django is also required, but we need a custom install.
-Requires: libxerces-c-3_1, openssl, httpd, mod_wsgi, python3, libpq5, postgresql94-devel, postgresql94-server, postgresql94
+Requires: libxerces-c-3_1, openssl, httpd, apache2-mod_wsgi-python3, apache2-mod_access, python3, libpq5, postgresql94-devel, postgresql94-server, postgresql94
 Requires(pre): shadow
 BuildRequires: python3-devel, automake, autoconf, libtool, libxerces-c-3_1, libxerces-c-devel, openssl, openssl-devel, libtool, make, automake, autoconf, doxygen, python3, python3-devel, gcc-c++, graphviz, rpm-build, git, libpq5, postgresql94-devel
 
-## Note: frePPLe requires a package that may not be present in the basic Suse Enterprise Server repositories:
+## Note: frePPLe requires packages that may not be present in the basic Suse Enterprise Server repositories:
 #sudo zypper addrepo http://download.opensuse.org/repositories/Apache:Modules/SLE_12_SP1/Apache:Modules.repo
 #sudo zypper refresh
-#sudo zypper install apache2-mod_wsgi
+#sudo zypper install apache2-mod_wsgi-python3
+#sudo zypper addrepo http://download.opensuse.org/repositories/devel:languages:python3/SLE_12_SP1/devel:languages:python3.repo
+#sudo zypper refresh
+#sudo zypper install python3-psycopg2
 
 # Note: frePPLe requires a custom install of django and also some
 # additional python modules. Users install all these using the python packager "pip3"
@@ -32,6 +35,10 @@ BuildRequires: python3-devel, automake, autoconf, libtool, libxerces-c-3_1, libx
 # The next line list the minimal set of python packages required to build
 # in an environment where you can't install these upfront. Eg when using "mock".
 #BuildRequires: python3-django, python3-django-rest-framework, python3-psycopg2
+
+#Apache2 needs these modules:
+#sudo a2enmod enable mod_access_compat mod_deflate
+#sudo systemctl restart apache2
 
 %description
 FrePPLe stands for "Free Production PLanning". It is an application for
@@ -134,7 +141,7 @@ rm -rf /var/log/frepple
 %{_mandir}/man1/frepple.1.*
 %{_mandir}/man1/frepplectl.1.*
 %doc COPYING
-%config(noreplace) %{_sysconfdir}/httpd/conf.d/z_frepple.conf
+%config(noreplace) %{_sysconfdir}/apache2/conf.d/z_frepple.conf
 %attr(0660,-,frepple) %config(noreplace) %{_sysconfdir}/frepple/license.xml
 %attr(0660,-,frepple) %config(noreplace) %{_sysconfdir}/frepple/init.xml
 %attr(0660,-,frepple) %config(noreplace) %{_sysconfdir}/frepple/djangosettings.py
