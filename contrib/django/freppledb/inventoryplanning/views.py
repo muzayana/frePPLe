@@ -19,7 +19,7 @@ from django.contrib.admin.utils import unquote
 from django.contrib.admin.models import LogEntry, CHANGE
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import F, Q, Min, Max, Sum
+from django.db.models import Q, Min, Max, Sum
 from django.db import connections, transaction
 from django.db.models.fields.related import RelatedField
 from django.forms.models import modelform_factory
@@ -39,8 +39,8 @@ from freppledb.common.report import GridFieldCurrency, GridFieldInteger
 from freppledb.common.models import Comment, Parameter, BucketDetail
 from freppledb.forecast.models import Forecast, ForecastPlan
 from freppledb.input.models import Buffer, Location, Calendar, CalendarBucket
-from freppledb.input.models import Demand, Supplier, OperationPlan, ItemSupplier
-from freppledb.input.models import DistributionOrder, PurchaseOrder, Item, ItemDistribution
+from freppledb.input.models import Demand, ItemSupplier, PurchaseOrder
+from freppledb.input.models import DistributionOrder, Item, ItemDistribution
 from freppledb.inventoryplanning.models import InventoryPlanning, InventoryPlanningOutput
 from freppledb.output.models import FlowPlan
 from freppledb.output.models import OperationPlan as OperationPlanOut
@@ -1372,7 +1372,7 @@ class DRPitemlocation(View):
         supplier=frepple.supplier(name=i.supplier.name),
         location=frepple.location(name=i.location.name) if i.location else None,
         item=frepple_item,
-        leadtime=i.leadtime,
+        leadtime=i.leadtime or 0,
         )
       if i.sizeminimum:
         frepple_itemsupplier.size_minimum = i.sizeminimum
@@ -1548,7 +1548,7 @@ class DRPitemlocation(View):
         [
           (float(i.orderstotal) if i.orderstotal else 0) + (float(i.ordersadjustment) if i.ordersadjustment else 0)
           for i in db_forecastplan
-          if i.startdate < frepple.settings.current
+          if i.enddate <= frepple.settings.current
         ],
         replanner.fcst_buckets
         )
