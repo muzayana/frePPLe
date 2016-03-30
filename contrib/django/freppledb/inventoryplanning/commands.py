@@ -377,13 +377,15 @@ def computeStockoutProbability(database=DEFAULT_DB_ALIAS):
           buffer_id,
           coalesce(round(sum(
             forecasttotal
-            * (extract(epoch from (least(%s + out_inventoryplanning.leadtime, forecastplan.enddate) - forecastplan.startdate)))
-            / (extract(epoch from out_inventoryplanning.leadtime))
+            * (extract(epoch from (least(%s + greatest(out_inventoryplanning.leadtime, interval '1 day'), forecastplan.enddate) 
+               - greatest(%s, forecastplan.startdate))))
+            / greatest((extract(epoch from out_inventoryplanning.leadtime)), 86400)
             )),0) as total,
           coalesce(round(sum(
             forecastnet
-            * (extract(epoch from (least(%s + out_inventoryplanning.leadtime, forecastplan.enddate) - forecastplan.startdate)))
-            / (extract(epoch from out_inventoryplanning.leadtime))
+            * (extract(epoch from (least(%s + greatest(out_inventoryplanning.leadtime, interval '1 day'), forecastplan.enddate)
+               - greatest(%s, forecastplan.startdate))))
+            / greatest((extract(epoch from out_inventoryplanning.leadtime)), 86400)
             )),0) as net
         from out_inventoryplanning
         inner join buffer
@@ -393,7 +395,7 @@ def computeStockoutProbability(database=DEFAULT_DB_ALIAS):
           and buffer.location_id = forecast.location_id
         left outer join forecastplan
           on forecastplan.forecast_id = forecast.name
-          and forecastplan.startdate >= %s
+          and forecastplan.enddate > %s
           and forecastplan.startdate < %s + out_inventoryplanning.leadtime
         group by buffer_id
         ),
@@ -467,10 +469,9 @@ def computeStockoutProbability(database=DEFAULT_DB_ALIAS):
   cursor.execute(sql, (
     current_date, current_date, current_date, current_date,
     current_date, current_date, current_date, current_date,
-    current_date, current_date,
-    current_date, current_date, current_date,
     current_date, current_date, current_date, current_date,
-    current_date
+    current_date, current_date, current_date, current_date,
+    current_date, current_date, current_date, current_date
     ))
 
   # Evaluate the stockout risk of all relevant buffers

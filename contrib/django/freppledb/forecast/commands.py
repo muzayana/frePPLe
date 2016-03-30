@@ -449,7 +449,6 @@ def exportForecastFull(cursor):
   select product.name parent, item.name child, 0.00 price 
   from item product, item
   where item.lft between product.lft and product.rght
-  and item.rght between product.lft and product.rght
   and exists (select 1 from forecast where item_id = product.name)
   ''')
   cursor.execute('''
@@ -458,7 +457,6 @@ def exportForecastFull(cursor):
           (SELECT SUM (COALESCE (child.price, 0))
              FROM item parent, item child
             WHERE     child.lft BETWEEN parent.lft AND parent.rght
-                  AND child.rght BETWEEN parent.lft AND parent.rght
                   AND parent.name = parent_child_price.child)
   ''')
   cursor.execute('''
@@ -471,7 +469,7 @@ def exportForecastFull(cursor):
            select
            forecast.name as forecast, calendarbucket.startdate as startdate,
            SUM(CASE when demand.name is NOT NULL and location.lft between flocation.lft and flocation.rght then planquantity else 0 end) as planneddemand,
-           SUM(CASE when demand.name is NULL and out_demand.demand like forecast.name || ' - %' then planquantity else 0 end) as plannedforecast,
+           SUM(CASE when demand.name is NULL and out_demand.demand like forecast.name || ' - %%' then planquantity else 0 end) as plannedforecast,
            SUM(CASE when demand.name is NOT NULL and location.lft between flocation.lft and flocation.rght then (planquantity*parent_child_price.price) else 0 end) as planneddemandvalue,
            SUM(CASE when demand.name is NULL and out_demand.demand like forecast.name || ' - %%' then (planquantity*parent_child_price.price) else 0 end) as plannedforecastvalue
         from out_demand
