@@ -210,10 +210,11 @@ Forecast::Metrics Forecast::MovingAverage::generateForecast
         }
         else
         {
-          // For the first few values
+          // For the first few values, we also divide by the order
+          // to avoid overforecasting
           for (unsigned int j = 0; j < i; ++j)
             sum += history[i-j-1];
-          avg = sum / i;
+          avg = sum / order;
         }
         if (i == count) break;
 
@@ -234,10 +235,11 @@ Forecast::Metrics Forecast::MovingAverage::generateForecast
         }
         else
         {
-          // For the first few values
+          // For the first few values, we also divide by the order
+          // to avoid overforecasting
           for (unsigned int j = 0; j < i; ++j)
             sum += clean_history[i-j-1];
-          avg = sum / i;
+          avg = sum / order;
         }
         if (i == count) break;
 
@@ -261,10 +263,20 @@ Forecast::Metrics Forecast::MovingAverage::generateForecast
     // Check outliers
     if (outliers == 0)
     {
-      standarddeviation = sqrt(standarddeviation / (count-1));
-      maxdeviation /= standarddeviation;
-      // Don't repeat if there are no outliers
-      if (maxdeviation < Forecast::Forecast_maxDeviation) break;
+      if (count > 1)
+      {
+        standarddeviation = sqrt(standarddeviation / (count-1));
+        maxdeviation /= standarddeviation;
+        // Don't repeat if there are no outliers
+        if (maxdeviation < Forecast::Forecast_maxDeviation) break;
+      }
+      else
+      {
+        // Single data point - never an outlier
+        standarddeviation = sqrt(standarddeviation);
+        maxdeviation = 0.0;
+        break;
+      }
     }
   } // End loop: 'scan' or 'filter' mode for outliers
 
@@ -1276,7 +1288,11 @@ Forecast::Metrics Forecast::Croston::generateForecast
     } // End loop: 'scan' or 'filter' mode for outliers
 
     // Better than earlier iterations?
-    if (error_smape < best_error)
+    // Different than other methods we consider an equal SMAPE to be better.
+    // This results in a higher alfa and a lower forecast value. For situations
+    // with only 1 demand hit this gives better results, as it compensates
+    // somewhat for empty buckets before the first hit and avoids overforecasting.
+    if (error_smape <= best_error)
     {
       best_error = error_smape;
       best_smape = error_smape_weights ? error_smape / error_smape_weights : 0.0;

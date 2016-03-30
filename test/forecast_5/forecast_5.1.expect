@@ -274,34 +274,34 @@
 			</calendar>
 			<buckets>
 				<bucket xsi:type="demand_forecastbucket">
-					<quantity>15</quantity>
+					<quantity>6</quantity>
 					<start>2009-01-01T00:00:00</start>
 					<end>2009-02-01T00:00:00</end>
-					<total>15</total>
+					<total>6</total>
 				</bucket>
 				<bucket xsi:type="demand_forecastbucket">
-					<quantity>15</quantity>
+					<quantity>6</quantity>
 					<start>2009-02-01T00:00:00</start>
 					<end>2009-03-01T00:00:00</end>
-					<total>15</total>
+					<total>6</total>
 				</bucket>
 				<bucket xsi:type="demand_forecastbucket">
-					<quantity>15</quantity>
+					<quantity>6</quantity>
 					<start>2009-03-01T00:00:00</start>
 					<end>2009-04-01T00:00:00</end>
-					<total>15</total>
+					<total>6</total>
 				</bucket>
 				<bucket xsi:type="demand_forecastbucket">
-					<quantity>15</quantity>
+					<quantity>6</quantity>
 					<start>2009-04-01T00:00:00</start>
 					<end>2009-05-01T00:00:00</end>
-					<total>15</total>
+					<total>6</total>
 				</bucket>
 				<bucket xsi:type="demand_forecastbucket">
-					<quantity>15</quantity>
+					<quantity>6</quantity>
 					<start>2009-05-01T00:00:00</start>
 					<end>2009-06-01T00:00:00</end>
-					<total>15</total>
+					<total>6</total>
 				</bucket>
 				<bucket xsi:type="demand_forecastbucket">
 					<quantity>0</quantity>

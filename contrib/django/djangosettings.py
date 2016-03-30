@@ -208,8 +208,6 @@ INSTALLED_APPS = (
     'django.contrib.auth',
     'registration',  #for cloud registration
     'django.contrib.contenttypes',
-    'django_admin_bootstrapped',
-    'django.contrib.admin',
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'bootstrap3',
@@ -225,6 +223,8 @@ INSTALLED_APPS = (
     'freppledb.execute',
     'freppledb.common',
     'rest_framework',
+    'django_admin_bootstrapped',
+    'django.contrib.admin',
 )
 
 
@@ -289,10 +289,28 @@ LOCALE_PATHS = (
     os.path.normpath(os.path.join(os.path.dirname(django.contrib.admindocs.__file__),'locale')),
 )
 
-TEMPLATE_DIRS = (
-    os.path.normpath(os.path.join(FREPPLE_APP,'freppledb','templates')),
-    os.path.normpath(os.path.join(FREPPLE_HOME,'templates')),
-)
+TEMPLATES_TODO = [ #to be used in the future, now interferes with middleware
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [
+            #os.path.normpath(os.path.join(FREPPLE_HOME,'templates')),
+        ],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                # Insert your TEMPLATE_CONTEXT_PROCESSORS here or use this
+                # list if you haven't customized them:
+                'django.contrib.auth.context_processors.auth',
+                'django.template.context_processors.debug',
+                'django.template.context_processors.i18n',
+                'django.template.context_processors.media',
+                'django.template.context_processors.static',
+                'django.template.context_processors.tz',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
 
 STATICFILES_DIRS = ()
 if os.path.isdir(os.path.normpath(os.path.join(FREPPLE_HOME,'static'))):
@@ -403,7 +421,7 @@ DEFAULT_DASHBOARD = [
   ]},
   { 'rowname': 'Sales', 'cols': [
     {'width':9, 'widgets':[
-      ("forecast", {"history": 12, "future": 12}),
+      ("forecast", {"history": 36, "future": 12}),
       ("late_orders",{"limit":20}),
       ("short_orders",{"limit":20}),
     ]},

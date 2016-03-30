@@ -113,9 +113,9 @@ class OverviewReport(GridPivot):
   crosses = (
     ('orderstotal', {'title': _('total orders')}),
     ('ordersopen', {'title': _('open orders')}),
-    ('ordersadjustment', {'title': _('orders adjustment'), 'editable': lambda req: req.user.has_perm('input.change_forecastdemand')}),
+    ('ordersadjustment', {'title': _('orders adjustment'), 'editable': lambda req: req.user.has_perm('forecast.change_forecast_plan')}),
     ('forecastbaseline', {'title': _('forecast baseline')}),
-    ('forecastadjustment', {'title': _('forecast override'), 'editable': lambda req: req.user.has_perm('input.change_forecastdemand')}),
+    ('forecastadjustment', {'title': _('forecast override'), 'editable': lambda req: req.user.has_perm('forecast.change_forecast_plan')}),
     ('forecasttotal', {'title': _('forecast total')}),
     ('forecastnet', {'title': _('forecast net')}),
     ('forecastconsumed', {'title': _('forecast consumed')}),
@@ -320,9 +320,9 @@ class OverviewReport(GridPivot):
 
 
   @classmethod
-  def parseCSVupload(reportclass, request):    # TODO also support uploads in pivot format
+  def parseCSVupload(reportclass, request):
     # Check permissions
-    if not request.user.has_perm('input.change_forecastdemand'):
+    if not request.user.has_perm('forecast.change_forecast_plan'):
       yield force_text(_('Permission denied')) + '\n '
     else:
 
@@ -364,7 +364,7 @@ class OverviewReport(GridPivot):
                 colindexes[2] = colnum
               elif col == _('bucket').lower():
                 colindexes[3] = colnum
-              elif col == _('forecast adjustment').lower():
+              elif col == _('forecast override').lower():
                 colindexes[4] = colnum
               elif col == _('orders adjustment').lower():
                 colindexes[5] = colnum
@@ -392,7 +392,7 @@ class OverviewReport(GridPivot):
                 yield force_text(_('No adjustment field specified')) + '\n '
                 errors = True
             if errors:
-              yield force_text(_('Recognized fields for list layout: forecast, bucket, start date, end date, forecast adjustment, orders adjustment')) + '\n '
+              yield force_text(_('Recognized fields for list layout: forecast, bucket, start date, end date, forecast override, orders adjustment')) + '\n '
               yield force_text(_('Recognized fields for pivot layout: forecast, data field, [bucket names*]')) + '\n '
               break
 
@@ -425,7 +425,7 @@ class OverviewReport(GridPivot):
                         fcst.updatePlan(
                           startdate, enddate, None, ordersadj, units, request.database
                           )
-                      elif field == _('forecast adjustment').lower():
+                      elif field == _('forecast override').lower():
                         try:
                           fcstadj = Decimal(b)
                         except:
@@ -477,9 +477,9 @@ class OverviewReport(GridPivot):
 
 
   @classmethod
-  def parseSpreadsheetUpload(reportclass, request):    # TODO also support uploads in pivot format
+  def parseSpreadsheetUpload(reportclass, request):
     # Check permissions
-    if not request.user.has_perm('input.change_forecastdemand'):
+    if not request.user.has_perm('forecast.change_forecast_plan'):
       yield force_text(_('Permission denied')) + '\n '
     else:
       # Choose the right language
@@ -521,7 +521,7 @@ class OverviewReport(GridPivot):
                 colindexes[2] = colnum
               elif col == _('bucket').lower():
                 colindexes[3] = colnum
-              elif col == _('forecast adjustment').lower():
+              elif col == _('forecast override').lower():
                 colindexes[4] = colnum
               elif col == _('orders adjustment').lower():
                 colindexes[5] = colnum
@@ -548,7 +548,7 @@ class OverviewReport(GridPivot):
                 yield force_text(_('No adjustment field specified')) + '\n '
                 errors = True
             if errors:
-              yield force_text(_('Recognized fields for list layout: forecast, bucket, start date, end date, forecast adjustment, orders adjustment')) + '\n '
+              yield force_text(_('Recognized fields for list layout: forecast, bucket, start date, end date, forecast override, orders adjustment')) + '\n '
               yield force_text(_('Recognized fields for pivot layout: forecast, data field, [bucket names*]')) + '\n '
               break
 
@@ -581,7 +581,7 @@ class OverviewReport(GridPivot):
                         fcst.updatePlan(
                           startdate, enddate, None, ordersadj, units, request.database
                           )
-                      elif field == _('forecast adjustment').lower():
+                      elif field == _('forecast override').lower():
                         try:
                           fcstadj = Decimal(b.value)
                         except:
@@ -664,7 +664,7 @@ class OrderReport(GridReport):
   '''
   A list report to show demands.
   '''
-  template = 'input/demandlist.html'
+
   title = _("Demand List")
   model = Demand
   frozenColumns = 1
@@ -676,13 +676,16 @@ class OrderReport(GridReport):
       item__lft__gte=fcst.item.lft,
       item__lft__lt=fcst.item.rght,
       customer__lft__gte=fcst.customer.lft,
-      customer__lft__lt=fcst.customer.rght
+      customer__lft__lt=fcst.customer.rght,
+      location__lft__gte=fcst.location.lft,
+      location__lft__lt=fcst.location.rght
       )
 
   rows = (
     #. Translators: Translation included with Django
     GridFieldText('name', title=_('name'), key=True, formatter='detail', extra="role:'input/demand'"),
     GridFieldText('item', title=_('item'), field_name='item__name', formatter='detail', extra="role:'input/item'"),
+    GridFieldText('location', title=_('location'), field_name='location__name', formatter='detail', extra="role:'input/location'"),
     GridFieldText('customer', title=_('customer'), field_name='customer__name', formatter='detail', extra="role:'input/customer'"),
     GridFieldText('description', title=_('description')),
     GridFieldText('category', title=_('category')),

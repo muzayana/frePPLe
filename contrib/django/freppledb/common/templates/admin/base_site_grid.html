@@ -87,7 +87,7 @@ $(function() {
       return value;
     }, {% endif %}
     {% block extra_grid %}{% endblock %}
-    height: {% if reportclass.height %}{% if "height" in preferences %}{{preferences.height}}{% else %}{{reportclass.height}}{% endif %}{% else %}($(window).height() - $("#grid").offset().top - 63 < 150) ? 150 : $(window).height() - $("#grid").offset().top - 63{% endif %}
+    height: {% if reportclass.height %}{% if "height" in preferences %}{{preferences.height}}{% else %}{{reportclass.height}}{% endif %}{% elif args.0 %}'100%'{% else %}($(window).height() - $("#grid").offset().top - 63 < 150) ? 150 : $(window).height() - $("#grid").offset().top - 63{% endif %}
     });{% if reportclass.frozenColumns > 0 %}
   jQuery("#grid").jqGrid('setFrozenColumns');{% endif %}{% if reportclass.multiselect and not is_popup %}
   $('#cb_grid.cbox').click(grid.markAllRows);{% endif %}{% if reportclass.editable and haschangeperm %}
@@ -109,11 +109,12 @@ $(function() {
 	  });
 
 	$(window).bind('resize', function() {
-  var h = $(window).height() - $("#grid").offset().top - 63;
-  if (h < 150) h = 150;
-  $("#grid")
-   .setGridWidth($('#content-main').width()){% if not reportclass.height %}
-   .setGridHeight(h){% endif %};
+    var h = $(window).height() - $("#grid").offset().top - 63;
+    if (h < 150) h = 150;
+    $("#grid")
+     .setGridWidth($('#content-main').width()){% if not reportclass.height %}
+     .setGridHeight(h){% endif %};
+	  {% if args.0 %}$("#grid").setGridHeight('100%'){% endif %};
 	});
 
 	$("#horizonbucketsul li a").click(function(){
@@ -141,11 +142,9 @@ $(function() {
 <div class="row">
 
 <div id="save_undo" class="col-xs-5 form-inline">
-
 {% block save_undo_buttons %}
 {% if not is_popup and reportclass.editable and haschangeperm %}
 {% comment %}Translators: Translation included with Django {% endcomment %}
-
 <input type="submit" value="{% filter force_escape|upper %}{% trans "Save" %}{% endfilter %}" class="btn btn-primary"  disabled role="button" id="save" onclick="upload.save()" title="{% trans 'save changes'|capfirst|force_escape %}">
 <input type="submit" value="{% filter force_escape|upper %}{% trans "Undo" %}{% endfilter %}" class="btn btn-primary"  disabled role="button" id="undo" onclick="upload.undo()" title="{% trans 'undo changes'|capfirst|force_escape %}">
 {% if actions %}
@@ -196,5 +195,4 @@ $(function() {
 {% if reportclass.hasTimeBuckets %}
 {% include "admin/subtemplate_timebuckets.html" %}
 {% endif %}
-{% block contextmenus %}{% endblock %}
 {% endblock %}

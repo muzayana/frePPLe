@@ -2,38 +2,35 @@
 {% load i18n %}
 
 {% block extrahead %}{{block.super}}
-{% if mode == "graph" %}<script type="text/javascript">
+{% if mode == "graph" and not args.0 %}<script type="text/javascript">
 $(function(){ graph.header(); })
 </script>{% endif %}
+<style type="text/css">
+.highutil
+{
+  color: red;
+  font-weight: bold;
+}
+</style>
 {% endblock %}
 
-{% block contextmenus %}
-<div id="detail0context" class="ContextMenu"><ul class="ui-menu ui-widget ui-widget-content ui-corner-all ui-state-default">
-<li class="ui-menu-item"><a id="{{request.prefix}}/forecast/?o=5a&amp;item={value}">{% trans 'detail'|capfirst %}</a></li>
-</ul></div>
-<div id="detail1context" class="ContextMenu"><ul class="ui-menu ui-widget ui-widget-content ui-corner-all ui-state-default">
-<li class="ui-menu-item"><a id="{{request.prefix}}/demandplan/{value}/?o=5a&amp;due__gte={startdate}&amp;due__lt={enddate}">{% trans 'detail'|capfirst %}</a></li>
-</ul></div>
-<div id="detail3context" class="ContextMenu"><ul class="ui-menu ui-widget ui-widget-content ui-corner-all ui-state-default">
-<li class="ui-menu-item"><a id="{{request.prefix}}/demandplan/{value}/?o=5a&amp;plandate__gte={startdate}&amp;plandate__lt={enddate}">{% trans 'detail'|capfirst %}</a></li>
-</ul></div>{% endblock %}
-
-{% block tools %}{% if args.0 %}{% tabs "input.item" %}{% endif %}{{block.super}}{% endblock %}
+{% block tools %}{% if args.0 %}{% tabs "input.resource" %}{% endif %}{{block.super}}{% endblock %}
 
 {% block before_table %}{% if args.0 %}
-<div id="graph" style="clear: both; height: 400px; padding: 10px; "></div>
+<div id="graph" style="clear: both; height: 400px; padding: 10px"></div>
 {% endif %}{% endblock %}
 
 {% block crosses %}
 {% if args.0 %}$(function(){
   // Resize top graph
   var h = $(window).height();
-  $("#graph").width($(window).width()-55).height(h>800 || h<480 ? 400 : h-380);
+  $("#graph").width($(window).width()-60).height(h>800 || h<480 ? 400 : h-420);
 });{% endif %}
 
 {% if args.0 or mode == "graph" %}
 function drawGraphs(jsondata)
 {
+  {% if args.0 %}$("#grid").setGridHeight('100%');{% endif %}
   {% if args.0 %}var margin = {top: 0, right: 100, bottom: 30, left: 50};
   {% else %}var margin = {top: 0, right: 0, bottom: 0, left: 50};
   {% endif %}var width = $({% if args.0 %}"#graph"{% else %}"#grid_graph"{% endif %}).width() - margin.left - margin.right;
@@ -75,49 +72,49 @@ function drawGraphs(jsondata)
 
     // Build the data for d3
     var max_y = 0;
-    var min_y = 0;
     var data = [];
     for (var bckt in timebuckets)
     {
       var tmp = jsondata['rows'][index][timebuckets[bckt]['name']];
       data.push({
-        'item': jsondata['rows'][index]['item'],
+        'resource': jsondata['rows'][index]['resource'],
         'bucket': bckt,
-        'demand': tmp[2],
-        'supply': tmp[3],
-        'backlog': tmp[4]
+        'available': tmp[0],
+        'unavailable': tmp[1],
+        'setup': tmp[2],
+        'load': tmp[3],
+        'perc': tmp[4]
         });
-      if (tmp[4] < min_y && 4 in fields)
-        min_y = tmp[4];
-      if (tmp[2] > max_y && 2 in fields)
-        max_y = tmp[2];
-      if (tmp[3] > max_y && 3 in fields)
-        max_y = tmp[3];
-      if (tmp[4] > max_y && 4 in fields)
-        max_y = tmp[4];
+      if (1 in fields)
+      {
+        if (tmp[0] + tmp[1] > max_y) max_y = tmp[0] + tmp[1];
+        if (tmp[1] + tmp[2] + tmp[3] > max_y) max_y = tmp[1] + tmp[2] + tmp[3];
+      }
+      else
+      {
+        if (tmp[0] > max_y) max_y = tmp[0];
+        if (tmp[2] + tmp[3] > max_y) max_y = tmp[2] + tmp[3];
+      }
     }
 
     // Update the scale of the Y-axis by looking for the max value
-    y.domain([min_y,max_y]);
-    var y_zero = y(0);
+    y.domain([0,max_y]);
 
-    // Create D3 bars
-    var my_y;
+    // D3 visualization
     svg.selectAll("g")
       .data(data)
       .enter()
       .append("g")
       .attr("transform", function(d) { return "translate(" + x(timebuckets[d['bucket']]['name']) + ",0)"; })
       .on("click", function(d) {
-          if (d3.event.defaultPrevented || (d['produced'] == 0 && d['consumed'] == 0))
-            return;
+          if (d3.event.defaultPrevented || d['load'] == 0) return;
           d3.select("#tooltip").style('display', 'none');
-          contextMenu = $("#detail1context");
+          contextMenu = $("#detailcontext");
           contextMenu.find('a').each( function() {
               $(this).attr(
                 'href',
                 $(this).attr('id')
-                  .replace(/{value}/g, admin_escape(d['item']))
+                  .replace(/{value}/g, admin_escape(d['resource']))
                   .replace(/{enddate}/g, timebuckets[d['bucket']]['enddate'])
                   .replace(/{startdate}/g, timebuckets[d['bucket']]['startdate'])
                 );
@@ -131,54 +128,85 @@ function drawGraphs(jsondata)
           d3.event.stopPropagation();
         })
       .on("mouseenter", function(d) {
-        graph.showTooltip(
-          '<div class="panel-heading" style="text-align:center; font-weight:bold">'
-          + timebuckets[d['bucket']]['name'] + '</div>'
-          + '<table><tr><td>{{_('demand')|capfirst}}</td><td style="text-align:center">'
-          + (Math.round(d['demand']*10)/10)
-          + '</td></tr><tr><td>{{_('supply')|capfirst}}</td><td style="text-align:center">'
-          + (Math.round(d['supply']*10)/10)
-          + '</td></tr><tr><td>{{_('backlog')|capfirst}}</td><td style="text-align:center">'
-          + (Math.round((d['backlog'])*10)/10)
-          + '</td></tr></table>'
-          );
+         graph.showTooltip(
+           '<div class="panel-heading" style="text-align:center; font-weight:bold">'
+           + timebuckets[d['bucket']]['name'] + "&nbsp;"
+           + (Math.round(d['perc']*10)/10) + '%</div>'
+           + '<table><tr><td>{{_('available')|capfirst}}</td><td style="text-align:center">'
+           + (Math.round(d['available']*10)/10)
+           + '</td></tr><tr><td>{{_('unavailable')|capfirst}}</td><td style="text-align:center">'
+           + (Math.round(d['unavailable']*10)/10)
+           + '</td></tr><tr><td>{{_('setup')|capfirst}}</td><td style="text-align:center">'
+           + (Math.round(d['setup']*10)/10)
+           + '</td></tr><tr><td>{{_('load')|capfirst}}</td><td style="text-align:center">'
+           + (Math.round(d['load']*10)/10)
+           + '</td></tr></table>'
+           );
         })
       .on("mouseleave", graph.hideTooltip)
       .on("mousemove", graph.moveTooltip)
       .each(function(d) {
         var bucket = d3.select(this);
-        if (d['demand'] > 0 && 2 in fields)
+        var newtop = 0;
+        var top = 0;
+        var load = d['load'];
+        var free = d['available'] - d['setup'] - load;
+        var overload = 0;
+        if (free < 0)
         {
-          my_y = y(d['demand']);
-          bucket.append("rect")
-            .attr("width", x_width/2)
-            .attr("height", y_zero - my_y)
-            .attr("x", x_width/2)
-            .attr("y", my_y)
-            .style("fill","#2B95EC");
+          overload = -free;
+          free = 0;
+          load = d['available'] - d['setup'];
         }
-        if (d['supply'] > 0 && 3 in fields)
+        if (d['unavailable'] > 0 && 1 in fields)
         {
-          my_y = y(d['supply']);
+          newtop = top + d['unavailable'];
           bucket.append("rect")
-            .attr("width", x_width/2)
-            .attr("height", y_zero - my_y)
-            .attr("y", my_y)
+            .attr("width", x_width)
+            .attr("y", y(newtop))
+            .attr("height", y(top) - y(newtop))
             .style("fill","#F6BD0F");
+          top = newtop;
+        }
+        if (d['setup'] > 0 && 2 in fields)
+        {
+          newtop = top + d['setup'];
+          bucket.append("rect")
+            .attr("width", x_width)
+            .attr("y", y(newtop))
+            .attr("height", y(top) - y(newtop))
+            .style("fill","#2B95EC");
+          top = newtop;
+        }
+        if (load > 0 && 3 in fields)
+        {
+          newtop = top + load;
+          bucket.append("rect")
+            .attr("width", x_width)
+            .attr("y", y(newtop))
+            .attr("height", y(top) - y(newtop))
+            .style("fill","#AFD8F8");
+          top = newtop;
+        }
+        if (free > 0)
+        {
+          newtop = top + free;
+          bucket.append("rect")
+            .attr("width", x_width)
+            .attr("y", y(newtop))
+            .attr("height", y(top) - y(newtop))
+            .style("fill","#8BBA00");
+        }
+        else if (overload > 0)
+        {
+          newtop = top + overload;
+          bucket.append("rect")
+            .attr("width", x_width)
+            .attr("y", y(newtop))
+            .attr("height", y(top) - y(newtop))
+            .style("fill","#FF0000");
         }
       });
-
-    // Create D3 line
-    if (4 in fields)
-    {
-      var line = d3.svg.line()
-        .x(function(d) { return x(timebuckets[d['bucket']]['name']) + x_width / 2; })
-        .y(function(d) { return y(d['backlog']); });
-      svg.append("svg:path")
-        .attr('class', 'graphline')
-        .attr("stroke","#8BBA00")
-        .attr("d", line(data));
-    }
 
     // Display Y-Axis
     var yAxis = d3.svg.axis()
@@ -193,7 +221,7 @@ function drawGraphs(jsondata)
       .attr("class", "y axis")
       .call(yAxis);
 
-    // Display X-axis for a single item
+    // Display X-axis for a single resource
     var nth = Math.ceil(timebuckets.length / width * bucketnamelength * 10);
     var myticks = [];
     for (var i in timebuckets)
@@ -210,27 +238,32 @@ function drawGraphs(jsondata)
     // Display legend
     var legend = svg.append("g");
     var codes = [
-      [2, "{{_('demand')|capfirst}}", "#2B95EC"],
-      [3, "{{_('supply')|capfirst}}", "#F6BD0F"],
-      [4, "{{_('backlog')|capfirst}}", "#8BBA00"]
+      ["{{_('available')|capfirst}}", "#000000", -1],
+      ["{{_('unavailable')|capfirst}}", "#F6BD0F", 1],
+      ["{{_('setup')|capfirst}}", "#2B95EC", 2],
+      ["{{_('load')|capfirst}}", "#AFD8F8", 3],
+      ["{{_('free')|capfirst}}", "#8BBA00", -2],
+      ["{{_('overload')|capfirst}}", "#FF0000", -2]
       ];
     var visible = 0;
     for (var i in codes)
     {
-      if (!(codes[i][0] in fields))
+      if (codes[i][2] == -1)
+        continue;
+      else if (codes[i][2] >= 0 && !(codes[i][2] in fields))
         continue;
       legend.append("rect")
         .attr("x", width + 82)
         .attr("width", 18)
         .attr("height", 18)
-        .style("fill", codes[i][2])
+        .style("fill", codes[i][1])
         .attr("transform", "translate(0," + (visible*20+10) + ")");
       legend.append("text")
         .attr("x", width + 76)
         .attr("y", 9)
         .attr("dy", ".35em")
         .style("text-anchor", "end")
-        .text(codes[i][1])
+        .text(codes[i][0])
         .attr("transform", "translate(0," + (visible*20+10) + ")");
       visible += 1;
     }{% endif %}
@@ -244,13 +277,21 @@ function crosses (cellvalue, options, rowdata)
   for (var i in cross_idx)
     switch(cross_idx[i])
     {
-      case 0:
-      case 1:
       case 3:
-        if (cellvalue[cross_idx[i]] != 0.0)
-          result += cellvalue[cross_idx[i]] + "<span class='context cross fa fa-caret-right' role='detail" + cross_idx[i] + "'></span><br/>";
+        if (cellvalue[3] != 0.0)
+          result += cellvalue[3] + '<a href="{{request.prefix}}/loadplan/' +
+                                             admin_escape(rowdata['resource']) +
+                                             '/?startdate__lt=' + options['colModel']['enddate'] +
+                                             '&amp;enddate__gt=' + options['colModel']['startdate'] +
+                                             '">&nbsp;<span class="context cross fa fa-caret-right"></span></a><br/>';
         else
           result += '0.0</br>';
+        break;
+      case 4:
+        if (cellvalue[4] > 95)
+          result += '<span class="highutil">' + cellvalue[4] + '%</span></br>';
+        else
+          result += cellvalue[4] + '%</br>';
         break;
       default:
         result += cellvalue[cross_idx[i]] + '</br>';

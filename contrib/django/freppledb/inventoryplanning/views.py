@@ -19,7 +19,7 @@ from django.contrib.admin.utils import unquote
 from django.contrib.admin.models import LogEntry, CHANGE
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Q, Min, Max
+from django.db.models import Q, Min, Max, Sum
 from django.db import connections, transaction
 from django.db.models.fields.related import RelatedField
 from django.forms.models import modelform_factory
@@ -39,8 +39,8 @@ from freppledb.common.report import GridFieldCurrency, GridFieldInteger
 from freppledb.common.models import Comment, Parameter, BucketDetail
 from freppledb.forecast.models import Forecast, ForecastPlan
 from freppledb.input.models import Buffer, Location, Calendar, CalendarBucket
-from freppledb.input.models import Demand, Supplier, OperationPlan, ItemSupplier
-from freppledb.input.models import DistributionOrder, PurchaseOrder, Item, ItemDistribution
+from freppledb.input.models import Demand, ItemSupplier, PurchaseOrder
+from freppledb.input.models import DistributionOrder, Item, ItemDistribution
 from freppledb.inventoryplanning.models import InventoryPlanning, InventoryPlanningOutput
 from freppledb.output.models import FlowPlan
 from freppledb.output.models import OperationPlan as OperationPlanOut
@@ -113,7 +113,8 @@ class Replanner:
       elif key in ('forecast.DueWithinBucket',):
         kw[key[9:]] = value
       elif key in ('forecast.calendar',):
-        kw[key[9:]] = self.frepple_calendar
+        if not replanners:
+          kw[key[9:]] = self.frepple_calendar
       elif key in ('forecast.Iterations', 'forecast.loglevel', 'forecast.Skip'
                    'forecast.MovingAverage_order', 'forecast.Net_CustomerThenItemHierarchy',
                    'forecast.Net_MatchUsingDeliveryOperation', 'forecast.Net_NetEarly',
@@ -271,39 +272,67 @@ class DRP(GridReport):
   @ classmethod
   def basequeryset(reportclass, request, args, kwargs):
     if args and args[0]:
+      # CASE 1: Single item to be shown
       return InventoryPlanningOutput.objects.all() \
         .filter(buffer__item__name=args[0]) \
         .select_related("buffer", "buffer__inventoryplanning", "buffer__item", "buffer__location")
     else:
       q = InventoryPlanningOutput.objects.all() \
         .select_related("buffer", "buffer__inventoryplanning", "buffer__item", "buffer__location")
-      if request.prefs and request.prefs.get("grouping", None) == 'item':
-        sortcol, sortdir = reportclass.get_sort(request).split(' ')
-        sortrow = reportclass.rows[int(sortcol)-1]
+      grouping = request.prefs.get("grouping", None) if request.prefs else 'itemlocation'
+      units_or_value = request.prefs.get('units', 'units') if request.prefs else 'units'
+      sortcol, sortdir = reportclass.get_sort(request).split(' ')
+      sortrow = reportclass.rows[int(sortcol)-1]
+      if grouping == 'item':
+        # CASE 2: Group results by item
         aggregate = "sum" if isinstance(sortrow, (GridFieldNumber, GridFieldInteger)) else "max"
         if sortrow.field_name.find("__") < 0:
-            # item grouping 1: field in the outinventoryplanning table
-            q = q.extra(
-              select = {'agg': '''select %s(sub."%s")
-                from out_inventoryplanning as sub
-                inner join buffer buf2 on sub.buffer_id = buf2.name
-                where buf2.item_id = buffer.item_id
-                group by buf2.item_id
-                ''' % (aggregate, sortrow.field_name)}
-              )
-            q = q.order_by(
-              '-agg' if sortdir == "desc" else "agg",
-              'buffer__item__name',
-              '-%s' % sortrow.field_name if sortdir == "desc" else sortrow.field_name
-              )
+          # item grouping 1: field in the outinventoryplanning table
+          if units_or_value == "value":
+            try:
+              sortby = "%svalue" % sortrow.field_name
+              InventoryPlanningOutput._meta.get_field(sortby)
+            except:
+              sortby = sortrow.field_name
+          else:
+            sortby = sortrow.field_name
+          q = q.extra(
+            select = {'agg': '''select %s(sub."%s")
+              from out_inventoryplanning as sub
+              inner join buffer buf2 on sub.buffer_id = buf2.name
+              where buf2.item_id = buffer.item_id
+              group by buf2.item_id
+              ''' % (aggregate, sortby)}
+            )
+          q = q.order_by(
+            '-agg' if sortdir == "desc" else "agg",
+            'buffer__item__name',
+            '-%s' % sortby if sortdir == "desc" else sortby
+            )
         elif sortrow.field_name.startswith("buffer__item__"):
           # item grouping 2: field in the item table
+          if units_or_value == "value":
+            try:
+              sortby = "%svalue" % sortrow.field_name
+              Item._meta.get_field(sortby)
+            except:
+              sortby = sortrow.field_name
+          else:
+            sortby = sortrow.field_name
           q = q.order_by(
-            '-%s' % sortrow.field_name if sortdir == "desc" else sortrow.field_name,
+            '-%s' % sortby if sortdir == "desc" else sortby,
             'buffer__item__name'
             )
         elif sortrow.field_name.startswith("buffer__location__"):
           # item grouping 3: field in the location table
+          if units_or_value == "value":
+            try:
+              sortby = "%svalue" % sortrow.field_name
+              Location._meta.get_field(sortby)
+            except:
+              sortby = sortrow.field_name
+          else:
+            sortby = sortrow.field_name
           q = q.extra(
             select = {'agg': '''select max(loc2."%s")
               from out_inventoryplanning as sub
@@ -311,57 +340,88 @@ class DRP(GridReport):
               inner join location loc2 on buf2.location_id = loc2.name
               where buf2.item_id = buffer.item_id
               group by buf2.item_id
-              ''' % sortrow.field_name[18:]}
+              ''' % sortby[18:]}
             )
           q = q.order_by(
             '-agg' if sortdir == "desc" else "agg",
             'buffer__item__name',
-            '-%s' % sortrow.field_name if sortdir == "desc" else sortrow.field_name
+            '-%s' % sortby if sortdir == "desc" else sortby
             )
         elif sortrow.field_name.startswith("buffer__inventoryplanning__"):
           # item grouping 4: field in the inventoryplanning table
+          if units_or_value == "value":
+            try:
+              sortby = "%svalue" % sortrow.field_name
+              InventoryPlanning._meta.get_field(sortby)
+            except:
+              sortby = sortrow.field_name
+          else:
+            sortby = sortrow.field_name
           q = q.extra(
             select = {'agg': '''select %s(sub."%s")
               from inventoryplanning as sub
               inner join buffer buf2 on sub.buffer_id = buf2.name
               where buf2.item_id = buffer.item_id
               group by buf2.item_id
-              ''' % (aggregate, sortrow.field_name[27:])}
+              ''' % (aggregate, sortby[27:])}
             )
           q = q.order_by(
             '-agg' if sortdir == "desc" else "agg",
             'buffer__item__name',
-            '-%s' % sortrow.field_name if sortdir == "desc" else sortrow.field_name
+            '-%s' % sortby if sortdir == "desc" else sortby
             )
         else:
           raise Exception("Item grouping not supported for this case")
-      elif request.prefs and request.prefs.get("grouping", None) == 'location':
-        sortcol, sortdir = reportclass.get_sort(request).split(' ')
-        sortrow = reportclass.rows[int(sortcol)-1]
+      elif grouping == 'location':
+        # CASE 3: Group results by location
         aggregate = "sum" if isinstance(sortrow, (GridFieldNumber, GridFieldInteger)) else "max"
         if sortrow.field_name.find("__") < 0:
-            # location grouping 1: field in the outinventoryplanning table
-            q = q.extra(
-              select = {'agg': '''select %s(sub."%s")
-                from out_inventoryplanning as sub
-                inner join buffer buf2 on sub.buffer_id = buf2.name
-                where buf2.location_id = buffer.location_id
-                group by buf2.location_id
-                ''' % (aggregate, sortrow.field_name)}
-              )
-            q = q.order_by(
-              '-agg' if sortdir == "desc" else "agg",
-              'buffer__location__name',
-              '-%s' % sortrow.field_name if sortdir == "desc" else sortrow.field_name
-              )
+          # location grouping 1: field in the outinventoryplanning table
+          if units_or_value == "value":
+            try:
+              sortby = "%svalue" % sortrow.field_name
+              InventoryPlanningOutput._meta.get_field(sortby)
+            except:
+              sortby = sortrow.field_name
+          else:
+            sortby = sortrow.field_name
+          q = q.extra(
+            select = {'agg': '''select %s(sub."%s")
+              from out_inventoryplanning as sub
+              inner join buffer buf2 on sub.buffer_id = buf2.name
+              where buf2.location_id = buffer.location_id
+              group by buf2.location_id
+              ''' % (aggregate, sortby)}
+            )
+          q = q.order_by(
+            '-agg' if sortdir == "desc" else "agg",
+            'buffer__location__name',
+            '-%s' % sortby if sortdir == "desc" else sortby
+            )
         elif sortrow.field_name.startswith("buffer__location__"):
           # location grouping 2: field in the location table
+          if units_or_value == "value":
+            try:
+              sortby = "%svalue" % sortrow.field_name
+              Location._meta.get_field(sortby)
+            except:
+              sortby = sortrow.field_name
+          else:
+            sortby = sortrow.field_name
           q = q.order_by(
-            '-%s' % sortrow.field_name if sortdir == "desc" else sortrow.field_name,
+            '-%s' % sortby if sortdir == "desc" else sortby,
             'buffer__location__name'
             )
         elif sortrow.field_name.startswith("buffer__item__"):
-          # item grouping 3: field in the item table
+          # location grouping 3: field in the item table
+          if units_or_value == "value":
+            try:
+              sortby = "%svalue" % sortrow.field_name
+              Item._meta.get_field(sortby)
+            except:
+              sortby = sortrow.field_name
+          else:
+            sortby = sortrow.field_name
           q = q.extra(
             select = {'agg': '''select max(it2."%s")
               from out_inventoryplanning as sub
@@ -369,31 +429,100 @@ class DRP(GridReport):
               inner join item it2 on buf2.item_id = it2.name
               where buf2.location_id = buffer.location_id
               group by buf2.location_id
-              ''' % sortrow.field_name[14:]}
+              ''' % sortby[14:]}
             )
           q = q.order_by(
             '-agg' if sortdir == "desc" else "agg",
             'buffer__location__name',
-            '-%s' % sortrow.field_name if sortdir == "desc" else sortrow.field_name
+            '-%s' % sortby if sortdir == "desc" else sortby
             )
         elif sortrow.field_name.startswith("buffer__inventoryplanning__"):
           # location grouping 4: field in the inventoryplanning table
+          if units_or_value == "value":
+            try:
+              sortby = "%svalue" % sortrow.field_name
+              InventoryPlanning._meta.get_field(sortby)
+            except:
+              sortby = sortrow.field_name
+          else:
+            sortby = sortrow.field_name
           q = q.extra(
             select = {'agg': '''select %s(sub."%s")
               from inventoryplanning as sub
               inner join buffer buf2 on sub.buffer_id = buf2.name
               where buf2.location_id = buffer.location_id
               group by buf2.location_id
-              ''' % (aggregate, sortrow.field_name[27:])}
+              ''' % (aggregate, sortby[27:])}
             )
           q = q.order_by(
             '-agg' if sortdir == "desc" else "agg",
             'buffer__location__name',
-            '-%s' % sortrow.field_name if sortdir == "desc" else sortrow.field_name
+            '-%s' % sortby if sortdir == "desc" else sortby
             )
         else:
           raise Exception("Location grouping not supported for this case")
+      elif grouping == 'itemlocation':
+        # CASE 4: No grouping
+        if sortrow.field_name.find("__") < 0:
+          # No grouping 1: field in the outinventoryplanning table
+          if units_or_value == "value":
+            try:
+              sortby = "%svalue" % sortrow.field_name
+              InventoryPlanningOutput._meta.get_field(sortby)
+            except:
+              sortby = sortrow.field_name
+          else:
+            sortby = sortrow.field_name
+          q = q.order_by(
+            '-%s' % sortby if sortdir == "desc" else sortby,
+            'buffer__location__name'
+            )
+        elif sortrow.field_name.startswith("buffer__location__"):
+          # No grouping 2: field in the location table
+          if units_or_value == "value":
+            try:
+              sortby = "%svalue" % sortrow.field_name
+              Location._meta.get_field(sortby)
+            except:
+              sortby = sortrow.field_name
+          else:
+            sortby = sortrow.field_name
+          q = q.order_by(
+            '-%s' % sortby if sortdir == "desc" else sortby,
+            'buffer__location__name'
+            )
+        elif sortrow.field_name.startswith("buffer__item__"):
+          # No grouping 3: field in the item table
+          if units_or_value == "value":
+            try:
+              sortby = "%svalue" % sortrow.field_name
+              Item._meta.get_field(sortby)
+            except:
+              sortby = sortrow.field_name
+          else:
+            sortby = sortrow.field_name
+          q = q.order_by(
+            '-%s' % sortby if sortdir == "desc" else sortby,
+            'buffer__location__name',
+            )
+        elif sortrow.field_name.startswith("buffer__inventoryplanning__"):
+          # No grouping 4: field in the inventoryplanning table
+          if units_or_value == "value":
+            try:
+              sortby = "%svalue" % sortrow.field_name
+              InventoryPlanning._meta.get_field(sortby)
+            except:
+              sortby = sortrow.field_name
+          else:
+            sortby = sortrow.field_name
+          q = q.order_by(
+            '-%s' % sortby if sortdir == "desc" else sortby,
+            'buffer__location__name'
+            )
+        else:
+          raise Exception("No grouping not supported for this case")
       return q
+
 
   @staticmethod
   def query(request, basequery):
@@ -1243,7 +1372,7 @@ class DRPitemlocation(View):
         supplier=frepple.supplier(name=i.supplier.name),
         location=frepple.location(name=i.location.name) if i.location else None,
         item=frepple_item,
-        leadtime=i.leadtime,
+        leadtime=i.leadtime or 0,
         )
       if i.sizeminimum:
         frepple_itemsupplier.size_minimum = i.sizeminimum
@@ -1339,8 +1468,8 @@ class DRPitemlocation(View):
       ):
         frepple.operation_itemdistribution.createOrder(
           destination=frepple.location(name=do.destination.name) if do.destination else None,
-          id=do.id, reference=do.reference,
-          item=frepple_item,
+          #id=do.id,
+          reference=do.reference, item=frepple_item,
           origin=frepple.location(name=do.origin.name) if do.origin else None,
           quantity=do.quantity, start=do.startdate, end=do.enddate,
           consume_material=do.consume_material if do.consume_material != None else True,
@@ -1355,8 +1484,8 @@ class DRPitemlocation(View):
       ):
         frepple.operation_itemsupplier.createOrder(
           location=frepple.location(name=po.location.name) if po.location else None,
-          id=po.id, reference=po.reference,
-          item=frepple_item,
+          #id=po.id,
+          reference=po.reference, item=frepple_item,
           supplier=frepple.supplier(name=po.supplier.name) if po.supplier else None,
           quantity=po.quantity, start=po.startdate, end=po.enddate,
           status=po.status, source=po.source
@@ -1419,7 +1548,7 @@ class DRPitemlocation(View):
         [
           (float(i.orderstotal) if i.orderstotal else 0) + (float(i.ordersadjustment) if i.ordersadjustment else 0)
           for i in db_forecastplan
-          if i.startdate < frepple.settings.current
+          if i.enddate <= frepple.settings.current
         ],
         replanner.fcst_buckets
         )

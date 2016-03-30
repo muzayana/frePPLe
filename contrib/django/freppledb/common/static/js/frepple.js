@@ -880,7 +880,7 @@ var grid = {
       var url = (location.href.indexOf("#") != -1 ? location.href.substr(0,location.href.indexOf("#")) : location.href);
       if (location.search.length > 0)
         // URL already has arguments
-        url += "&format=" + $('#csvformat').val();
+        url += "&format=" + $('#csvformat input:radio:checked').val();
       else if (url.charAt(url.length - 1) == '?')
         // This is the first argument for the URL, but we already have a question mark at the end
         url += "format=" + $('#csvformat input:radio:checked').val();
@@ -894,7 +894,7 @@ var grid = {
       window.open(url,'_blank');
       $('#popup').modal('hide');
     })
-          },
+  },
 
 
   // Display time bucket selection dialog
@@ -1690,7 +1690,7 @@ $(function() {
     }
   });
   $('#search').typeahead({minLength: 2}, {
-    limit:100,
+    limit:1000,
     highlight: true,
     name: 'search',
     display: 'value',
@@ -1811,6 +1811,7 @@ function import_show(url)
 {
   $('#timebuckets').modal('hide');
   $.jgrid.hideModal("#searchmodfbox_grid");
+  $('#popup').modal({keyboard: false, backdrop:'static'});
   $('#popup').html('<div class="modal-dialog">'+
       '<div class="modal-content">'+
         '<div class="modal-header">'+
@@ -1829,35 +1830,42 @@ function import_show(url)
         '</div>'+
         '<div class="modal-footer">'+
             '<input type="submit" id="importbutton" role="button" class="btn btn-danger pull-left" value="'+gettext('Import')+'">'+
-            '<input type="submit" id="cancelbutton" role="button" class="btn btn-primary pull-right" data-dismiss="modal" value="'+gettext('Cancel')+'">'+
+            '<input type="submit" id="cancelbutton" role="button" class="btn btn-primary pull-right" data-dismiss="modal" value="'+gettext('Close')+'">'+
         '</div>'+
       '</div>'+
     '</div>' )
   .modal('show');
+
   $('#importbutton').on('click', function() {
-            if ($("#csv_file").val() == "") return;
-            $('#uploadResponse').css('display','block');
-            $.ajax({
-              type: 'post',
-              url: typeof(url) != 'undefined' ? url : '',
-              cache: false,
-              data: new FormData($("#uploadform")[0]),
-              success: function (data) {
-                var el = $('#uploadResponse');
-                el.val(data);
-                el.scrollTop(el[0].scrollHeight - el.height());
-              },
-              xhrFields: {
-                onprogress: function (e) {
-                  var el = $('#uploadResponse');
-                  el.val(e.currentTarget.response);
-                  el.scrollTop(el[0].scrollHeight - el.height());
-                }
-              },
-              processData: false,
-              contentType: false
-              });
-          }
+    if ($("#csv_file").val() == "") return;
+    $('#uploadResponse').css('display','block');
+    $('#uploadResponse').text(gettext('Importing... pressing Close button will not stop the process.'));
+    $('#importbutton').css('display','none');
+    $('#uploadform').css('display','none');
+    $.ajax({
+      type: 'post',
+      url: typeof(url) != 'undefined' ? url : '',
+      cache: false,
+      data: new FormData($("#uploadform")[0]),
+      success: function (data) {
+        var el = $('#uploadResponse');
+        el.val(data);
+        el.scrollTop(el[0].scrollHeight - el.height());
+        $('#cancelbutton').val(gettext('Close'));
+        $('#importbutton').hide();
+        $("#grid").trigger("reloadGrid");
+      },
+      xhrFields: {
+        onprogress: function (e) {
+          var el = $('#uploadResponse');
+          el.val(e.currentTarget.response);
+          el.scrollTop(el[0].scrollHeight - el.height());
+        }
+      },
+      processData: false,
+      contentType: false
+    });
+   }
   )
 }
 

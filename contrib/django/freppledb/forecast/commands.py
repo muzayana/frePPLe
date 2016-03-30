@@ -72,33 +72,61 @@ def aggregateDemand(cursor):
   #      currently all periods in calendarbucket are used...
   starttime = time()
   cursor.execute('''
-     create temp table demand_history
-     on commit preserve rows
-     as
-      select forecast.name as forecast,
-        calendarbucket.startdate as startdate,
-        calendarbucket.enddate as enddate,
-        sum(demand.quantity) as orderstotal,
-        sum(case when demand.status is null or demand.status = 'open' then demand.quantity else 0 end) as ordersopen,
-        coalesce(sum(demand.quantity*ditem.price), 0) as orderstotalvalue,
-        coalesce(sum(case when demand.status is null or demand.status = 'open' then (demand.quantity*ditem.price) else 0 end), 0) as ordersopenvalue
-      from demand
-      inner join item as ditem on demand.item_id = ditem.name
-      left outer join customer as dcustomer on demand.customer_id = dcustomer.name
-      left outer join location as dlocation on demand.location_id = dlocation.name
-      inner join item as fitem on ditem.lft between fitem.lft and fitem.rght
-      left outer join customer as fcustomer on dcustomer.lft between fcustomer.lft and fcustomer.rght
-      left outer join location as flocation on dlocation.lft between flocation.lft and flocation.rght
-      inner join forecast on fitem.name = forecast.item_id and fcustomer.name = forecast.customer_id and flocation.name = forecast.location_id
-      inner join common_parameter on common_parameter.name = 'forecast.calendar'
-      inner join calendarbucket
-        on common_parameter.value = calendarbucket.calendar_id
-        and calendarbucket.startdate <= demand.due
-        and calendarbucket.enddate > demand.due
-      where demand.status in ('open','closed')
-      group by forecast.name, calendarbucket.startdate, calendarbucket.enddate
-     ''')
-  cursor.execute('''CREATE UNIQUE INDEX demand_history_idx ON demand_history (forecast, startdate)''')
+    create temporary table parent_child_price on commit preserve rows as
+    select product.name parent, item.name child, 0.00 price
+    from item product, item
+    where item.lft between product.lft and product.rght
+    and item.rght between product.lft and product.rght
+    and exists (select 1 from forecast where item_id = product.name)
+    ''')
+  cursor.execute('''
+    update parent_child_price
+    set price = (
+      select sum(coalesce(child.price,0))
+      from item parent, item child
+      where child.lft between parent.lft and parent.rght
+        and parent.name = parent_child_price.child
+      )''')
+  cursor.execute('''
+    create temporary table customers_customer on commit preserve rows as
+    select customers.name customers, customer.name customer
+    from customer customers, customer
+    where customer.lft between customers.lft and customers.rght
+    and exists (select 1 from forecast where customer_id = customers.name)
+    ''')
+  cursor.execute('''
+    create temporary table locations_location on commit preserve rows as
+    select locations.name locations, location.name as location
+    from location locations, location
+    where location.lft between locations.lft and locations.rght
+    and exists (select 1 from forecast where location_id = locations.name)
+    ''')
+  cursor.execute('''
+    create temporary table demand_history on commit preserve rows as
+    select forecast.name as forecast,
+    calendarbucket.startdate as startdate,
+    calendarbucket.enddate as enddate,
+    sum(demand.quantity) as orderstotal,
+    sum(case when demand.status = 'open' then demand.quantity else 0 end) as ordersopen,
+    coalesce(sum(demand.quantity*parent_child_price.price), 0) as orderstotalvalue,
+    coalesce(sum(case when demand.status = 'open' then (demand.quantity*parent_child_price.price) else 0 end), 0) as ordersopenvalue
+    from forecast
+    left outer join locations_location on forecast.location_id = locations_location.locations
+    left outer join customers_customer on forecast.customer_id = customers_customer.customers
+    inner join parent_child_price on parent_child_price.parent = forecast.item_id
+    inner join demand on demand.item_id = parent_child_price.child and demand.status in ('open','closed')
+      and demand.location_id = coalesce(locations_location.location,demand.location_id)
+      and demand.customer_id = coalesce(customers_customer.customer,demand.customer_id)
+    inner join common_parameter on common_parameter.name = 'forecast.calendar'
+    inner join calendarbucket on common_parameter.value = calendarbucket.calendar_id
+      and calendarbucket.startdate <= demand.due
+      and calendarbucket.enddate > demand.due
+    group by forecast.name, calendarbucket.startdate, calendarbucket.enddate
+    ''')
+  cursor.execute('create unique index demand_history_idx ON demand_history (forecast, startdate)')
+  cursor.execute('drop table locations_location')
+  cursor.execute('drop table customers_customer')
+  cursor.execute('drop table parent_child_price')
   print('Aggregate - temp table in %.2f seconds' % (time() - starttime))
 
   # Create all active history pairs
@@ -216,7 +244,7 @@ def generateBaseline(solver_fcst, cursor):
   cursor.execute('''select distinct startdate
      from calendarbucket
      where calendarbucket.calendar_id = %s
-       and startdate >= %s and startdate < %s
+       and enddate > %s and startdate < %s
      order by startdate
      ''', (
     fcst_calendar, frepple.settings.current,
@@ -236,7 +264,7 @@ def generateBaseline(solver_fcst, cursor):
        on forecastplan.forecast_id = forecast.name
        and calendarbucket.startdate = forecastplan.startdate
      where calendarbucket.startdate >= %s
-      and calendarbucket.startdate < %s
+      and calendarbucket.enddate <= %s
       and forecast.planned = true
      order by forecast.name, calendarbucket.startdate
      ''', (
@@ -306,7 +334,7 @@ def applyForecastAdjustments(cursor):
      left outer join forecastplan
        on forecastplan.forecast_id = forecast.name
        and calendarbucket.startdate = forecastplan.startdate
-     where calendarbucket.enddate >= %s
+     where calendarbucket.enddate > %s
        and calendarbucket.startdate < %s
        and forecastplan.forecastadjustment is not null
        and forecastplan.forecastadjustment > 0
@@ -329,7 +357,7 @@ def loadForecastValues(cursor):
      left outer join forecastplan
        on forecastplan.forecast_id = forecast.name
        and calendarbucket.startdate = forecastplan.startdate
-     where calendarbucket.enddate >= %s
+     where calendarbucket.enddate > %s
        and calendarbucket.startdate < %s
        and forecastplan.forecasttotal > 0
        and forecast.planned = 't'
@@ -383,7 +411,7 @@ def exportForecastFull(cursor):
   cursor.execute('''update forecastplan
     set forecasttotal=0, forecastnet=0, forecastconsumed=0, ordersplanned=0, forecastplanned=0,
       forecasttotalvalue=0, forecastnetvalue=0, forecastconsumedvalue=0, ordersplannedvalue=0, forecastplannedvalue=0
-    where startdate >= %s
+    where enddate > %s
       and (forecasttotal<>0 or forecastnet<>0 or forecastconsumed<>0 or ordersplanned <> 0 or forecastplanned <> 0
         or forecasttotalvalue<>0 or forecastnetvalue<>0 or forecastconsumedvalue<>0 or ordersplannedvalue <> 0 or forecastplannedvalue <> 0)
     ''', (frepple.settings.current,))
@@ -393,7 +421,7 @@ def exportForecastFull(cursor):
   cursor.execute('''update forecastplan
     set forecastnet=0, forecastconsumed=0, ordersplanned=0, forecastplanned=0,
       forecastbaselinevalue=0, forecastnetvalue=0, forecastconsumedvalue=0, ordersplannedvalue=0, forecastplannedvalue=0
-    where startdate < %s
+    where enddate <= %s
       and (forecastnet<>0 or forecastconsumed<>0 or ordersplanned <> 0 or forecastplanned <> 0
         or forecastnetvalue<>0 or forecastconsumedvalue<>0 or ordersplannedvalue <> 0 or forecastplannedvalue <> 0)
     ''', (frepple.settings.current,))
@@ -417,38 +445,51 @@ def exportForecastFull(cursor):
   transaction.commit(using=cursor.db.alias)
   fcst_calendar = Parameter.getValue('forecast.calendar', cursor.db.alias, None)
   cursor.execute('''
-    update forecastplan
-      set ordersplanned=coalesce(plannedquantities.planneddemand,0),
-          forecastplanned=coalesce(plannedquantities.plannedforecast,0),
-          ordersplannedvalue=coalesce(plannedquantities.planneddemandvalue,0),
-          forecastplannedvalue=coalesce(plannedquantities.plannedforecastvalue,0)
-      from (
-        select
+  create temporary table parent_child_price on commit preserve rows as
+  select product.name parent, item.name child, 0.00 price 
+  from item product, item
+  where item.lft between product.lft and product.rght
+  and exists (select 1 from forecast where item_id = product.name)
+  ''')
+  cursor.execute('''
+  UPDATE parent_child_price
+   SET price =
+          (SELECT SUM (COALESCE (child.price, 0))
+             FROM item parent, item child
+            WHERE     child.lft BETWEEN parent.lft AND parent.rght
+                  AND parent.name = parent_child_price.child)
+  ''')
+  cursor.execute('''
+    UPDATE forecastplan
+   SET ordersplanned = COALESCE (plannedquantities.planneddemand, 0),
+       forecastplanned = COALESCE (plannedquantities.plannedforecast, 0),
+       ordersplannedvalue = COALESCE (plannedquantities.planneddemandvalue, 0),
+       forecastplannedvalue = COALESCE (plannedquantities.plannedforecastvalue, 0)
+      FROM (
+           select
            forecast.name as forecast, calendarbucket.startdate as startdate,
-           sum(case when demand.name is not null and location.lft between flocation.lft and flocation.rght then planquantity else 0 end) as planneddemand,
-           sum(case when demand.name is null and out_demand.demand like forecast.name || ' - %%' then planquantity else 0 end) as plannedforecast,
-           sum(case when demand.name is not null and location.lft between flocation.lft and flocation.rght then (planquantity*item.price) else 0 end) as planneddemandvalue,
-           sum(case when demand.name is null and out_demand.demand like forecast.name || ' - %%' then (planquantity*item.price) else 0 end) as plannedforecastvalue
+           SUM(CASE when demand.name is NOT NULL and location.lft between flocation.lft and flocation.rght then planquantity else 0 end) as planneddemand,
+           SUM(CASE when demand.name is NULL and out_demand.demand like forecast.name || ' - %%' then planquantity else 0 end) as plannedforecast,
+           SUM(CASE when demand.name is NOT NULL and location.lft between flocation.lft and flocation.rght then (planquantity*parent_child_price.price) else 0 end) as planneddemandvalue,
+           SUM(CASE when demand.name is NULL and out_demand.demand like forecast.name || ' - %%' then (planquantity*parent_child_price.price) else 0 end) as plannedforecastvalue
         from out_demand
-        inner join item
-          on out_demand.item = item.name
+        inner join parent_child_price
+          on out_demand.item = parent_child_price.child
         left outer join customer
           on out_demand.customer = customer.name
         left outer join demand
           on out_demand.demand = demand.name
         left outer join location
           on location.name = demand.location_id
-        inner join item as fitem
-          on item.lft between fitem.lft and fitem.rght
         left outer join customer as fcustomer
           on customer.lft between fcustomer.lft and fcustomer.rght
         inner join forecast
-          on fitem.name = forecast.item_id
+         on parent_child_price.parent = forecast.item_id
           and fcustomer.name = forecast.customer_id
         inner join location as flocation
           on flocation.name = forecast.location_id
         inner join calendarbucket
-          on calendarbucket.calendar_id = %s
+          on calendarbucket.calendar_id = 'Forecast'
           and out_demand.plandate >= calendarbucket.startdate
           and out_demand.plandate < calendarbucket.enddate
         group by forecast.name, calendarbucket.startdate
@@ -463,6 +504,7 @@ def exportForecastFull(cursor):
           )
     ''', (fcst_calendar,))
   transaction.commit(using=cursor.db.alias)
+  cursor.execute('drop table parent_child_price')
   print('Updated planned quantity fields in %.2f seconds' % (time() - starttime))
   starttime = time()
   cursor.execute('''

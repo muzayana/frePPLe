@@ -178,8 +178,41 @@ DECLARE_EXPORT void SolverMRP::SolverMRPdata::commit()
     // Clean the list of demands of this cluster
     demands->clear();
 
+    // Completely recreate all purchasing operation plans
+    for (set<const OperationItemSupplier*>::iterator o = purchase_operations.begin();
+      o != purchase_operations.end(); ++o
+      )
+    {
+      // TODO This code assumes the buffer is ONLY replenished through these purchases.
+      // When it is replenished through an alternate, it will not give the results we expect.
+
+      // Erase existing proposed purchases
+      const_cast<OperationItemSupplier*>(*o)->deleteOperationPlans(false);
+      // Create new proposed purchases
+      try
+      {
+        safety_stock_planning = true;
+        state->curBuffer = NULL;
+        state->q_qty = -1.0;
+        state->q_date = Date::infinitePast;
+        state->a_cost = 0.0;
+        state->a_penalty = 0.0;
+        state->curDemand = NULL;
+        state->curOwnerOpplan = NULL;
+        state->a_qty = 0;
+        (*o)->getBuffer()->solve(*solver, this);
+        CommandManager::commit();
+      }
+      catch(...)
+      {
+        CommandManager::rollback();
+      }
+    }
+    purchase_operations.clear();
+
     // Solve for safety stock in buffers.
-    if (!solver->getPlanSafetyStockFirst()) solveSafetyStock(solver);
+    if (!solver->getPlanSafetyStockFirst())
+      solveSafetyStock(solver);
   }
   catch (...)
   {
@@ -215,7 +248,8 @@ void SolverMRP::SolverMRPdata::solveSafetyStock(SolverMRP* solver)
 {
   OperatorDelete cleanup(this);
   safety_stock_planning = true;
-  if (getLogLevel()>0) logger << "Start safety stock replenishment pass   " << solver->getConstraints() << endl;
+  if (getLogLevel() > 0)
+    logger << "Start safety stock replenishment pass   " << solver->getConstraints() << endl;
   vector< list<Buffer*> > bufs(HasLevel::getNumberOfLevels() + 1);
   for (Buffer::iterator buf = Buffer::begin(); buf != Buffer::end(); ++buf)
     if (buf->getCluster() == cluster
@@ -248,7 +282,9 @@ void SolverMRP::SolverMRPdata::solveSafetyStock(SolverMRP* solver)
       {
         CommandManager::rollback();
       }
-  if (getLogLevel()>0) logger << "Finished safety stock replenishment pass" << endl;
+
+  if (getLogLevel() > 0)
+    logger << "Finished safety stock replenishment pass" << endl;
   safety_stock_planning = false;
 }
 

@@ -1,6 +1,6 @@
 
 Test: demand_deviation:10 price:1 service_level:80
-	ROQ for product with lead time 120:	2016-01-01	268.0
+	ROQ for product with lead time 120:	1971-01-01	268.0
 	ROQ for product with lead time 120:	2016-02-01	311.0
 	ROQ for product with lead time 120:	2016-03-01	346.0
 	ROQ for product with lead time 120:	2016-04-01	408.0
@@ -11,7 +11,7 @@ Test: demand_deviation:10 price:1 service_level:80
 	ROQ for product with lead time 120:	2016-09-01	558.0
 	ROQ for product with lead time 120:	2016-10-01	506.0
 	ROQ for product with lead time 120:	2016-11-01	413.0
-	ROQ for product with lead time 30:	2016-01-01	218.0
+	ROQ for product with lead time 30:	1971-01-01	218.0
 	ROQ for product with lead time 30:	2016-02-01	225.0
 	ROQ for product with lead time 30:	2016-03-01	218.0
 	ROQ for product with lead time 30:	2016-04-01	383.0
@@ -21,7 +21,7 @@ Test: demand_deviation:10 price:1 service_level:80
 	ROQ for product with lead time 30:	2016-09-01	494.0
 	ROQ for product with lead time 30:	2016-10-01	575.0
 	ROQ for product with lead time 30:	2016-11-01	584.0
-	ROQ for product with lead time 60:	2016-01-01	221.0
+	ROQ for product with lead time 60:	1971-01-01	221.0
 	ROQ for product with lead time 60:	2016-03-01	309.0
 	ROQ for product with lead time 60:	2016-04-01	380.0
 	ROQ for product with lead time 60:	2016-05-01	379.0
@@ -30,7 +30,7 @@ Test: demand_deviation:10 price:1 service_level:80
 	ROQ for product with lead time 60:	2016-08-01	490.0
 	ROQ for product with lead time 60:	2016-09-01	536.0
 	ROQ for product with lead time 60:	2016-10-01	579.0
-	ROQ for product with lead time 90:	2016-01-01	220.0
+	ROQ for product with lead time 90:	1971-01-01	220.0
 	ROQ for product with lead time 90:	2016-02-01	285.0
 	ROQ for product with lead time 90:	2016-03-01	333.0
 	ROQ for product with lead time 90:	2016-04-01	380.0
@@ -41,13 +41,13 @@ Test: demand_deviation:10 price:1 service_level:80
 	ROQ for product with lead time 90:	2016-09-01	552.0
 	ROQ for product with lead time 90:	2016-10-01	477.0
 	ROQ for product with lead time 90:	2016-11-01	337.0
-	SS for product with lead time 120:	2016-01-01	1.0
-	SS for product with lead time 30:	2016-01-01	1.0
-	SS for product with lead time 60:	2016-01-01	1.0
-	SS for product with lead time 90:	2016-01-01	1.0
+	SS for product with lead time 120:	1971-01-01	1.0
+	SS for product with lead time 30:	1971-01-01	1.0
+	SS for product with lead time 60:	1971-01-01	1.0
+	SS for product with lead time 90:	1971-01-01	1.0
 
 Test: demand_deviation:10 price:1 service_level:90
-	ROQ for product with lead time 120:	2016-01-01	268.0
+	ROQ for product with lead time 120:	1971-01-01	268.0
 	ROQ for product with lead time 120:	2016-02-01	311.0
 	ROQ for product with lead time 120:	2016-03-01	346.0
 	ROQ for product with lead time 120:	2016-04-01	408.0
@@ -58,7 +58,7 @@ Test: demand_deviation:10 price:1 service_level:90
 	ROQ for product with lead time 120:	2016-09-01	558.0
 	ROQ for product with lead time 120:	2016-10-01	506.0
 	ROQ for product with lead time 120:	2016-11-01	413.0
-	ROQ for product with lead time 30:	2016-01-01	218.0
+	ROQ for product with lead time 30:	1971-01-01	218.0
 	ROQ for product with lead time 30:	2016-02-01	225.0
 	ROQ for product with lead time 30:	2016-03-01	218.0
 	ROQ for product with lead time 30:	2016-04-01	383.0
@@ -68,7 +68,7 @@ Test: demand_deviation:10 price:1 service_level:90
 	ROQ for product with lead time 30:	2016-09-01	494.0
 	ROQ for product with lead time 30:	2016-10-01	575.0
 	ROQ for product with lead time 30:	2016-11-01	584.0
-	ROQ for product with lead time 60:	2016-01-01	221.0
+	ROQ for product with lead time 60:	1971-01-01	221.0
 	ROQ for product with lead time 60:	2016-03-01	309.0
 	ROQ for product with lead time 60:	2016-04-01	380.0
 	ROQ for product with lead time 60:	2016-05-01	379.0
@@ -77,7 +77,7 @@ Test: demand_deviation:10 price:1 service_level:90
 	ROQ for product with lead time 60:	2016-08-01	490.0
 	ROQ for product with lead time 60:	2016-09-01	536.0
 	ROQ for product with lead time 60:	2016-10-01	579.0
-	ROQ for product with lead time 90:	2016-01-01	220.0
+	ROQ for product with lead time 90:	1971-01-01	220.0
 	ROQ for product with lead time 90:	2016-02-01	285.0
 	ROQ for product with lead time 90:	2016-03-01	333.0
 	ROQ for product with lead time 90:	2016-04-01	380.0
@@ -88,13 +88,13 @@ Test: demand_deviation:10 price:1 service_level:90
 	ROQ for product with lead time 90:	2016-09-01	552.0
 	ROQ for product with lead time 90:	2016-10-01	477.0
 	ROQ for product with lead time 90:	2016-11-01	337.0
-	SS for product with lead time 120:	2016-01-01	1.0
-	SS for product with lead time 30:	2016-01-01	1.0
-	SS for product with lead time 60:	2016-01-01	1.0
-	SS for product with lead time 90:	2016-01-01	1.0
+	SS for product with lead time 120:	1971-01-01	1.0
+	SS for product with lead time 30:	1971-01-01	1.0
+	SS for product with lead time 60:	1971-01-01	1.0
+	SS for product with lead time 90:	1971-01-01	1.0
 
 Test: demand_deviation:10 price:1 service_level:95
-	ROQ for product with lead time 120:	2016-01-01	268.0
+	ROQ for product with lead time 120:	1971-01-01	268.0
 	ROQ for product with lead time 120:	2016-02-01	311.0
 	ROQ for product with lead time 120:	2016-03-01	346.0
 	ROQ for product with lead time 120:	2016-04-01	408.0
@@ -105,7 +105,7 @@ Test: demand_deviation:10 price:1 service_level:95
 	ROQ for product with lead time 120:	2016-09-01	558.0
 	ROQ for product with lead time 120:	2016-10-01	506.0
 	ROQ for product with lead time 120:	2016-11-01	413.0
-	ROQ for product with lead time 30:	2016-01-01	218.0
+	ROQ for product with lead time 30:	1971-01-01	218.0
 	ROQ for product with lead time 30:	2016-02-01	225.0
 	ROQ for product with lead time 30:	2016-03-01	218.0
 	ROQ for product with lead time 30:	2016-04-01	383.0
@@ -115,7 +115,7 @@ Test: demand_deviation:10 price:1 service_level:95
 	ROQ for product with lead time 30:	2016-09-01	494.0
 	ROQ for product with lead time 30:	2016-10-01	575.0
 	ROQ for product with lead time 30:	2016-11-01	584.0
-	ROQ for product with lead time 60:	2016-01-01	221.0
+	ROQ for product with lead time 60:	1971-01-01	221.0
 	ROQ for product with lead time 60:	2016-03-01	309.0
 	ROQ for product with lead time 60:	2016-04-01	380.0
 	ROQ for product with lead time 60:	2016-05-01	379.0
@@ -124,7 +124,7 @@ Test: demand_deviation:10 price:1 service_level:95
 	ROQ for product with lead time 60:	2016-08-01	490.0
 	ROQ for product with lead time 60:	2016-09-01	536.0
 	ROQ for product with lead time 60:	2016-10-01	579.0
-	ROQ for product with lead time 90:	2016-01-01	220.0
+	ROQ for product with lead time 90:	1971-01-01	220.0
 	ROQ for product with lead time 90:	2016-02-01	285.0
 	ROQ for product with lead time 90:	2016-03-01	333.0
 	ROQ for product with lead time 90:	2016-04-01	380.0
@@ -135,13 +135,13 @@ Test: demand_deviation:10 price:1 service_level:95
 	ROQ for product with lead time 90:	2016-09-01	552.0
 	ROQ for product with lead time 90:	2016-10-01	477.0
 	ROQ for product with lead time 90:	2016-11-01	337.0
-	SS for product with lead time 120:	2016-01-01	1.0
-	SS for product with lead time 30:	2016-01-01	1.0
-	SS for product with lead time 60:	2016-01-01	1.0
-	SS for product with lead time 90:	2016-01-01	1.0
+	SS for product with lead time 120:	1971-01-01	1.0
+	SS for product with lead time 30:	1971-01-01	1.0
+	SS for product with lead time 60:	1971-01-01	1.0
+	SS for product with lead time 90:	1971-01-01	1.0
 
 Test: demand_deviation:10 price:1 service_level:98
-	ROQ for product with lead time 120:	2016-01-01	268.0
+	ROQ for product with lead time 120:	1971-01-01	268.0
 	ROQ for product with lead time 120:	2016-02-01	311.0
 	ROQ for product with lead time 120:	2016-03-01	346.0
 	ROQ for product with lead time 120:	2016-04-01	408.0
@@ -152,7 +152,7 @@ Test: demand_deviation:10 price:1 service_level:98
 	ROQ for product with lead time 120:	2016-09-01	558.0
 	ROQ for product with lead time 120:	2016-10-01	506.0
 	ROQ for product with lead time 120:	2016-11-01	413.0
-	ROQ for product with lead time 30:	2016-01-01	218.0
+	ROQ for product with lead time 30:	1971-01-01	218.0
 	ROQ for product with lead time 30:	2016-02-01	225.0
 	ROQ for product with lead time 30:	2016-03-01	218.0
 	ROQ for product with lead time 30:	2016-04-01	383.0
@@ -162,7 +162,7 @@ Test: demand_deviation:10 price:1 service_level:98
 	ROQ for product with lead time 30:	2016-09-01	494.0
 	ROQ for product with lead time 30:	2016-10-01	575.0
 	ROQ for product with lead time 30:	2016-11-01	584.0
-	ROQ for product with lead time 60:	2016-01-01	221.0
+	ROQ for product with lead time 60:	1971-01-01	221.0
 	ROQ for product with lead time 60:	2016-03-01	309.0
 	ROQ for product with lead time 60:	2016-04-01	380.0
 	ROQ for product with lead time 60:	2016-05-01	379.0
@@ -171,7 +171,7 @@ Test: demand_deviation:10 price:1 service_level:98
 	ROQ for product with lead time 60:	2016-08-01	490.0
 	ROQ for product with lead time 60:	2016-09-01	536.0
 	ROQ for product with lead time 60:	2016-10-01	579.0
-	ROQ for product with lead time 90:	2016-01-01	220.0
+	ROQ for product with lead time 90:	1971-01-01	220.0
 	ROQ for product with lead time 90:	2016-02-01	285.0
 	ROQ for product with lead time 90:	2016-03-01	333.0
 	ROQ for product with lead time 90:	2016-04-01	380.0
@@ -182,22 +182,22 @@ Test: demand_deviation:10 price:1 service_level:98
 	ROQ for product with lead time 90:	2016-09-01	552.0
 	ROQ for product with lead time 90:	2016-10-01	477.0
 	ROQ for product with lead time 90:	2016-11-01	337.0
-	SS for product with lead time 120:	2016-01-01	8.0
+	SS for product with lead time 120:	1971-01-01	8.0
 	SS for product with lead time 120:	2016-02-01	6.0
 	SS for product with lead time 120:	2016-03-01	4.0
 	SS for product with lead time 120:	2016-04-01	2.0
 	SS for product with lead time 120:	2016-05-01	1.0
-	SS for product with lead time 30:	2016-01-01	1.0
-	SS for product with lead time 60:	2016-01-01	2.0
+	SS for product with lead time 30:	1971-01-01	1.0
+	SS for product with lead time 60:	1971-01-01	2.0
 	SS for product with lead time 60:	2016-03-01	1.0
-	SS for product with lead time 90:	2016-01-01	8.0
+	SS for product with lead time 90:	1971-01-01	8.0
 	SS for product with lead time 90:	2016-02-01	4.0
 	SS for product with lead time 90:	2016-03-01	2.0
 	SS for product with lead time 90:	2016-04-01	1.0
 	SS for product with lead time 90:	2016-11-01	2.0
 
 Test: demand_deviation:10 price:10 service_level:80
-	ROQ for product with lead time 120:	2016-01-01	85.0
+	ROQ for product with lead time 120:	1971-01-01	85.0
 	ROQ for product with lead time 120:	2016-02-01	99.0
 	ROQ for product with lead time 120:	2016-03-01	110.0
 	ROQ for product with lead time 120:	2016-04-01	129.0
@@ -208,7 +208,7 @@ Test: demand_deviation:10 price:10 service_level:80
 	ROQ for product with lead time 120:	2016-09-01	177.0
 	ROQ for product with lead time 120:	2016-10-01	160.0
 	ROQ for product with lead time 120:	2016-11-01	131.0
-	ROQ for product with lead time 30:	2016-01-01	69.0
+	ROQ for product with lead time 30:	1971-01-01	69.0
 	ROQ for product with lead time 30:	2016-02-01	71.0
 	ROQ for product with lead time 30:	2016-03-01	69.0
 	ROQ for product with lead time 30:	2016-04-01	121.0
@@ -218,7 +218,7 @@ Test: demand_deviation:10 price:10 service_level:80
 	ROQ for product with lead time 30:	2016-09-01	156.0
 	ROQ for product with lead time 30:	2016-10-01	182.0
 	ROQ for product with lead time 30:	2016-11-01	185.0
-	ROQ for product with lead time 60:	2016-01-01	70.0
+	ROQ for product with lead time 60:	1971-01-01	70.0
 	ROQ for product with lead time 60:	2016-03-01	98.0
 	ROQ for product with lead time 60:	2016-04-01	120.0
 	ROQ for product with lead time 60:	2016-06-01	139.0
@@ -226,7 +226,7 @@ Test: demand_deviation:10 price:10 service_level:80
 	ROQ for product with lead time 60:	2016-08-01	155.0
 	ROQ for product with lead time 60:	2016-09-01	170.0
 	ROQ for product with lead time 60:	2016-10-01	184.0
-	ROQ for product with lead time 90:	2016-01-01	70.0
+	ROQ for product with lead time 90:	1971-01-01	70.0
 	ROQ for product with lead time 90:	2016-02-01	91.0
 	ROQ for product with lead time 90:	2016-03-01	106.0
 	ROQ for product with lead time 90:	2016-04-01	121.0
@@ -237,13 +237,13 @@ Test: demand_deviation:10 price:10 service_level:80
 	ROQ for product with lead time 90:	2016-09-01	175.0
 	ROQ for product with lead time 90:	2016-10-01	151.0
 	ROQ for product with lead time 90:	2016-11-01	107.0
-	SS for product with lead time 120:	2016-01-01	1.0
-	SS for product with lead time 30:	2016-01-01	1.0
-	SS for product with lead time 60:	2016-01-01	1.0
-	SS for product with lead time 90:	2016-01-01	1.0
+	SS for product with lead time 120:	1971-01-01	1.0
+	SS for product with lead time 30:	1971-01-01	1.0
+	SS for product with lead time 60:	1971-01-01	1.0
+	SS for product with lead time 90:	1971-01-01	1.0
 
 Test: demand_deviation:10 price:10 service_level:90
-	ROQ for product with lead time 120:	2016-01-01	85.0
+	ROQ for product with lead time 120:	1971-01-01	85.0
 	ROQ for product with lead time 120:	2016-02-01	99.0
 	ROQ for product with lead time 120:	2016-03-01	110.0
 	ROQ for product with lead time 120:	2016-04-01	129.0
@@ -254,7 +254,7 @@ Test: demand_deviation:10 price:10 service_level:90
 	ROQ for product with lead time 120:	2016-09-01	177.0
 	ROQ for product with lead time 120:	2016-10-01	160.0
 	ROQ for product with lead time 120:	2016-11-01	131.0
-	ROQ for product with lead time 30:	2016-01-01	69.0
+	ROQ for product with lead time 30:	1971-01-01	69.0
 	ROQ for product with lead time 30:	2016-02-01	71.0
 	ROQ for product with lead time 30:	2016-03-01	69.0
 	ROQ for product with lead time 30:	2016-04-01	121.0
@@ -264,7 +264,7 @@ Test: demand_deviation:10 price:10 service_level:90
 	ROQ for product with lead time 30:	2016-09-01	156.0
 	ROQ for product with lead time 30:	2016-10-01	182.0
 	ROQ for product with lead time 30:	2016-11-01	185.0
-	ROQ for product with lead time 60:	2016-01-01	70.0
+	ROQ for product with lead time 60:	1971-01-01	70.0
 	ROQ for product with lead time 60:	2016-03-01	98.0
 	ROQ for product with lead time 60:	2016-04-01	120.0
 	ROQ for product with lead time 60:	2016-06-01	139.0
@@ -272,7 +272,7 @@ Test: demand_deviation:10 price:10 service_level:90
 	ROQ for product with lead time 60:	2016-08-01	155.0
 	ROQ for product with lead time 60:	2016-09-01	170.0
 	ROQ for product with lead time 60:	2016-10-01	184.0
-	ROQ for product with lead time 90:	2016-01-01	70.0
+	ROQ for product with lead time 90:	1971-01-01	70.0
 	ROQ for product with lead time 90:	2016-02-01	91.0
 	ROQ for product with lead time 90:	2016-03-01	106.0
 	ROQ for product with lead time 90:	2016-04-01	121.0
@@ -283,13 +283,13 @@ Test: demand_deviation:10 price:10 service_level:90
 	ROQ for product with lead time 90:	2016-09-01	175.0
 	ROQ for product with lead time 90:	2016-10-01	151.0
 	ROQ for product with lead time 90:	2016-11-01	107.0
-	SS for product with lead time 120:	2016-01-01	1.0
-	SS for product with lead time 30:	2016-01-01	1.0
-	SS for product with lead time 60:	2016-01-01	1.0
-	SS for product with lead time 90:	2016-01-01	1.0
+	SS for product with lead time 120:	1971-01-01	1.0
+	SS for product with lead time 30:	1971-01-01	1.0
+	SS for product with lead time 60:	1971-01-01	1.0
+	SS for product with lead time 90:	1971-01-01	1.0
 
 Test: demand_deviation:10 price:10 service_level:95
-	ROQ for product with lead time 120:	2016-01-01	85.0
+	ROQ for product with lead time 120:	1971-01-01	85.0
 	ROQ for product with lead time 120:	2016-02-01	99.0
 	ROQ for product with lead time 120:	2016-03-01	110.0
 	ROQ for product with lead time 120:	2016-04-01	129.0
@@ -300,7 +300,7 @@ Test: demand_deviation:10 price:10 service_level:95
 	ROQ for product with lead time 120:	2016-09-01	177.0
 	ROQ for product with lead time 120:	2016-10-01	160.0
 	ROQ for product with lead time 120:	2016-11-01	131.0
-	ROQ for product with lead time 30:	2016-01-01	69.0
+	ROQ for product with lead time 30:	1971-01-01	69.0
 	ROQ for product with lead time 30:	2016-02-01	71.0
 	ROQ for product with lead time 30:	2016-03-01	69.0
 	ROQ for product with lead time 30:	2016-04-01	121.0
@@ -310,7 +310,7 @@ Test: demand_deviation:10 price:10 service_level:95
 	ROQ for product with lead time 30:	2016-09-01	156.0
 	ROQ for product with lead time 30:	2016-10-01	182.0
 	ROQ for product with lead time 30:	2016-11-01	185.0
-	ROQ for product with lead time 60:	2016-01-01	70.0
+	ROQ for product with lead time 60:	1971-01-01	70.0
 	ROQ for product with lead time 60:	2016-03-01	98.0
 	ROQ for product with lead time 60:	2016-04-01	120.0
 	ROQ for product with lead time 60:	2016-06-01	139.0
@@ -318,7 +318,7 @@ Test: demand_deviation:10 price:10 service_level:95
 	ROQ for product with lead time 60:	2016-08-01	155.0
 	ROQ for product with lead time 60:	2016-09-01	170.0
 	ROQ for product with lead time 60:	2016-10-01	184.0
-	ROQ for product with lead time 90:	2016-01-01	70.0
+	ROQ for product with lead time 90:	1971-01-01	70.0
 	ROQ for product with lead time 90:	2016-02-01	91.0
 	ROQ for product with lead time 90:	2016-03-01	106.0
 	ROQ for product with lead time 90:	2016-04-01	121.0
@@ -329,7 +329,7 @@ Test: demand_deviation:10 price:10 service_level:95
 	ROQ for product with lead time 90:	2016-09-01	175.0
 	ROQ for product with lead time 90:	2016-10-01	151.0
 	ROQ for product with lead time 90:	2016-11-01	107.0
-	SS for product with lead time 120:	2016-01-01	10.0
+	SS for product with lead time 120:	1971-01-01	10.0
 	SS for product with lead time 120:	2016-02-01	8.0
 	SS for product with lead time 120:	2016-03-01	6.0
 	SS for product with lead time 120:	2016-04-01	4.0
@@ -337,11 +337,11 @@ Test: demand_deviation:10 price:10 service_level:95
 	SS for product with lead time 120:	2016-06-01	2.0
 	SS for product with lead time 120:	2016-07-01	1.0
 	SS for product with lead time 120:	2016-11-01	4.0
-	SS for product with lead time 30:	2016-01-01	1.0
-	SS for product with lead time 60:	2016-01-01	5.0
+	SS for product with lead time 30:	1971-01-01	1.0
+	SS for product with lead time 60:	1971-01-01	5.0
 	SS for product with lead time 60:	2016-03-01	2.0
 	SS for product with lead time 60:	2016-04-01	1.0
-	SS for product with lead time 90:	2016-01-01	11.0
+	SS for product with lead time 90:	1971-01-01	11.0
 	SS for product with lead time 90:	2016-02-01	5.0
 	SS for product with lead time 90:	2016-03-01	4.0
 	SS for product with lead time 90:	2016-04-01	3.0
@@ -350,7 +350,7 @@ Test: demand_deviation:10 price:10 service_level:95
 	SS for product with lead time 90:	2016-11-01	4.0
 
 Test: demand_deviation:10 price:10 service_level:98
-	ROQ for product with lead time 120:	2016-01-01	85.0
+	ROQ for product with lead time 120:	1971-01-01	85.0
 	ROQ for product with lead time 120:	2016-02-01	99.0
 	ROQ for product with lead time 120:	2016-03-01	110.0
 	ROQ for product with lead time 120:	2016-04-01	129.0
@@ -361,7 +361,7 @@ Test: demand_deviation:10 price:10 service_level:98
 	ROQ for product with lead time 120:	2016-09-01	177.0
 	ROQ for product with lead time 120:	2016-10-01	160.0
 	ROQ for product with lead time 120:	2016-11-01	131.0
-	ROQ for product with lead time 30:	2016-01-01	69.0
+	ROQ for product with lead time 30:	1971-01-01	69.0
 	ROQ for product with lead time 30:	2016-02-01	71.0
 	ROQ for product with lead time 30:	2016-03-01	69.0
 	ROQ for product with lead time 30:	2016-04-01	121.0
@@ -371,7 +371,7 @@ Test: demand_deviation:10 price:10 service_level:98
 	ROQ for product with lead time 30:	2016-09-01	156.0
 	ROQ for product with lead time 30:	2016-10-01	182.0
 	ROQ for product with lead time 30:	2016-11-01	185.0
-	ROQ for product with lead time 60:	2016-01-01	70.0
+	ROQ for product with lead time 60:	1971-01-01	70.0
 	ROQ for product with lead time 60:	2016-03-01	98.0
 	ROQ for product with lead time 60:	2016-04-01	120.0
 	ROQ for product with lead time 60:	2016-06-01	139.0
@@ -379,7 +379,7 @@ Test: demand_deviation:10 price:10 service_level:98
 	ROQ for product with lead time 60:	2016-08-01	155.0
 	ROQ for product with lead time 60:	2016-09-01	170.0
 	ROQ for product with lead time 60:	2016-10-01	184.0
-	ROQ for product with lead time 90:	2016-01-01	70.0
+	ROQ for product with lead time 90:	1971-01-01	70.0
 	ROQ for product with lead time 90:	2016-02-01	91.0
 	ROQ for product with lead time 90:	2016-03-01	106.0
 	ROQ for product with lead time 90:	2016-04-01	121.0
@@ -390,7 +390,7 @@ Test: demand_deviation:10 price:10 service_level:98
 	ROQ for product with lead time 90:	2016-09-01	175.0
 	ROQ for product with lead time 90:	2016-10-01	151.0
 	ROQ for product with lead time 90:	2016-11-01	107.0
-	SS for product with lead time 120:	2016-01-01	20.0
+	SS for product with lead time 120:	1971-01-01	20.0
 	SS for product with lead time 120:	2016-02-01	19.0
 	SS for product with lead time 120:	2016-03-01	17.0
 	SS for product with lead time 120:	2016-04-01	16.0
@@ -398,20 +398,20 @@ Test: demand_deviation:10 price:10 service_level:98
 	SS for product with lead time 120:	2016-07-01	14.0
 	SS for product with lead time 120:	2016-08-01	13.0
 	SS for product with lead time 120:	2016-11-01	16.0
-	SS for product with lead time 30:	2016-01-01	12.0
+	SS for product with lead time 30:	1971-01-01	12.0
 	SS for product with lead time 30:	2016-02-01	11.0
 	SS for product with lead time 30:	2016-03-01	12.0
 	SS for product with lead time 30:	2016-04-01	5.0
 	SS for product with lead time 30:	2016-07-01	3.0
 	SS for product with lead time 30:	2016-10-01	2.0
 	SS for product with lead time 30:	2016-11-01	1.0
-	SS for product with lead time 60:	2016-01-01	20.0
+	SS for product with lead time 60:	1971-01-01	20.0
 	SS for product with lead time 60:	2016-03-01	14.0
 	SS for product with lead time 60:	2016-04-01	9.0
 	SS for product with lead time 60:	2016-06-01	8.0
 	SS for product with lead time 60:	2016-07-01	7.0
 	SS for product with lead time 60:	2016-10-01	6.0
-	SS for product with lead time 90:	2016-01-01	28.0
+	SS for product with lead time 90:	1971-01-01	28.0
 	SS for product with lead time 90:	2016-02-01	15.0
 	SS for product with lead time 90:	2016-03-01	14.0
 	SS for product with lead time 90:	2016-04-01	13.0
@@ -422,7 +422,7 @@ Test: demand_deviation:10 price:10 service_level:98
 	SS for product with lead time 90:	2016-11-01	14.0
 
 Test: demand_deviation:20 price:10 service_level:80
-	ROQ for product with lead time 120:	2016-01-01	85.0
+	ROQ for product with lead time 120:	1971-01-01	85.0
 	ROQ for product with lead time 120:	2016-02-01	99.0
 	ROQ for product with lead time 120:	2016-03-01	110.0
 	ROQ for product with lead time 120:	2016-04-01	129.0
@@ -433,7 +433,7 @@ Test: demand_deviation:20 price:10 service_level:80
 	ROQ for product with lead time 120:	2016-09-01	177.0
 	ROQ for product with lead time 120:	2016-10-01	160.0
 	ROQ for product with lead time 120:	2016-11-01	131.0
-	ROQ for product with lead time 30:	2016-01-01	69.0
+	ROQ for product with lead time 30:	1971-01-01	69.0
 	ROQ for product with lead time 30:	2016-02-01	71.0
 	ROQ for product with lead time 30:	2016-03-01	69.0
 	ROQ for product with lead time 30:	2016-04-01	121.0
@@ -443,7 +443,7 @@ Test: demand_deviation:20 price:10 service_level:80
 	ROQ for product with lead time 30:	2016-09-01	156.0
 	ROQ for product with lead time 30:	2016-10-01	182.0
 	ROQ for product with lead time 30:	2016-11-01	185.0
-	ROQ for product with lead time 60:	2016-01-01	70.0
+	ROQ for product with lead time 60:	1971-01-01	70.0
 	ROQ for product with lead time 60:	2016-03-01	98.0
 	ROQ for product with lead time 60:	2016-04-01	120.0
 	ROQ for product with lead time 60:	2016-06-01	139.0
@@ -451,7 +451,7 @@ Test: demand_deviation:20 price:10 service_level:80
 	ROQ for product with lead time 60:	2016-08-01	155.0
 	ROQ for product with lead time 60:	2016-09-01	170.0
 	ROQ for product with lead time 60:	2016-10-01	184.0
-	ROQ for product with lead time 90:	2016-01-01	70.0
+	ROQ for product with lead time 90:	1971-01-01	70.0
 	ROQ for product with lead time 90:	2016-02-01	91.0
 	ROQ for product with lead time 90:	2016-03-01	106.0
 	ROQ for product with lead time 90:	2016-04-01	121.0
@@ -462,13 +462,13 @@ Test: demand_deviation:20 price:10 service_level:80
 	ROQ for product with lead time 90:	2016-09-01	175.0
 	ROQ for product with lead time 90:	2016-10-01	151.0
 	ROQ for product with lead time 90:	2016-11-01	107.0
-	SS for product with lead time 120:	2016-01-01	1.0
-	SS for product with lead time 30:	2016-01-01	1.0
-	SS for product with lead time 60:	2016-01-01	1.0
-	SS for product with lead time 90:	2016-01-01	1.0
+	SS for product with lead time 120:	1971-01-01	1.0
+	SS for product with lead time 30:	1971-01-01	1.0
+	SS for product with lead time 60:	1971-01-01	1.0
+	SS for product with lead time 90:	1971-01-01	1.0
 
 Test: demand_deviation:20 price:10 service_level:90
-	ROQ for product with lead time 120:	2016-01-01	85.0
+	ROQ for product with lead time 120:	1971-01-01	85.0
 	ROQ for product with lead time 120:	2016-02-01	99.0
 	ROQ for product with lead time 120:	2016-03-01	110.0
 	ROQ for product with lead time 120:	2016-04-01	129.0
@@ -479,7 +479,7 @@ Test: demand_deviation:20 price:10 service_level:90
 	ROQ for product with lead time 120:	2016-09-01	177.0
 	ROQ for product with lead time 120:	2016-10-01	160.0
 	ROQ for product with lead time 120:	2016-11-01	131.0
-	ROQ for product with lead time 30:	2016-01-01	69.0
+	ROQ for product with lead time 30:	1971-01-01	69.0
 	ROQ for product with lead time 30:	2016-02-01	71.0
 	ROQ for product with lead time 30:	2016-03-01	69.0
 	ROQ for product with lead time 30:	2016-04-01	121.0
@@ -489,7 +489,7 @@ Test: demand_deviation:20 price:10 service_level:90
 	ROQ for product with lead time 30:	2016-09-01	156.0
 	ROQ for product with lead time 30:	2016-10-01	182.0
 	ROQ for product with lead time 30:	2016-11-01	185.0
-	ROQ for product with lead time 60:	2016-01-01	70.0
+	ROQ for product with lead time 60:	1971-01-01	70.0
 	ROQ for product with lead time 60:	2016-03-01	98.0
 	ROQ for product with lead time 60:	2016-04-01	120.0
 	ROQ for product with lead time 60:	2016-06-01	139.0
@@ -497,7 +497,7 @@ Test: demand_deviation:20 price:10 service_level:90
 	ROQ for product with lead time 60:	2016-08-01	155.0
 	ROQ for product with lead time 60:	2016-09-01	170.0
 	ROQ for product with lead time 60:	2016-10-01	184.0
-	ROQ for product with lead time 90:	2016-01-01	70.0
+	ROQ for product with lead time 90:	1971-01-01	70.0
 	ROQ for product with lead time 90:	2016-02-01	91.0
 	ROQ for product with lead time 90:	2016-03-01	106.0
 	ROQ for product with lead time 90:	2016-04-01	121.0
@@ -508,7 +508,7 @@ Test: demand_deviation:20 price:10 service_level:90
 	ROQ for product with lead time 90:	2016-09-01	175.0
 	ROQ for product with lead time 90:	2016-10-01	151.0
 	ROQ for product with lead time 90:	2016-11-01	107.0
-	SS for product with lead time 120:	2016-01-01	18.0
+	SS for product with lead time 120:	1971-01-01	18.0
 	SS for product with lead time 120:	2016-02-01	15.0
 	SS for product with lead time 120:	2016-03-01	12.0
 	SS for product with lead time 120:	2016-04-01	8.0
@@ -516,9 +516,9 @@ Test: demand_deviation:20 price:10 service_level:90
 	SS for product with lead time 120:	2016-06-01	3.0
 	SS for product with lead time 120:	2016-07-01	1.0
 	SS for product with lead time 120:	2016-11-01	6.0
-	SS for product with lead time 30:	2016-01-01	1.0
-	SS for product with lead time 60:	2016-01-01	1.0
-	SS for product with lead time 90:	2016-01-01	3.0
+	SS for product with lead time 30:	1971-01-01	1.0
+	SS for product with lead time 60:	1971-01-01	1.0
+	SS for product with lead time 90:	1971-01-01	3.0
 	SS for product with lead time 90:	2016-02-01	11.0
 	SS for product with lead time 90:	2016-03-01	8.0
 	SS for product with lead time 90:	2016-04-01	5.0
@@ -527,7 +527,7 @@ Test: demand_deviation:20 price:10 service_level:90
 	SS for product with lead time 90:	2016-11-01	7.0
 
 Test: demand_deviation:20 price:10 service_level:95
-	ROQ for product with lead time 120:	2016-01-01	85.0
+	ROQ for product with lead time 120:	1971-01-01	85.0
 	ROQ for product with lead time 120:	2016-02-01	99.0
 	ROQ for product with lead time 120:	2016-03-01	110.0
 	ROQ for product with lead time 120:	2016-04-01	129.0
@@ -538,7 +538,7 @@ Test: demand_deviation:20 price:10 service_level:95
 	ROQ for product with lead time 120:	2016-09-01	177.0
 	ROQ for product with lead time 120:	2016-10-01	160.0
 	ROQ for product with lead time 120:	2016-11-01	131.0
-	ROQ for product with lead time 30:	2016-01-01	69.0
+	ROQ for product with lead time 30:	1971-01-01	69.0
 	ROQ for product with lead time 30:	2016-02-01	71.0
 	ROQ for product with lead time 30:	2016-03-01	69.0
 	ROQ for product with lead time 30:	2016-04-01	121.0
@@ -548,7 +548,7 @@ Test: demand_deviation:20 price:10 service_level:95
 	ROQ for product with lead time 30:	2016-09-01	156.0
 	ROQ for product with lead time 30:	2016-10-01	182.0
 	ROQ for product with lead time 30:	2016-11-01	185.0
-	ROQ for product with lead time 60:	2016-01-01	70.0
+	ROQ for product with lead time 60:	1971-01-01	70.0
 	ROQ for product with lead time 60:	2016-03-01	98.0
 	ROQ for product with lead time 60:	2016-04-01	120.0
 	ROQ for product with lead time 60:	2016-06-01	139.0
@@ -556,7 +556,7 @@ Test: demand_deviation:20 price:10 service_level:95
 	ROQ for product with lead time 60:	2016-08-01	155.0
 	ROQ for product with lead time 60:	2016-09-01	170.0
 	ROQ for product with lead time 60:	2016-10-01	184.0
-	ROQ for product with lead time 90:	2016-01-01	70.0
+	ROQ for product with lead time 90:	1971-01-01	70.0
 	ROQ for product with lead time 90:	2016-02-01	91.0
 	ROQ for product with lead time 90:	2016-03-01	106.0
 	ROQ for product with lead time 90:	2016-04-01	121.0
@@ -567,7 +567,7 @@ Test: demand_deviation:20 price:10 service_level:95
 	ROQ for product with lead time 90:	2016-09-01	175.0
 	ROQ for product with lead time 90:	2016-10-01	151.0
 	ROQ for product with lead time 90:	2016-11-01	107.0
-	SS for product with lead time 120:	2016-01-01	35.0
+	SS for product with lead time 120:	1971-01-01	35.0
 	SS for product with lead time 120:	2016-02-01	32.0
 	SS for product with lead time 120:	2016-03-01	29.0
 	SS for product with lead time 120:	2016-04-01	26.0
@@ -577,19 +577,19 @@ Test: demand_deviation:20 price:10 service_level:95
 	SS for product with lead time 120:	2016-08-01	19.0
 	SS for product with lead time 120:	2016-10-01	20.0
 	SS for product with lead time 120:	2016-11-01	25.0
-	SS for product with lead time 30:	2016-01-01	1.0
+	SS for product with lead time 30:	1971-01-01	1.0
 	SS for product with lead time 30:	2016-04-01	3.0
 	SS for product with lead time 30:	2016-05-01	4.0
 	SS for product with lead time 30:	2016-06-01	3.0
 	SS for product with lead time 30:	2016-07-01	1.0
-	SS for product with lead time 60:	2016-01-01	18.0
+	SS for product with lead time 60:	1971-01-01	18.0
 	SS for product with lead time 60:	2016-03-01	21.0
 	SS for product with lead time 60:	2016-04-01	14.0
 	SS for product with lead time 60:	2016-06-01	11.0
 	SS for product with lead time 60:	2016-07-01	9.0
 	SS for product with lead time 60:	2016-09-01	8.0
 	SS for product with lead time 60:	2016-10-01	6.0
-	SS for product with lead time 90:	2016-01-01	34.0
+	SS for product with lead time 90:	1971-01-01	34.0
 	SS for product with lead time 90:	2016-02-01	26.0
 	SS for product with lead time 90:	2016-03-01	23.0
 	SS for product with lead time 90:	2016-04-01	21.0
@@ -602,7 +602,7 @@ Test: demand_deviation:20 price:10 service_level:95
 	SS for product with lead time 90:	2016-11-01	23.0
 
 Test: demand_deviation:20 price:10 service_level:98
-	ROQ for product with lead time 120:	2016-01-01	85.0
+	ROQ for product with lead time 120:	1971-01-01	85.0
 	ROQ for product with lead time 120:	2016-02-01	99.0
 	ROQ for product with lead time 120:	2016-03-01	110.0
 	ROQ for product with lead time 120:	2016-04-01	129.0
@@ -613,7 +613,7 @@ Test: demand_deviation:20 price:10 service_level:98
 	ROQ for product with lead time 120:	2016-09-01	177.0
 	ROQ for product with lead time 120:	2016-10-01	160.0
 	ROQ for product with lead time 120:	2016-11-01	131.0
-	ROQ for product with lead time 30:	2016-01-01	69.0
+	ROQ for product with lead time 30:	1971-01-01	69.0
 	ROQ for product with lead time 30:	2016-02-01	71.0
 	ROQ for product with lead time 30:	2016-03-01	69.0
 	ROQ for product with lead time 30:	2016-04-01	121.0
@@ -623,7 +623,7 @@ Test: demand_deviation:20 price:10 service_level:98
 	ROQ for product with lead time 30:	2016-09-01	156.0
 	ROQ for product with lead time 30:	2016-10-01	182.0
 	ROQ for product with lead time 30:	2016-11-01	185.0
-	ROQ for product with lead time 60:	2016-01-01	70.0
+	ROQ for product with lead time 60:	1971-01-01	70.0
 	ROQ for product with lead time 60:	2016-03-01	98.0
 	ROQ for product with lead time 60:	2016-04-01	120.0
 	ROQ for product with lead time 60:	2016-06-01	139.0
@@ -631,7 +631,7 @@ Test: demand_deviation:20 price:10 service_level:98
 	ROQ for product with lead time 60:	2016-08-01	155.0
 	ROQ for product with lead time 60:	2016-09-01	170.0
 	ROQ for product with lead time 60:	2016-10-01	184.0
-	ROQ for product with lead time 90:	2016-01-01	70.0
+	ROQ for product with lead time 90:	1971-01-01	70.0
 	ROQ for product with lead time 90:	2016-02-01	91.0
 	ROQ for product with lead time 90:	2016-03-01	106.0
 	ROQ for product with lead time 90:	2016-04-01	121.0
@@ -642,7 +642,7 @@ Test: demand_deviation:20 price:10 service_level:98
 	ROQ for product with lead time 90:	2016-09-01	175.0
 	ROQ for product with lead time 90:	2016-10-01	151.0
 	ROQ for product with lead time 90:	2016-11-01	107.0
-	SS for product with lead time 120:	2016-01-01	54.0
+	SS for product with lead time 120:	1971-01-01	54.0
 	SS for product with lead time 120:	2016-02-01	51.0
 	SS for product with lead time 120:	2016-03-01	49.0
 	SS for product with lead time 120:	2016-04-01	46.0
@@ -653,7 +653,7 @@ Test: demand_deviation:20 price:10 service_level:98
 	SS for product with lead time 120:	2016-09-01	40.0
 	SS for product with lead time 120:	2016-10-01	42.0
 	SS for product with lead time 120:	2016-11-01	45.0
-	SS for product with lead time 30:	2016-01-01	31.0
+	SS for product with lead time 30:	1971-01-01	31.0
 	SS for product with lead time 30:	2016-02-01	32.0
 	SS for product with lead time 30:	2016-03-01	31.0
 	SS for product with lead time 30:	2016-04-01	24.0
@@ -662,14 +662,14 @@ Test: demand_deviation:20 price:10 service_level:98
 	SS for product with lead time 30:	2016-07-01	14.0
 	SS for product with lead time 30:	2016-10-01	13.0
 	SS for product with lead time 30:	2016-11-01	12.0
-	SS for product with lead time 60:	2016-01-01	62.0
+	SS for product with lead time 60:	1971-01-01	62.0
 	SS for product with lead time 60:	2016-03-01	52.0
 	SS for product with lead time 60:	2016-04-01	29.0
 	SS for product with lead time 60:	2016-06-01	27.0
 	SS for product with lead time 60:	2016-07-01	25.0
 	SS for product with lead time 60:	2016-09-01	24.0
 	SS for product with lead time 60:	2016-10-01	23.0
-	SS for product with lead time 90:	2016-01-01	84.0
+	SS for product with lead time 90:	1971-01-01	84.0
 	SS for product with lead time 90:	2016-02-01	43.0
 	SS for product with lead time 90:	2016-03-01	41.0
 	SS for product with lead time 90:	2016-04-01	39.0
@@ -681,7 +681,7 @@ Test: demand_deviation:20 price:10 service_level:98
 	SS for product with lead time 90:	2016-11-01	40.0
 
 Test: demand_deviation:20 price:10 service_level:80 ss_min_qty:40
-	ROQ for product with lead time 120:	2016-01-01	85.0
+	ROQ for product with lead time 120:	1971-01-01	85.0
 	ROQ for product with lead time 120:	2016-02-01	99.0
 	ROQ for product with lead time 120:	2016-03-01	110.0
 	ROQ for product with lead time 120:	2016-04-01	129.0
@@ -692,7 +692,7 @@ Test: demand_deviation:20 price:10 service_level:80 ss_min_qty:40
 	ROQ for product with lead time 120:	2016-09-01	177.0
 	ROQ for product with lead time 120:	2016-10-01	160.0
 	ROQ for product with lead time 120:	2016-11-01	131.0
-	ROQ for product with lead time 30:	2016-01-01	69.0
+	ROQ for product with lead time 30:	1971-01-01	69.0
 	ROQ for product with lead time 30:	2016-02-01	71.0
 	ROQ for product with lead time 30:	2016-03-01	69.0
 	ROQ for product with lead time 30:	2016-04-01	121.0
@@ -702,7 +702,7 @@ Test: demand_deviation:20 price:10 service_level:80 ss_min_qty:40
 	ROQ for product with lead time 30:	2016-09-01	156.0
 	ROQ for product with lead time 30:	2016-10-01	182.0
 	ROQ for product with lead time 30:	2016-11-01	185.0
-	ROQ for product with lead time 60:	2016-01-01	70.0
+	ROQ for product with lead time 60:	1971-01-01	70.0
 	ROQ for product with lead time 60:	2016-03-01	98.0
 	ROQ for product with lead time 60:	2016-04-01	120.0
 	ROQ for product with lead time 60:	2016-06-01	139.0
@@ -710,7 +710,7 @@ Test: demand_deviation:20 price:10 service_level:80 ss_min_qty:40
 	ROQ for product with lead time 60:	2016-08-01	155.0
 	ROQ for product with lead time 60:	2016-09-01	170.0
 	ROQ for product with lead time 60:	2016-10-01	184.0
-	ROQ for product with lead time 90:	2016-01-01	70.0
+	ROQ for product with lead time 90:	1971-01-01	70.0
 	ROQ for product with lead time 90:	2016-02-01	91.0
 	ROQ for product with lead time 90:	2016-03-01	106.0
 	ROQ for product with lead time 90:	2016-04-01	121.0
@@ -721,13 +721,13 @@ Test: demand_deviation:20 price:10 service_level:80 ss_min_qty:40
 	ROQ for product with lead time 90:	2016-09-01	175.0
 	ROQ for product with lead time 90:	2016-10-01	151.0
 	ROQ for product with lead time 90:	2016-11-01	107.0
-	SS for product with lead time 120:	2016-01-01	40.0
-	SS for product with lead time 30:	2016-01-01	40.0
-	SS for product with lead time 60:	2016-01-01	40.0
-	SS for product with lead time 90:	2016-01-01	40.0
+	SS for product with lead time 120:	1971-01-01	40.0
+	SS for product with lead time 30:	1971-01-01	40.0
+	SS for product with lead time 60:	1971-01-01	40.0
+	SS for product with lead time 90:	1971-01-01	40.0
 
 Test: demand_deviation:20 price:10 service_level:90 ss_min_qty:40
-	ROQ for product with lead time 120:	2016-01-01	85.0
+	ROQ for product with lead time 120:	1971-01-01	85.0
 	ROQ for product with lead time 120:	2016-02-01	99.0
 	ROQ for product with lead time 120:	2016-03-01	110.0
 	ROQ for product with lead time 120:	2016-04-01	129.0
@@ -738,7 +738,7 @@ Test: demand_deviation:20 price:10 service_level:90 ss_min_qty:40
 	ROQ for product with lead time 120:	2016-09-01	177.0
 	ROQ for product with lead time 120:	2016-10-01	160.0
 	ROQ for product with lead time 120:	2016-11-01	131.0
-	ROQ for product with lead time 30:	2016-01-01	69.0
+	ROQ for product with lead time 30:	1971-01-01	69.0
 	ROQ for product with lead time 30:	2016-02-01	71.0
 	ROQ for product with lead time 30:	2016-03-01	69.0
 	ROQ for product with lead time 30:	2016-04-01	121.0
@@ -748,7 +748,7 @@ Test: demand_deviation:20 price:10 service_level:90 ss_min_qty:40
 	ROQ for product with lead time 30:	2016-09-01	156.0
 	ROQ for product with lead time 30:	2016-10-01	182.0
 	ROQ for product with lead time 30:	2016-11-01	185.0
-	ROQ for product with lead time 60:	2016-01-01	70.0
+	ROQ for product with lead time 60:	1971-01-01	70.0
 	ROQ for product with lead time 60:	2016-03-01	98.0
 	ROQ for product with lead time 60:	2016-04-01	120.0
 	ROQ for product with lead time 60:	2016-06-01	139.0
@@ -756,7 +756,7 @@ Test: demand_deviation:20 price:10 service_level:90 ss_min_qty:40
 	ROQ for product with lead time 60:	2016-08-01	155.0
 	ROQ for product with lead time 60:	2016-09-01	170.0
 	ROQ for product with lead time 60:	2016-10-01	184.0
-	ROQ for product with lead time 90:	2016-01-01	70.0
+	ROQ for product with lead time 90:	1971-01-01	70.0
 	ROQ for product with lead time 90:	2016-02-01	91.0
 	ROQ for product with lead time 90:	2016-03-01	106.0
 	ROQ for product with lead time 90:	2016-04-01	121.0
@@ -767,13 +767,13 @@ Test: demand_deviation:20 price:10 service_level:90 ss_min_qty:40
 	ROQ for product with lead time 90:	2016-09-01	175.0
 	ROQ for product with lead time 90:	2016-10-01	151.0
 	ROQ for product with lead time 90:	2016-11-01	107.0
-	SS for product with lead time 120:	2016-01-01	40.0
-	SS for product with lead time 30:	2016-01-01	40.0
-	SS for product with lead time 60:	2016-01-01	40.0
-	SS for product with lead time 90:	2016-01-01	40.0
+	SS for product with lead time 120:	1971-01-01	40.0
+	SS for product with lead time 30:	1971-01-01	40.0
+	SS for product with lead time 60:	1971-01-01	40.0
+	SS for product with lead time 90:	1971-01-01	40.0
 
 Test: demand_deviation:20 price:10 service_level:95 ss_min_qty:40
-	ROQ for product with lead time 120:	2016-01-01	85.0
+	ROQ for product with lead time 120:	1971-01-01	85.0
 	ROQ for product with lead time 120:	2016-02-01	99.0
 	ROQ for product with lead time 120:	2016-03-01	110.0
 	ROQ for product with lead time 120:	2016-04-01	129.0
@@ -784,7 +784,7 @@ Test: demand_deviation:20 price:10 service_level:95 ss_min_qty:40
 	ROQ for product with lead time 120:	2016-09-01	177.0
 	ROQ for product with lead time 120:	2016-10-01	160.0
 	ROQ for product with lead time 120:	2016-11-01	131.0
-	ROQ for product with lead time 30:	2016-01-01	69.0
+	ROQ for product with lead time 30:	1971-01-01	69.0
 	ROQ for product with lead time 30:	2016-02-01	71.0
 	ROQ for product with lead time 30:	2016-03-01	69.0
 	ROQ for product with lead time 30:	2016-04-01	121.0
@@ -794,7 +794,7 @@ Test: demand_deviation:20 price:10 service_level:95 ss_min_qty:40
 	ROQ for product with lead time 30:	2016-09-01	156.0
 	ROQ for product with lead time 30:	2016-10-01	182.0
 	ROQ for product with lead time 30:	2016-11-01	185.0
-	ROQ for product with lead time 60:	2016-01-01	70.0
+	ROQ for product with lead time 60:	1971-01-01	70.0
 	ROQ for product with lead time 60:	2016-03-01	98.0
 	ROQ for product with lead time 60:	2016-04-01	120.0
 	ROQ for product with lead time 60:	2016-06-01	139.0
@@ -802,7 +802,7 @@ Test: demand_deviation:20 price:10 service_level:95 ss_min_qty:40
 	ROQ for product with lead time 60:	2016-08-01	155.0
 	ROQ for product with lead time 60:	2016-09-01	170.0
 	ROQ for product with lead time 60:	2016-10-01	184.0
-	ROQ for product with lead time 90:	2016-01-01	70.0
+	ROQ for product with lead time 90:	1971-01-01	70.0
 	ROQ for product with lead time 90:	2016-02-01	91.0
 	ROQ for product with lead time 90:	2016-03-01	106.0
 	ROQ for product with lead time 90:	2016-04-01	121.0
@@ -813,13 +813,13 @@ Test: demand_deviation:20 price:10 service_level:95 ss_min_qty:40
 	ROQ for product with lead time 90:	2016-09-01	175.0
 	ROQ for product with lead time 90:	2016-10-01	151.0
 	ROQ for product with lead time 90:	2016-11-01	107.0
-	SS for product with lead time 120:	2016-01-01	40.0
-	SS for product with lead time 30:	2016-01-01	40.0
-	SS for product with lead time 60:	2016-01-01	40.0
-	SS for product with lead time 90:	2016-01-01	40.0
+	SS for product with lead time 120:	1971-01-01	40.0
+	SS for product with lead time 30:	1971-01-01	40.0
+	SS for product with lead time 60:	1971-01-01	40.0
+	SS for product with lead time 90:	1971-01-01	40.0
 
 Test: demand_deviation:20 price:10 service_level:98 ss_min_qty:40
-	ROQ for product with lead time 120:	2016-01-01	85.0
+	ROQ for product with lead time 120:	1971-01-01	85.0
 	ROQ for product with lead time 120:	2016-02-01	99.0
 	ROQ for product with lead time 120:	2016-03-01	110.0
 	ROQ for product with lead time 120:	2016-04-01	129.0
@@ -830,7 +830,7 @@ Test: demand_deviation:20 price:10 service_level:98 ss_min_qty:40
 	ROQ for product with lead time 120:	2016-09-01	177.0
 	ROQ for product with lead time 120:	2016-10-01	160.0
 	ROQ for product with lead time 120:	2016-11-01	131.0
-	ROQ for product with lead time 30:	2016-01-01	69.0
+	ROQ for product with lead time 30:	1971-01-01	69.0
 	ROQ for product with lead time 30:	2016-02-01	71.0
 	ROQ for product with lead time 30:	2016-03-01	69.0
 	ROQ for product with lead time 30:	2016-04-01	121.0
@@ -840,7 +840,7 @@ Test: demand_deviation:20 price:10 service_level:98 ss_min_qty:40
 	ROQ for product with lead time 30:	2016-09-01	156.0
 	ROQ for product with lead time 30:	2016-10-01	182.0
 	ROQ for product with lead time 30:	2016-11-01	185.0
-	ROQ for product with lead time 60:	2016-01-01	70.0
+	ROQ for product with lead time 60:	1971-01-01	70.0
 	ROQ for product with lead time 60:	2016-03-01	98.0
 	ROQ for product with lead time 60:	2016-04-01	120.0
 	ROQ for product with lead time 60:	2016-06-01	139.0
@@ -848,7 +848,7 @@ Test: demand_deviation:20 price:10 service_level:98 ss_min_qty:40
 	ROQ for product with lead time 60:	2016-08-01	155.0
 	ROQ for product with lead time 60:	2016-09-01	170.0
 	ROQ for product with lead time 60:	2016-10-01	184.0
-	ROQ for product with lead time 90:	2016-01-01	70.0
+	ROQ for product with lead time 90:	1971-01-01	70.0
 	ROQ for product with lead time 90:	2016-02-01	91.0
 	ROQ for product with lead time 90:	2016-03-01	106.0
 	ROQ for product with lead time 90:	2016-04-01	121.0
@@ -859,7 +859,7 @@ Test: demand_deviation:20 price:10 service_level:98 ss_min_qty:40
 	ROQ for product with lead time 90:	2016-09-01	175.0
 	ROQ for product with lead time 90:	2016-10-01	151.0
 	ROQ for product with lead time 90:	2016-11-01	107.0
-	SS for product with lead time 120:	2016-01-01	54.0
+	SS for product with lead time 120:	1971-01-01	54.0
 	SS for product with lead time 120:	2016-02-01	51.0
 	SS for product with lead time 120:	2016-03-01	49.0
 	SS for product with lead time 120:	2016-04-01	46.0
@@ -870,17 +870,17 @@ Test: demand_deviation:20 price:10 service_level:98 ss_min_qty:40
 	SS for product with lead time 120:	2016-09-01	40.0
 	SS for product with lead time 120:	2016-10-01	42.0
 	SS for product with lead time 120:	2016-11-01	45.0
-	SS for product with lead time 30:	2016-01-01	40.0
-	SS for product with lead time 60:	2016-01-01	62.0
+	SS for product with lead time 30:	1971-01-01	40.0
+	SS for product with lead time 60:	1971-01-01	62.0
 	SS for product with lead time 60:	2016-03-01	52.0
 	SS for product with lead time 60:	2016-04-01	40.0
-	SS for product with lead time 90:	2016-01-01	84.0
+	SS for product with lead time 90:	1971-01-01	84.0
 	SS for product with lead time 90:	2016-02-01	43.0
 	SS for product with lead time 90:	2016-03-01	41.0
 	SS for product with lead time 90:	2016-04-01	40.0
 
 Test: demand_deviation:20 price:10 service_level:80 ss_max_qty:60
-	ROQ for product with lead time 120:	2016-01-01	85.0
+	ROQ for product with lead time 120:	1971-01-01	85.0
 	ROQ for product with lead time 120:	2016-02-01	99.0
 	ROQ for product with lead time 120:	2016-03-01	110.0
 	ROQ for product with lead time 120:	2016-04-01	129.0
@@ -891,7 +891,7 @@ Test: demand_deviation:20 price:10 service_level:80 ss_max_qty:60
 	ROQ for product with lead time 120:	2016-09-01	177.0
 	ROQ for product with lead time 120:	2016-10-01	160.0
 	ROQ for product with lead time 120:	2016-11-01	131.0
-	ROQ for product with lead time 30:	2016-01-01	69.0
+	ROQ for product with lead time 30:	1971-01-01	69.0
 	ROQ for product with lead time 30:	2016-02-01	71.0
 	ROQ for product with lead time 30:	2016-03-01	69.0
 	ROQ for product with lead time 30:	2016-04-01	121.0
@@ -901,7 +901,7 @@ Test: demand_deviation:20 price:10 service_level:80 ss_max_qty:60
 	ROQ for product with lead time 30:	2016-09-01	156.0
 	ROQ for product with lead time 30:	2016-10-01	182.0
 	ROQ for product with lead time 30:	2016-11-01	185.0
-	ROQ for product with lead time 60:	2016-01-01	70.0
+	ROQ for product with lead time 60:	1971-01-01	70.0
 	ROQ for product with lead time 60:	2016-03-01	98.0
 	ROQ for product with lead time 60:	2016-04-01	120.0
 	ROQ for product with lead time 60:	2016-06-01	139.0
@@ -909,7 +909,7 @@ Test: demand_deviation:20 price:10 service_level:80 ss_max_qty:60
 	ROQ for product with lead time 60:	2016-08-01	155.0
 	ROQ for product with lead time 60:	2016-09-01	170.0
 	ROQ for product with lead time 60:	2016-10-01	184.0
-	ROQ for product with lead time 90:	2016-01-01	70.0
+	ROQ for product with lead time 90:	1971-01-01	70.0
 	ROQ for product with lead time 90:	2016-02-01	91.0
 	ROQ for product with lead time 90:	2016-03-01	106.0
 	ROQ for product with lead time 90:	2016-04-01	121.0
@@ -920,13 +920,13 @@ Test: demand_deviation:20 price:10 service_level:80 ss_max_qty:60
 	ROQ for product with lead time 90:	2016-09-01	175.0
 	ROQ for product with lead time 90:	2016-10-01	151.0
 	ROQ for product with lead time 90:	2016-11-01	107.0
-	SS for product with lead time 120:	2016-01-01	1.0
-	SS for product with lead time 30:	2016-01-01	1.0
-	SS for product with lead time 60:	2016-01-01	1.0
-	SS for product with lead time 90:	2016-01-01	1.0
+	SS for product with lead time 120:	1971-01-01	1.0
+	SS for product with lead time 30:	1971-01-01	1.0
+	SS for product with lead time 60:	1971-01-01	1.0
+	SS for product with lead time 90:	1971-01-01	1.0
 
 Test: demand_deviation:20 price:10 service_level:90 ss_max_qty:60
-	ROQ for product with lead time 120:	2016-01-01	85.0
+	ROQ for product with lead time 120:	1971-01-01	85.0
 	ROQ for product with lead time 120:	2016-02-01	99.0
 	ROQ for product with lead time 120:	2016-03-01	110.0
 	ROQ for product with lead time 120:	2016-04-01	129.0
@@ -937,7 +937,7 @@ Test: demand_deviation:20 price:10 service_level:90 ss_max_qty:60
 	ROQ for product with lead time 120:	2016-09-01	177.0
 	ROQ for product with lead time 120:	2016-10-01	160.0
 	ROQ for product with lead time 120:	2016-11-01	131.0
-	ROQ for product with lead time 30:	2016-01-01	69.0
+	ROQ for product with lead time 30:	1971-01-01	69.0
 	ROQ for product with lead time 30:	2016-02-01	71.0
 	ROQ for product with lead time 30:	2016-03-01	69.0
 	ROQ for product with lead time 30:	2016-04-01	121.0
@@ -947,7 +947,7 @@ Test: demand_deviation:20 price:10 service_level:90 ss_max_qty:60
 	ROQ for product with lead time 30:	2016-09-01	156.0
 	ROQ for product with lead time 30:	2016-10-01	182.0
 	ROQ for product with lead time 30:	2016-11-01	185.0
-	ROQ for product with lead time 60:	2016-01-01	70.0
+	ROQ for product with lead time 60:	1971-01-01	70.0
 	ROQ for product with lead time 60:	2016-03-01	98.0
 	ROQ for product with lead time 60:	2016-04-01	120.0
 	ROQ for product with lead time 60:	2016-06-01	139.0
@@ -955,7 +955,7 @@ Test: demand_deviation:20 price:10 service_level:90 ss_max_qty:60
 	ROQ for product with lead time 60:	2016-08-01	155.0
 	ROQ for product with lead time 60:	2016-09-01	170.0
 	ROQ for product with lead time 60:	2016-10-01	184.0
-	ROQ for product with lead time 90:	2016-01-01	70.0
+	ROQ for product with lead time 90:	1971-01-01	70.0
 	ROQ for product with lead time 90:	2016-02-01	91.0
 	ROQ for product with lead time 90:	2016-03-01	106.0
 	ROQ for product with lead time 90:	2016-04-01	121.0
@@ -966,7 +966,7 @@ Test: demand_deviation:20 price:10 service_level:90 ss_max_qty:60
 	ROQ for product with lead time 90:	2016-09-01	175.0
 	ROQ for product with lead time 90:	2016-10-01	151.0
 	ROQ for product with lead time 90:	2016-11-01	107.0
-	SS for product with lead time 120:	2016-01-01	18.0
+	SS for product with lead time 120:	1971-01-01	18.0
 	SS for product with lead time 120:	2016-02-01	15.0
 	SS for product with lead time 120:	2016-03-01	12.0
 	SS for product with lead time 120:	2016-04-01	8.0
@@ -974,9 +974,9 @@ Test: demand_deviation:20 price:10 service_level:90 ss_max_qty:60
 	SS for product with lead time 120:	2016-06-01	3.0
 	SS for product with lead time 120:	2016-07-01	1.0
 	SS for product with lead time 120:	2016-11-01	6.0
-	SS for product with lead time 30:	2016-01-01	1.0
-	SS for product with lead time 60:	2016-01-01	1.0
-	SS for product with lead time 90:	2016-01-01	3.0
+	SS for product with lead time 30:	1971-01-01	1.0
+	SS for product with lead time 60:	1971-01-01	1.0
+	SS for product with lead time 90:	1971-01-01	3.0
 	SS for product with lead time 90:	2016-02-01	11.0
 	SS for product with lead time 90:	2016-03-01	8.0
 	SS for product with lead time 90:	2016-04-01	5.0
@@ -985,7 +985,7 @@ Test: demand_deviation:20 price:10 service_level:90 ss_max_qty:60
 	SS for product with lead time 90:	2016-11-01	7.0
 
 Test: demand_deviation:20 price:10 service_level:95 ss_max_qty:60
-	ROQ for product with lead time 120:	2016-01-01	85.0
+	ROQ for product with lead time 120:	1971-01-01	85.0
 	ROQ for product with lead time 120:	2016-02-01	99.0
 	ROQ for product with lead time 120:	2016-03-01	110.0
 	ROQ for product with lead time 120:	2016-04-01	129.0
@@ -996,7 +996,7 @@ Test: demand_deviation:20 price:10 service_level:95 ss_max_qty:60
 	ROQ for product with lead time 120:	2016-09-01	177.0
 	ROQ for product with lead time 120:	2016-10-01	160.0
 	ROQ for product with lead time 120:	2016-11-01	131.0
-	ROQ for product with lead time 30:	2016-01-01	69.0
+	ROQ for product with lead time 30:	1971-01-01	69.0
 	ROQ for product with lead time 30:	2016-02-01	71.0
 	ROQ for product with lead time 30:	2016-03-01	69.0
 	ROQ for product with lead time 30:	2016-04-01	121.0
@@ -1006,7 +1006,7 @@ Test: demand_deviation:20 price:10 service_level:95 ss_max_qty:60
 	ROQ for product with lead time 30:	2016-09-01	156.0
 	ROQ for product with lead time 30:	2016-10-01	182.0
 	ROQ for product with lead time 30:	2016-11-01	185.0
-	ROQ for product with lead time 60:	2016-01-01	70.0
+	ROQ for product with lead time 60:	1971-01-01	70.0
 	ROQ for product with lead time 60:	2016-03-01	98.0
 	ROQ for product with lead time 60:	2016-04-01	120.0
 	ROQ for product with lead time 60:	2016-06-01	139.0
@@ -1014,7 +1014,7 @@ Test: demand_deviation:20 price:10 service_level:95 ss_max_qty:60
 	ROQ for product with lead time 60:	2016-08-01	155.0
 	ROQ for product with lead time 60:	2016-09-01	170.0
 	ROQ for product with lead time 60:	2016-10-01	184.0
-	ROQ for product with lead time 90:	2016-01-01	70.0
+	ROQ for product with lead time 90:	1971-01-01	70.0
 	ROQ for product with lead time 90:	2016-02-01	91.0
 	ROQ for product with lead time 90:	2016-03-01	106.0
 	ROQ for product with lead time 90:	2016-04-01	121.0
@@ -1025,7 +1025,7 @@ Test: demand_deviation:20 price:10 service_level:95 ss_max_qty:60
 	ROQ for product with lead time 90:	2016-09-01	175.0
 	ROQ for product with lead time 90:	2016-10-01	151.0
 	ROQ for product with lead time 90:	2016-11-01	107.0
-	SS for product with lead time 120:	2016-01-01	35.0
+	SS for product with lead time 120:	1971-01-01	35.0
 	SS for product with lead time 120:	2016-02-01	32.0
 	SS for product with lead time 120:	2016-03-01	29.0
 	SS for product with lead time 120:	2016-04-01	26.0
@@ -1035,19 +1035,19 @@ Test: demand_deviation:20 price:10 service_level:95 ss_max_qty:60
 	SS for product with lead time 120:	2016-08-01	19.0
 	SS for product with lead time 120:	2016-10-01	20.0
 	SS for product with lead time 120:	2016-11-01	25.0
-	SS for product with lead time 30:	2016-01-01	1.0
+	SS for product with lead time 30:	1971-01-01	1.0
 	SS for product with lead time 30:	2016-04-01	3.0
 	SS for product with lead time 30:	2016-05-01	4.0
 	SS for product with lead time 30:	2016-06-01	3.0
 	SS for product with lead time 30:	2016-07-01	1.0
-	SS for product with lead time 60:	2016-01-01	18.0
+	SS for product with lead time 60:	1971-01-01	18.0
 	SS for product with lead time 60:	2016-03-01	21.0
 	SS for product with lead time 60:	2016-04-01	14.0
 	SS for product with lead time 60:	2016-06-01	11.0
 	SS for product with lead time 60:	2016-07-01	9.0
 	SS for product with lead time 60:	2016-09-01	8.0
 	SS for product with lead time 60:	2016-10-01	6.0
-	SS for product with lead time 90:	2016-01-01	34.0
+	SS for product with lead time 90:	1971-01-01	34.0
 	SS for product with lead time 90:	2016-02-01	26.0
 	SS for product with lead time 90:	2016-03-01	23.0
 	SS for product with lead time 90:	2016-04-01	21.0
@@ -1060,7 +1060,7 @@ Test: demand_deviation:20 price:10 service_level:95 ss_max_qty:60
 	SS for product with lead time 90:	2016-11-01	23.0
 
 Test: demand_deviation:20 price:10 service_level:98 ss_max_qty:60
-	ROQ for product with lead time 120:	2016-01-01	85.0
+	ROQ for product with lead time 120:	1971-01-01	85.0
 	ROQ for product with lead time 120:	2016-02-01	99.0
 	ROQ for product with lead time 120:	2016-03-01	110.0
 	ROQ for product with lead time 120:	2016-04-01	129.0
@@ -1071,7 +1071,7 @@ Test: demand_deviation:20 price:10 service_level:98 ss_max_qty:60
 	ROQ for product with lead time 120:	2016-09-01	177.0
 	ROQ for product with lead time 120:	2016-10-01	160.0
 	ROQ for product with lead time 120:	2016-11-01	131.0
-	ROQ for product with lead time 30:	2016-01-01	69.0
+	ROQ for product with lead time 30:	1971-01-01	69.0
 	ROQ for product with lead time 30:	2016-02-01	71.0
 	ROQ for product with lead time 30:	2016-03-01	69.0
 	ROQ for product with lead time 30:	2016-04-01	121.0
@@ -1081,7 +1081,7 @@ Test: demand_deviation:20 price:10 service_level:98 ss_max_qty:60
 	ROQ for product with lead time 30:	2016-09-01	156.0
 	ROQ for product with lead time 30:	2016-10-01	182.0
 	ROQ for product with lead time 30:	2016-11-01	185.0
-	ROQ for product with lead time 60:	2016-01-01	70.0
+	ROQ for product with lead time 60:	1971-01-01	70.0
 	ROQ for product with lead time 60:	2016-03-01	98.0
 	ROQ for product with lead time 60:	2016-04-01	120.0
 	ROQ for product with lead time 60:	2016-06-01	139.0
@@ -1089,7 +1089,7 @@ Test: demand_deviation:20 price:10 service_level:98 ss_max_qty:60
 	ROQ for product with lead time 60:	2016-08-01	155.0
 	ROQ for product with lead time 60:	2016-09-01	170.0
 	ROQ for product with lead time 60:	2016-10-01	184.0
-	ROQ for product with lead time 90:	2016-01-01	70.0
+	ROQ for product with lead time 90:	1971-01-01	70.0
 	ROQ for product with lead time 90:	2016-02-01	91.0
 	ROQ for product with lead time 90:	2016-03-01	106.0
 	ROQ for product with lead time 90:	2016-04-01	121.0
@@ -1100,7 +1100,7 @@ Test: demand_deviation:20 price:10 service_level:98 ss_max_qty:60
 	ROQ for product with lead time 90:	2016-09-01	175.0
 	ROQ for product with lead time 90:	2016-10-01	151.0
 	ROQ for product with lead time 90:	2016-11-01	107.0
-	SS for product with lead time 120:	2016-01-01	54.0
+	SS for product with lead time 120:	1971-01-01	54.0
 	SS for product with lead time 120:	2016-02-01	51.0
 	SS for product with lead time 120:	2016-03-01	49.0
 	SS for product with lead time 120:	2016-04-01	46.0
@@ -1111,7 +1111,7 @@ Test: demand_deviation:20 price:10 service_level:98 ss_max_qty:60
 	SS for product with lead time 120:	2016-09-01	40.0
 	SS for product with lead time 120:	2016-10-01	42.0
 	SS for product with lead time 120:	2016-11-01	45.0
-	SS for product with lead time 30:	2016-01-01	31.0
+	SS for product with lead time 30:	1971-01-01	31.0
 	SS for product with lead time 30:	2016-02-01	32.0
 	SS for product with lead time 30:	2016-03-01	31.0
 	SS for product with lead time 30:	2016-04-01	24.0
@@ -1120,14 +1120,14 @@ Test: demand_deviation:20 price:10 service_level:98 ss_max_qty:60
 	SS for product with lead time 30:	2016-07-01	14.0
 	SS for product with lead time 30:	2016-10-01	13.0
 	SS for product with lead time 30:	2016-11-01	12.0
-	SS for product with lead time 60:	2016-01-01	60.0
+	SS for product with lead time 60:	1971-01-01	60.0
 	SS for product with lead time 60:	2016-03-01	52.0
 	SS for product with lead time 60:	2016-04-01	29.0
 	SS for product with lead time 60:	2016-06-01	27.0
 	SS for product with lead time 60:	2016-07-01	25.0
 	SS for product with lead time 60:	2016-09-01	24.0
 	SS for product with lead time 60:	2016-10-01	23.0
-	SS for product with lead time 90:	2016-01-01	60.0
+	SS for product with lead time 90:	1971-01-01	60.0
 	SS for product with lead time 90:	2016-02-01	43.0
 	SS for product with lead time 90:	2016-03-01	41.0
 	SS for product with lead time 90:	2016-04-01	39.0
@@ -1139,7 +1139,7 @@ Test: demand_deviation:20 price:10 service_level:98 ss_max_qty:60
 	SS for product with lead time 90:	2016-11-01	40.0
 
 Test: demand_deviation:20 price:10 roq_min_qty:120 service_level:80
-	ROQ for product with lead time 120:	2016-01-01	120.0
+	ROQ for product with lead time 120:	1971-01-01	120.0
 	ROQ for product with lead time 120:	2016-04-01	129.0
 	ROQ for product with lead time 120:	2016-05-01	138.0
 	ROQ for product with lead time 120:	2016-06-01	147.0
@@ -1148,7 +1148,7 @@ Test: demand_deviation:20 price:10 roq_min_qty:120 service_level:80
 	ROQ for product with lead time 120:	2016-09-01	177.0
 	ROQ for product with lead time 120:	2016-10-01	160.0
 	ROQ for product with lead time 120:	2016-11-01	131.0
-	ROQ for product with lead time 30:	2016-01-01	120.0
+	ROQ for product with lead time 30:	1971-01-01	120.0
 	ROQ for product with lead time 30:	2016-04-01	121.0
 	ROQ for product with lead time 30:	2016-05-01	120.0
 	ROQ for product with lead time 30:	2016-06-01	121.0
@@ -1156,13 +1156,13 @@ Test: demand_deviation:20 price:10 roq_min_qty:120 service_level:80
 	ROQ for product with lead time 30:	2016-09-01	156.0
 	ROQ for product with lead time 30:	2016-10-01	182.0
 	ROQ for product with lead time 30:	2016-11-01	185.0
-	ROQ for product with lead time 60:	2016-01-01	120.0
+	ROQ for product with lead time 60:	1971-01-01	120.0
 	ROQ for product with lead time 60:	2016-06-01	139.0
 	ROQ for product with lead time 60:	2016-07-01	154.0
 	ROQ for product with lead time 60:	2016-08-01	155.0
 	ROQ for product with lead time 60:	2016-09-01	170.0
 	ROQ for product with lead time 60:	2016-10-01	184.0
-	ROQ for product with lead time 90:	2016-01-01	120.0
+	ROQ for product with lead time 90:	1971-01-01	120.0
 	ROQ for product with lead time 90:	2016-04-01	121.0
 	ROQ for product with lead time 90:	2016-05-01	132.0
 	ROQ for product with lead time 90:	2016-06-01	144.0
@@ -1171,13 +1171,13 @@ Test: demand_deviation:20 price:10 roq_min_qty:120 service_level:80
 	ROQ for product with lead time 90:	2016-09-01	175.0
 	ROQ for product with lead time 90:	2016-10-01	151.0
 	ROQ for product with lead time 90:	2016-11-01	120.0
-	SS for product with lead time 120:	2016-01-01	1.0
-	SS for product with lead time 30:	2016-01-01	1.0
-	SS for product with lead time 60:	2016-01-01	1.0
-	SS for product with lead time 90:	2016-01-01	1.0
+	SS for product with lead time 120:	1971-01-01	1.0
+	SS for product with lead time 30:	1971-01-01	1.0
+	SS for product with lead time 60:	1971-01-01	1.0
+	SS for product with lead time 90:	1971-01-01	1.0
 
 Test: demand_deviation:20 price:10 roq_min_qty:120 service_level:90
-	ROQ for product with lead time 120:	2016-01-01	120.0
+	ROQ for product with lead time 120:	1971-01-01	120.0
 	ROQ for product with lead time 120:	2016-04-01	129.0
 	ROQ for product with lead time 120:	2016-05-01	138.0
 	ROQ for product with lead time 120:	2016-06-01	147.0
@@ -1186,7 +1186,7 @@ Test: demand_deviation:20 price:10 roq_min_qty:120 service_level:90
 	ROQ for product with lead time 120:	2016-09-01	177.0
 	ROQ for product with lead time 120:	2016-10-01	160.0
 	ROQ for product with lead time 120:	2016-11-01	131.0
-	ROQ for product with lead time 30:	2016-01-01	120.0
+	ROQ for product with lead time 30:	1971-01-01	120.0
 	ROQ for product with lead time 30:	2016-04-01	121.0
 	ROQ for product with lead time 30:	2016-05-01	120.0
 	ROQ for product with lead time 30:	2016-06-01	121.0
@@ -1194,13 +1194,13 @@ Test: demand_deviation:20 price:10 roq_min_qty:120 service_level:90
 	ROQ for product with lead time 30:	2016-09-01	156.0
 	ROQ for product with lead time 30:	2016-10-01	182.0
 	ROQ for product with lead time 30:	2016-11-01	185.0
-	ROQ for product with lead time 60:	2016-01-01	120.0
+	ROQ for product with lead time 60:	1971-01-01	120.0
 	ROQ for product with lead time 60:	2016-06-01	139.0
 	ROQ for product with lead time 60:	2016-07-01	154.0
 	ROQ for product with lead time 60:	2016-08-01	155.0
 	ROQ for product with lead time 60:	2016-09-01	170.0
 	ROQ for product with lead time 60:	2016-10-01	184.0
-	ROQ for product with lead time 90:	2016-01-01	120.0
+	ROQ for product with lead time 90:	1971-01-01	120.0
 	ROQ for product with lead time 90:	2016-04-01	121.0
 	ROQ for product with lead time 90:	2016-05-01	132.0
 	ROQ for product with lead time 90:	2016-06-01	144.0
@@ -1209,16 +1209,16 @@ Test: demand_deviation:20 price:10 roq_min_qty:120 service_level:90
 	ROQ for product with lead time 90:	2016-09-01	175.0
 	ROQ for product with lead time 90:	2016-10-01	151.0
 	ROQ for product with lead time 90:	2016-11-01	120.0
-	SS for product with lead time 120:	2016-01-01	10.0
+	SS for product with lead time 120:	1971-01-01	10.0
 	SS for product with lead time 120:	2016-03-01	9.0
 	SS for product with lead time 120:	2016-04-01	8.0
 	SS for product with lead time 120:	2016-05-01	5.0
 	SS for product with lead time 120:	2016-06-01	3.0
 	SS for product with lead time 120:	2016-07-01	1.0
 	SS for product with lead time 120:	2016-11-01	6.0
-	SS for product with lead time 30:	2016-01-01	1.0
-	SS for product with lead time 60:	2016-01-01	1.0
-	SS for product with lead time 90:	2016-01-01	1.0
+	SS for product with lead time 30:	1971-01-01	1.0
+	SS for product with lead time 60:	1971-01-01	1.0
+	SS for product with lead time 90:	1971-01-01	1.0
 	SS for product with lead time 90:	2016-02-01	4.0
 	SS for product with lead time 90:	2016-04-01	5.0
 	SS for product with lead time 90:	2016-05-01	2.0
@@ -1226,7 +1226,7 @@ Test: demand_deviation:20 price:10 roq_min_qty:120 service_level:90
 	SS for product with lead time 90:	2016-11-01	4.0
 
 Test: demand_deviation:20 price:10 roq_min_qty:120 service_level:95
-	ROQ for product with lead time 120:	2016-01-01	120.0
+	ROQ for product with lead time 120:	1971-01-01	120.0
 	ROQ for product with lead time 120:	2016-04-01	129.0
 	ROQ for product with lead time 120:	2016-05-01	138.0
 	ROQ for product with lead time 120:	2016-06-01	147.0
@@ -1235,7 +1235,7 @@ Test: demand_deviation:20 price:10 roq_min_qty:120 service_level:95
 	ROQ for product with lead time 120:	2016-09-01	177.0
 	ROQ for product with lead time 120:	2016-10-01	160.0
 	ROQ for product with lead time 120:	2016-11-01	131.0
-	ROQ for product with lead time 30:	2016-01-01	120.0
+	ROQ for product with lead time 30:	1971-01-01	120.0
 	ROQ for product with lead time 30:	2016-04-01	121.0
 	ROQ for product with lead time 30:	2016-05-01	120.0
 	ROQ for product with lead time 30:	2016-06-01	121.0
@@ -1243,13 +1243,13 @@ Test: demand_deviation:20 price:10 roq_min_qty:120 service_level:95
 	ROQ for product with lead time 30:	2016-09-01	156.0
 	ROQ for product with lead time 30:	2016-10-01	182.0
 	ROQ for product with lead time 30:	2016-11-01	185.0
-	ROQ for product with lead time 60:	2016-01-01	120.0
+	ROQ for product with lead time 60:	1971-01-01	120.0
 	ROQ for product with lead time 60:	2016-06-01	139.0
 	ROQ for product with lead time 60:	2016-07-01	154.0
 	ROQ for product with lead time 60:	2016-08-01	155.0
 	ROQ for product with lead time 60:	2016-09-01	170.0
 	ROQ for product with lead time 60:	2016-10-01	184.0
-	ROQ for product with lead time 90:	2016-01-01	120.0
+	ROQ for product with lead time 90:	1971-01-01	120.0
 	ROQ for product with lead time 90:	2016-04-01	121.0
 	ROQ for product with lead time 90:	2016-05-01	132.0
 	ROQ for product with lead time 90:	2016-06-01	144.0
@@ -1258,7 +1258,7 @@ Test: demand_deviation:20 price:10 roq_min_qty:120 service_level:95
 	ROQ for product with lead time 90:	2016-09-01	175.0
 	ROQ for product with lead time 90:	2016-10-01	151.0
 	ROQ for product with lead time 90:	2016-11-01	120.0
-	SS for product with lead time 120:	2016-01-01	28.0
+	SS for product with lead time 120:	1971-01-01	28.0
 	SS for product with lead time 120:	2016-03-01	27.0
 	SS for product with lead time 120:	2016-04-01	26.0
 	SS for product with lead time 120:	2016-05-01	24.0
@@ -1267,19 +1267,19 @@ Test: demand_deviation:20 price:10 roq_min_qty:120 service_level:95
 	SS for product with lead time 120:	2016-08-01	19.0
 	SS for product with lead time 120:	2016-10-01	20.0
 	SS for product with lead time 120:	2016-11-01	25.0
-	SS for product with lead time 30:	2016-01-01	1.0
+	SS for product with lead time 30:	1971-01-01	1.0
 	SS for product with lead time 30:	2016-04-01	3.0
 	SS for product with lead time 30:	2016-05-01	4.0
 	SS for product with lead time 30:	2016-06-01	3.0
 	SS for product with lead time 30:	2016-07-01	1.0
-	SS for product with lead time 60:	2016-01-01	3.0
+	SS for product with lead time 60:	1971-01-01	3.0
 	SS for product with lead time 60:	2016-03-01	15.0
 	SS for product with lead time 60:	2016-04-01	14.0
 	SS for product with lead time 60:	2016-06-01	11.0
 	SS for product with lead time 60:	2016-07-01	9.0
 	SS for product with lead time 60:	2016-09-01	8.0
 	SS for product with lead time 60:	2016-10-01	6.0
-	SS for product with lead time 90:	2016-01-01	18.0
+	SS for product with lead time 90:	1971-01-01	18.0
 	SS for product with lead time 90:	2016-02-01	21.0
 	SS for product with lead time 90:	2016-05-01	19.0
 	SS for product with lead time 90:	2016-06-01	17.0
@@ -1290,7 +1290,7 @@ Test: demand_deviation:20 price:10 roq_min_qty:120 service_level:95
 	SS for product with lead time 90:	2016-11-01	21.0
 
 Test: demand_deviation:20 price:10 roq_min_qty:120 service_level:98
-	ROQ for product with lead time 120:	2016-01-01	120.0
+	ROQ for product with lead time 120:	1971-01-01	120.0
 	ROQ for product with lead time 120:	2016-04-01	129.0
 	ROQ for product with lead time 120:	2016-05-01	138.0
 	ROQ for product with lead time 120:	2016-06-01	147.0
@@ -1299,7 +1299,7 @@ Test: demand_deviation:20 price:10 roq_min_qty:120 service_level:98
 	ROQ for product with lead time 120:	2016-09-01	177.0
 	ROQ for product with lead time 120:	2016-10-01	160.0
 	ROQ for product with lead time 120:	2016-11-01	131.0
-	ROQ for product with lead time 30:	2016-01-01	120.0
+	ROQ for product with lead time 30:	1971-01-01	120.0
 	ROQ for product with lead time 30:	2016-04-01	121.0
 	ROQ for product with lead time 30:	2016-05-01	120.0
 	ROQ for product with lead time 30:	2016-06-01	121.0
@@ -1307,13 +1307,13 @@ Test: demand_deviation:20 price:10 roq_min_qty:120 service_level:98
 	ROQ for product with lead time 30:	2016-09-01	156.0
 	ROQ for product with lead time 30:	2016-10-01	182.0
 	ROQ for product with lead time 30:	2016-11-01	185.0
-	ROQ for product with lead time 60:	2016-01-01	120.0
+	ROQ for product with lead time 60:	1971-01-01	120.0
 	ROQ for product with lead time 60:	2016-06-01	139.0
 	ROQ for product with lead time 60:	2016-07-01	154.0
 	ROQ for product with lead time 60:	2016-08-01	155.0
 	ROQ for product with lead time 60:	2016-09-01	170.0
 	ROQ for product with lead time 60:	2016-10-01	184.0
-	ROQ for product with lead time 90:	2016-01-01	120.0
+	ROQ for product with lead time 90:	1971-01-01	120.0
 	ROQ for product with lead time 90:	2016-04-01	121.0
 	ROQ for product with lead time 90:	2016-05-01	132.0
 	ROQ for product with lead time 90:	2016-06-01	144.0
@@ -1322,7 +1322,7 @@ Test: demand_deviation:20 price:10 roq_min_qty:120 service_level:98
 	ROQ for product with lead time 90:	2016-09-01	175.0
 	ROQ for product with lead time 90:	2016-10-01	151.0
 	ROQ for product with lead time 90:	2016-11-01	120.0
-	SS for product with lead time 120:	2016-01-01	48.0
+	SS for product with lead time 120:	1971-01-01	48.0
 	SS for product with lead time 120:	2016-03-01	47.0
 	SS for product with lead time 120:	2016-04-01	46.0
 	SS for product with lead time 120:	2016-05-01	45.0
@@ -1332,7 +1332,7 @@ Test: demand_deviation:20 price:10 roq_min_qty:120 service_level:98
 	SS for product with lead time 120:	2016-09-01	40.0
 	SS for product with lead time 120:	2016-10-01	42.0
 	SS for product with lead time 120:	2016-11-01	45.0
-	SS for product with lead time 30:	2016-01-01	16.0
+	SS for product with lead time 30:	1971-01-01	16.0
 	SS for product with lead time 30:	2016-02-01	17.0
 	SS for product with lead time 30:	2016-03-01	16.0
 	SS for product with lead time 30:	2016-04-01	24.0
@@ -1341,14 +1341,14 @@ Test: demand_deviation:20 price:10 roq_min_qty:120 service_level:98
 	SS for product with lead time 30:	2016-07-01	14.0
 	SS for product with lead time 30:	2016-10-01	13.0
 	SS for product with lead time 30:	2016-11-01	12.0
-	SS for product with lead time 60:	2016-01-01	45.0
+	SS for product with lead time 60:	1971-01-01	45.0
 	SS for product with lead time 60:	2016-03-01	46.0
 	SS for product with lead time 60:	2016-04-01	29.0
 	SS for product with lead time 60:	2016-06-01	27.0
 	SS for product with lead time 60:	2016-07-01	25.0
 	SS for product with lead time 60:	2016-09-01	24.0
 	SS for product with lead time 60:	2016-10-01	23.0
-	SS for product with lead time 90:	2016-01-01	67.0
+	SS for product with lead time 90:	1971-01-01	67.0
 	SS for product with lead time 90:	2016-02-01	38.0
 	SS for product with lead time 90:	2016-04-01	39.0
 	SS for product with lead time 90:	2016-05-01	37.0
@@ -1359,52 +1359,52 @@ Test: demand_deviation:20 price:10 roq_min_qty:120 service_level:98
 	SS for product with lead time 90:	2016-11-01	38.0
 
 Test: demand_deviation:20 price:10 roq_max_qty:60 service_level:80
-	ROQ for product with lead time 120:	2016-01-01	60.0
-	ROQ for product with lead time 30:	2016-01-01	60.0
-	ROQ for product with lead time 60:	2016-01-01	60.0
-	ROQ for product with lead time 90:	2016-01-01	60.0
-	SS for product with lead time 120:	2016-01-01	7.0
+	ROQ for product with lead time 120:	1971-01-01	60.0
+	ROQ for product with lead time 30:	1971-01-01	60.0
+	ROQ for product with lead time 60:	1971-01-01	60.0
+	ROQ for product with lead time 90:	1971-01-01	60.0
+	SS for product with lead time 120:	1971-01-01	7.0
 	SS for product with lead time 120:	2016-09-01	8.0
 	SS for product with lead time 120:	2016-10-01	7.0
-	SS for product with lead time 30:	2016-01-01	1.0
-	SS for product with lead time 60:	2016-01-01	1.0
-	SS for product with lead time 90:	2016-01-01	1.0
+	SS for product with lead time 30:	1971-01-01	1.0
+	SS for product with lead time 60:	1971-01-01	1.0
+	SS for product with lead time 90:	1971-01-01	1.0
 	SS for product with lead time 90:	2016-02-01	3.0
 	SS for product with lead time 90:	2016-08-01	4.0
 	SS for product with lead time 90:	2016-10-01	3.0
 
 Test: demand_deviation:20 price:10 roq_max_qty:60 service_level:90
-	ROQ for product with lead time 120:	2016-01-01	60.0
-	ROQ for product with lead time 30:	2016-01-01	60.0
-	ROQ for product with lead time 60:	2016-01-01	60.0
-	ROQ for product with lead time 90:	2016-01-01	60.0
-	SS for product with lead time 120:	2016-01-01	26.0
+	ROQ for product with lead time 120:	1971-01-01	60.0
+	ROQ for product with lead time 30:	1971-01-01	60.0
+	ROQ for product with lead time 60:	1971-01-01	60.0
+	ROQ for product with lead time 90:	1971-01-01	60.0
+	SS for product with lead time 120:	1971-01-01	26.0
 	SS for product with lead time 120:	2016-05-01	27.0
 	SS for product with lead time 120:	2016-06-01	26.0
 	SS for product with lead time 120:	2016-07-01	27.0
 	SS for product with lead time 120:	2016-10-01	26.0
-	SS for product with lead time 30:	2016-01-01	1.0
+	SS for product with lead time 30:	1971-01-01	1.0
 	SS for product with lead time 30:	2016-04-01	2.0
 	SS for product with lead time 30:	2016-07-01	5.0
 	SS for product with lead time 30:	2016-09-01	4.0
 	SS for product with lead time 30:	2016-10-01	5.0
 	SS for product with lead time 30:	2016-11-01	4.0
-	SS for product with lead time 60:	2016-01-01	1.0
+	SS for product with lead time 60:	1971-01-01	1.0
 	SS for product with lead time 60:	2016-03-01	10.0
 	SS for product with lead time 60:	2016-04-01	13.0
 	SS for product with lead time 60:	2016-09-01	14.0
-	SS for product with lead time 90:	2016-01-01	6.0
+	SS for product with lead time 90:	1971-01-01	6.0
 	SS for product with lead time 90:	2016-02-01	20.0
 	SS for product with lead time 90:	2016-08-01	21.0
 	SS for product with lead time 90:	2016-10-01	20.0
 
 Test: demand_deviation:20 price:10 roq_max_qty:60 service_level:95
-	ROQ for product with lead time 120:	2016-01-01	60.0
-	ROQ for product with lead time 30:	2016-01-01	60.0
-	ROQ for product with lead time 60:	2016-01-01	60.0
-	ROQ for product with lead time 90:	2016-01-01	60.0
-	SS for product with lead time 120:	2016-01-01	42.0
-	SS for product with lead time 30:	2016-01-01	1.0
+	ROQ for product with lead time 120:	1971-01-01	60.0
+	ROQ for product with lead time 30:	1971-01-01	60.0
+	ROQ for product with lead time 60:	1971-01-01	60.0
+	ROQ for product with lead time 90:	1971-01-01	60.0
+	SS for product with lead time 120:	1971-01-01	42.0
+	SS for product with lead time 30:	1971-01-01	1.0
 	SS for product with lead time 30:	2016-02-01	2.0
 	SS for product with lead time 30:	2016-03-01	1.0
 	SS for product with lead time 30:	2016-04-01	17.0
@@ -1414,24 +1414,24 @@ Test: demand_deviation:20 price:10 roq_max_qty:60 service_level:95
 	SS for product with lead time 30:	2016-09-01	13.0
 	SS for product with lead time 30:	2016-10-01	14.0
 	SS for product with lead time 30:	2016-11-01	13.0
-	SS for product with lead time 60:	2016-01-01	22.0
+	SS for product with lead time 60:	1971-01-01	22.0
 	SS for product with lead time 60:	2016-03-01	32.0
 	SS for product with lead time 60:	2016-04-01	25.0
-	SS for product with lead time 90:	2016-01-01	38.0
+	SS for product with lead time 90:	1971-01-01	38.0
 	SS for product with lead time 90:	2016-02-01	34.0
 	SS for product with lead time 90:	2016-09-01	35.0
 	SS for product with lead time 90:	2016-10-01	34.0
 
 Test: demand_deviation:20 price:10 roq_max_qty:60 service_level:98
-	ROQ for product with lead time 120:	2016-01-01	60.0
-	ROQ for product with lead time 30:	2016-01-01	60.0
-	ROQ for product with lead time 60:	2016-01-01	60.0
-	ROQ for product with lead time 90:	2016-01-01	60.0
-	SS for product with lead time 120:	2016-01-01	60.0
+	ROQ for product with lead time 120:	1971-01-01	60.0
+	ROQ for product with lead time 30:	1971-01-01	60.0
+	ROQ for product with lead time 60:	1971-01-01	60.0
+	ROQ for product with lead time 90:	1971-01-01	60.0
+	SS for product with lead time 120:	1971-01-01	60.0
 	SS for product with lead time 120:	2016-03-01	59.0
 	SS for product with lead time 120:	2016-04-01	60.0
 	SS for product with lead time 120:	2016-10-01	59.0
-	SS for product with lead time 30:	2016-01-01	35.0
+	SS for product with lead time 30:	1971-01-01	35.0
 	SS for product with lead time 30:	2016-02-01	36.0
 	SS for product with lead time 30:	2016-03-01	35.0
 	SS for product with lead time 30:	2016-04-01	38.0
@@ -1441,11 +1441,11 @@ Test: demand_deviation:20 price:10 roq_max_qty:60 service_level:98
 	SS for product with lead time 30:	2016-09-01	23.0
 	SS for product with lead time 30:	2016-10-01	24.0
 	SS for product with lead time 30:	2016-11-01	23.0
-	SS for product with lead time 60:	2016-01-01	66.0
+	SS for product with lead time 60:	1971-01-01	66.0
 	SS for product with lead time 60:	2016-03-01	64.0
 	SS for product with lead time 60:	2016-04-01	38.0
 	SS for product with lead time 60:	2016-09-01	39.0
-	SS for product with lead time 90:	2016-01-01	88.0
+	SS for product with lead time 90:	1971-01-01	88.0
 	SS for product with lead time 90:	2016-02-01	49.0
 	SS for product with lead time 90:	2016-04-01	50.0
 	SS for product with lead time 90:	2016-10-01	49.0

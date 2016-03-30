@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<plan xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <name>Stockout Probability test case</name>
+  <description>
+    This test verifies the stockout probability calculation.
+  </description>
+  <current>2015-01-01T00:00:00</current>
+  <calendars>
+    <calendar name="months">
+      <buckets>
+        <bucket start="2015-01-01T00:00:00" end="2015-02-01T00:00:00" value="1"/>
+        <bucket start="2015-02-01T00:00:00" end="2015-03-01T00:00:00" value="1"/>
+        <bucket start="2015-03-01T00:00:00" end="2015-04-01T00:00:00" value="1"/>
+        <bucket start="2015-04-01T00:00:00" end="2015-05-01T00:00:00" value="1"/>
+        <bucket start="2015-05-01T00:00:00" end="2015-06-01T00:00:00" value="1"/>
+        <bucket start="2015-06-01T00:00:00" end="2015-07-01T00:00:00" value="1"/>
+        <bucket start="2015-07-01T00:00:00" end="2015-08-01T00:00:00" value="1"/>
+        <bucket start="2015-08-01T00:00:00" end="2015-09-01T00:00:00" value="1"/>
+        <bucket start="2015-09-01T00:00:00" end="2015-10-01T00:00:00" value="1"/>
+        <bucket start="2015-10-01T00:00:00" end="2015-11-01T00:00:00" value="1"/>
+        <bucket start="2015-11-01T00:00:00" end="2015-12-01T00:00:00" value="1"/>
+        <bucket start="2015-12-01T00:00:00" end="2016-01-01T00:00:00" value="1"/>
+        <bucket start="2016-01-01T00:00:00" end="2016-02-01T00:00:00" value="1"/>
+        <bucket start="2016-02-01T00:00:00" end="2016-03-01T00:00:00" value="1"/>
+        <bucket start="2016-03-01T00:00:00" end="2016-04-01T00:00:00" value="1"/>
+        <bucket start="2016-04-01T00:00:00" end="2016-05-01T00:00:00" value="1"/>
+        <bucket start="2016-05-01T00:00:00" end="2016-06-01T00:00:00" value="1"/>
+        <bucket start="2016-06-01T00:00:00" end="2016-07-01T00:00:00" value="1"/>
+        <bucket start="2016-07-01T00:00:00" end="2016-08-01T00:00:00" value="1"/>
+        <bucket start="2016-08-01T00:00:00" end="2016-09-01T00:00:00" value="1"/>
+        <bucket start="2016-09-01T00:00:00" end="2016-10-01T00:00:00" value="1"/>
+        <bucket start="2016-10-01T00:00:00" end="2016-11-01T00:00:00" value="1"/>
+        <bucket start="2016-11-01T00:00:00" end="2016-12-01T00:00:00" value="1"/>
+        <bucket start="2016-12-01T00:00:00" end="2017-01-01T00:00:00" value="1"/>                
+      </buckets>
+    </calendar>
+  </calendars>
+  
+  <items>
+    <item name="product with lead time 30">
+      <price>1</price>
+      <itemsuppliers>
+        <itemsupplier>
+          <supplier name="vendor" />
+          <leadtime>P30D</leadtime>
+        </itemsupplier>
+      </itemsuppliers>
+    </item>
+    <item name="product with lead time 60">
+      <price>1</price>      
+      <itemsuppliers>
+        <itemsupplier>
+          <supplier name="vendor" />
+          <leadtime>P60D</leadtime>
+        </itemsupplier>
+      </itemsuppliers>
+    </item>
+    <item name="product with lead time 90">
+      <price>1</price>
+      <itemsuppliers>
+        <itemsupplier>
+          <supplier name="vendor" />
+          <leadtime>P90D</leadtime>
+        </itemsupplier>
+      </itemsuppliers>
+    </item>    
+    <item name="product with lead time 120">
+      <price>1</price>
+      <itemsuppliers>
+        <itemsupplier>
+          <supplier name="vendor" />
+          <leadtime>P120D</leadtime>
+        </itemsupplier>
+      </itemsuppliers>
+    </item>
+  </items>    
+
+  
+  <buffers>
+    <buffer>
+      <name>product with lead time 30</name>
+      <item name="product with lead time 30"/>
+      <location name="factory"/>
+    </buffer>
+    <buffer>
+      <name>product with lead time 60</name>
+      <item name="product with lead time 60"/>
+      <location name="factory"/>
+    </buffer>
+    <buffer>
+      <name>product with lead time 90</name>
+      <item name="product with lead time 90"/>
+      <location name="factory"/>
+    </buffer>
+    <buffer>
+      <name>product with lead time 120</name>
+      <item name="product with lead time 120"/>
+      <location name="factory"/>
+    </buffer>            
+  </buffers>
+  <demands>
+    <!-- Demand for item with lead time 30 -->    
+    <demand xsi:type="demand_forecast">
+      <name>product with lead time 30</name> 
+      <item name="product with lead time 30"/>
+      <location name="factory"/> 
+      <calendar name="months"/>	  
+    </demand>   <demand xsi:type="demand_forecast">
+      <name>product with lead time 60</name> 
+      <item name="product with lead time 60"/>
+      <location name="factory"/>
+	  <calendar name="months"/>	  
+    </demand>   <demand xsi:type="demand_forecast">
+      <name>product with lead time 90</name> 
+      <item name="product with lead time 90"/>
+      <location name="factory"/>
+      <calendar name="months"/>	  	  
+    </demand>   
+    <demand xsi:type="demand_forecast">
+      <name>product with lead time 120</name> 
+      <item name="product with lead time 120"/>
+      <location name="factory"/>
+      <calendar name="months"/>	  	  
+    </demand>     
+      </demands>
+
+<?python
+
+with open("output.1.xml", "wt", encoding='utf-8') as output:
+  
+    forecastsolver = frepple.solver_forecast(loglevel=0,
+      Net_CustomerThenItemHierarchy=True, Net_MatchUsingDeliveryOperation=False)
+      
+    
+    
+    thecalendar = frepple.calendar(name="months")
+    thebuckets = [ i.start for i in thecalendar.buckets ]
+    
+    for d in frepple.demands() :
+      forecastsolver.timeseries(d, [10,10,10,10,10,10,10,10,10,10,10,10,10,10], thebuckets)
+    
+    
+  
+    # Run the inventory planning solver to compute the safety stock and reorder quantities
+    solver =  frepple.solver_inventoryplanning(
+              calendar=frepple.calendar(name='months'),
+              horizon_start=0,
+              horizon_end=365,
+              holding_cost=0.05,
+              fixed_order_cost=20,
+              loglevel=2,
+              )
+              
+    sol = frepple.solver_mrp(constraints=15, loglevel=0)
+    
+    
+    for o in range(0,100,10):
+        for b in frepple.buffers():
+            b.onhand = o
+        sol.solve()     
+        for b in frepple.buffers():
+            print("stockout probability for%s with on hand %d : %.4f" % (b.name,b.onhand,solver.computeStockoutProbability(b)),file=output)
+
+    
+?>
+
+</plan>
