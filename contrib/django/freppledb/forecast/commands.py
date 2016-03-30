@@ -264,7 +264,7 @@ def generateBaseline(solver_fcst, cursor):
        on forecastplan.forecast_id = forecast.name
        and calendarbucket.startdate = forecastplan.startdate
      where calendarbucket.startdate >= %s
-      and calendarbucket.enddate < %s
+      and calendarbucket.enddate <= %s
       and forecast.planned = true
      order by forecast.name, calendarbucket.startdate
      ''', (
