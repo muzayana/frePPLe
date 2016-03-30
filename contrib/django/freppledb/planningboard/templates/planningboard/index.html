@@ -76,6 +76,21 @@ $(function() {
 	  $("#horizonunit").val($(this).prop('name'));
 	});
 
+  var resizeoptions={
+      handleSelector: "#resize-handle",
+      resizeWidth: false,
+      resizeHeight: true,
+      onDrag: function (e, $el, opt) {$("#grid").setGridHeight($('#content-main').height()-52);},
+  }
+  $("#resize-handle").css({'visibility':'visible', 'transform':'scale(3,0.8)', 'position':'relative'});
+  $("#content-main").resizable({
+    handleSelector: "#resize-handle",
+    resizeWidth: false,
+    resizeHeight: true,
+    onDrag: function (e, $el, opt) {$("#grid").setGridHeight($('#content-main').height()-52);},
+    onDragEnd: function (e, $el, opt) {grid.saveColumnConfiguration();}
+  });
+
 });
 
 </script>
@@ -91,11 +106,14 @@ $(function() {
 <button class="btn btn-xs btn-primary" onclick="grid.showBucket()" data-toggle="tooltip" data-placement="top" data-original-title="{% trans 'configure time buckets'|capfirst|force_escape %}" id="bucketconfig"><span class="fa fa-clock-o"></span></button>
 </div></div></div>
 
-<div class="row">
-<div class="col-md-12">
-<div id="ganttdiv" style="margin: 5px 1px 5px 0px; overflow-x: hide; overflow-y: scroll; border: 1px solid">
-<svg id="gantt" style="width:100%"></svg>
-</div></div></div>
+<div class="row" style="text-align: center;">
+	<div class="col-md-12" id="content-main">
+		<div id="ganttdiv" style="margin: 5px 1px 5px 0px; overflow-x: hide; overflow-y: scroll; border: 1px solid">
+		  <svg id="gantt" style="width:100%"></svg>
+		</div>
+	</div>
+	<span id="resize-handle" class="fa fa-bars handle" style="position: relative; cursor: ns-resize; visibility: visible; transform: scale(3, 0.8); touch-action: none;"></span>
+</div>
 
 <div class="row">
 <div class="col-md-12">
