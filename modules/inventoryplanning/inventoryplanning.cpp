@@ -802,8 +802,11 @@ double InventoryPlanningSolver::computeStockOutProbability(const Buffer* b){
     //for the current bucket, we need to find out the demand
 	double bucketForecast = 0;
     for (Buffer::flowplanlist::const_iterator i = b->getFlowPlans().begin();
-      i != b->getFlowPlans().end(); ++i) {
+      i != b->getFlowPlans().end() && i->getDate() < bucketEnd; ++i) {
 
+		  if (i->getDate() < bucketStart)
+			  continue;
+		  
 		  // Only consider consumption
         if (i->getEventType() != 1 || i->getQuantity() >= 0)
           continue;
@@ -814,10 +817,8 @@ double InventoryPlanningSolver::computeStockOutProbability(const Buffer* b){
         if (dmd && dmd->getType() == *DemandDefault::metadata) {
 			continue;
 		}
-
-
-		if (i->getDate() >= bucketStart && i->getDate() < bucketEnd)
-			bucketForecast -= i->getQuantity();
+		
+		bucketForecast -= i->getQuantity();
 
 	}
 
@@ -830,8 +831,9 @@ double InventoryPlanningSolver::computeStockOutProbability(const Buffer* b){
 		continue;
 	}
 
-	// on_hand at the end of the bucket, we have to remove one second otherwise bucketEnd is the first second of following bucket
-    double on_hand = b->getOnHand(bucketEnd-oneSecond);
+	// on_hand at the end of the bucket or at the end of the leadtime, 
+	// we have to remove one second otherwise bucketEnd is the first second of following bucket
+    double on_hand = b->getOnHand(min(bucketEnd-oneSecond,currentDate+leadtime-oneSecond));
     // If on-hand at end of bucket is 0, no need to go further
     // StockOut probability is 100% whatever the demand is for that buffer
     if (on_hand <= 0) {
