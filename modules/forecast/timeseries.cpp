@@ -1194,8 +1194,9 @@ void Forecast::Seasonal::applyForecast
 
 double Forecast::Croston::initial_alfa = 0.1;
 double Forecast::Croston::min_alfa = 0.03;
-double Forecast::Croston::max_alfa = 1.0;
+double Forecast::Croston::max_alfa = 0.8;
 double Forecast::Croston::min_intermittence = 0.33;
+double Forecast::Croston::decay_rate = 0.1;
 
 
 Forecast::Metrics Forecast::Croston::generateForecast
@@ -1204,12 +1205,15 @@ Forecast::Metrics Forecast::Croston::generateForecast
   // Count non-zero buckets
   double nonzero = 0.0;
   double totalsum = 0.0;
+  unsigned long lastnonzero = 0;
   for (unsigned long i = 0; i < count; ++i)
     if (history[i])
     {
       ++nonzero;
       totalsum += history[i];
+      lastnonzero = i;
     }
+  double periods_between_demands = count / nonzero;
 
   unsigned int iteration = 0;
   double error_smape = 0.0, error_smape_weights = 0.0, best_smape = 0.0;
@@ -1229,9 +1233,11 @@ Forecast::Metrics Forecast::Croston::generateForecast
       // Initialize variables.
       // We initialize to the overall average, since we potentially have
       // very few data points to adjust the forecast.
+      // Since the time series only starts at the first non-zero value, we
+      // initialize as if there are some extra zero buckets before it.
       error_smape = error_smape_weights = 0.0;
       q_i = totalsum / nonzero;
-      p_i = count / nonzero;
+      p_i = (/*periods_between_demands + */count) / nonzero;
       f_i = (1 - alfa / 2) * q_i / p_i;
 
       // Calculate the forecast and forecast error.
@@ -1249,7 +1255,15 @@ Forecast::Metrics Forecast::Croston::generateForecast
           f_i = (1 - alfa / 2) * q_i / p_i;
           between_demands = 1;
         }
+        else if (i > lastnonzero && between_demands > 2 * periods_between_demands)
+        {
+          // Too many zeroes since the last hit: decay the forecast with a
+          // certain factor every bucket.
+          f_i = f_i * (1 - decay_rate);
+          p_i = (1 - alfa / 2) * q_i / f_i;
+        }
         else
+          // Zero bucket
           ++between_demands;
         if (i == count) break;
         if (outliers == 0)
@@ -1302,7 +1316,7 @@ Forecast::Metrics Forecast::Croston::generateForecast
     }
 
     // Debugging info on the iteration
-    if (solver->getLogLevel()>5)
+    if (solver->getLogLevel()>9)
       logger << (fcst ? fcst->getName() : "")
         << ": croston: iteration " << iteration
         << ": alfa " << alfa
