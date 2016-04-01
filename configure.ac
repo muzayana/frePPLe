@@ -3,7 +3,7 @@
 #
 
 #
-# Copyright (C) 2007-2014 by frePPLe bvba
+# Copyright (C) 2007-2016 by frePPLe bvba
 #
 # All information contained herein is, and remains the property of frePPLe.
 # You are allowed to use and modify the source code, as long as the software is used
