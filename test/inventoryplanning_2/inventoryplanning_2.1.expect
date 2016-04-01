@@ -1,40 +1,40 @@
-stockout probability forproduct with lead time 120 with on hand 0 : 1.0000
-stockout probability forproduct with lead time 30 with on hand 0 : 1.0000
-stockout probability forproduct with lead time 60 with on hand 0 : 1.0000
-stockout probability forproduct with lead time 90 with on hand 0 : 1.0000
-stockout probability forproduct with lead time 120 with on hand 10 : 1.0000
-stockout probability forproduct with lead time 30 with on hand 10 : 1.0000
-stockout probability forproduct with lead time 60 with on hand 10 : 1.0000
-stockout probability forproduct with lead time 90 with on hand 10 : 1.0000
-stockout probability forproduct with lead time 120 with on hand 20 : 1.0000
-stockout probability forproduct with lead time 30 with on hand 20 : 0.5011
-stockout probability forproduct with lead time 60 with on hand 20 : 1.0000
-stockout probability forproduct with lead time 90 with on hand 20 : 1.0000
-stockout probability forproduct with lead time 120 with on hand 30 : 1.0000
-stockout probability forproduct with lead time 30 with on hand 30 : 0.0024
-stockout probability forproduct with lead time 60 with on hand 30 : 1.0000
-stockout probability forproduct with lead time 90 with on hand 30 : 1.0000
-stockout probability forproduct with lead time 120 with on hand 40 : 1.0000
-stockout probability forproduct with lead time 30 with on hand 40 : 0.0000
-stockout probability forproduct with lead time 60 with on hand 40 : 0.9890
-stockout probability forproduct with lead time 90 with on hand 40 : 1.0000
-stockout probability forproduct with lead time 120 with on hand 50 : 1.0000
-stockout probability forproduct with lead time 30 with on hand 50 : 0.0000
-stockout probability forproduct with lead time 60 with on hand 50 : 0.5285
-stockout probability forproduct with lead time 90 with on hand 50 : 0.9999
-stockout probability forproduct with lead time 120 with on hand 60 : 1.0000
-stockout probability forproduct with lead time 30 with on hand 60 : 0.0000
-stockout probability forproduct with lead time 60 with on hand 60 : 0.0159
-stockout probability forproduct with lead time 90 with on hand 60 : 0.9661
-stockout probability forproduct with lead time 120 with on hand 70 : 0.9992
-stockout probability forproduct with lead time 30 with on hand 70 : 0.0000
-stockout probability forproduct with lead time 60 with on hand 70 : 0.0000
-stockout probability forproduct with lead time 90 with on hand 70 : 0.5000
-stockout probability forproduct with lead time 120 with on hand 80 : 0.9431
-stockout probability forproduct with lead time 30 with on hand 80 : 0.0000
-stockout probability forproduct with lead time 60 with on hand 80 : 0.0000
-stockout probability forproduct with lead time 90 with on hand 80 : 0.0339
-stockout probability forproduct with lead time 120 with on hand 90 : 0.5000
-stockout probability forproduct with lead time 30 with on hand 90 : 0.0000
-stockout probability forproduct with lead time 60 with on hand 90 : 0.0000
-stockout probability forproduct with lead time 90 with on hand 90 : 0.0001
+stockout probability for product with lead time 120 with on hand 0 : 1.0000
+stockout probability for product with lead time 30 with on hand 0 : 1.0000
+stockout probability for product with lead time 60 with on hand 0 : 1.0000
+stockout probability for product with lead time 90 with on hand 0 : 1.0000
+stockout probability for product with lead time 120 with on hand 10 : 1.0000
+stockout probability for product with lead time 30 with on hand 10 : 1.0000
+stockout probability for product with lead time 60 with on hand 10 : 1.0000
+stockout probability for product with lead time 90 with on hand 10 : 1.0000
+stockout probability for product with lead time 120 with on hand 20 : 1.0000
+stockout probability for product with lead time 30 with on hand 20 : 0.5011
+stockout probability for product with lead time 60 with on hand 20 : 1.0000
+stockout probability for product with lead time 90 with on hand 20 : 1.0000
+stockout probability for product with lead time 120 with on hand 30 : 1.0000
+stockout probability for product with lead time 30 with on hand 30 : 0.0024
+stockout probability for product with lead time 60 with on hand 30 : 0.9890
+stockout probability for product with lead time 90 with on hand 30 : 1.0000
+stockout probability for product with lead time 120 with on hand 40 : 1.0000
+stockout probability for product with lead time 30 with on hand 40 : 0.0000
+stockout probability for product with lead time 60 with on hand 40 : 0.5285
+stockout probability for product with lead time 90 with on hand 40 : 0.9999
+stockout probability for product with lead time 120 with on hand 50 : 1.0000
+stockout probability for product with lead time 30 with on hand 50 : 0.0000
+stockout probability for product with lead time 60 with on hand 50 : 0.0159
+stockout probability for product with lead time 90 with on hand 50 : 0.9661
+stockout probability for product with lead time 120 with on hand 60 : 0.9992
+stockout probability for product with lead time 30 with on hand 60 : 0.0000
+stockout probability for product with lead time 60 with on hand 60 : 0.0000
+stockout probability for product with lead time 90 with on hand 60 : 0.5000
+stockout probability for product with lead time 120 with on hand 70 : 0.9431
+stockout probability for product with lead time 30 with on hand 70 : 0.0000
+stockout probability for product with lead time 60 with on hand 70 : 0.0000
+stockout probability for product with lead time 90 with on hand 70 : 0.0339
+stockout probability for product with lead time 120 with on hand 80 : 0.5000
+stockout probability for product with lead time 30 with on hand 80 : 0.0000
+stockout probability for product with lead time 60 with on hand 80 : 0.0000
+stockout probability for product with lead time 90 with on hand 80 : 0.0001
+stockout probability for product with lead time 120 with on hand 90 : 0.0569
+stockout probability for product with lead time 30 with on hand 90 : 0.0000
+stockout probability for product with lead time 60 with on hand 90 : 0.0000
+stockout probability for product with lead time 90 with on hand 90 : 0.0000

@@ -131,37 +131,31 @@ with open("output.1.xml", "wt", encoding='utf-8') as output:
     forecastsolver = frepple.solver_forecast(loglevel=0,
       Net_CustomerThenItemHierarchy=True, Net_MatchUsingDeliveryOperation=False)
       
-    
-    
     thecalendar = frepple.calendar(name="months")
     thebuckets = [ i.start for i in thecalendar.buckets ]
     
     for d in frepple.demands() :
       forecastsolver.timeseries(d, [10,10,10,10,10,10,10,10,10,10,10,10,10,10], thebuckets)
     
-    
-  
     # Run the inventory planning solver to compute the safety stock and reorder quantities
     solver =  frepple.solver_inventoryplanning(
-              calendar=frepple.calendar(name='months'),
-              horizon_start=0,
-              horizon_end=365,
-              holding_cost=0.05,
-              fixed_order_cost=20,
-              loglevel=2,
-              )
+      calendar=frepple.calendar(name='months'),
+      horizon_start=0,
+      horizon_end=365,
+      holding_cost=0.05,
+      fixed_order_cost=20,
+      loglevel=2,
+      )
               
     sol = frepple.solver_mrp(constraints=15, loglevel=0)
     
-    
     for o in range(0,100,10):
-        for b in frepple.buffers():
-            b.onhand = o
-        sol.solve()     
-        for b in frepple.buffers():
-            print("stockout probability for%s with on hand %d : %.4f" % (b.name,b.onhand,solver.computeStockoutProbability(b)),file=output)
+      for b in frepple.buffers():
+        b.onhand = o
+      sol.solve()     
+      for b in frepple.buffers():
+        print("stockout probability for %s with on hand %d : %.4f" % (b.name,b.onhand,solver.computeStockoutProbability(b)),file=output)
 
-    
 ?>
 
 </plan>
