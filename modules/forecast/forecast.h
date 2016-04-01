@@ -1173,6 +1173,10 @@ class Forecast : public Demand
         /** Minimum intermittence before this method is applicable. */
         static double min_intermittence;
 
+        /** Decay rate for dying forecasts (ie no hits since 2 * average time
+          * between demand hits. */
+        static double decay_rate;
+
         /** Smoothed forecast.<br>
           * Used to carry results between the evaluation and applying of the forecast.
           */
@@ -1217,6 +1221,19 @@ class Forecast : public Demand
         static double getMinAlfa()
         {
           return min_alfa;
+        }
+
+        /** Decay rate for dying items. */
+        static void setDecayRate(double x)
+        {
+          if (x<0 || x>1.0) throw DataException(
+              "Parameter Croston.decayRate must be between 0 and 1");
+          decay_rate = x;
+        }
+
+        static double getDecayRate()
+        {
+          return decay_rate;
         }
 
         /** Update the maximum value for the alfa parameter. */
@@ -2043,6 +2060,16 @@ class ForecastSolver : public Solver
       Forecast::Croston::setMinIntermittence(i);
     }
 
+    double getCrostonDecayRate() const
+    {
+      return Forecast::Croston::getDecayRate();
+    }
+
+    void setCrostonDecayRate(double i)
+    {
+      Forecast::Croston::setDecayRate(i);
+    }
+
     template<class Cls> static inline void registerFields(MetaClass* m)
     {
       // Forecast buckets
@@ -2090,6 +2117,7 @@ class ForecastSolver : public Solver
       m->addDoubleField<Cls>(ForecastSolver::tag_Croston_minAlfa, &Cls::getCrostonMinAlfa, &Cls::setCrostonMinAlfa);
       m->addDoubleField<Cls>(ForecastSolver::tag_Croston_maxAlfa, &Cls::getCrostonMaxAlfa, &Cls::setCrostonMaxAlfa);
       m->addDoubleField<Cls>(ForecastSolver::tag_Croston_minIntermittence, &Cls::getCrostonMinIntermittence, &Cls::setCrostonMinIntermittence);
+      m->addDoubleField<Cls>(ForecastSolver::tag_Croston_decayRate, &Cls::getCrostonDecayRate, &Cls::setCrostonDecayRate);
     }
 
   private:
@@ -2175,6 +2203,7 @@ class ForecastSolver : public Solver
     static const Keyword tag_Croston_minAlfa;
     static const Keyword tag_Croston_maxAlfa;
     static const Keyword tag_Croston_minIntermittence;
+    static const Keyword tag_Croston_decayRate;
     static const Keyword tag_Outlier_maxDeviation;
 };
 

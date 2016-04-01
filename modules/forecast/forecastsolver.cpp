@@ -57,6 +57,7 @@ const Keyword ForecastSolver::tag_Croston_initialAlfa("Croston_initialAlfa");
 const Keyword ForecastSolver::tag_Croston_minAlfa("Croston_minAlfa");
 const Keyword ForecastSolver::tag_Croston_maxAlfa("Croston_maxAlfa");
 const Keyword ForecastSolver::tag_Croston_minIntermittence("Croston_minIntermittence");
+const Keyword ForecastSolver::tag_Croston_decayRate("Croston_decayRate");
 const Keyword ForecastSolver::tag_Outlier_maxDeviation("Outlier_maxDeviation");
 
 
