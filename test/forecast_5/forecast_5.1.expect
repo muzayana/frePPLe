@@ -162,7 +162,7 @@
 			</buckets>
 		</demand>
 		<demand xsi:type="demand_forecast">
-			<name>intermittent</name>
+			<name>intermittent 00</name>
 			<item>
 				<name>item</name>
 			</item>
@@ -202,6 +202,506 @@
 					<start>2009-05-01T00:00:00</start>
 					<end>2009-06-01T00:00:00</end>
 					<total>1</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>0</quantity>
+					<start>2009-06-01T00:00:00</start>
+					<end>2030-12-31T00:00:00</end>
+					<total>0</total>
+				</bucket>
+			</buckets>
+		</demand>
+		<demand xsi:type="demand_forecast">
+			<name>intermittent 01</name>
+			<item>
+				<name>item</name>
+			</item>
+			<customer>
+				<name>customer</name>
+			</customer>
+			<calendar>
+				<name>planningbuckets</name>
+			</calendar>
+			<buckets>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>1</quantity>
+					<start>2009-01-01T00:00:00</start>
+					<end>2009-02-01T00:00:00</end>
+					<total>1</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>2</quantity>
+					<start>2009-02-01T00:00:00</start>
+					<end>2009-03-01T00:00:00</end>
+					<total>2</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>1</quantity>
+					<start>2009-03-01T00:00:00</start>
+					<end>2009-04-01T00:00:00</end>
+					<total>1</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>1</quantity>
+					<start>2009-04-01T00:00:00</start>
+					<end>2009-05-01T00:00:00</end>
+					<total>1</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>1</quantity>
+					<start>2009-05-01T00:00:00</start>
+					<end>2009-06-01T00:00:00</end>
+					<total>1</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>0</quantity>
+					<start>2009-06-01T00:00:00</start>
+					<end>2030-12-31T00:00:00</end>
+					<total>0</total>
+				</bucket>
+			</buckets>
+		</demand>
+		<demand xsi:type="demand_forecast">
+			<name>intermittent 02</name>
+			<item>
+				<name>item</name>
+			</item>
+			<customer>
+				<name>customer</name>
+			</customer>
+			<calendar>
+				<name>planningbuckets</name>
+			</calendar>
+			<buckets>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>1</quantity>
+					<start>2009-01-01T00:00:00</start>
+					<end>2009-02-01T00:00:00</end>
+					<total>1</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>1</quantity>
+					<start>2009-02-01T00:00:00</start>
+					<end>2009-03-01T00:00:00</end>
+					<total>1</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>2</quantity>
+					<start>2009-03-01T00:00:00</start>
+					<end>2009-04-01T00:00:00</end>
+					<total>2</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>1</quantity>
+					<start>2009-04-01T00:00:00</start>
+					<end>2009-05-01T00:00:00</end>
+					<total>1</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>1</quantity>
+					<start>2009-05-01T00:00:00</start>
+					<end>2009-06-01T00:00:00</end>
+					<total>1</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>0</quantity>
+					<start>2009-06-01T00:00:00</start>
+					<end>2030-12-31T00:00:00</end>
+					<total>0</total>
+				</bucket>
+			</buckets>
+		</demand>
+		<demand xsi:type="demand_forecast">
+			<name>intermittent 03</name>
+			<item>
+				<name>item</name>
+			</item>
+			<customer>
+				<name>customer</name>
+			</customer>
+			<calendar>
+				<name>planningbuckets</name>
+			</calendar>
+			<buckets>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>1</quantity>
+					<start>2009-01-01T00:00:00</start>
+					<end>2009-02-01T00:00:00</end>
+					<total>1</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>1</quantity>
+					<start>2009-02-01T00:00:00</start>
+					<end>2009-03-01T00:00:00</end>
+					<total>1</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>1</quantity>
+					<start>2009-03-01T00:00:00</start>
+					<end>2009-04-01T00:00:00</end>
+					<total>1</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>1</quantity>
+					<start>2009-04-01T00:00:00</start>
+					<end>2009-05-01T00:00:00</end>
+					<total>1</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>2</quantity>
+					<start>2009-05-01T00:00:00</start>
+					<end>2009-06-01T00:00:00</end>
+					<total>2</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>0</quantity>
+					<start>2009-06-01T00:00:00</start>
+					<end>2030-12-31T00:00:00</end>
+					<total>0</total>
+				</bucket>
+			</buckets>
+		</demand>
+		<demand xsi:type="demand_forecast">
+			<name>intermittent 04</name>
+			<item>
+				<name>item</name>
+			</item>
+			<customer>
+				<name>customer</name>
+			</customer>
+			<calendar>
+				<name>planningbuckets</name>
+			</calendar>
+			<buckets>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>1</quantity>
+					<start>2009-01-01T00:00:00</start>
+					<end>2009-02-01T00:00:00</end>
+					<total>1</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>1</quantity>
+					<start>2009-02-01T00:00:00</start>
+					<end>2009-03-01T00:00:00</end>
+					<total>1</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>1</quantity>
+					<start>2009-03-01T00:00:00</start>
+					<end>2009-04-01T00:00:00</end>
+					<total>1</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>1</quantity>
+					<start>2009-04-01T00:00:00</start>
+					<end>2009-05-01T00:00:00</end>
+					<total>1</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>1</quantity>
+					<start>2009-05-01T00:00:00</start>
+					<end>2009-06-01T00:00:00</end>
+					<total>1</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>0</quantity>
+					<start>2009-06-01T00:00:00</start>
+					<end>2030-12-31T00:00:00</end>
+					<total>0</total>
+				</bucket>
+			</buckets>
+		</demand>
+		<demand xsi:type="demand_forecast">
+			<name>intermittent 05</name>
+			<item>
+				<name>item</name>
+			</item>
+			<customer>
+				<name>customer</name>
+			</customer>
+			<calendar>
+				<name>planningbuckets</name>
+			</calendar>
+			<buckets>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>1</quantity>
+					<start>2009-01-01T00:00:00</start>
+					<end>2009-02-01T00:00:00</end>
+					<total>1</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>1</quantity>
+					<start>2009-02-01T00:00:00</start>
+					<end>2009-03-01T00:00:00</end>
+					<total>1</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>1</quantity>
+					<start>2009-03-01T00:00:00</start>
+					<end>2009-04-01T00:00:00</end>
+					<total>1</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>1</quantity>
+					<start>2009-04-01T00:00:00</start>
+					<end>2009-05-01T00:00:00</end>
+					<total>1</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>0</quantity>
+					<start>2009-05-01T00:00:00</start>
+					<end>2009-06-01T00:00:00</end>
+					<total>0</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>0</quantity>
+					<start>2009-06-01T00:00:00</start>
+					<end>2030-12-31T00:00:00</end>
+					<total>0</total>
+				</bucket>
+			</buckets>
+		</demand>
+		<demand xsi:type="demand_forecast">
+			<name>intermittent 06</name>
+			<item>
+				<name>item</name>
+			</item>
+			<customer>
+				<name>customer</name>
+			</customer>
+			<calendar>
+				<name>planningbuckets</name>
+			</calendar>
+			<buckets>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>1</quantity>
+					<start>2009-01-01T00:00:00</start>
+					<end>2009-02-01T00:00:00</end>
+					<total>1</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>0</quantity>
+					<start>2009-02-01T00:00:00</start>
+					<end>2009-03-01T00:00:00</end>
+					<total>0</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>1</quantity>
+					<start>2009-03-01T00:00:00</start>
+					<end>2009-04-01T00:00:00</end>
+					<total>1</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>1</quantity>
+					<start>2009-04-01T00:00:00</start>
+					<end>2009-05-01T00:00:00</end>
+					<total>1</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>1</quantity>
+					<start>2009-05-01T00:00:00</start>
+					<end>2009-06-01T00:00:00</end>
+					<total>1</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>0</quantity>
+					<start>2009-06-01T00:00:00</start>
+					<end>2030-12-31T00:00:00</end>
+					<total>0</total>
+				</bucket>
+			</buckets>
+		</demand>
+		<demand xsi:type="demand_forecast">
+			<name>intermittent 07</name>
+			<item>
+				<name>item</name>
+			</item>
+			<customer>
+				<name>customer</name>
+			</customer>
+			<calendar>
+				<name>planningbuckets</name>
+			</calendar>
+			<buckets>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>1</quantity>
+					<start>2009-01-01T00:00:00</start>
+					<end>2009-02-01T00:00:00</end>
+					<total>1</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>0</quantity>
+					<start>2009-02-01T00:00:00</start>
+					<end>2009-03-01T00:00:00</end>
+					<total>0</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>1</quantity>
+					<start>2009-03-01T00:00:00</start>
+					<end>2009-04-01T00:00:00</end>
+					<total>1</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>1</quantity>
+					<start>2009-04-01T00:00:00</start>
+					<end>2009-05-01T00:00:00</end>
+					<total>1</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>0</quantity>
+					<start>2009-05-01T00:00:00</start>
+					<end>2009-06-01T00:00:00</end>
+					<total>0</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>0</quantity>
+					<start>2009-06-01T00:00:00</start>
+					<end>2030-12-31T00:00:00</end>
+					<total>0</total>
+				</bucket>
+			</buckets>
+		</demand>
+		<demand xsi:type="demand_forecast">
+			<name>intermittent 08</name>
+			<item>
+				<name>item</name>
+			</item>
+			<customer>
+				<name>customer</name>
+			</customer>
+			<calendar>
+				<name>planningbuckets</name>
+			</calendar>
+			<buckets>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>0</quantity>
+					<start>2009-01-01T00:00:00</start>
+					<end>2009-02-01T00:00:00</end>
+					<total>0</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>1</quantity>
+					<start>2009-02-01T00:00:00</start>
+					<end>2009-03-01T00:00:00</end>
+					<total>1</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>0</quantity>
+					<start>2009-03-01T00:00:00</start>
+					<end>2009-04-01T00:00:00</end>
+					<total>0</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>0</quantity>
+					<start>2009-04-01T00:00:00</start>
+					<end>2009-05-01T00:00:00</end>
+					<total>0</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>1</quantity>
+					<start>2009-05-01T00:00:00</start>
+					<end>2009-06-01T00:00:00</end>
+					<total>1</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>0</quantity>
+					<start>2009-06-01T00:00:00</start>
+					<end>2030-12-31T00:00:00</end>
+					<total>0</total>
+				</bucket>
+			</buckets>
+		</demand>
+		<demand xsi:type="demand_forecast">
+			<name>intermittent 09</name>
+			<item>
+				<name>item</name>
+			</item>
+			<customer>
+				<name>customer</name>
+			</customer>
+			<calendar>
+				<name>planningbuckets</name>
+			</calendar>
+			<buckets>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>0</quantity>
+					<start>2009-01-01T00:00:00</start>
+					<end>2009-02-01T00:00:00</end>
+					<total>0</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>1</quantity>
+					<start>2009-02-01T00:00:00</start>
+					<end>2009-03-01T00:00:00</end>
+					<total>1</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>0</quantity>
+					<start>2009-03-01T00:00:00</start>
+					<end>2009-04-01T00:00:00</end>
+					<total>0</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>0</quantity>
+					<start>2009-04-01T00:00:00</start>
+					<end>2009-05-01T00:00:00</end>
+					<total>0</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>1</quantity>
+					<start>2009-05-01T00:00:00</start>
+					<end>2009-06-01T00:00:00</end>
+					<total>1</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>0</quantity>
+					<start>2009-06-01T00:00:00</start>
+					<end>2030-12-31T00:00:00</end>
+					<total>0</total>
+				</bucket>
+			</buckets>
+		</demand>
+		<demand xsi:type="demand_forecast">
+			<name>intermittent 10</name>
+			<item>
+				<name>item</name>
+			</item>
+			<customer>
+				<name>customer</name>
+			</customer>
+			<calendar>
+				<name>planningbuckets</name>
+			</calendar>
+			<buckets>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>0</quantity>
+					<start>2009-01-01T00:00:00</start>
+					<end>2009-02-01T00:00:00</end>
+					<total>0</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>1</quantity>
+					<start>2009-02-01T00:00:00</start>
+					<end>2009-03-01T00:00:00</end>
+					<total>1</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>0</quantity>
+					<start>2009-03-01T00:00:00</start>
+					<end>2009-04-01T00:00:00</end>
+					<total>0</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>0</quantity>
+					<start>2009-04-01T00:00:00</start>
+					<end>2009-05-01T00:00:00</end>
+					<total>0</total>
+				</bucket>
+				<bucket xsi:type="demand_forecastbucket">
+					<quantity>0</quantity>
+					<start>2009-05-01T00:00:00</start>
+					<end>2009-06-01T00:00:00</end>
+					<total>0</total>
 				</bucket>
 				<bucket xsi:type="demand_forecastbucket">
 					<quantity>0</quantity>
